@@ -18,15 +18,25 @@ export function normalizeNamePart(s) {
     .replace(/^-+|-+$/g, '');
 }
 
-export function syntheticEmail(ime, prezime) {
+// Nadimak / broj člana je dio internog emaila, pa razlikuje lovce istog imena.
+export function syntheticEmail(ime, prezime, nadimak = '') {
   const a = normalizeNamePart(ime);
   const b = normalizeNamePart(prezime);
   if (!a || !b) throw new Error('Ime i prezime su obavezni');
-  return `${a}.${b}@${EMAIL_DOMAIN}`;
+  const n = normalizeNamePart(nadimak);
+  return `${a}.${b}${n ? `.${n}` : ''}@${EMAIL_DOMAIN}`;
 }
 
 export function validatePin(pin) {
   return PIN_RE.test(String(pin ?? '')) ? null : 'PIN mora imati 6 do 8 cifara';
+}
+
+export function validateNadimak(s) {
+  const t = String(s ?? '').trim();
+  if (!t) return null;
+  if (t.length > 20) return 'Nadimak / broj člana je predug';
+  if (!normalizeNamePart(t)) return 'Nadimak / broj člana ima neispravne znakove';
+  return null;
 }
 
 export function validateName(s) {
@@ -77,7 +87,7 @@ export function cachedProfile() {
 
 function friendlyAuthError(err) {
   const msg = String(err?.message || err);
-  if (/already registered|already exists/i.test(msg)) return 'Korisnik s tim imenom i prezimenom već postoji. Javite se administratoru.';
+  if (/already registered|already exists/i.test(msg)) return 'Korisnik s tim imenom i prezimenom već postoji. Upišite nadimak ili broj člana.';
   if (/invalid login credentials/i.test(msg)) return 'Pogrešno ime, prezime ili PIN.';
   if (/rate limit|too many/i.test(msg)) return 'Previše pokušaja. Pokušajte ponovo za nekoliko minuta.';
   if (err?.name === 'TimeoutError' || /fetch|network/i.test(msg)) return 'Nema veze sa serverom. Pokušajte kad bude signala.';
@@ -95,28 +105,32 @@ function storeProfile(p) {
   return p;
 }
 
-export async function register({ ime, prezime, pin }) {
-  const err = validateName(ime) || validateName(prezime) || validatePin(pin);
+function validateCredentials({ ime, prezime, nadimak, pin }) {
+  const err = validateName(ime) || validateName(prezime) || validateNadimak(nadimak) || validatePin(pin);
   if (err) throw new Error(err);
+}
+
+export async function register({ ime, prezime, nadimak, pin }) {
+  validateCredentials({ ime, prezime, nadimak, pin });
   const sb = getClient();
+  const nad = String(nadimak ?? '').trim();
   const { data, error } = await sb.auth.signUp({
-    email: syntheticEmail(ime, prezime),
+    email: syntheticEmail(ime, prezime, nad),
     password: String(pin),
-    options: { data: { ime: ime.trim(), prezime: prezime.trim() } },
+    options: { data: { ime: ime.trim(), prezime: prezime.trim(), nadimak: nad } },
   });
   if (error) throw new Error(friendlyAuthError(error));
   const user = data.user;
   const profile = (data.session && await fetchProfile(sb, user.id).catch(() => null))
-    || { id: user.id, ime: ime.trim(), prezime: prezime.trim(), odobren: false, is_admin: false };
+    || { id: user.id, ime: ime.trim(), prezime: prezime.trim(), nadimak: nad || null, odobren: false, is_admin: false };
   return storeProfile(profile);
 }
 
-export async function login({ ime, prezime, pin }) {
-  const err = validateName(ime) || validateName(prezime) || validatePin(pin);
-  if (err) throw new Error(err);
+export async function login({ ime, prezime, nadimak, pin }) {
+  validateCredentials({ ime, prezime, nadimak, pin });
   const sb = getClient();
   const { data, error } = await sb.auth.signInWithPassword({
-    email: syntheticEmail(ime, prezime),
+    email: syntheticEmail(ime, prezime, nadimak),
     password: String(pin),
   });
   if (error) throw new Error(friendlyAuthError(error));

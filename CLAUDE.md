@@ -96,3 +96,11 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Emoji ikonice izgledaju različito na OEM uređajima → SVG sprite (`<svg class="ic"><use href="#ic-…"/></svg>`).
 - Dnevni mod / jako sunce: svaka nova boja mora proći kontrast 4.5:1 i u dnevnoj temi.
 - Dodirne mete ≥ 44 px, polja ≥ 48 px, font polja ≥ 16 px (inače WebView zumira).
+
+## Odluke vlasnika projekta
+
+- Lovci istog imena i prezimena razlikuju se poljem **nadimak / broj člana** (neobavezno, dio internog emaila `ime.prezime[.nadimak]@lovci.grmec.app`, kolona `korisnici.nadimak`).
+- Admin **NE vidi privatne** zapise.
+- **SOS** ide svim aktivnim učesnicima lova koji je u toku tog dana.
+- **Vođa lova** je posebna uloga po reviru/sekciji (društvo ima više revira), nije isto što i admin. Šema za revire i vođe dolazi u fazi 3.
+- Supabase projekat (i kasnije repozitorij) će biti na drugom nalogu; URL/anon key vlasnik javlja kad napravi projekat. Granice lovišta (KML) i MBTiles stižu kasnije.

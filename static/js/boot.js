@@ -57,7 +57,7 @@ function safetyNet(err) {
 
 function readForm(form) {
   const fd = new FormData(form);
-  return { ime: fd.get('ime'), prezime: fd.get('prezime'), pin: fd.get('pin') };
+  return { ime: fd.get('ime'), prezime: fd.get('prezime'), nadimak: fd.get('nadimak'), pin: fd.get('pin') };
 }
 
 function wireAuthForms() {

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  syntheticEmail, normalizeNamePart, validatePin, validateName, decideStartScreen, isAuthRejection,
+  syntheticEmail, normalizeNamePart, validatePin, validateName, validateNadimak, decideStartScreen, isAuthRejection,
 } from '../../static/js/auth.js';
 
 test('interni email iz imena i prezimena (dijakritika)', () => {
@@ -36,4 +36,20 @@ test('mrežna greška nije odbijena sesija', () => {
   assert.equal(isAuthRejection({ name: 'AuthRetryableFetchError', status: 0 }), false);
   assert.equal(isAuthRejection({ status: 401 }), true);
   assert.equal(isAuthRejection({ code: 'PGRST301' }), true);
+});
+
+test('nadimak ili broj člana razlikuje lovce istog imena', () => {
+  assert.equal(syntheticEmail('Mujo', 'Mujić', ''), 'mujo.mujic@lovci.grmec.app');
+  assert.equal(syntheticEmail('Mujo', 'Mujić', '  '), 'mujo.mujic@lovci.grmec.app');
+  assert.equal(syntheticEmail('Mujo', 'Mujić', '127'), 'mujo.mujic.127@lovci.grmec.app');
+  assert.equal(syntheticEmail('Mujo', 'Mujić', 'Mali Đuro'), 'mujo.mujic.mali-djuro@lovci.grmec.app');
+  assert.notEqual(syntheticEmail('Mujo', 'Mujić'), syntheticEmail('Mujo', 'Mujić', '2'));
+});
+
+test('nadimak je neobavezan, ali ako postoji mora biti ispravan', () => {
+  assert.equal(validateNadimak(''), null);
+  assert.equal(validateNadimak(null), null);
+  assert.equal(validateNadimak('127'), null);
+  assert.ok(validateNadimak('!!!'));
+  assert.ok(validateNadimak('x'.repeat(21)));
 });

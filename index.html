@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.1.0';
+  const APP_VER = 'v0.1.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -29,6 +29,7 @@
   <form id="forma-prijava" autocomplete="off" novalidate>
     <label>Ime<input name="ime" required maxlength="40" autocapitalize="words"></label>
     <label>Prezime<input name="prezime" required maxlength="40" autocapitalize="words"></label>
+    <label>Nadimak ili broj člana <span class="sitno">(samo ako drugi član ima isto ime i prezime)</span><input name="nadimak" maxlength="20" autocapitalize="words"></label>
     <label>PIN (6–8 cifara)<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required></label>
     <div class="red-dugmadi">
       <button type="submit" value="prijava" class="dugme glavno">Prijava</button>

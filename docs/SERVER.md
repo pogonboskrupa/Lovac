@@ -3,7 +3,7 @@
 1. Napravi projekat na supabase.com (region: Frankfurt, `eu-central-1`, najbliži BiH).
 2. **Authentication → Sign In / Providers → Email**:
    - uključi Email provider;
-   - **isključi "Confirm email"** (lovac nema pravi email — interni je `ime.prezime@lovci.grmec.app`);
+   - **isključi "Confirm email"** (lovac nema pravi email — interni je `ime.prezime[.nadimak]@lovci.grmec.app`);
    - minimalna dužina lozinke: 6 (PIN je 6–8 cifara).
 3. **SQL Editor**: pokreni redom sve fajlove iz `supabase/migrations/` (svaki se smije pokrenuti ponovo).
 4. U aplikaciji se registruj kao prvi korisnik, pa u SQL Editoru postavi sebe za administratora:
