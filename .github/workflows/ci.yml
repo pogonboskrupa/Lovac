@@ -78,6 +78,11 @@ jobs:
       - run: sed -i "s|GITHUB_REPO = '[^']*'|GITHUB_REPO = '${{ github.repository }}'|" static/js/config.js
       - run: ./gradlew --no-daemon assembleDebug
         working-directory: android
+      - name: Web fajlovi su u APK-u
+        run: |
+          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep 'assets/www/' | tee apk-assets.txt
+          grep -q 'assets/www/index.html' apk-assets.txt
+          grep -q 'assets/www/static/js/boot.js' apk-assets.txt
       - uses: actions/upload-artifact@v4
         with:
           name: apk
@@ -111,6 +116,7 @@ jobs:
           name: emulator
           path: |
             logcat-js.txt
+            logcat-sve.txt
             emulator.png
 
   release:
