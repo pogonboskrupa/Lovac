@@ -1,6 +1,6 @@
 // Podešavanje servera. Anon key je javan po dizajnu (pristup čuva RLS na serveru).
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_URL = 'https://aeioslmkfymhktikzuny.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_nXQ_q9kHsQQ5fzytjVkCPg_f9GrrGm9';
 
 // Lovac se prijavljuje imenom, prezimenom i PIN-om; email je interni i lovac ga ne vidi.
 export const EMAIL_DOMAIN = 'lovci.grmec.app';

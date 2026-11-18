@@ -90,3 +90,15 @@ test('kontrast ≥ 4.5:1 u noćnoj i dnevnoj temi', () => {
     }
   }
 });
+
+test('config.js: server je podešen, a u repou je samo javni ključ (nikad service_role / secret)', () => {
+  const cfg = read('static/js/config.js');
+  assert.match(cfg, /SUPABASE_URL = 'https:\/\/[a-z0-9]+\.supabase\.co'/);
+  const key = cfg.match(/SUPABASE_ANON_KEY = '([^']+)'/)?.[1] ?? '';
+  assert.ok(key.startsWith('sb_publishable_') || key.startsWith('eyJ'), 'očekivan publishable ili anon key');
+  assert.ok(!/sb_secret_/.test(cfg), 'secret key u repou');
+  if (key.startsWith('eyJ')) {
+    const role = JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString()).role;
+    assert.equal(role, 'anon', `JWT ključ ima ulogu ${role}`);
+  }
+});

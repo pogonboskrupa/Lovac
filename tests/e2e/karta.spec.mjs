@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, TILE_HOSTS } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, TILE_HOSTS } from './helpers.mjs';
+
+test.beforeEach(async ({ page }) => { await fakeServerConfigUnset(page); });
 
 test('bez podešenog servera app ulazi na kartu sa pločicama i koordinatama', async ({ page }) => {
   const errors = [];

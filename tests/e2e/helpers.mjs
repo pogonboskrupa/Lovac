@@ -15,14 +15,23 @@ export async function serveTiles(page, counter = { n: 0 }) {
   return counter;
 }
 
-// Podmeće config.js sa "podešenim" serverom čiji pozivi vise (mrtva veza).
-export async function fakeServerConfigHanging(page) {
+async function overrideConfig(page, url, key) {
   await page.route('**/static/js/config.js', async (route) => {
     const res = await route.fetch();
     const src = (await res.text())
-      .replace("SUPABASE_URL = ''", "SUPABASE_URL = 'https://lazni.supabase.test'")
-      .replace("SUPABASE_ANON_KEY = ''", "SUPABASE_ANON_KEY = 'anon'");
+      .replace(/SUPABASE_URL = '[^']*'/, `SUPABASE_URL = '${url}'`)
+      .replace(/SUPABASE_ANON_KEY = '[^']*'/, `SUPABASE_ANON_KEY = '${key}'`);
     return route.fulfill({ response: res, body: src });
   });
+}
+
+// Podmeće config.js sa "podešenim" serverom čiji pozivi vise (mrtva veza).
+export async function fakeServerConfigHanging(page) {
+  await overrideConfig(page, 'https://lazni.supabase.test', 'anon');
   await page.route(/lazni\.supabase\.test/, () => new Promise(() => {}));
+}
+
+// Server nije podešen: app ulazi direktno na kartu.
+export async function fakeServerConfigUnset(page) {
+  await overrideConfig(page, '', '');
 }
