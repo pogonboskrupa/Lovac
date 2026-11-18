@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pozadina">#FF11160F</color>
+    <color name="naglasak">#FFD9A441</color>
+    <style name="Tema" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/pozadina</item>
+        <item name="android:colorPrimary">@color/pozadina</item>
+        <item name="android:colorAccent">@color/naglasak</item>
+    </style>
+</resources>

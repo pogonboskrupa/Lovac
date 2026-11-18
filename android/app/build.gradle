@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ba.grmec.lovac'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'ba.grmec.lovac'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "0.1.0"
+    }
+
+    // Fiksan ključ iz repoa: bez njega CI svaki put pravi nov ključ i update preko
+    // postojeće instalacije pada sa "App not installed".
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.debug }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Web app (index.html, sw.js, static/) se kopira u assets pri svakom buildu.
+def copyWeb = tasks.register('copyWeb', Sync) {
+    from(rootProject.file('..')) {
+        include 'index.html', 'sw.js', 'static/**'
+    }
+    into layout.projectDirectory.dir('src/main/assets/www')
+}
+preBuild.dependsOn copyWeb
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.core:core:1.15.0'
+}

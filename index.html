@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="bs" data-tema="noc">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#11160f">
+<title>Lovačko društvo "Grmeč"</title>
+<link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
+<link rel="stylesheet" href="static/css/app.css">
+<script>
+  const APP_VER = 'v0.1.0';
+  window.APP_VER = APP_VER;
+</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
+  <symbol id="ic-follow" viewBox="0 0 24 24"><path d="M12 2 20 21 12 17 4 21Z" fill="currentColor"/></symbol>
+  <symbol id="ic-layers" viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5Zm-10 9 10 5 10-5M2 16l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"/></symbol>
+  <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14" stroke="currentColor" stroke-width="2.5"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="ic-north" viewBox="0 0 24 24"><path d="M12 2 18 20 12 15 6 20Z" fill="currentColor"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
+</svg>
+
+<main id="ekran-prijava" class="ekran ekran-forma" hidden>
+  <h1>Lovačko društvo "Grmeč"</h1>
+  <form id="forma-prijava" autocomplete="off" novalidate>
+    <label>Ime<input name="ime" required maxlength="40" autocapitalize="words"></label>
+    <label>Prezime<input name="prezime" required maxlength="40" autocapitalize="words"></label>
+    <label>PIN (6–8 cifara)<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required></label>
+    <div class="red-dugmadi">
+      <button type="submit" value="prijava" class="dugme glavno">Prijava</button>
+      <button type="submit" value="registracija" class="dugme">Registracija</button>
+    </div>
+    <p id="prijava-status" class="status" role="status"></p>
+  </form>
+  <p class="sitno">Novi nalog čeka odobrenje administratora društva. <span class="app-ver"></span></p>
+</main>
+
+<main id="ekran-cekanje" class="ekran ekran-forma" hidden>
+  <h1>Čeka odobrenje</h1>
+  <p>Vaš nalog je primljen. Administrator društva ga treba odobriti prije korištenja.</p>
+  <div class="red-dugmadi">
+    <button id="btn-provjeri-odobrenje" class="dugme glavno" type="button">Provjeri ponovo</button>
+    <button id="btn-odjava" class="dugme" type="button">Odjava</button>
+  </div>
+</main>
+
+<main id="ekran-mapa" class="ekran" hidden>
+  <div id="karta"></div>
+  <div class="nisan" aria-hidden="true"></div>
+
+  <div class="gornja-traka">
+    <span id="veza" class="znacka" data-veza="nepoznato"></span>
+    <span id="bez-servera" class="znacka upozorenje" hidden>Server nije podešen</span>
+    <span class="razmak"></span>
+    <button id="btn-tema" class="ikona-dugme" type="button" aria-label="Dnevni / noćni prikaz"><svg class="ic"><use href="#ic-sun"/></svg></button>
+    <button id="btn-podloga" class="ikona-dugme" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
+  </div>
+  <div id="meni-podloga" class="meni" hidden>
+    <button type="button" data-podloga="topo">Topografska</button>
+    <button type="button" data-podloga="satelit">Satelit</button>
+    <button type="button" data-podloga="osm">OSM</button>
+  </div>
+
+  <div class="sjever" aria-label="Sjever je gore"><svg class="ic"><use href="#ic-north"/></svg><span>S</span></div>
+
+  <div class="desna-kolona">
+    <button id="btn-zoom-in" class="ikona-dugme" type="button" aria-label="Uvećaj"><svg class="ic"><use href="#ic-plus"/></svg></button>
+    <button id="btn-zoom-out" class="ikona-dugme" type="button" aria-label="Umanji"><svg class="ic"><use href="#ic-minus"/></svg></button>
+    <button id="btn-centriraj" class="ikona-dugme" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
+    <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
+  </div>
+
+  <div class="donji-dio">
+    <div id="gps-status" class="gps-status" hidden>
+      <span id="gps-tacnost" class="tacnost">GPS…</span>
+      <span>fiks prije <span id="gps-starost">—</span></span>
+    </div>
+    <button id="koord-traka" class="koord-traka" type="button" aria-label="Koordinate centra karte, dodir kopira">
+      <span>WGS84 <b id="koord-wgs">—</b></span>
+      <span>GK6 <b id="koord-gk">—</b></span>
+    </button>
+  </div>
+</main>
+
+<div id="nova-verzija" class="traka-obavijest" hidden>
+  <svg class="ic"><use href="#ic-download"/></svg>
+  <span class="nv-tekst"></span>
+  <button type="button" class="dugme glavno">Ažuriraj</button>
+</div>
+<div id="alarm" class="alarm" role="alert" hidden>
+  <span class="alarm-tekst"></span>
+  <button type="button" class="dugme" onclick="this.parentElement.hidden=true">U redu</button>
+</div>
+<div id="poruka" class="poruka" role="status" hidden></div>
+
+<script src="static/libs/leaflet/leaflet.js"></script>
+<script src="static/libs/supabase.js"></script>
+<script type="module" src="static/js/boot.js"></script>
+</body>
+</html>

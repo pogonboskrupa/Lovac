@@ -1,0 +1,137 @@
+/* Tokeni boja. Parovi tekst/pozadina provjeravaju se testom (kontrast ≥ 4.5:1) u obje teme. */
+:root,
+:root[data-tema="noc"] {
+  --pozadina: #11160f;
+  --povrsina: #1c2419;
+  --tekst: #e9eedc;
+  --tekst-2: #b9c2a8;
+  --naglasak: #d9a441;
+  --naglasak-tekst: #1a1408;
+  --dugme: #2b3626;
+  --dugme-tekst: #e9eedc;
+  --upozorenje: #f2b84b;
+  --upozorenje-tekst: #1a1408;
+  --greska: #ff8a7a;
+  --gps-dobro: #3fbf5a;
+  --gps-srednje: #e8c440;
+  --gps-lose: #ff5a4a;
+  --gps-tekst: #0d0d0d;
+  --sjena: 0 2px 6px rgb(0 0 0 / 0.5);
+}
+:root[data-tema="dan"] {
+  --pozadina: #f6f3ea;
+  --povrsina: #ffffff;
+  --tekst: #14170f;
+  --tekst-2: #3f4636;
+  --naglasak: #8a5a00;
+  --naglasak-tekst: #ffffff;
+  --dugme: #e4e0d2;
+  --dugme-tekst: #14170f;
+  --upozorenje: #8a5a00;
+  --upozorenje-tekst: #ffffff;
+  --greska: #a3200f;
+  --gps-dobro: #2f9e47;
+  --gps-srednje: #e8c440;
+  --gps-lose: #e0402f;
+  --gps-tekst: #0d0d0d;
+  --sjena: 0 1px 4px rgb(0 0 0 / 0.3);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--pozadina);
+  color: var(--tekst);
+  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+[hidden] { display: none !important; }
+.ic { width: 24px; height: 24px; fill: currentColor; stroke: currentColor; }
+
+/* Forme: polja ≥ 48 px i font ≥ 16 px, inače WebView zumira. */
+.ekran-forma { padding: 24px 20px; max-width: 420px; margin: 0 auto; overflow-y: auto; height: 100%; }
+.ekran-forma h1 { font-size: 1.4rem; }
+label { display: block; margin: 12px 0; color: var(--tekst-2); }
+input {
+  display: block; width: 100%; min-height: 48px; margin-top: 4px; padding: 10px 12px;
+  font-size: 16px; color: var(--tekst); background: var(--povrsina);
+  border: 1px solid var(--tekst-2); border-radius: 8px;
+}
+.red-dugmadi { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.dugme {
+  min-height: 48px; min-width: 44px; padding: 0 18px; font-size: 16px; border: 0; border-radius: 8px;
+  background: var(--dugme); color: var(--dugme-tekst);
+}
+.dugme.glavno { background: var(--naglasak); color: var(--naglasak-tekst); font-weight: 600; }
+.dugme:disabled { opacity: 0.6; }
+.status { min-height: 1.4em; color: var(--greska); }
+.sitno { font-size: 0.85rem; color: var(--tekst-2); }
+
+/* Karta */
+#ekran-mapa { position: fixed; inset: 0; }
+#karta { position: absolute; inset: 0; background: var(--pozadina); }
+.nisan {
+  position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+  pointer-events: none; z-index: 500;
+  background:
+    linear-gradient(var(--tekst), var(--tekst)) center / 2px 100% no-repeat,
+    linear-gradient(var(--tekst), var(--tekst)) center / 100% 2px no-repeat;
+  opacity: 0.7; filter: drop-shadow(0 0 1px #000);
+}
+.ikona-dugme {
+  width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 10px;
+  background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+}
+.ikona-dugme[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); }
+.gornja-traka {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 1000; display: flex; gap: 8px; align-items: center;
+  padding: calc(8px + env(safe-area-inset-top)) 8px 8px;
+}
+.razmak { flex: 1; }
+.znacka { padding: 4px 10px; border-radius: 999px; background: var(--povrsina); color: var(--tekst); font-size: 14px; box-shadow: var(--sjena); }
+.znacka:empty { display: none; }
+.znacka.upozorenje, .znacka[data-veza="nema"] { background: var(--upozorenje); color: var(--upozorenje-tekst); }
+.meni {
+  position: absolute; top: calc(64px + env(safe-area-inset-top)); right: 8px; z-index: 1001;
+  display: flex; flex-direction: column; background: var(--povrsina); border-radius: 10px; box-shadow: var(--sjena); overflow: hidden;
+}
+.meni button { min-height: 48px; padding: 0 20px; border: 0; background: none; color: var(--tekst); font-size: 16px; text-align: left; }
+.meni button[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); }
+.sjever {
+  position: absolute; left: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 1000; width: 44px; height: 44px;
+  display: grid; place-items: center; border-radius: 50%; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+}
+.sjever .ic { width: 18px; height: 18px; margin-top: -8px; }
+.sjever span { position: absolute; bottom: 2px; font-size: 11px; font-weight: 700; }
+.desna-kolona { position: absolute; right: 8px; top: 40%; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+.donji-dio { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1000; padding: 0 8px calc(8px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.gps-status { display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 10px; background: var(--povrsina); box-shadow: var(--sjena); font-size: 14px; }
+.tacnost { padding: 2px 8px; border-radius: 6px; font-weight: 700; color: var(--gps-tekst); background: var(--gps-lose); }
+.tacnost[data-tacnost="dobro"] { background: var(--gps-dobro); }
+.tacnost[data-tacnost="srednje"] { background: var(--gps-srednje); }
+.koord-traka {
+  width: 100%; min-height: 44px; display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center;
+  padding: 6px 10px; border: 0; border-radius: 10px; background: var(--povrsina); color: var(--tekst-2); font-size: 14px; box-shadow: var(--sjena);
+}
+.koord-traka b { color: var(--tekst); font-variant-numeric: tabular-nums; }
+.leaflet-bottom.leaflet-left { bottom: calc(110px + env(safe-area-inset-bottom)); }
+
+/* GPS marker */
+.gps-ikona { background: none; border: 0; }
+.gps-tacka { width: 28px; height: 28px; display: grid; place-items: center; }
+.gps-tacka::before { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #2f7dff; border: 3px solid #fff; box-shadow: 0 0 4px #000; }
+.gps-strelica { width: 28px; height: 28px; fill: #2f7dff; stroke: #fff; stroke-width: 1.5; transform-origin: 50% 50%; position: absolute; visibility: hidden; }
+
+/* Obavijesti */
+.traka-obavijest, .alarm {
+  position: fixed; left: 8px; right: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 2000;
+  display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 10px;
+  background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+}
+.traka-obavijest span, .alarm span { flex: 1; }
+.alarm { background: var(--upozorenje); color: var(--upozorenje-tekst); font-weight: 600; }
+.poruka {
+  position: fixed; left: 50%; bottom: calc(130px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 2000;
+  max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 10px; background: var(--tekst); color: var(--pozadina);
+}

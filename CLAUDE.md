@@ -27,13 +27,20 @@ Jezik: bosanski u UI-ju, komentarima i commit porukama ("historija", ne "istorij
 ## Komande
 
 ```bash
-npm test                      # Node testovi (tests/js/)
-node --test tests/js/<fajl>.test.mjs   # jedan Node test
-npx playwright test --trace off       # browser testovi
-npx playwright test tests/e2e/<fajl>.spec.ts --trace off   # jedan browser test
+npm test                                   # Node testovi (tests/js/**/*.test.mjs)
+node --test tests/js/geo.test.mjs          # jedan Node test
+npx playwright test --trace off            # browser testovi (sam diže scripts/serve.mjs na :8123)
+npx playwright test tests/e2e/karta.spec.mjs --trace off -g "podloge"   # jedan browser test
+npm run serve                              # webapp lokalno na http://localhost:8123
+PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (idempotentnost) + tests/sql/*.sql
 ```
 
-Java/Android se kompajlira samo u CI-ju (sandbox nema Android SDK).
+- SQL testovi rade nad običnim Postgres 16 + `tests/sql/setup/supabase_stub.sql` (imitira `auth.users`, `auth.uid()`, uloge `anon`/`authenticated`). Korisnik se glumi sa `set local role authenticated` + `set_config('request.jwt.claim.sub', ...)`. Svaki test fajl je u transakciji sa `rollback`.
+- Lokalni Postgres: binarni fajlovi su u `/usr/lib/postgresql/16/bin`; initdb pokretati kao korisnik `postgres` u direktoriju van scratchpad-a (npr. `/var/tmp`).
+- Java/Android se kompajlira samo u CI-ju (sandbox nema Android SDK). Emulator test (`scripts/emulator-smoke.sh`) traži `BOOT_OK` u logcat-u (`LovacJS` tag) — `boot.js` ga loguje na kraju pokretanja.
+- Gradle `copyWeb` task kopira `index.html`, `sw.js` i `static/` u `android/app/src/main/assets/www/` (gitignored); APK servira sa `https://appassets.androidplatform.net/assets/www/`.
+- `static/js/config.js`: `GITHUB_REPO` CI zamjenjuje stvarnim imenom repozitorija pri buildu; Supabase URL/key se upisuju ručno (vidi `docs/SERVER.md`).
+- Moduli u `static/js/` ne diraju DOM pri importu, pa ih Node testovi direktno importuju (stvarni kod, ne kopije).
 
 ## Pravila rada
 

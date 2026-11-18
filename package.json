@@ -1,0 +1,17 @@
+{
+  "name": "lovacko-drustvo-grmec",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/js/**/*.test.mjs\"",
+    "test:e2e": "playwright test --trace off",
+    "test:sql": "bash scripts/sql-test.sh",
+    "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@supabase/supabase-js": "2.119.0",
+    "@turf/turf": "7.2.0",
+    "leaflet": "1.9.4"
+  }
+}

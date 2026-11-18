@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  js:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm test
+
+  sql:
+    needs: js
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/sql-test.sh
+
+  e2e:
+    needs: js
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --trace off --shard=${{ matrix.shard }}/2
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: playwright-report/
+
+  apk:
+    needs: [sql, e2e]
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+      - id: ver
+        run: echo "version=$(grep -oP "APP_VER = '\Kv[0-9]+\.[0-9]+\.[0-9]+" index.html)" >> "$GITHUB_OUTPUT"
+      # Link za ažuriranje uvijek vodi na repozitorij iz kojeg je APK napravljen.
+      - run: sed -i "s|GITHUB_REPO = '[^']*'|GITHUB_REPO = '${{ github.repository }}'|" static/js/config.js
+      - run: ./gradlew --no-daemon assembleDebug
+        working-directory: android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+  emulator:
+    needs: apk
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: android/app/build/outputs/apk/debug/
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash scripts/emulator-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator
+          path: |
+            logcat-js.txt
+            emulator.png
+
+  release:
+    needs: [apk, emulator]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.apk.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: apk, path: out }
+      - id: exists
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Release
+        if: steps.exists.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          make_latest: 'true'
+          files: out/app-debug.apk
+          body: |
+            APK: https://github.com/${{ github.repository }}/releases/latest/download/app-debug.apk
+      - name: Verzija već postoji
+        if: steps.exists.outputs.exists == 'true'
+        run: echo "::notice::Release $TAG već postoji — za novi release podigni verziju na tri mjesta."
+
+  pages:
+    needs: [sql, e2e]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    # Webapp je samo za razvoj; ako Pages nije uključen, ne ruši CI.
+    continue-on-error: true
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p _site
+          cp -r index.html sw.js static _site/
+          sed -i "s|GITHUB_REPO = '[^']*'|GITHUB_REPO = '${{ github.repository }}'|" _site/static/js/config.js
+      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/deploy-pages@v4
