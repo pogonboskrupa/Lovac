@@ -27,9 +27,19 @@ adb shell pm grant $PKG android.permission.ACCESS_COARSE_LOCATION || true
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 adb shell settings put secure location_mode 3 || true
 
+# Veći logcat bafer: sistemski logovi pri hladnom startu emulatora inače istisnu naše linije.
+adb logcat -G 16M || true
 adb logcat -c
 adb shell am start -W -n $PKG/.MainActivity
-if ! cekaj BOOT_OK 90; then echo "BOOT_OK nije stigao iz WebView-a"; diagnoza; exit 1; fi
+if ! cekaj BOOT_OK 150; then
+  # Hladan start WebView-a na emulatoru zna trajati minutama; jedan ponovni pokušaj se jasno ispisuje.
+  echo "UPOZORENJE: BOOT_OK nije stigao u 150 s — ponovno pokretanje app-a (1 pokušaj)"
+  adb logcat -d -s LovacJS:I | tail -20 || true
+  adb shell am force-stop $PKG
+  adb logcat -c
+  adb shell am start -W -n $PKG/.MainActivity
+  if ! cekaj BOOT_OK 120; then echo "BOOT_OK nije stigao iz WebView-a ni nakon ponovnog pokretanja"; diagnoza; exit 1; fi
+fi
 adb logcat -d -s LovacJS:I > logcat-js.txt || true
 if grep -E "Uncaught|neuhvaćena greška" logcat-js.txt; then echo "JS greška pri pokretanju u APK-u"; diagnoza; exit 1; fi
 echo "Pokretanje OK"

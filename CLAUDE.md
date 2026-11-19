@@ -98,6 +98,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Dijeljeni tajmer (crash-snimak više snimanja) gasi se tek kad NIJEDNO snimanje ne traje.
 - Arhitektura: `GpsService` (foreground, `START_STICKY`, wake lock) piše SVE tačke u `GpsBuffer` (`filesDir/gps-buffer.jsonl`); JS (`snimanje.js`) čita od bajt-pomaka preko `AndroidGps.read(offset)` i filtrira po intervalima traga (start/kraj/pauze) u `trag.js mergePoints`. Bafer se briše tek kad nema aktivnog NI nedovršenog traga.
 - `LocationListener` na Androidu ≤ 10 nema default metode: `onStatusChanged/onProviderEnabled/onProviderDisabled` moraju biti implementirane (inače AbstractMethodError).
+- Emulator: logcat bafer je 16 MB, a BOOT_OK se čeka 150 s uz JEDAN ispisan ponovni pokušaj (hladan start WebView-a na emulatoru je ponekad spor).
 - Emulator test snimanja: `am start -e autotest trag` → JS loguje `TRAG_TACAKA n`, a skripta šalje `adb emu geo fix`. Autotest ne traži izuzeće od baterije (dijalog bi prekrio app).
 
 **Pločice**
@@ -115,6 +116,12 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Server (migracija 004, `cuvaj_rev`): stariji rev ne prepisuje noviji, vlasnik se ne mijenja. Tuđi zapisi stižu kroz `pullShared` (`tudji: true`), ne uređuju se i ne šalju nazad; kad ih vlasnik vrati na privatno, uklanjaju se lokalno.
 - Fotografije se (još) NE šalju na server — ostaju na telefonu.
 - Potraga (`vrsta: 'potraga'`) se šalje i dok traje (vodič psa krvara je prati); ostali tragovi tek kad su završeni. Potraga i obilazak mogu teći paralelno; panel prikazuje potragu.
+
+**Slojevi (granice lovišta)**
+- `slojevi.js`: KML/KMZ/GPX/SHP → GeoJSON u WGS84; ZIP čitač sa `DecompressionStream('deflate-raw')`; SHP u GK zoni 6 se preračunava (`geo.js gk6ToWgs84`, test protiv PROJ). Projekcija iz `.prj`, a bez njega po rasponu koordinata.
+- Prikaz u pane-u `slojevi` (zIndex 350, ispod tragova/markera) sa VLASTITIM `L.svg` rendererom koji se uklanja kad nijedan sloj nije vidljiv.
+- Admin objavljuje sloj (migracija 005 `slojevi`); spisak sa servera bira samo lake kolone (bez `geojson`), a preuzimanje jednog sloja ide sa `select('*')`.
+- `onShowFileChooser`: za ne-slike (`accept` bez `image`) chooser je `*/*` bez kamere — KML/KMZ/GPX nemaju pouzdan MIME na Androidu.
 
 **Izvoz**
 - CSV za Excel (`odstrel.js toCsv`): BOM, `;`, decimalni zarez, `\r\n`; ćelija koja počinje sa `= + - @` dobija `'` (zaštita od formula).

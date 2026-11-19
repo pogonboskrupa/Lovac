@@ -159,15 +159,20 @@ public class MainActivity extends Activity {
     private boolean openFileChooser(ValueCallback<Uri[]> cb, WebChromeClient.FileChooserParams params) {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
         fileCallback = cb;
+        // Slike (sa kamerom) ili ostali fajlovi (KML/KMZ/GPX/SHP nemaju pouzdan MIME na Androidu).
+        boolean images = false;
+        for (String t : params.getAcceptTypes()) {
+            if (t != null && t.startsWith("image")) images = true;
+        }
         Intent pick = new Intent(Intent.ACTION_GET_CONTENT)
                 .addCategory(Intent.CATEGORY_OPENABLE)
-                .setType("image/*");
+                .setType(images ? "image/*" : "*/*");
         if (params.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
             pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         }
-        Intent chooser = Intent.createChooser(pick, "Fotografija");
+        Intent chooser = Intent.createChooser(pick, images ? "Fotografija" : "Fajl");
         cameraUri = null;
-        try {
+        if (images) try {
             File dir = new File(getCacheDir(), "kamera");
             if (dir.exists() || dir.mkdirs()) {
                 File f = new File(dir, "foto-" + System.currentTimeMillis() + ".jpg");

@@ -32,3 +32,19 @@ test('starost fiksa', () => {
   assert.equal(formatFixAge(3 * 3600e3 + 5 * 60e3), '3 h 5 min');
   assert.equal(formatFixAge(-1), '—');
 });
+
+import { gk6ToWgs84 } from '../../static/js/geo.js';
+
+test('GK zona 6 -> WGS84 se poklapa sa PROJ (< 0,2 m)', () => {
+  const REF_INV = [
+    [6342176.852, 4963671.602, 44.8, 16.00000004],
+    [6381324.342, 4940596.778, 44.60000001, 16.50000005],
+    [6300000, 5000000, 45.11603044, 15.45293185],
+    [6450000, 4900000, 44.24273444, 17.36893619],
+  ];
+  for (const [e, n, lat, lon] of REF_INV) {
+    const r = gk6ToWgs84(e, n);
+    assert.ok(Math.abs(r.lat - lat) < 2e-6, `lat ${r.lat} vs ${lat}`);
+    assert.ok(Math.abs(r.lon - lon) < 2e-6, `lon ${r.lon} vs ${lon}`);
+  }
+});

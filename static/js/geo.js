@@ -119,3 +119,39 @@ export function compassName(deg) {
 export function formatBearing(deg) {
   return `${compassName(deg)} ${Math.round(deg)}°`;
 }
+
+// Inverzni transverzalni Merkator (Snyder) — za uvoz slojeva u GK zoni 6.
+function inverseTransverseMercator(easting, northing, ell, p) {
+  const e2 = ell.f * (2 - ell.f);
+  const ep2 = e2 / (1 - e2);
+  const e4 = e2 * e2;
+  const e6 = e4 * e2;
+  const M = (northing - p.y0) / p.k0;
+  const mu = M / (ell.a * (1 - e2 / 4 - 3 * e4 / 64 - 5 * e6 / 256));
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+  const φ1 = mu + (3 * e1 / 2 - 27 * e1 ** 3 / 32) * Math.sin(2 * mu)
+    + (21 * e1 ** 2 / 16 - 55 * e1 ** 4 / 32) * Math.sin(4 * mu)
+    + (151 * e1 ** 3 / 96) * Math.sin(6 * mu)
+    + (1097 * e1 ** 4 / 512) * Math.sin(8 * mu);
+  const sin = Math.sin(φ1);
+  const cos = Math.cos(φ1);
+  const tan = Math.tan(φ1);
+  const C1 = ep2 * cos * cos;
+  const T1 = tan * tan;
+  const N1 = ell.a / Math.sqrt(1 - e2 * sin * sin);
+  const R1 = ell.a * (1 - e2) / (1 - e2 * sin * sin) ** 1.5;
+  const D = (easting - p.x0) / (N1 * p.k0);
+  const lat = φ1 - (N1 * tan / R1) * (D * D / 2
+    - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * D ** 4 / 24
+    + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * D ** 6 / 720);
+  const lon = (D - (1 + 2 * T1 + C1) * D ** 3 / 6
+    + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5 / 120) / cos;
+  return [lat / DEG, p.lon0 + lon / DEG];
+}
+
+export function gk6ToWgs84(easting, northing) {
+  const [mLat, mLon] = inverseTransverseMercator(easting, northing, BESSEL, GK6);
+  const [x, y, z] = geodeticToEcef(mLat, mLon, 0, BESSEL);
+  const [lat, lon] = ecefToGeodetic(x - MGI_SHIFT.dx, y - MGI_SHIFT.dy, z - MGI_SHIFT.dz, WGS84);
+  return { lat, lon };
+}
