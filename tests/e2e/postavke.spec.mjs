@@ -29,9 +29,9 @@ test('tema se mijenja iz postavki i pamti', async ({ page }) => {
 
 test('podloga se bira iz postavki', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#btn-postavke').click();
-  await page.locator('#postavke [data-podloga="osm"]').click();
-  await expect(page.locator('#postavke [data-podloga="osm"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#btn-karte').click();
+  await page.locator('#karte [data-podloga="osm"]').click();
+  await expect(page.locator('#karte [data-podloga="osm"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('dugme Nazad (window.__nazad) prvo zatvara postavke, tek onda dozvoljava izlaz', async ({ page }) => {
@@ -47,7 +47,7 @@ test('brisanje keša pločica traži drugi dodir (WebView nema confirm dijalog)'
   await page.goto('/');
   await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
   await page.waitForTimeout(800);
-  await page.locator('#btn-postavke').click();
+  await page.locator('#btn-karte').click();
   const broj = async () => Number((await page.locator('#postavke-kes').innerText()).match(/\d+/)?.[0] ?? -1);
   await expect.poll(broj).toBeGreaterThan(0);
   await page.locator('#btn-kes-obrisi').click();
@@ -81,8 +81,8 @@ test('odjava iz postavki vodi na prijavu odmah, i kad server ne odgovara, i bri�
 test('dodirne mete u postavkama su ≥ 44 px', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  for (const sel of ['#btn-postavke-zatvori', '[data-tema-izbor="noc"]', '[data-tema-izbor="dan"]', '#postavke [data-podloga="topo"]',
-    '#btn-kes-obrisi', '#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju', '#btn-postavke-odjava']) {
+  for (const sel of ['#btn-postavke-zatvori', '[data-tema-izbor="noc"]', '[data-tema-izbor="dan"]',
+    '#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju', '#btn-postavke-odjava']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }

@@ -26,7 +26,7 @@ test('udaljenost: dvije tačke na nišanu (pomjeranje karte)', async ({ page }) 
 
 test('površina: tri dodira na karti daju hektare; Poništi i Nazad', async ({ page }) => {
   await page.locator('#mj-nacin [data-nacin="povrsina"]').click();
-  for (const [x, y] of [[100, 300], [300, 300], [200, 500]]) await page.mouse.click(x, y);
+  for (const [x, y] of [[120, 460], [280, 460], [200, 600]]) await page.mouse.click(x, y);
   await expect(page.locator('#mj-rezultat')).toHaveText(/^Površina [\d,]+ ha · obim/);
   await page.locator('#btn-mj-ponisti').click();
   await expect(page.locator('#mj-rezultat')).toHaveText('Dodaj bar 3 tačke');

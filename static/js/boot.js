@@ -21,6 +21,7 @@ import { initMjerenje } from './mjerenje-ui.js';
 import { initPreuzimanje } from './preuzimanje-ui.js';
 import { initKarte, runKarteAutotest } from './karte-ui.js';
 import { initLov } from './lov-ui.js';
+import { initNav } from './nav.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
@@ -63,7 +64,7 @@ function enter(screen) {
       console.error('postavke', err);
     }
     for (const [name, fn] of [
-      ['meniji', () => { wireMenu('btn-spiskovi', 'meni-spiskovi'); wireMenu('btn-dodaj', 'meni-dodaj'); }],
+      ['meniji', () => { wireMenu('btn-dodaj', 'meni-dodaj'); initNav(); }],
       ['dijeljenje', () => setShareDialog(initDijeljenje())],
       ['navigacija', () => initNavigation(globalThis.L, map)],
       ['objekti', () => initObjekti(globalThis.L, map)],

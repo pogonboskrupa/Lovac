@@ -110,7 +110,7 @@ export function initKarte(L, map) {
     render();
     toast(`Offline karta "${m.naziv}" je spremna (zoom ${m.minzoom}–${m.maxzoom})`);
   };
-  document.addEventListener('postavke:otvorene', render);
+  document.addEventListener('karte:otvorene', render);
   render();
 }
 

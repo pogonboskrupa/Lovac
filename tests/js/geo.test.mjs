@@ -48,3 +48,37 @@ test('GK zona 6 -> WGS84 se poklapa sa PROJ (< 0,2 m)', () => {
     assert.ok(Math.abs(r.lon - lon) < 2e-6, `lon ${r.lon} vs ${lon}`);
   }
 });
+
+import { wgs84ToGk, gkToWgs84, gkZoneFor, formatGk, scaleRatio, formatScale } from '../../static/js/geo.js';
+
+// Referenca: PROJ, tmerc lon_0=15 k=0.9999 x_0=5500000, Bessel, towgs84=682,-203,480 (MGI Balkans zona 5).
+test('WGS84 <-> MGI Balkans zona 5 se poklapa sa PROJ (< 1 cm / < 0,2 m)', () => {
+  const REF = [[44.8, 16.0, 5579486.102, 4962226.124], [44.76, 16.3, 5603291.243, 4958117.133], [45.2, 15.5, 5539655.034, 5006309.94]];
+  for (const [lat, lon, e, n] of REF) {
+    const r = wgs84ToGk(5, lat, lon);
+    assert.ok(Math.abs(r.e - e) < 0.01 && Math.abs(r.n - n) < 0.01, `${r.e},${r.n} vs ${e},${n}`);
+  }
+  const back = gkToWgs84(5, 5605178, 4959430);
+  assert.ok(Math.abs(back.lat - 44.77153826) < 2e-6 && Math.abs(back.lon - 16.32409586) < 2e-6);
+});
+
+test('zona se bira po dužini: granica 16,5° (Grmeč je u zoni 5)', () => {
+  assert.equal(gkZoneFor(16.32), 5);
+  assert.equal(gkZoneFor(16.499), 5);
+  assert.equal(gkZoneFor(16.5), 6);
+  assert.equal(gkZoneFor(17.8), 6);
+  assert.equal(gkZoneFor(15.1), 5);
+});
+
+test('koordinate kao u aplikaciji na terenu: MGI 5 Y 5605178, X 4959430', () => {
+  const f = formatGk(44.77153826, 16.32409586);
+  assert.deepEqual(f, { zona: 5, tekst: 'Y 5605178, X 4959430', oznaka: 'MGI 5' });
+});
+
+test('razmjer karte 1:N (96 dpi), zaokružen', () => {
+  assert.equal(scaleRatio(44.77, 14), 26000);
+  assert.equal(formatScale(26000), '1:26 000');
+  assert.equal(formatScale(591657550), '1:591 657 550');
+  assert.ok(scaleRatio(44.77, 17) < scaleRatio(44.77, 14));
+  assert.equal(scaleRatio(0, 18) % 100, 0);
+});

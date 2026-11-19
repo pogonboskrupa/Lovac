@@ -149,6 +149,12 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - DEM: Terrarium z13 u Cache API `dem-v1` (`dem.js terrainAt`); termika je samo pravilo palca i to UI kaže.
 - U e2e testovima `serveTiles` blokira Open-Meteo i DEM (404); testovi koji ih trebaju ih sami rutiraju. Za vrijeme: `page.clock.setFixedTime` + `test.use({ timezoneId: 'Europe/Sarajevo' })`.
 
+**Raspored ekrana i koordinate**
+- Raspored (kao u referentnoj aplikaciji vlasnika): gore lijevo okvir sa MGI koordinatama + razmjerom 1:N + N.V., gore desno podloge, desno dole `+`/opažanje/snimaj/prati/lociranje, lijevo dole zoom sa nivoom, DONJA NAVIGACIJA Mapa/Karte/Meni/Postavke (`nav.js`). Ekrani (`.list-preko`) se otvaraju iznad mape i OSTAVLJAJU navigaciju slobodnom (`inset-bottom: var(--nav-h)`); dodir na tab zatvara sve kroz `handleBack()` pa tek onda otvara traženo.
+- Podloga, keš pločica, offline karte (MBTiles) i preuzimanje područja su u tabu **Karte** (`#karte`), ne u Postavkama; događaj `karte:otvorene` osvježava njihov prikaz.
+- Meni i "Dodaj" su ploče iznad navigacije (`#meni-spiskovi`, `#meni-dodaj`). Plutajući paneli (navigacija, mjerenje, panel lova) počinju od `--gore-2`; dno mape ide u `.mapa-dno` (kontrole iznad panela snimanja/uživo).
+- MGI zona se bira po dužini (`gkZoneFor`: < 16,5° = zona 5, inače 6). Grmeč/Unsko-sanski kanton je u ZONI 5 (Y ~5,6 mil.); koordinate sa terena vlasnika su "MGI 5 Y 5605178, X 4959430". SHP uvoz prepoznaje zonu iz `.prj` ili po rasponu koordinata.
+
 **UI**
 - Gornja traka i desna kolona: `.ikona-dugme` ima `flex: none` — inače flex na uskom ekranu stisne dugmad ispod 44 px.
 - WebView ne prikazuje `confirm()`/`alert()` bez `onJsConfirm`/`onJsAlert` u `WebChromeClient`: potvrda opasnih radnji ide drugim dodirom na isto dugme.

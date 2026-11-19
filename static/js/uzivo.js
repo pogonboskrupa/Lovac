@@ -2,7 +2,7 @@
 // Sve samo dok lov traje i samo učesnicima (provodi server). Bez push servisa: obavijest stiže
 // samo dok je aplikacija otvorena — to se lovcu ne obećava drugačije.
 
-import { formatWgs84, formatGk6 } from './geo.js';
+import { formatWgs84, formatGk } from './geo.js';
 import { formatDecimalBs, summarizeHarvest } from './odstrel.js';
 
 const ULOGE = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
@@ -11,8 +11,9 @@ export function sosText(user, fix, lovNaziv) {
   const who = `${user?.ime || ''} ${user?.prezime || ''}`.trim();
   if (!fix) return `SOS! ${who} treba pomoć (lov: ${lovNaziv}). GPS pozicija nepoznata — nazovi.`;
   const ll = `${fix.lat.toFixed(6)},${fix.lon.toFixed(6)}`;
+  const gk = formatGk(fix.lat, fix.lon);
   return `SOS! ${who} treba pomoć (lov: ${lovNaziv}). WGS84 ${formatWgs84(fix.lat, fix.lon)}`
-    + `${Number.isFinite(fix.acc) ? ` (±${Math.round(fix.acc)} m)` : ''} | GK6 ${formatGk6(fix.lat, fix.lon)} | https://maps.google.com/?q=${ll}`;
+    + `${Number.isFinite(fix.acc) ? ` (±${Math.round(fix.acc)} m)` : ''} | ${gk.oznaka} ${gk.tekst} | https://maps.google.com/?q=${ll}`;
 }
 
 export function smsNumbers(telefoni, myId) {

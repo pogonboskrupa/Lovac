@@ -1,7 +1,7 @@
 // Karta: podloge, mjerilo, sjever i traka koordinata centra karte.
 
 import { BASE_LAYERS, createCachedTileLayer } from './tiles.js';
-import { formatWgs84, formatGk6 } from './geo.js';
+import { formatWgs84, formatGk, scaleRatio, formatScale } from './geo.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { toast, copyText, wireMenu } from './ui.js';
 
@@ -31,8 +31,7 @@ export function initMap(L, elementId) {
   };
   setBase(loadJSON(LAYER_KEY, BASE_LAYERS[0].id));
 
-  L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
-
+  map.on('zoomend', () => updateCoordBar(map));
   map.on('moveend', () => {
     const c = map.getCenter();
     saveSoft(VIEW_KEY, { lat: c.lat, lon: c.lng, z: map.getZoom() });
@@ -45,10 +44,13 @@ export function initMap(L, elementId) {
 
 export function updateCoordBar(map) {
   const c = map.getCenter();
-  const w = document.getElementById('koord-wgs');
-  const g = document.getElementById('koord-gk');
-  if (w) w.textContent = formatWgs84(c.lat, c.lng);
-  if (g) g.textContent = formatGk6(c.lat, c.lng);
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  const gk = formatGk(c.lat, c.lng);
+  set('koord-wgs', formatWgs84(c.lat, c.lng));
+  set('koord-zona', gk.oznaka);
+  set('koord-gk', gk.tekst);
+  set('koord-razmjer', formatScale(scaleRatio(c.lat, map.getZoom())));
+  set('zoom-nivo', String(Math.round(map.getZoom())));
 }
 
 function wireMapControls(map, setBase) {
@@ -64,7 +66,8 @@ function wireMapControls(map, setBase) {
   document.getElementById('btn-zoom-out')?.addEventListener('click', () => map.zoomOut());
   document.getElementById('koord-traka')?.addEventListener('click', async () => {
     const c = map.getCenter();
-    const text = `WGS84 ${formatWgs84(c.lat, c.lng)} | GK6 ${formatGk6(c.lat, c.lng)}`;
+    const gk = formatGk(c.lat, c.lng);
+    const text = `${gk.oznaka} ${gk.tekst} | WGS84 ${formatWgs84(c.lat, c.lng)}`;
     toast(await copyText(text) ? 'Koordinate kopirane' : text);
   });
 }

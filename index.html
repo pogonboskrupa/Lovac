@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.4';
+  const APP_VER = 'v0.2.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -37,6 +37,10 @@
   <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></symbol>
   <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
   <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M3 7h11M19 7h2M3 17h2M10 17h11" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16.5" cy="7" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="7.5" cy="17" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
+  <symbol id="ic-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5Z" fill="currentColor"/></symbol>
+  <symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20ZM9 4v13.5M15 6.5V20" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
 </svg>
@@ -71,19 +75,27 @@
   <div class="nisan" aria-hidden="true"></div>
 
   <div class="gornja-traka">
+    <button id="koord-traka" class="pill-info" type="button" aria-label="Koordinate i razmjer centra karte, dodir kopira koordinate">
+      <span class="pill-red"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b><span class="pill-sep"></span><span id="koord-zona" class="pill-oznaka">MGI 5</span><b id="koord-gk">—</b></span>
+      <span class="pill-red"><b id="koord-razmjer" class="narandzasto">—</b><span id="koord-wgs" class="pill-oznaka">—</span></span>
+    </button>
+    <button id="btn-podloga" class="ikona-dugme krug" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
+  </div>
+  <div class="status-red">
     <span id="veza" class="znacka" data-veza="nepoznato"></span>
     <span id="bez-servera" class="znacka upozorenje" hidden>Server nije podešen</span>
     <button id="red-znacka" class="znacka znacka-dugme" type="button" hidden></button>
-    <span class="razmak"></span>
-    <button id="btn-tema" class="ikona-dugme" type="button" aria-label="Dnevni / noćni prikaz"><svg class="ic"><use href="#ic-sun"/></svg></button>
-    <button id="btn-podloga" class="ikona-dugme" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
-    <button id="btn-spiskovi" class="ikona-dugme" type="button" aria-label="Spiskovi"><svg class="ic"><use href="#ic-list"/></svg></button>
-    <button id="btn-postavke" class="ikona-dugme" type="button" aria-label="Postavke"><svg class="ic"><use href="#ic-settings"/></svg></button>
+    <div id="gps-status" class="gps-status" hidden>
+      <span id="gps-tacnost" class="tacnost">GPS…</span>
+      <span>fiks prije <span id="gps-starost">—</span></span>
+    </div>
+    <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
   <div id="meni-spiskovi" class="meni" hidden>
     <button type="button" id="btn-danas">Danas: lovno vrijeme i lovostaj</button>
     <button type="button" id="btn-lovovi">Zajednički lov</button>
     <button type="button" id="btn-slojevi">Slojevi (granice lovišta)</button>
+    <button type="button" id="btn-sekcije" hidden>Sekcije i pristup</button>
     <button type="button" id="btn-tragovi">Moji tragovi</button>
     <button type="button" id="btn-objekti">Lovački objekti</button>
     <button type="button" id="btn-opazanja">Opažanja divljači</button>
@@ -100,18 +112,6 @@
     <button type="button" data-podloga="topo">Topografska</button>
     <button type="button" data-podloga="satelit">Satelit</button>
     <button type="button" data-podloga="osm">OSM</button>
-  </div>
-
-  <div class="sjever" aria-label="Sjever je gore"><svg class="ic"><use href="#ic-north"/></svg><span>S</span></div>
-
-  <div class="desna-kolona">
-    <button id="btn-zoom-in" class="ikona-dugme" type="button" aria-label="Uvećaj"><svg class="ic"><use href="#ic-plus"/></svg></button>
-    <button id="btn-zoom-out" class="ikona-dugme" type="button" aria-label="Umanji"><svg class="ic"><use href="#ic-minus"/></svg></button>
-    <button id="btn-centriraj" class="ikona-dugme" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
-    <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
-    <button id="btn-snimaj" class="ikona-dugme snimaj" type="button" aria-pressed="false" aria-label="Snimaj trag"><svg class="ic"><use href="#ic-record"/></svg></button>
-    <button id="btn-opazanje" class="ikona-dugme" type="button" aria-label="Opažanje divljači na mojoj poziciji"><svg class="ic"><use href="#ic-eye"/></svg></button>
-    <button id="btn-dodaj" class="ikona-dugme glavno" type="button" aria-label="Dodaj na kartu"><svg class="ic"><use href="#ic-plus"/></svg></button>
   </div>
 
   <div id="navigacija" class="navigacija" hidden>
@@ -153,48 +153,54 @@
     </div>
   </div>
 
-  <div class="donji-dio">
-    <div id="uzivo" class="uzivo" hidden>
-      <button id="btn-sos" class="dugme dugme-sos" type="button">SOS</button>
-      <span id="uzivo-stanje" class="sitno">Uživo: tvoju poziciju vide učesnici dok lov traje</span>
-    </div>
-    <div id="panel-snimanje" class="panel-snimanje" hidden>
-      <div class="snim-info"><span id="snim-vrsta"></span><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.<span id="snim-krv"></span></div>
-      <div id="potraga-dugmad" class="red-dugmadi" hidden>
-        <button id="btn-krv" class="dugme dugme-krv" type="button">Krv ovdje</button>
-        <button id="btn-vodi-nazad" class="dugme" type="button">Vodi me nazad</button>
-        <button id="btn-potraga-dijeli" class="dugme" type="button">Dijeli</button>
+  <div class="mapa-dno">
+    <div class="kontrole-red">
+      <div class="zoom-pill">
+        <button id="btn-zoom-in" class="zoom-dugme" type="button" aria-label="Uvećaj"><svg class="ic"><use href="#ic-plus"/></svg></button>
+        <span id="zoom-nivo" class="zoom-nivo" aria-live="off">—</span>
+        <button id="btn-zoom-out" class="zoom-dugme" type="button" aria-label="Umanji"><svg class="ic"><use href="#ic-minus"/></svg></button>
       </div>
-      <div class="red-dugmadi">
-        <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
-        <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
+      <div class="desna-kolona">
+        <button id="btn-dodaj" class="ikona-dugme glavno" type="button" aria-label="Dodaj na kartu"><svg class="ic"><use href="#ic-plus"/></svg></button>
+        <button id="btn-opazanje" class="ikona-dugme" type="button" aria-label="Opažanje divljači na mojoj poziciji"><svg class="ic"><use href="#ic-eye"/></svg></button>
+        <button id="btn-snimaj" class="ikona-dugme snimaj" type="button" aria-pressed="false" aria-label="Snimaj trag"><svg class="ic"><use href="#ic-record"/></svg></button>
+        <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
+        <button id="btn-centriraj" class="ikona-dugme krug veliki" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
       </div>
     </div>
-    <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
-    <div id="gps-status" class="gps-status" hidden>
-      <span id="gps-tacnost" class="tacnost">GPS…</span>
-      <span>fiks prije <span id="gps-starost">—</span></span>
+    <div class="donji-dio">
+      <div id="uzivo" class="uzivo" hidden>
+        <button id="btn-sos" class="dugme dugme-sos" type="button">SOS</button>
+        <span id="uzivo-stanje" class="sitno">Uživo: tvoju poziciju vide učesnici dok lov traje</span>
+      </div>
+      <div id="panel-snimanje" class="panel-snimanje" hidden>
+        <div class="snim-info"><span id="snim-vrsta"></span><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.<span id="snim-krv"></span></div>
+        <div id="potraga-dugmad" class="red-dugmadi" hidden>
+          <button id="btn-krv" class="dugme dugme-krv" type="button">Krv ovdje</button>
+          <button id="btn-vodi-nazad" class="dugme" type="button">Vodi me nazad</button>
+          <button id="btn-potraga-dijeli" class="dugme" type="button">Dijeli</button>
+        </div>
+        <div class="red-dugmadi">
+          <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
+          <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
+        </div>
+      </div>
     </div>
-    <button id="koord-traka" class="koord-traka" type="button" aria-label="Koordinate centra karte, dodir kopira">
-      <span>WGS84 <b id="koord-wgs">—</b></span>
-      <span>GK6 <b id="koord-gk">—</b></span>
-      <span>N.V. <b id="koord-nv">—</b></span>
-    </button>
   </div>
+
+  <nav class="donja-nav" aria-label="Glavna navigacija">
+    <button id="nav-mapa" type="button" aria-current="page"><svg class="ic"><use href="#ic-compass"/></svg><span>Mapa</span></button>
+    <button id="btn-karte" type="button"><svg class="ic"><use href="#ic-map"/></svg><span>Karte</span></button>
+    <button id="btn-spiskovi" type="button"><svg class="ic"><use href="#ic-menu"/></svg><span>Meni</span></button>
+    <button id="btn-postavke" type="button"><svg class="ic"><use href="#ic-settings"/></svg><span>Postavke</span></button>
+  </nav>
 </main>
 
-<section id="postavke" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="postavke-naslov" hidden>
+<section id="karte" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="karte-naslov" hidden>
   <header class="postavke-glava">
-    <h2 id="postavke-naslov">Postavke</h2>
-    <button id="btn-postavke-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+    <h2 id="karte-naslov">Karte</h2>
   </header>
-
-  <h3>Izgled</h3>
-  <div class="segment" role="group" aria-label="Tema">
-    <button type="button" data-tema-izbor="noc" aria-pressed="true">Noćni</button>
-    <button type="button" data-tema-izbor="dan" aria-pressed="false">Dnevni (jako sunce)</button>
-  </div>
-
+  <button id="btn-slojevi-karte" class="dugme" type="button">Slojevi (granice lovišta, revira)</button>
   <h3>Podloga karte</h3>
   <div id="postavke-podloge" class="segment" role="group" aria-label="Podloga karte">
     <button type="button" data-podloga="topo">Topografska</button>
@@ -219,6 +225,22 @@
   <div class="red-dugmadi">
     <button id="btn-pred-preuzmi" class="dugme glavno" type="button">Preuzmi područje</button>
     <button id="btn-pred-prekini" class="dugme" type="button" hidden>Prekini</button>
+  </div>
+
+  <h3>Izvori karata</h3>
+  <p class="sitno">© OpenStreetMap, SRTM | © OpenTopoMap (CC-BY-SA) · © Esri, Maxar, Earthstar Geographics · © OpenStreetMap contributors.</p>
+</section>
+
+<section id="postavke" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="postavke-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="postavke-naslov">Postavke</h2>
+    <button id="btn-postavke-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+
+  <h3>Izgled</h3>
+  <div class="segment" role="group" aria-label="Tema">
+    <button type="button" data-tema-izbor="noc" aria-pressed="true">Noćni</button>
+    <button type="button" data-tema-izbor="dan" aria-pressed="false">Dnevni (jako sunce)</button>
   </div>
 
   <h3>Tragovi</h3>

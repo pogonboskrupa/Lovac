@@ -1,7 +1,7 @@
 // Uvoz slojeva (granice lovišta, revira, lovnih površina): KML, KMZ, GPX, SHP (zip ili .shp+.dbf+.prj).
 // Sve se pretvara u GeoJSON u WGS84; SHP u GK zoni 6 (MGI Balkans) se preračunava.
 
-import { gk6ToWgs84 } from './geo.js';
+import { gkToWgs84 } from './geo.js';
 
 // ---------------- ZIP ----------------
 // Čita centralni direktorij; sadržaj unosa se raspakuje tek kad zatreba (lijeno).
@@ -131,10 +131,12 @@ function firstCoord(shapes) {
 
 export function detectProjection(prj, shapes) {
   const t = String(prj || '');
+  if (/Balkans[_ ]?zone[_ ]?5|31275|MGI.*zone.?5/i.test(t)) return 'gk5';
   if (/Balkans[_ ]?zone[_ ]?6|31276|MGI.*zone.?6/i.test(t)) return 'gk6';
   if (/GCS_WGS_1984|WGS[_ ]?84|4326/i.test(t) && !/PROJCS/i.test(t)) return 'wgs84';
   const c = firstCoord(shapes);
   if (c && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90) return 'wgs84';
+  if (c && c[0] > 5.2e6 && c[0] < 5.8e6 && c[1] > 4.6e6 && c[1] < 5.1e6) return 'gk5';
   if (c && c[0] > 6.2e6 && c[0] < 6.8e6 && c[1] > 4.6e6 && c[1] < 5.1e6) return 'gk6';
   return 'nepoznato';
 }
@@ -147,7 +149,8 @@ const NAME_KEYS = ['name', 'NAME', 'NAZIV', 'naziv', 'Naziv', 'IME', 'ime', 'LAB
 
 export function shapefileToGeoJSON(shapes, attrs, proj) {
   if (proj === 'nepoznato') throw new Error('Nepoznat koordinatni sistem SHP fajla (dodaj .prj)');
-  const conv = proj === 'gk6' ? ([x, y]) => { const r = gk6ToWgs84(x, y); return [r.lon, r.lat]; } : (c) => c;
+  const zone = { gk5: 5, gk6: 6 }[proj];
+  const conv = zone ? ([x, y]) => { const r = gkToWgs84(zone, x, y); return [r.lon, r.lat]; } : (c) => c;
   const features = [];
   shapes.forEach((g, i) => {
     if (!g) return;

@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sosText, smsNumbers, newSosSince, huntReportData } from '../../static/js/uzivo.js';
 
-test('SOS tekst: ime, lov, WGS84 i GK6 koordinate, link za kartu', () => {
+test('SOS tekst: ime, lov, WGS84 i MGI koordinate (zona po dužini), link za kartu', () => {
   const t = sosText({ ime: 'Ado', prezime: 'Adić' }, { lat: 44.8, lon: 16.0, acc: 6 }, 'Pogon Bara');
   assert.match(t, /^SOS! Ado Adić treba pomoć \(lov: Pogon Bara\)\./);
   assert.match(t, /WGS84 44\.800000, 16\.000000/);
-  assert.match(t, /GK6 Y 6342177 {2}X 4963672/);
+  assert.match(t, /MGI 5 Y 5579486, X 4962226/);
   assert.match(t, /±6 m/);
   assert.match(t, /https:\/\/maps\.google\.com\/\?q=44\.800000,16\.000000/);
   assert.match(sosText({ ime: 'A', prezime: 'B' }, null, 'L'), /pozicija nepoznata/);

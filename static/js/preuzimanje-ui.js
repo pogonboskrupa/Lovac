@@ -36,7 +36,8 @@ export function initPreuzimanje(map, activeBase) {
   };
 
   $('pred-zoom').addEventListener('change', refresh);
-  document.addEventListener('postavke:otvorene', refresh);
+  map.on('moveend zoomend', () => { if (!$('karte').hidden) refresh(); });
+  document.addEventListener('karte:otvorene', refresh);
 
   $('btn-pred-preuzmi').addEventListener('click', async () => {
     const base = BASE_LAYERS.find((b) => b.id === activeBase());
@@ -61,7 +62,7 @@ export function initPreuzimanje(map, activeBase) {
     $('btn-pred-preuzmi').disabled = false;
     bar.hidden = true;
     toast(aborted ? 'Preuzimanje prekinuto' : `Područje preuzeto (${res.done - res.errors} pločica${res.errors ? `, ${res.errors} grešaka` : ''})`);
-    document.dispatchEvent(new CustomEvent('postavke:otvorene'));
+    document.dispatchEvent(new CustomEvent('karte:otvorene'));
   });
   $('btn-pred-prekini').addEventListener('click', () => ctrl?.abort());
 }

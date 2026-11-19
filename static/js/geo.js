@@ -7,6 +7,11 @@ const BESSEL = { a: 6377397.155, f: 1 / 299.1528128 };
 // Pomak je obrnut jer ide WGS84 -> MGI.
 const MGI_SHIFT = { dx: -682, dy: 203, dz: -480 };
 const GK6 = { lon0: 18, k0: 0.9999, x0: 6500000, y0: 0 };
+// Zone MGI Balkans: 5 (srednji meridijan 15°, Y ~5,5 mil.) i 6 (18°, Y ~6,5 mil.). Zapadna BiH (Grmeč) je u zoni 5.
+export const GK_ZONES = {
+  5: { lon0: 15, k0: 0.9999, x0: 5500000, y0: 0 },
+  6: GK6,
+};
 
 const DEG = Math.PI / 180;
 
@@ -154,4 +159,46 @@ export function gk6ToWgs84(easting, northing) {
   const [x, y, z] = geodeticToEcef(mLat, mLon, 0, BESSEL);
   const [lat, lon] = ecefToGeodetic(x - MGI_SHIFT.dx, y - MGI_SHIFT.dy, z - MGI_SHIFT.dz, WGS84);
   return { lat, lon };
+}
+
+
+function zoneParams(zone) {
+  const p = GK_ZONES[zone];
+  if (!p) throw new Error(`Nepoznata GK zona ${zone}`);
+  return p;
+}
+
+export function wgs84ToGk(zone, lat, lon) {
+  const [x, y, z] = geodeticToEcef(lat, lon, 0, WGS84);
+  const [mLat, mLon] = ecefToGeodetic(x + MGI_SHIFT.dx, y + MGI_SHIFT.dy, z + MGI_SHIFT.dz, BESSEL);
+  return transverseMercator(mLat, mLon, BESSEL, zoneParams(zone));
+}
+
+export function gkToWgs84(zone, easting, northing) {
+  const [mLat, mLon] = inverseTransverseMercator(easting, northing, BESSEL, zoneParams(zone));
+  const [x, y, z] = geodeticToEcef(mLat, mLon, 0, BESSEL);
+  const [lat, lon] = ecefToGeodetic(x - MGI_SHIFT.dx, y - MGI_SHIFT.dy, z - MGI_SHIFT.dz, WGS84);
+  return { lat, lon };
+}
+
+// Granica zona je 16,5° (sredina između meridijana 15° i 18°).
+export function gkZoneFor(lon) {
+  return lon < 16.5 ? 5 : 6;
+}
+
+export function formatGk(lat, lon, zone = gkZoneFor(lon)) {
+  const { e, n } = wgs84ToGk(zone, lat, lon);
+  return { zona: zone, tekst: `Y ${Math.round(e)}, X ${Math.round(n)}`, oznaka: `MGI ${zone}` };
+}
+
+// Razmjer 1:N za 96 dpi ekran (0,2646 mm po pikselu), zaokružen da se čita kao na papirnoj karti.
+export function scaleRatio(lat, zoom) {
+  const mPerPx = (156543.03392 * Math.cos(lat * DEG)) / 2 ** zoom;
+  const n = mPerPx / 0.000264583;
+  const step = n >= 10000 ? 1000 : n >= 1000 ? 100 : 10;
+  return Math.round(n / step) * step;
+}
+
+export function formatScale(n) {
+  return `1:${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`;
 }

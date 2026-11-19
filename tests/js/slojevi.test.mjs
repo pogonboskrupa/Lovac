@@ -84,6 +84,17 @@ test('SHP + DBF + PRJ (GK zona 6) postaje GeoJSON u WGS84', () => {
   assert.equal(gj.features[0].properties.name, 'Revir Grmeč');
 });
 
+test('SHP u GK zoni 5 (Grmeč): .prj i raspon koordinata', () => {
+  const ring = [[5603291.243, 4958117.133], [5605178, 4959430], [5603291.243, 4959430], [5603291.243, 4958117.133]];
+  const shapes = parseShp(makeShpPolygon(ring));
+  assert.equal(detectProjection('PROJCS["MGI_Balkans_zone_5",GEOGCS["GCS_MGI"]]', shapes), 'gk5');
+  assert.equal(detectProjection('PROJCS["MGI 1901 / Balkans zone 5"]', shapes), 'gk5');
+  assert.equal(detectProjection(null, shapes), 'gk5', 'bez .prj: Y oko 5,6 mil. je zona 5');
+  const gj = shapefileToGeoJSON(shapes, [], 'gk5');
+  const [lon, lat] = gj.features[0].geometry.coordinates[0][0];
+  assert.ok(Math.abs(lat - 44.76) < 1e-5 && Math.abs(lon - 16.3) < 1e-5, `${lat},${lon}`);
+});
+
 test('KML boja aabbggrr -> CSS', () => {
   assert.deepEqual(kmlColor('ff0000ff'), { color: '#ff0000', opacity: 1 });
   assert.deepEqual(kmlColor('7f00ff00'), { color: '#00ff00', opacity: 0.5 });
