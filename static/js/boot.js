@@ -15,6 +15,7 @@ import { initAdmin } from './admin.js';
 import { initObjekti } from './objekti-ui.js';
 import { initOpazanja } from './opazanja-ui.js';
 import { initDanas } from './danas-ui.js';
+import { initOdstrel } from './odstrel-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
 import { initSync } from './sync.js';
@@ -62,6 +63,7 @@ function enter(screen) {
       ['objekti', () => initObjekti(globalThis.L, map)],
       ['opazanja', () => initOpazanja(globalThis.L, map)],
       ['danas', () => initDanas(map)],
+      ['odstrel', () => initOdstrel(globalThis.L, map)],
       ['propisi', () => initPropisiAdmin()],
     ]) {
       try { fn(); } catch (err) { console.error(name, err); }

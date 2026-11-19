@@ -125,3 +125,31 @@ test('dijeljeni tajmer crash-snimka se gasi tek kad nijedno snimanje ne traje', 
   assert.equal(t.isRunning(), false);
   assert.deepEqual(calls, ['start', 'stop']);
 });
+
+import { nearestReturnTargets } from '../../static/js/trag.js';
+
+test('GPX/KML: oznake potrage (nastrijel, krv) kao tačke', () => {
+  const tr = stopTrack(newTrack({ id: 'p', start: T0, naziv: 'Potraga' }), T0 + 60000);
+  const wpts = [{ lat: 44.88, lon: 16.15, t: T0, naziv: 'Nastrijel' }, { lat: 44.8805, lon: 16.1505, t: T0 + 30000, naziv: 'Krv' }];
+  const gpx = toGpx(tr, [pt(0), pt(1)], wpts);
+  assert.equal((gpx.match(/<wpt /g) || []).length, 2);
+  assert.match(gpx, /<wpt lat="44\.8800000" lon="16\.1500000"><time>[^<]+<\/time><name>Nastrijel<\/name><\/wpt>/);
+  const kml = toKml(tr, [pt(0), pt(1)], wpts);
+  assert.equal((kml.match(/<Point>/g) || []).length, 2);
+  assert.match(kml, /<name>Krv<\/name>/);
+});
+
+test('"Vodi me nazad": nastrijel, najbliža čeka i auto, početak traga', () => {
+  const me = { lat: 44.88, lon: 16.15 };
+  const objekti = [
+    { id: 'c1', vrsta: 'ceka_visoka', naziv: 'Daleka čeka', lat: 44.95, lon: 16.15 },
+    { id: 'c2', vrsta: 'ceka_niska', naziv: 'Bliska čeka', lat: 44.882, lon: 16.15 },
+    { id: 'a1', vrsta: 'parking', naziv: 'Auto', lat: 44.87, lon: 16.15 },
+    { id: 'h1', vrsta: 'hraniliste', naziv: 'Hranilište', lat: 44.8801, lon: 16.15 },
+  ];
+  const potraga = { nastrijel: { lat: 44.881, lon: 16.151 }, tacke: [{ lat: 44.8812, lon: 16.1512, t: 1 }] };
+  const t = nearestReturnTargets(me, objekti, potraga);
+  assert.deepEqual(t.map((x) => x.vrsta), ['nastrijel', 'ceka', 'auto', 'pocetak']);
+  assert.equal(t[1].naziv, 'Bliska čeka');
+  assert.equal(t[2].naziv, 'Auto');
+});

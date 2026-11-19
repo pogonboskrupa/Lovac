@@ -44,8 +44,8 @@ export async function saveTrack(trag) {
     alarm(`Trag "${trag.naziv}" nije sačuvan: ${err?.message || err}`);
     throw err;
   }
-  // Na server ide samo završen trag.
-  if (rec.status === 'gotovo' && !rec.tudji) await enqueue('tragovi', rec.id).catch((err) => console.error('red slanja', err));
+  // Na server ide završen trag; potraga i dok traje (vodič psa krvara je prati).
+  if ((rec.status === 'gotovo' || rec.vrsta === 'potraga') && !rec.tudji) await enqueue('tragovi', rec.id).catch((err) => console.error('red slanja', err));
   return rec;
 }
 
@@ -137,9 +137,9 @@ function askBatteryExemptionOnce() {
   }
 }
 
-export async function startRecording({ naziv, vrsta = 'obilazak', pitajBateriju = true } = {}) {
+export async function startRecording({ naziv, vrsta = 'obilazak', pitajBateriju = true, nastrijel = null } = {}) {
   const now = Date.now();
-  const trag = newTrack({ id: uuid(), start: now, naziv: naziv || defaultTrackName(now), vrsta });
+  const trag = { ...newTrack({ id: uuid(), start: now, naziv: naziv || defaultTrackName(now), vrsta }), ...(nastrijel ? { nastrijel, krv: [] } : {}) };
   await saveTrack(trag);
   active.set(trag.id, trag);
   try {
@@ -164,6 +164,9 @@ async function updateActive(id, fn) {
   emit();
   return next;
 }
+
+// Trag krvi dodirom na trenutnoj poziciji (potraga za ranjenom divljači).
+export const addBloodMark = (id, mark) => updateActive(id, (t, now) => ({ ...t, krv: [...(t.krv || []), { ...mark, t: mark.t ?? now }] }));
 
 export const pauseRecording = (id) => updateActive(id, (t, now) => pauseTrack(t, now, false));
 export const resumeRecording = (id) => updateActive(id, (t, now) => resumeTrack(t, now));

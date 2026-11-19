@@ -144,6 +144,7 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(updateBridge, "AndroidUpdate");
         webView.addJavascriptInterface(new GpsBridge(this), "AndroidGps");
         webView.addJavascriptInterface(new ShareBridge(this), "AndroidShare");
+        webView.addJavascriptInterface(new PrintBridge(this), "AndroidPrint");
 
         if (savedInstanceState != null) webView.restoreState(savedInstanceState);
         else webView.loadUrl(startUrl(getIntent()));

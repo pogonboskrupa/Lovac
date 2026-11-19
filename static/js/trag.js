@@ -154,7 +154,11 @@ export function escapeXml(s) {
   return String(s ?? '').replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
 }
 
-export function toGpx(trag, points) {
+function gpxWaypoints(wpts) {
+  return wpts.map((w) => `  <wpt lat="${w.lat.toFixed(7)}" lon="${w.lon.toFixed(7)}"><time>${new Date(w.t).toISOString()}</time><name>${escapeXml(w.naziv)}</name></wpt>\n`).join('');
+}
+
+export function toGpx(trag, points, wpts = []) {
   const segs = segmentsByPauses(points, trag.pauze).map((seg) => {
     const pts = seg.map((p) => {
       const ele = Number.isFinite(p.alt) ? `<ele>${p.alt.toFixed(1)}</ele>` : '';
@@ -164,7 +168,7 @@ export function toGpx(trag, points) {
   }).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="LD Grmec" xmlns="http://www.topografix.com/GPX/1/1">
-  <trk>
+${gpxWaypoints(wpts)}  <trk>
     <name>${escapeXml(trag.naziv)}</name>
 ${segs}
   </trk>
@@ -172,7 +176,7 @@ ${segs}
 `;
 }
 
-export function toKml(trag, points) {
+export function toKml(trag, points, wpts = []) {
   const lines = segmentsByPauses(points, trag.pauze).map((seg) => {
     const coords = seg.map((p) => `${p.lon.toFixed(7)},${p.lat.toFixed(7)}${Number.isFinite(p.alt) ? `,${p.alt.toFixed(1)}` : ''}`).join(' ');
     return `<LineString><tessellate>1</tessellate><coordinates>${coords}</coordinates></LineString>`;
@@ -184,6 +188,7 @@ export function toKml(trag, points) {
     <name>${escapeXml(trag.naziv)}</name>
     <Style id="trag"><LineStyle><color>ff1f5aff</color><width>4</width></LineStyle></Style>
     <Placemark><name>${escapeXml(trag.naziv)}</name><styleUrl>#trag</styleUrl>${geom}</Placemark>
+${wpts.map((w) => `    <Placemark><name>${escapeXml(w.naziv)}</name><Point><coordinates>${w.lon.toFixed(7)},${w.lat.toFixed(7)}</coordinates></Point></Placemark>`).join('\n')}
   </Document>
 </kml>
 `;
@@ -230,4 +235,27 @@ export function createSnapshotTimer(save, ms = 30000, timers = globalThis) {
     },
     isRunning: () => handle != null,
   };
+}
+
+// Ciljevi za "Vodi me nazad" u potrazi: tačka nastrijela, najbliža čeka, najbliže vozilo, početak traga.
+export function nearestReturnTargets(from, objekti, potraga) {
+  const out = [];
+  if (potraga?.nastrijel) out.push({ vrsta: 'nastrijel', naziv: 'Tačka nastrijela', ...potraga.nastrijel });
+  const nearest = (pred) => objekti.filter(pred)
+    .map((o) => ({ ...o, d: haversine(from, o) }))
+    .sort((a, b) => a.d - b.d)[0];
+  const ceka = nearest((o) => /^ceka/.test(o.vrsta));
+  if (ceka) out.push({ vrsta: 'ceka', naziv: ceka.naziv, lat: ceka.lat, lon: ceka.lon });
+  const auto = nearest((o) => o.vrsta === 'parking');
+  if (auto) out.push({ vrsta: 'auto', naziv: auto.naziv, lat: auto.lat, lon: auto.lon });
+  const first = potraga?.tacke?.[0];
+  if (first) out.push({ vrsta: 'pocetak', naziv: 'Početak traga potrage', lat: first.lat, lon: first.lon });
+  return out;
+}
+
+export function trackWaypoints(trag) {
+  const w = [];
+  if (trag.nastrijel) w.push({ ...trag.nastrijel, naziv: 'Nastrijel' });
+  for (const k of trag.krv || []) w.push({ ...k, naziv: k.napomena ? `Krv: ${k.napomena}` : 'Krv' });
+  return w;
 }

@@ -10,7 +10,11 @@ import {
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { shareFile } from './dijeljenje.js';
 import { shareDialog, memberName } from './dijeljenje-ui.js';
-import { VIDLJIVOST } from './zapisi.js';
+import { VIDLJIVOST, listRecords } from './zapisi.js';
+import { currentFix } from './gps.js';
+import { startNavigation } from './navigacija.js';
+import { nearestReturnTargets, trackWaypoints } from './trag.js';
+import { addBloodMark } from './snimanje.js';
 
 const LIVE_STYLE = { color: '#ff5a1f', weight: 4, opacity: 0.9, interactive: false };
 const SHOWN_STYLE = { color: '#2f7dff', weight: 4, opacity: 0.85, interactive: false };
@@ -43,10 +47,22 @@ export function initTragovi(L, map) {
   const list = $('tragovi');
   const recovery = $('oporavak');
 
-  const current = () => activeRecordings()[0] || null;
+  // Potraga ima prednost u panelu (može teći paralelno sa obilaskom).
+  const current = () => { const r = activeRecordings(); return r.find((x) => x.vrsta === 'potraga') || r[0] || null; };
+  const marks = L.layerGroup().addTo(map);
+  const drawMarks = (tr, group = marks) => {
+    group.clearLayers();
+    const icon = (cls, title) => L.divIcon({ className: `oznaka ${cls}`, html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
+    if (tr?.nastrijel) L.marker([tr.nastrijel.lat, tr.nastrijel.lon], { icon: icon('oznaka-nastrijel'), interactive: false }).addTo(group);
+    for (const k of tr?.krv || []) L.marker([k.lat, k.lon], { icon: icon('oznaka-krv'), interactive: false }).addTo(group);
+  };
 
   const renderPanel = (recs) => {
-    const tr = recs[0];
+    const tr = current();
+    $('potraga-dugmad').hidden = tr?.vrsta !== 'potraga';
+    $('snim-vrsta').textContent = tr?.vrsta === 'potraga' ? 'Potraga · ' : '';
+    $('snim-krv').textContent = tr?.vrsta === 'potraga' ? ` · krv: ${(tr.krv || []).length}` : '';
+    drawMarks(tr?.vrsta === 'potraga' ? tr : null);
     btnRec.setAttribute('aria-pressed', String(Boolean(tr)));
     panel.hidden = !tr;
     for (const [id, line] of live) {
@@ -93,9 +109,71 @@ export function initTragovi(L, map) {
     toast(`Trag sačuvan: ${formatDistance(trackDistance(done.tacke))}`);
   });
 
+  // ---- potraga za ranjenom divljači ----
+  const potragaStart = $('potraga-start');
+  const startSearch = async (point) => {
+    potragaStart.hidden = true;
+    const d = new Date();
+    try {
+      await startRecording({
+        vrsta: 'potraga',
+        naziv: `Potraga ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+        nastrijel: { lat: point.lat, lon: point.lon, t: Date.now() },
+      });
+      toast('Potraga počela: tačka nastrijela je označena');
+    } catch (err) {
+      toast(err.message, 5000);
+    }
+  };
+  $('btn-dodaj-potragu').addEventListener('click', () => {
+    $('meni-dodaj').hidden = true;
+    if (activeRecordings().some((r) => r.vrsta === 'potraga')) { toast('Potraga već traje'); return; }
+    $('btn-nastrijel-gps').disabled = !currentFix();
+    potragaStart.hidden = false;
+  });
+  $('btn-nastrijel-gps').addEventListener('click', () => { const f = currentFix(); if (f) startSearch(f); });
+  $('btn-nastrijel-nisan').addEventListener('click', () => { const c = map.getCenter(); startSearch({ lat: c.lat, lon: c.lng }); });
+  $('btn-nastrijel-odustani').addEventListener('click', () => { potragaStart.hidden = true; });
+  $('btn-krv').addEventListener('click', async () => {
+    const tr = current();
+    const f = currentFix();
+    if (!tr || tr.vrsta !== 'potraga') return;
+    if (!f) { toast('Čekam GPS…'); return; }
+    await addBloodMark(tr.id, { lat: f.lat, lon: f.lon, acc: f.acc });
+    toast('Krv označena');
+  });
+  const nazad = $('meni-nazad');
+  $('btn-vodi-nazad').addEventListener('click', async () => {
+    const f = currentFix();
+    const from = f || { lat: map.getCenter().lat, lon: map.getCenter().lng };
+    const targets = nearestReturnTargets(from, await listRecords('objekti'), current());
+    $('nazad-spisak').innerHTML = targets.map((t, i) => `<button type="button" class="dugme" data-i="${i}">${escapeHtml(t.naziv)}</button>`).join('')
+      || '<p class="sitno">Nema cilja (nema čeke ni auta u objektima).</p>';
+    nazad.targets = targets;
+    nazad.hidden = false;
+  });
+  $('nazad-spisak').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-i]');
+    if (!b) return;
+    nazad.hidden = true;
+    startNavigation(nazad.targets[Number(b.dataset.i)]);
+  });
+  $('btn-nazad-odustani').addEventListener('click', () => { nazad.hidden = true; });
+  $('btn-potraga-dijeli').addEventListener('click', async () => {
+    const tr = current();
+    if (tr) await shareDialog()?.open('tragovi', tr.id);
+  });
+  registerBackHandler(() => {
+    if (!potragaStart.hidden) { potragaStart.hidden = true; return true; }
+    if (!nazad.hidden) { nazad.hidden = true; return true; }
+    return false;
+  });
+
   // ---- spisak tragova ----
+  const shownMarks = L.layerGroup().addTo(map);
   const showTrack = (tr) => {
     if (shown) map.removeLayer(shown);
+    drawMarks(tr, shownMarks);
     const pts = pointsForDisplay(tr);
     shown = L.polyline(pts.map((p) => [p.lat, p.lon]), SHOWN_STYLE).addTo(map);
     if (pts.length) map.fitBounds(shown.getBounds(), { padding: [40, 40], maxZoom: 17 });
@@ -148,10 +226,10 @@ export function initTragovi(L, map) {
         await shareDialog()?.open('tragovi', id);
         break;
       case 'gpx':
-        shareFile(trackFileName(tr, 'gpx'), 'application/gpx+xml', toGpx(tr, pts));
+        shareFile(trackFileName(tr, 'gpx'), 'application/gpx+xml', toGpx(tr, pts, trackWaypoints(tr)));
         break;
       case 'kml':
-        shareFile(trackFileName(tr, 'kml'), 'application/vnd.google-earth.kml+xml', toKml(tr, pts));
+        shareFile(trackFileName(tr, 'kml'), 'application/vnd.google-earth.kml+xml', toKml(tr, pts, trackWaypoints(tr)));
         break;
       default:
     }

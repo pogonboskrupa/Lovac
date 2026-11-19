@@ -114,6 +114,11 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Ručno "Pošalji sad" (`force`) čeka tekuće slanje pa kreće ponovo (tekuće ne zna za nove zapise).
 - Server (migracija 004, `cuvaj_rev`): stariji rev ne prepisuje noviji, vlasnik se ne mijenja. Tuđi zapisi stižu kroz `pullShared` (`tudji: true`), ne uređuju se i ne šalju nazad; kad ih vlasnik vrati na privatno, uklanjaju se lokalno.
 - Fotografije se (još) NE šalju na server — ostaju na telefonu.
+- Potraga (`vrsta: 'potraga'`) se šalje i dok traje (vodič psa krvara je prati); ostali tragovi tek kad su završeni. Potraga i obilazak mogu teći paralelno; panel prikazuje potragu.
+
+**Izvoz**
+- CSV za Excel (`odstrel.js toCsv`): BOM, `;`, decimalni zarez, `\r\n`; ćelija koja počinje sa `= + - @` dobija `'` (zaštita od formula).
+- PDF/štampa: `AndroidPrint.printHtml` (WebView u mostu mora živjeti dok sistem ne preuzme dokument); u browseru iframe `print()`. Izvještaj odstrela uvijek nosi napomenu da ne zamjenjuje službeni lovački dnevnik.
 
 **Propisi, svjetlo, vjetar**
 - Sunce: puni NOAA algoritam u `sunce.js` (test protiv Python `astral`, tolerancija 1 min). Lovno vrijeme = admin pravilo (`propisi.js pickRule`: posebno za vrstu, inače opšte); bez pravila UI kaže "nije unio administrator", nikad zadana vrijednost.
