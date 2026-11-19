@@ -88,6 +88,10 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - `capture` atribut kamere WebView ignoriše → za "Uslikaj" ide `ACTION_IMAGE_CAPTURE` intent.
 - OEM battery manager ubija cijeli proces: pri prvom snimanju tražiti izuzeće od optimizacije baterije. Bez push servisa NE obećavati "javićemo i kad je app ugašena".
 
+**Ažuriranje**
+- U APK-u se service worker NE koristi (i odjavljuje se): cache-first SW bi nakon instalacije novog APK-a servirao stari app shell.
+- Provjera nove verzije ide prvo preko `version.json` na grani `verzija` (CI ga objavljuje nakon Release-a, `raw.githubusercontent.com`), a GitHub API je rezerva: API ima limit 60/sat po IP-u, a mobilni operateri dijele IP. Neuspjela provjera se prikazuje kao greška, nikad kao "nema nove verzije". U Postavkama je uvijek dostupno "Preuzmi zadnju verziju".
+
 **Snimanje traga**
 - Pauza se pamti kao vremenski intervali (trajno); inače native replay ubaci tačke iz pauze ili odbaci tačke prije nje. Stop zatvara otvoren interval.
 - Dijeljeni tajmer (crash-snimak više snimanja) gasi se tek kad NIJEDNO snimanje ne traje.

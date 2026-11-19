@@ -146,6 +146,19 @@ jobs:
           files: out/app-debug.apk
           body: |
             APK: https://github.com/${{ github.repository }}/releases/latest/download/app-debug.apk
+      # App provjerava novu verziju preko ovog fajla (raw.githubusercontent nema API limit po IP-u).
+      - name: Objavi version.json na granu verzija
+        if: steps.exists.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf '{"verzija":"%s"}\n' "$TAG" > /tmp/version.json
+          git checkout -q --orphan verzija-objava
+          git rm -rfq .
+          cp /tmp/version.json version.json
+          git add version.json
+          git commit -qm "verzija $TAG"
+          git push -f origin HEAD:refs/heads/verzija
       - name: Verzija već postoji
         if: steps.exists.outputs.exists == 'true'
         run: echo "::notice::Release $TAG već postoji — za novi release podigni verziju na tri mjesta."

@@ -96,10 +96,11 @@ function wireUpdateButton(appVer) {
       install.hidden = !ver;
     } catch (err) {
       console.warn('provjera verzije', err);
-      status.textContent = 'Nema veze sa serverom';
+      status.textContent = 'Provjera nije uspjela (nema veze sa serverom). Možeš preuzeti zadnju verziju dugmetom ispod.';
     }
   });
   install.addEventListener('click', () => installUpdate());
+  el('btn-preuzmi-zadnju').addEventListener('click', () => installUpdate());
 }
 
 export function initPostavke({ setBase, onLogout, appVer }) {

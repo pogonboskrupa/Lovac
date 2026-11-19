@@ -11,7 +11,7 @@ export async function serveTiles(page, counter = { n: 0 }) {
     return route.fulfill({ status: 200, body: PNG, headers: { 'content-type': 'image/png', 'access-control-allow-origin': '*' } });
   });
   // Provjera nove verzije ne smije ići na pravi server u testu.
-  await page.route(/api\.github\.com/, (r) => r.fulfill({ status: 404, body: '{}' }));
+  await page.route(/api\.github\.com|raw\.githubusercontent\.com/, (r) => r.fulfill({ status: 404, body: '{}' }));
   return counter;
 }
 

@@ -82,8 +82,39 @@ test('dodirne mete u postavkama su ≥ 44 px', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
   for (const sel of ['#btn-postavke-zatvori', '[data-tema-izbor="noc"]', '[data-tema-izbor="dan"]', '#postavke [data-podloga="topo"]',
-    '#btn-kes-obrisi', '#btn-provjeri-azuriranje', '#btn-postavke-odjava']) {
+    '#btn-kes-obrisi', '#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju', '#btn-postavke-odjava']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }
+});
+
+test('provjera ažuriranja koristi version.json i nudi instalaciju', async ({ page }) => {
+  await page.route(/raw\.githubusercontent\.com/, (r) => r.fulfill({
+    status: 200, body: '{"verzija":"v9.9.9"}', headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
+  }));
+  await page.goto('/');
+  await expect(page.locator('#nova-verzija')).toBeVisible();
+  await expect(page.locator('#nova-verzija .nv-tekst')).toHaveText('Nova verzija v9.9.9');
+  await page.locator('#btn-postavke').click();
+  await page.locator('#btn-provjeri-azuriranje').click();
+  await expect(page.locator('#postavke-azur-status')).toHaveText('Nova verzija v9.9.9');
+  await expect(page.locator('#btn-instaliraj-azuriranje')).toBeVisible();
+});
+
+test('kad server za verzije ne odgovara, postavke to kažu (ne lažno "najnovija")', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  await page.locator('#btn-provjeri-azuriranje').click();
+  await expect(page.locator('#postavke-azur-status')).toHaveText(/Provjera nije uspjela/);
+});
+
+test('"Preuzmi zadnju verziju" je uvijek dostupno i u APK-u zove AndroidUpdate most', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__pozvano = [];
+    window.AndroidUpdate = { downloadAndInstall: (u) => window.__pozvano.push(u) };
+  });
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  await page.locator('#btn-preuzmi-zadnju').click();
+  expect(await page.evaluate(() => window.__pozvano)).toEqual([expect.stringMatching(/\/releases\/latest\/download\/app-debug\.apk$/)]);
 });

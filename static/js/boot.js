@@ -10,7 +10,7 @@ import { showScreen, toast, alarm, initTheme } from './ui.js';
 import { initMap } from './map.js';
 import { initGps } from './gps.js';
 import { initPostavke, handleBack } from './postavke.js';
-import { checkForUpdate, installUpdate } from './update.js';
+import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
 let mapReady = false;
@@ -127,9 +127,17 @@ async function updateCheck() {
   }
 }
 
-function registerServiceWorker() {
+async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  return navigator.serviceWorker.register('sw.js').catch((err) => console.warn('sw', err));
+  if (shouldUseServiceWorker(globalThis.location, Boolean(globalThis.AndroidUpdate))) {
+    await navigator.serviceWorker.register('sw.js');
+    return;
+  }
+  // APK: ukloni SW i keš app shell-a koje su ostavile ranije verzije.
+  for (const reg of await navigator.serviceWorker.getRegistrations()) await reg.unregister();
+  if (globalThis.caches) {
+    for (const k of await caches.keys()) if (k.startsWith('shell-')) await caches.delete(k);
+  }
 }
 
 function wireConnectionBadge() {
