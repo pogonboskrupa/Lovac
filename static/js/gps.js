@@ -16,6 +16,28 @@ export function headingFromAlpha(alpha, screenDeg = 0) {
   return ((360 - alpha + screenDeg) % 360 + 360) % 360;
 }
 
+// Zadnji fiks i smjer za druge module (Vodi me do, opažanje na poziciji).
+const gpsListeners = new Set();
+let lastFix = null;
+let lastHeading = null;
+
+export function onGpsUpdate(fn) {
+  gpsListeners.add(fn);
+  return () => gpsListeners.delete(fn);
+}
+
+export function currentFix() {
+  return lastFix;
+}
+
+export function currentHeading() {
+  return lastHeading ?? lastFix?.heading ?? null;
+}
+
+function notifyGps() {
+  gpsListeners.forEach((fn) => { try { fn(lastFix, currentHeading()); } catch (e) { console.error(e); } });
+}
+
 export function initGps(L, map) {
   const state = { fix: null, follow: false, watchId: null, heading: null, marker: null, circle: null };
 
@@ -67,7 +89,9 @@ export function initGps(L, map) {
       heading: Number.isFinite(c.heading) && c.speed > 0.5 ? c.heading : null,
       t: pos.timestamp || Date.now(),
     };
+    lastFix = state.fix;
     render();
+    notifyGps();
   };
 
   const onErr = (err) => {
@@ -88,7 +112,7 @@ export function initGps(L, map) {
   const startCompass = () => {
     const handler = (e) => {
       const h = headingFromAlpha(e.alpha, screenAngle());
-      if (h != null && e.absolute !== false) { state.heading = h; render(); }
+      if (h != null && e.absolute !== false) { state.heading = h; lastHeading = h; render(); notifyGps(); }
     };
     if ('ondeviceorientationabsolute' in globalThis) {
       globalThis.addEventListener('deviceorientationabsolute', handler);

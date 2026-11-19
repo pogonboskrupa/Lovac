@@ -98,3 +98,24 @@ export function formatFixAge(ms) {
   if (m < 60) return `${m} min`;
   return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
+
+// Početni azimut (0 = sjever, u smjeru kazaljke) od a do b.
+export function bearing(a, b) {
+  const r = Math.PI / 180;
+  const φ1 = a.lat * r;
+  const φ2 = b.lat * r;
+  const Δλ = (b.lon - a.lon) * r;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return ((Math.atan2(y, x) / r) + 360) % 360;
+}
+
+const STRANE = ['S', 'SI', 'I', 'JI', 'J', 'JZ', 'Z', 'SZ'];
+
+export function compassName(deg) {
+  return STRANE[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+}
+
+export function formatBearing(deg) {
+  return `${compassName(deg)} ${Math.round(deg)}°`;
+}

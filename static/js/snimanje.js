@@ -8,6 +8,7 @@ import {
 } from './trag.js';
 import { idbPut, idbGet, idbAll, idbDelete } from './db.js';
 import { alarm } from './ui.js';
+import { uuid } from './zapisi.js';
 
 const NATIVE_POLL_MS = 3000;
 const RAW_WINDOW_MS = 4 * 60 * 1000;
@@ -31,14 +32,6 @@ function nativeGps() {
 
 export function hasNativeGps() {
   return Boolean(nativeGps());
-}
-
-function uuid() {
-  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
 }
 
 // Kritičan upis: neuspjeh se javlja glasno, nikad tihi catch.

@@ -80,16 +80,16 @@ input {
   opacity: 0.7; filter: drop-shadow(0 0 1px #000);
 }
 .ikona-dugme {
-  width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 10px;
+  flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 10px;
   background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
 }
 .ikona-dugme[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); }
 .gornja-traka {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 1000; display: flex; gap: 8px; align-items: center;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 1000; display: flex; gap: 6px; align-items: center;
   padding: calc(8px + env(safe-area-inset-top)) 8px 8px;
 }
 .razmak { flex: 1; }
-.znacka { padding: 4px 10px; border-radius: 999px; background: var(--povrsina); color: var(--tekst); font-size: 14px; box-shadow: var(--sjena); }
+.znacka { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px 10px; border-radius: 999px; background: var(--povrsina); color: var(--tekst); font-size: 14px; box-shadow: var(--sjena); }
 .znacka:empty { display: none; }
 .znacka.upozorenje, .znacka[data-veza="nema"] { background: var(--upozorenje); color: var(--upozorenje-tekst); }
 .meni {
@@ -157,6 +157,49 @@ input {
   position: fixed; left: 12px; right: 12px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 3500;
   padding: 16px; border-radius: 12px; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
 }
+
+/* Lovački objekti */
+.ikona-dugme.glavno { background: var(--naglasak); color: var(--naglasak-tekst); }
+.meni-dodaj { top: auto; bottom: calc(180px + env(safe-area-inset-bottom)); right: 64px; }
+.obj-marker { background: none; border: 0; }
+.obj-ikona {
+  width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--povrsina); color: var(--tekst); border: 3px solid var(--gps-dobro); box-shadow: var(--sjena);
+}
+.obj-ikona[data-stanje="popravka"] { border-color: var(--gps-srednje); }
+.obj-ikona[data-stanje="sruseno"] { border-color: var(--gps-lose); border-style: dashed; }
+.ikone-izbor { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.ikone-izbor button {
+  min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: 0; border-radius: 8px; background: var(--dugme); color: var(--dugme-tekst); font-size: 14px; padding: 6px;
+}
+.ikone-izbor button[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); font-weight: 600; }
+textarea {
+  display: block; width: 100%; min-height: 48px; margin-top: 4px; padding: 10px 12px; font: inherit; font-size: 16px;
+  color: var(--tekst); background: var(--povrsina); border: 1px solid var(--tekst-2); border-radius: 8px;
+}
+.dugme-fajl { display: inline-flex; align-items: center; justify-content: center; margin: 8px 0; color: var(--dugme-tekst); }
+.foto-red { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.foto { position: relative; margin: 0; }
+.foto img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; display: block; }
+.foto-ukloni {
+  position: absolute; top: -6px; right: -6px; width: 44px; height: 44px; border: 0; border-radius: 50%;
+  background: var(--tekst); color: var(--pozadina); font-size: 22px; line-height: 1;
+}
+.obj-red-dugme {
+  display: flex; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 4px 0; border: 0;
+  background: none; color: var(--tekst); text-align: left; font: inherit;
+}
+.obj-red[data-stanje="popravka"] .ic { color: var(--upozorenje); }
+.obj-red[data-stanje="sruseno"] .ic { color: var(--greska); }
+.dijalog .red-dugmadi { gap: 8px; }
+.navigacija {
+  position: absolute; left: 8px; right: 64px; top: calc(64px + env(safe-area-inset-top)); z-index: 1100;
+  display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px;
+  background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+}
+.nav-strelica { width: 48px; height: 48px; flex: none; fill: var(--naglasak); transition: transform 0.3s; }
+.nav-tekst { flex: 1; display: flex; flex-direction: column; font-size: 15px; }
 
 /* Obavijesti */
 .traka-obavijest, .alarm {

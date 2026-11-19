@@ -2,14 +2,18 @@ package ba.grmec.lovac;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.GeolocationPermissions;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -19,6 +23,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -28,10 +33,15 @@ import androidx.webkit.ServiceWorkerControllerCompat;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewFeature;
 
+import java.io.File;
+
 public class MainActivity extends Activity {
     static final String HOST = "appassets.androidplatform.net";
     static final String START_URL = "https://" + HOST + "/assets/www/index.html";
     private static final int REQ_LOCATION = 41;
+    private static final int REQ_FILE = 51;
+    private ValueCallback<Uri[]> fileCallback;
+    private Uri cameraUri;
 
     private WebView webView;
     private WebViewAssetLoader assetLoader;
@@ -100,6 +110,13 @@ public class MainActivity extends Activity {
                 return true;
             }
 
+            // Bez ovoga WebView ignoriše <input type=file>; kamera ide preko ACTION_IMAGE_CAPTURE
+            // (WebView ignoriše capture atribut).
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                return openFileChooser(cb, params);
+            }
+
             @Override
             public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 if (hasLocationPermission()) {
@@ -136,6 +153,63 @@ public class MainActivity extends Activity {
     static String startUrl(Intent intent) {
         String t = intent == null ? null : intent.getStringExtra("autotest");
         return "trag".equals(t) ? START_URL + "?autotest=trag" : START_URL;
+    }
+
+    private boolean openFileChooser(ValueCallback<Uri[]> cb, WebChromeClient.FileChooserParams params) {
+        if (fileCallback != null) fileCallback.onReceiveValue(null);
+        fileCallback = cb;
+        Intent pick = new Intent(Intent.ACTION_GET_CONTENT)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .setType("image/*");
+        if (params.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+            pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+        Intent chooser = Intent.createChooser(pick, "Fotografija");
+        cameraUri = null;
+        try {
+            File dir = new File(getCacheDir(), "kamera");
+            if (dir.exists() || dir.mkdirs()) {
+                File f = new File(dir, "foto-" + System.currentTimeMillis() + ".jpg");
+                cameraUri = FileProvider.getUriForFile(this, getPackageName() + ".files", f);
+                Intent cam = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                        .putExtra(MediaStore.EXTRA_OUTPUT, cameraUri)
+                        .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                // Dozvola za upis se kroz EXTRA_INITIAL_INTENTS ne prenosi bez ClipData.
+                cam.setClipData(ClipData.newRawUri("", cameraUri));
+                chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cam});
+            }
+        } catch (Exception e) {
+            Log.w("Lovac", "Kamera nije dostupna", e);
+            cameraUri = null;
+        }
+        try {
+            startActivityForResult(chooser, REQ_FILE);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            fileCallback.onReceiveValue(null);
+            fileCallback = null;
+            return false;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_FILE || fileCallback == null) return;
+        Uri[] result = null;
+        if (resultCode == RESULT_OK) {
+            if (data != null && data.getClipData() != null && data.getData() == null) {
+                ClipData clip = data.getClipData();
+                result = new Uri[clip.getItemCount()];
+                for (int i = 0; i < clip.getItemCount(); i++) result[i] = clip.getItemAt(i).getUri();
+            } else if (data != null && data.getData() != null) {
+                result = new Uri[]{data.getData()};
+            } else if (cameraUri != null) {
+                result = new Uri[]{cameraUri};
+            }
+        }
+        fileCallback.onReceiveValue(result);
+        fileCallback = null;
     }
 
     private boolean hasLocationPermission() {

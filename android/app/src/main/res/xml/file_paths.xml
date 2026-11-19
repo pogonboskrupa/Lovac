@@ -2,4 +2,5 @@
 <paths>
     <external-files-path name="preuzimanja" path="Download/" />
     <cache-path name="podijeli" path="podijeli/" />
+    <cache-path name="kamera" path="kamera/" />
 </paths>

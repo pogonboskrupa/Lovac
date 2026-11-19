@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
 
 const tracksInDb = (page) => page.evaluate(() => new Promise((resolve, reject) => {
-  const r = indexedDB.open('lovac', 1);
+  const r = indexedDB.open('lovac');
   r.onsuccess = () => {
     const req = r.result.transaction('tragovi').objectStore('tragovi').getAll();
     req.onsuccess = () => resolve(req.result);
@@ -91,6 +91,7 @@ test('browser: snimanje preko watchPosition i spisak tragova sa dužinom', async
   await page.locator('#btn-snim-stop').click();
   await page.locator('#btn-snim-stop').click();
 
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-tragovi').click();
   await expect(page.locator('#tragovi')).toBeVisible();
   const row = page.locator('#tragovi-spisak .trag-red');
@@ -134,6 +135,7 @@ test('izvoz GPX/KML ide kroz AndroidShare, uglačavanje se može vratiti, brisan
   await page.locator('#btn-snim-stop').click();
   await page.locator('#btn-snim-stop').click();
 
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-tragovi').click();
   const row = page.locator('#tragovi-spisak .trag-red').first();
   await row.locator('[data-akcija="gpx"]').click();
@@ -162,7 +164,7 @@ test('dodirne mete snimanja ≥ 44 px', async ({ page }) => {
   await installNativeMock(page);
   await page.goto('/');
   await page.locator('#btn-snimaj').click();
-  for (const sel of ['#btn-snimaj', '#btn-tragovi', '#btn-snim-pauza', '#btn-snim-stop']) {
+  for (const sel of ['#btn-snimaj', '#btn-spiskovi', '#btn-snim-pauza', '#btn-snim-stop']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }

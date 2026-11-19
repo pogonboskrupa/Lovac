@@ -6,12 +6,15 @@ import {
 } from './auth.js';
 import { setStorageReporter } from './storage.js';
 import { onQualityChange } from './net.js';
-import { showScreen, toast, alarm, initTheme, handleBack } from './ui.js';
+import { showScreen, toast, alarm, initTheme, handleBack, wireMenu } from './ui.js';
 import { initMap } from './map.js';
 import { initGps } from './gps.js';
 import { initPostavke } from './postavke.js';
 import { initTragovi, runRecordingAutotest } from './tragovi-ui.js';
 import { initAdmin } from './admin.js';
+import { initObjekti } from './objekti-ui.js';
+import { initNavigation } from './navigacija.js';
+import { refreshAllSpiskovi } from './spiskovi.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
@@ -46,6 +49,13 @@ function enter(screen) {
       initPostavke({ setBase, onLogout: doLogout, appVer: APP_VER });
     } catch (err) {
       console.error('postavke', err);
+    }
+    for (const [name, fn] of [
+      ['meniji', () => { wireMenu('btn-spiskovi', 'meni-spiskovi'); wireMenu('btn-dodaj', 'meni-dodaj'); }],
+      ['navigacija', () => initNavigation(globalThis.L, map)],
+      ['objekti', () => initObjekti(globalThis.L, map)],
+    ]) {
+      try { fn(); } catch (err) { console.error(name, err); }
     }
     try {
       initAdmin();
@@ -177,6 +187,7 @@ onDomReady(() => {
       if (!isServerConfigured()) document.getElementById('bez-servera').hidden = false;
     }],
     ['sesija', () => backgroundSession()],
+    ['spiskovi', () => (isServerConfigured() ? refreshAllSpiskovi() : null)],
     ['sw', registerServiceWorker],
     ['azuriranje', updateCheck],
     ['autotest', () => {

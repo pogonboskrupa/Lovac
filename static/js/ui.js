@@ -83,9 +83,9 @@ export function handleBack() {
       console.error('nazad', err);
     }
   }
-  const menu = document.getElementById('meni-podloga');
-  if (menu && !menu.hidden) { menu.hidden = true; return true; }
-  return false;
+  const menus = [...document.querySelectorAll('.meni')].filter((m) => !m.hidden);
+  menus.forEach((m) => { m.hidden = true; });
+  return menus.length > 0;
 }
 
 // Potvrda opasne radnje drugim dodirom (WebView ne prikazuje confirm()).
@@ -107,4 +107,15 @@ export function wireTwoTap(btn, confirmLabel, action, ms = 4000) {
 
 export function escapeHtml(s) {
   return String(s ?? '').replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Meni koji otvara dugme; drugi meniji se zatvaraju.
+export function wireMenu(buttonId, menuId) {
+  const btn = document.getElementById(buttonId);
+  const menu = document.getElementById(menuId);
+  btn?.addEventListener('click', () => {
+    const open = menu.hidden;
+    document.querySelectorAll('.meni').forEach((m) => { m.hidden = true; });
+    menu.hidden = !open;
+  });
 }

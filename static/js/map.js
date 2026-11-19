@@ -3,7 +3,7 @@
 import { BASE_LAYERS, createCachedTileLayer } from './tiles.js';
 import { formatWgs84, formatGk6 } from './geo.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { toast, copyText } from './ui.js';
+import { toast, copyText, wireMenu } from './ui.js';
 
 const VIEW_KEY = 'lovac.pogled';
 const LAYER_KEY = 'lovac.podloga';
@@ -53,9 +53,7 @@ export function updateCoordBar(map) {
 
 function wireMapControls(map, setBase) {
   const menu = document.getElementById('meni-podloga');
-  document.getElementById('btn-podloga')?.addEventListener('click', () => {
-    menu.hidden = !menu.hidden;
-  });
+  wireMenu('btn-podloga', 'meni-podloga');
   menu?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-podloga]');
     if (!btn) return;

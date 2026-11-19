@@ -153,6 +153,7 @@ export function initTragovi(L, map) {
   const openList = async () => {
     await renderList();
     $('postavke').hidden = true;
+    $('meni-spiskovi').hidden = true;
     list.hidden = false;
   };
   $('btn-tragovi').addEventListener('click', openList);

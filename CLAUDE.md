@@ -86,6 +86,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Tastatura prekriva donje listove uz edge-to-edge: WebView ide u omotač kojem se postavlja donji padding = IME inset; u webapp-u `interactive-widget=resizes-content`.
 - WebView nema `window.Notification` ni pouzdan `navigator.share` / `window.print` → native mostovi.
 - `capture` atribut kamere WebView ignoriše → za "Uslikaj" ide `ACTION_IMAGE_CAPTURE` intent.
+- `<input type=file>` u WebView-u ne radi bez `WebChromeClient.onShowFileChooser` (MainActivity: izbor slike + kamera u jednom chooser-u; dozvola za upis kameri ide kroz `ClipData`, jer se kroz `EXTRA_INITIAL_INTENTS` ne prenosi). CAMERA dozvola se namjerno NE deklariše: ako je u manifestu, `ACTION_IMAGE_CAPTURE` je traži.
 - OEM battery manager ubija cijeli proces: pri prvom snimanju tražiti izuzeće od optimizacije baterije. Bez push servisa NE obećavati "javićemo i kad je app ugašena".
 
 **Ažuriranje**
@@ -102,7 +103,13 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Pločice**
 - Mrežno preuzimanje pločica ide kroz `createLimiter` (max 6 istovremeno, najnovije prvo, prekid na `tileunload`/`tileabort`); bez toga spor server i slab signal ugase sve zahtjeve odjednom. Keš pločica ima gornju granicu (`MAX_CACHED_TILES`).
 
+**Zapisi i spiskovi**
+- Objekti/opažanja/odstrel idu kroz `zapisi.js` (`newRecord`/`updateRecord`: klijentski UUID, `vidljivost: 'privatno'`, `rev` +1, `sinhronizovano: false`). Fotografije se smanjuju (`foto.js`, max 1600 px) i čuvaju u IndexedDB store-u `fotografije`; zapis čuva samo id-eve.
+- Admin spiskovi (`spiskovi.js`): zadani spisak u kodu samo za nazive (vrste objekata/divljači); `lovostaj` i `lovno_vrijeme` nemaju zadane vrijednosti. Za naziv starog zapisa koristi `getSpisakAll` (i neaktivni redovi).
+- Novi store u IndexedDB-u traži podizanje `DB_VERSION` u `db.js` (onupgradeneeded pravi samo store-ove koji fale).
+
 **UI**
+- Gornja traka i desna kolona: `.ikona-dugme` ima `flex: none` — inače flex na uskom ekranu stisne dugmad ispod 44 px.
 - WebView ne prikazuje `confirm()`/`alert()` bez `onJsConfirm`/`onJsAlert` u `WebChromeClient`: potvrda opasnih radnji ide drugim dodirom na isto dugme.
 - Odjava na mrtvoj vezi: `signOut` visi, pa se čeka najviše `SIGNOUT_GRACE_MS`, a lokalni `sb-*` ključevi se brišu uvijek; ekran se mijenja odmah.
 - Dugme Nazad: `MainActivity` pita `window.__nazad()`; svaki novi overlay/list registruje zatvaranje sa `registerBackHandler()` iz `ui.js` (zadnji registrovan ide prvi).

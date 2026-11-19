@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.1.6';
+  const APP_VER = 'v0.1.7';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -23,6 +23,18 @@
   <symbol id="ic-north" viewBox="0 0 24 24"><path d="M12 2 18 20 12 15 6 20Z" fill="currentColor"/></symbol>
   <symbol id="ic-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol>
   <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="5" cy="19" r="2.5" fill="currentColor"/><circle cx="19" cy="5" r="2.5" fill="currentColor"/><path d="M5 16.5V12c0-2 1.5-3 3.5-3h7c2 0 3.5-1 3.5-3V7.5" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="3 2"/></symbol>
+  <symbol id="ic-obj-ceka-visoka" viewBox="0 0 24 24"><path d="M7 21l3-12h4l3 12M9.2 13h5.6M8.2 17h7.6M6 9h12l-2.5-4h-7z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-ceka-niska" viewBox="0 0 24 24"><path d="M5 21l2-7h10l2 7M4 14h16l-2.5-4h-11z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-zaklon" viewBox="0 0 24 24"><path d="M3 20h18M5 20c0-5 3-9 7-9s7 4 7 9M9 20v-4h6v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-hraniliste" viewBox="0 0 24 24"><path d="M3 10h18l-2 8H5zM7 10V6h10v4M5 22l2-4M19 22l-2-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-soliste" viewBox="0 0 24 24"><path d="M8 4h8v6H8zM12 10v10M8 20h8" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-kaljuziste" viewBox="0 0 24 24"><path d="M3 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M3 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0M8 8c1-2 3-2 4 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-pojiliste" viewBox="0 0 24 24"><path d="M12 3c-4 6-6 9-6 12a6 6 0 0 0 12 0c0-3-2-6-6-12z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-kuca" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-kamera" viewBox="0 0 24 24"><path d="M4 8h4l2-2h4l2 2h4v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-auto" viewBox="0 0 24 24"><path d="M5 15l1.5-5h11l1.5 5M3 15h18v4H3zM6.5 19v2M17.5 19v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-obj-pin" viewBox="0 0 24 24"><path d="M12 21s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></symbol>
   <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M3 7h11M19 7h2M3 17h2M10 17h11" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16.5" cy="7" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="7.5" cy="17" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
@@ -63,7 +75,15 @@
     <span class="razmak"></span>
     <button id="btn-tema" class="ikona-dugme" type="button" aria-label="Dnevni / noćni prikaz"><svg class="ic"><use href="#ic-sun"/></svg></button>
     <button id="btn-podloga" class="ikona-dugme" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
+    <button id="btn-spiskovi" class="ikona-dugme" type="button" aria-label="Spiskovi"><svg class="ic"><use href="#ic-list"/></svg></button>
     <button id="btn-postavke" class="ikona-dugme" type="button" aria-label="Postavke"><svg class="ic"><use href="#ic-settings"/></svg></button>
+  </div>
+  <div id="meni-spiskovi" class="meni" hidden>
+    <button type="button" id="btn-tragovi">Moji tragovi</button>
+    <button type="button" id="btn-objekti">Lovački objekti</button>
+  </div>
+  <div id="meni-dodaj" class="meni meni-dodaj" hidden>
+    <button type="button" id="btn-dodaj-objekat">Lovački objekat</button>
   </div>
   <div id="meni-podloga" class="meni" hidden>
     <button type="button" data-podloga="topo">Topografska</button>
@@ -79,7 +99,17 @@
     <button id="btn-centriraj" class="ikona-dugme" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
     <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
     <button id="btn-snimaj" class="ikona-dugme snimaj" type="button" aria-pressed="false" aria-label="Snimaj trag"><svg class="ic"><use href="#ic-record"/></svg></button>
-    <button id="btn-tragovi" class="ikona-dugme" type="button" aria-label="Moji tragovi"><svg class="ic"><use href="#ic-route"/></svg></button>
+    <button id="btn-dodaj" class="ikona-dugme glavno" type="button" aria-label="Dodaj na kartu"><svg class="ic"><use href="#ic-plus"/></svg></button>
+  </div>
+
+  <div id="navigacija" class="navigacija" hidden>
+    <svg id="nav-strelica" class="nav-strelica" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 19 20 12 16 5 20Z"/></svg>
+    <div class="nav-tekst">
+      <b id="nav-cilj"></b>
+      <span><b id="nav-udaljenost"></b> · <span id="nav-smjer"></span></span>
+      <span id="nav-napomena" class="sitno"></span>
+    </div>
+    <button id="btn-nav-kraj" class="dugme" type="button">Kraj</button>
   </div>
 
   <div class="donji-dio">
@@ -165,6 +195,63 @@
   <button id="btn-korisnici-osvjezi" class="dugme" type="button">Osvježi</button>
   <p id="korisnici-status" class="status" role="status"></p>
   <ul id="korisnici-spisak" class="spisak"></ul>
+</section>
+
+<section id="objekt-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="objekt-forma-naslov" hidden>
+  <form id="forma-objekt" novalidate>
+    <header class="postavke-glava"><h2 id="objekt-forma-naslov">Nov lovački objekat</h2></header>
+    <h3>Vrsta</h3>
+    <div id="objekt-vrste" class="ikone-izbor" role="group" aria-label="Vrsta objekta"></div>
+    <label>Naziv<input name="naziv" maxlength="60" placeholder="npr. Čeka kod bukve"></label>
+    <h3>Stanje</h3>
+    <div id="objekt-stanje" class="segment" role="group" aria-label="Stanje">
+      <button type="button" data-stanje="ispravno">Ispravno</button>
+      <button type="button" data-stanje="popravka">Treba popravka</button>
+      <button type="button" data-stanje="sruseno">Srušeno</button>
+    </div>
+    <label>Zadnji obilazak<input name="zadnji_obilazak" type="date"></label>
+    <label>Napomena<textarea name="napomena" rows="3" maxlength="1000"></textarea></label>
+    <h3>Fotografije</h3>
+    <div id="objekt-foto" class="foto-red"></div>
+    <label class="dugme dugme-fajl">Dodaj fotografiju<input id="objekt-foto-input" type="file" accept="image/*" multiple hidden></label>
+    <h3>Pozicija</h3>
+    <p id="objekt-pozicija" class="sitno"></p>
+    <div class="red-dugmadi">
+      <button type="button" id="btn-objekt-nisan" class="dugme">Na nišan karte</button>
+      <button type="button" id="btn-objekt-moja-lokacija" class="dugme">Na moju lokaciju</button>
+    </div>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Sačuvaj</button>
+      <button type="button" id="btn-objekt-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>
+
+<section id="objekt-detalj" class="dijalog" role="dialog" aria-labelledby="od-naziv" hidden>
+  <h3 id="od-naziv"></h3>
+  <p id="od-info" class="sitno"></p>
+  <p id="od-napomena"></p>
+  <div id="od-foto" class="foto-red"></div>
+  <div class="red-dugmadi">
+    <button id="btn-od-vodi" class="dugme glavno" type="button">Vodi me do</button>
+    <button id="btn-od-obidjeno" class="dugme" type="button">Obiđeno danas</button>
+    <button id="btn-od-uredi" class="dugme" type="button">Uredi</button>
+    <button id="btn-od-obrisi" class="dugme" type="button">Obriši</button>
+    <button id="btn-od-zatvori" class="dugme" type="button">Zatvori</button>
+  </div>
+</section>
+
+<section id="objekti" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="objekti-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="objekti-naslov">Lovački objekti</h2>
+    <button id="btn-objekti-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div id="objekti-filter" class="segment" role="group" aria-label="Filter">
+    <button type="button" data-filter="svi">Svi</button>
+    <button type="button" data-filter="popravka">Treba popravka (za obilazak)</button>
+  </div>
+  <p id="objekti-prazno" class="sitno">Nema objekata. Dodaju se dugmetom + na karti.</p>
+  <ul id="objekti-spisak" class="spisak"></ul>
 </section>
 
 <section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>
