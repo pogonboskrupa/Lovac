@@ -99,7 +99,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Arhitektura: `GpsService` (foreground, `START_STICKY`, wake lock) piše SVE tačke u `GpsBuffer` (`filesDir/gps-buffer.jsonl`); JS (`snimanje.js`) čita od bajt-pomaka preko `AndroidGps.read(offset)` i filtrira po intervalima traga (start/kraj/pauze) u `trag.js mergePoints`. Bafer se briše tek kad nema aktivnog NI nedovršenog traga.
 - `LocationListener` na Androidu ≤ 10 nema default metode: `onStatusChanged/onProviderEnabled/onProviderDisabled` moraju biti implementirane (inače AbstractMethodError).
 - Emulator: logcat bafer je 16 MB, a BOOT_OK se čeka 150 s uz JEDAN ispisan ponovni pokušaj (hladan start WebView-a na emulatoru je ponekad spor).
-- Emulator test snimanja: `am start -e autotest trag` → JS loguje `TRAG_TACAKA n`, a skripta šalje `adb emu geo fix`. Autotest ne traži izuzeće od baterije (dijalog bi prekrio app).
+- Emulator test snimanja: `am start -e autotest trag` → JS loguje `TRAG_TACAKA n` i `TRAG_SERVIS true|false` (iz `AndroidGps.isRunning()`), a skripta šalje `adb emu geo fix`. Autotest ne traži izuzeće od baterije (dijalog bi prekrio app).
 
 **Pločice**
 - Mrežno preuzimanje pločica ide kroz `createLimiter` (max 6 istovremeno, najnovije prvo, prekid na `tileunload`/`tileabort`); bez toga spor server i slab signal ugase sve zahtjeve odjednom. Keš pločica ima gornju granicu (`MAX_CACHED_TILES`).
@@ -112,6 +112,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Sinhronizacija (red slanja)**
 - `zapisi.saveRecord`/`deleteRecord` i `snimanje.saveTrack` (samo završen trag) stavljaju zapis u red (`sync.enqueue`, ključ `store:id`, dedup). Šalje se ZADNJA lokalna verzija (upsert `onConflict: 'id'`); brisanje ide kao nadgrobni zapis `obrisan: true`.
 - Unos u redu se briše SAMO ako je isti `seq` kao poslani: zapis može ponovo ući u red (izmjena/brisanje) dok slanje traje — inače se nadgrobni zapis izgubi.
+- Mreža sigurnosti: svako slanje prvo radi `reconcileQueue()` (vlastiti zapis sa `sinhronizovano: false` kojeg nema u redu ulazi u red). Brisanje: nadgrobni zapis se upisuje u red PRIJE lokalnog brisanja; ako upis u red ne uspije, zapis se ne briše.
 - Ručno "Pošalji sad" (`force`) čeka tekuće slanje pa kreće ponovo (tekuće ne zna za nove zapise).
 - Server (migracija 004, `cuvaj_rev`): stariji rev ne prepisuje noviji, vlasnik se ne mijenja. Tuđi zapisi stižu kroz `pullShared` (`tudji: true`), ne uređuju se i ne šalju nazad; kad ih vlasnik vrati na privatno, uklanjaju se lokalno.
 - Fotografije se (još) NE šalju na server — ostaju na telefonu.
@@ -122,6 +123,11 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Prikaz u pane-u `slojevi` (zIndex 350, ispod tragova/markera) sa VLASTITIM `L.svg` rendererom koji se uklanja kad nijedan sloj nije vidljiv.
 - Admin objavljuje sloj (migracija 005 `slojevi`); spisak sa servera bira samo lake kolone (bez `geojson`), a preuzimanje jednog sloja ide sa `select('*')`.
 - `onShowFileChooser`: za ne-slike (`accept` bez `image`) chooser je `*/*` bez kamere — KML/KMZ/GPX nemaju pouzdan MIME na Androidu.
+
+**Offline karte i preuzimanje**
+- MBTiles / RMaps SQLiteDB: `KarteBridge` kopira fajl u `filesDir/karte` u komadima; pločice servira `MbtilesPathHandler` na `/mbtiles/<id>/{z}/{x}/{y}` (Android SQLite, pločica po pločicu). MBTiles red je TMS (`2^z-1-y`), SQLiteDB ima `z = 17 - zoom`. Sloj ima `minZoom = minzoom` fajla.
+- Preuzimanje područja: samo topo i satelit (OSM pravila zabranjuju masovno preuzimanje), najviše `MAX_PREDOWNLOAD_TILES` (2500); preuzimaju se i DEM pločice.
+- Emulator test offline karte: CI pravi `test.mbtiles` (Python sqlite3), ubacuje ga sa `run-as`, a `-e autotest karte` loguje `KARTE_SPISAK` i `KARTE_PLOCICA`.
 
 **Izvoz**
 - CSV za Excel (`odstrel.js toCsv`): BOM, `;`, decimalni zarez, `\r\n`; ćelija koja počinje sa `= + - @` dobija `'` (zaštita od formula).

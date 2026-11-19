@@ -17,6 +17,9 @@ import { initOpazanja } from './opazanja-ui.js';
 import { initDanas } from './danas-ui.js';
 import { initOdstrel } from './odstrel-ui.js';
 import { initSlojevi } from './slojevi-ui.js';
+import { initMjerenje } from './mjerenje-ui.js';
+import { initPreuzimanje } from './preuzimanje-ui.js';
+import { initKarte, runKarteAutotest } from './karte-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
 import { initSync } from './sync.js';
@@ -50,7 +53,7 @@ function enter(screen) {
   showScreen(screen);
   if (screen === 'mapa' && !mapReady) {
     mapReady = true;
-    const { map, setBase } = initMap(globalThis.L, 'karta');
+    const { map, setBase, activeBase } = initMap(globalThis.L, 'karta');
     initGps(globalThis.L, map);
     try {
       initPostavke({ setBase, onLogout: doLogout, appVer: APP_VER });
@@ -66,6 +69,9 @@ function enter(screen) {
       ['danas', () => initDanas(map)],
       ['odstrel', () => initOdstrel(globalThis.L, map)],
       ['slojevi', () => initSlojevi(globalThis.L, map)],
+      ['mjerenje', () => initMjerenje(globalThis.L, map)],
+      ['preuzimanje', () => initPreuzimanje(map, activeBase)],
+      ['karte', () => initKarte(globalThis.L, map)],
       ['propisi', () => initPropisiAdmin()],
     ]) {
       try { fn(); } catch (err) { console.error(name, err); }
@@ -205,7 +211,9 @@ onDomReady(() => {
     ['sw', registerServiceWorker],
     ['azuriranje', updateCheck],
     ['autotest', () => {
-      if (new URLSearchParams(globalThis.location.search).get('autotest') === 'trag') return runRecordingAutotest();
+      const at = new URLSearchParams(globalThis.location.search).get('autotest');
+      if (at === 'trag') return runRecordingAutotest();
+      if (at === 'karte') return runKarteAutotest();
       return null;
     }],
   ]);

@@ -169,3 +169,57 @@ export const BASE_LAYERS = [
     options: { maxNativeZoom: 19, maxZoom: 19, attribution: '© OpenStreetMap' },
   },
 ];
+
+// ---------------- Preuzimanje područja za offline ----------------
+// OSM-ova pravila zabranjuju masovno preuzimanje sa tile.openstreetmap.org; OpenTopoMap traži umjerenost.
+export const PREDOWNLOAD_ALLOWED = ['topo', 'satelit'];
+export const MAX_PREDOWNLOAD_TILES = 2500;
+const AVG_TILE_KB = 25;
+
+function lonToX(lon, z) {
+  return Math.floor(((lon + 180) / 360) * 2 ** z);
+}
+function latToY(lat, z) {
+  const r = (lat * Math.PI) / 180;
+  return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z);
+}
+
+export function tilesForBounds(b, zMin, zMax) {
+  const out = [];
+  for (let z = zMin; z <= zMax; z++) {
+    const x0 = lonToX(b.west, z);
+    const x1 = lonToX(b.east, z);
+    const y0 = latToY(b.north, z);
+    const y1 = latToY(b.south, z);
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) out.push({ z, x, y });
+  }
+  return out;
+}
+
+export function estimateDownload(n) {
+  return { plocica: n, velicina: `~${Math.max(1, Math.round((n * AVG_TILE_KB) / 1024))} MB` };
+}
+
+export function tileUrl(template, { z, x, y }, subdomains = 'abc') {
+  const s = subdomains[(x + y) % subdomains.length] || 'a';
+  return template.replace('{s}', s).replace('{z}', z).replace('{x}', x).replace('{y}', y);
+}
+
+// Preuzima pločice u keš (preskače već keširane). onProgress(urađeno, ukupno, greške).
+export async function predownloadTiles(urls, { onProgress = () => {}, signal } = {}) {
+  let done = 0;
+  let errors = 0;
+  const cache = await getTileCache();
+  await Promise.all(urls.map(async (url) => {
+    try {
+      if (signal?.aborted) return;
+      if (!(cache && await cache.match(url))) await loadTileBlob(url, signal);
+    } catch (err) {
+      if (err?.name !== 'AbortError') errors++;
+    } finally {
+      done++;
+      onProgress(done, urls.length, errors);
+    }
+  }));
+  return { done, errors };
+}

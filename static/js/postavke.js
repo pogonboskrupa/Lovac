@@ -95,6 +95,7 @@ export function initPostavke({ setBase, onLogout, appVer }) {
     refreshStatic(appVer);
     refreshCacheCount();
     el('postavke').hidden = false;
+    document.dispatchEvent(new CustomEvent('postavke:otvorene'));
   };
   el('btn-postavke').addEventListener('click', open);
   el('btn-postavke-zatvori').addEventListener('click', closeSettings);

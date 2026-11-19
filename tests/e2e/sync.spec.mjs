@@ -118,13 +118,31 @@ test('izabrani lovci: mora se izabrati bar jedan, dijeli_sa ide na server', asyn
 
 test('brisanje šalje nadgrobni zapis', async ({ page }) => {
   const server = { fail: false, sent: [], shared: [] };
+  const logs = [];
+  page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.text()); });
+  const red = () => page.evaluate(() => new Promise((res) => {
+    const r = indexedDB.open('lovac');
+    r.onsuccess = () => { const q = r.result.transaction('red').objectStore('red').getAll(); q.onsuccess = () => res(JSON.stringify(q.result.map((e) => [e.id.slice(0, 14), !!e.tombstone, e.pokusaja]))); };
+  }));
   await setup(page, server);
   await page.goto('/');
   await addObject(page, 'Kratkog vijeka');
+  logs.push(`poslije unosa: ${await red()} poslano=${server.sent.length}`);
   await page.locator('.obj-ikona').click();
   await page.locator('#btn-od-obrisi').click();
   await page.locator('#btn-od-obrisi').click();
-  await sendUntil(page, server, (x) => x.body.obrisan === true);
+  await page.waitForTimeout(300);
+  logs.push(`poslije brisanja: ${await red()} poslano=${server.sent.length}`);
+  try {
+    await sendUntil(page, server, (x) => x.body.obrisan === true);
+  } catch (err) {
+    console.log('LOG', JSON.stringify(logs));
+    console.log('DIJAG', JSON.stringify(server.sent.map((x) => [x.body.obrisan, x.body.rev])), await page.evaluate(() => new Promise((res) => {
+      const r = indexedDB.open('lovac');
+      r.onsuccess = () => { const q = r.result.transaction('red').objectStore('red').getAll(); q.onsuccess = () => res(JSON.stringify(q.result.map((e) => [e.id, !!e.tombstone, e.pokusaja, e.greska, e.sljedeci - Date.now()]))); };
+    })));
+    throw err;
+  }
 });
 
 test('podijeljen tuđi objekat stiže sa servera, prikazuje se kao tuđi i ne može se uređivati; nestaje kad ga vlasnik vrati na privatno', async ({ page }) => {
@@ -145,4 +163,21 @@ test('podijeljen tuđi objekat stiže sa servera, prikazuje se kao tuđi i ne mo
   server.shared = [];
   await page.locator('#btn-posalji-sad').evaluate((b) => b.click());
   await expect(page.locator('.obj-ikona[data-tudji="true"]')).toHaveCount(0);
+});
+
+test('zaštita: neposlan zapis kojeg nema u redu (npr. upis u red nije uspio) ipak se pošalje', async ({ page }) => {
+  const server = { fail: false, sent: [], shared: [] };
+  await setup(page, server);
+  await page.goto('/');
+  await expect(page.locator('#ekran-mapa')).toBeVisible();
+  await page.evaluate(() => new Promise((resolve) => {
+    const r = indexedDB.open('lovac');
+    r.onsuccess = () => {
+      const tx = r.result.transaction('objekti', 'readwrite');
+      tx.objectStore('objekti').put({ id: '44444444-0000-4000-8000-000000000001', naziv: 'Bez reda', vrsta: 'soliste', stanje: 'ispravno',
+        lat: 44.88, lon: 16.15, vidljivost: 'privatno', dijeli_sa: [], rev: 1, created_at: Date.now(), updated_at: Date.now(), sinhronizovano: false });
+      tx.oncomplete = resolve;
+    };
+  }));
+  await sendUntil(page, server, (x) => x.body.id === '44444444-0000-4000-8000-000000000001');
 });

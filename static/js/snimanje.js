@@ -233,11 +233,15 @@ export async function finishRecovered(id) {
 
 export async function deleteTrack(id) {
   const cur = await idbGet('tragovi', id);
-  await idbDelete('tragovi', id);
-  if (cur?.status === 'gotovo' && !cur.tudji) {
-    await enqueue('tragovi', id, { id, obrisan: true, rev: (cur.rev || 0) + 1, updated_at: Date.now() })
-      .catch((err) => console.error('red slanja', err));
+  if ((cur?.status === 'gotovo' || cur?.vrsta === 'potraga') && !cur.tudji) {
+    try {
+      await enqueue('tragovi', id, { id, obrisan: true, rev: (cur.rev || 0) + 1, updated_at: Date.now() });
+    } catch (err) {
+      alarm(`Brisanje traga nije sačuvano za slanje: ${err?.message || err}`);
+      throw err;
+    }
   }
+  await idbDelete('tragovi', id);
 }
 
 export async function renameTrack(id, naziv) {

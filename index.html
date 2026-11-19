@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.1';
+  const APP_VER = 'v0.2.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -93,6 +93,7 @@
     <button type="button" id="btn-dodaj-opazanje">Opažanje divljači</button>
     <button type="button" id="btn-dodaj-odstrel">Odstrel</button>
     <button type="button" id="btn-dodaj-potragu">Potraga (ranjena divljač)</button>
+    <button type="button" id="btn-mjerenje">Mjerenje (udaljenost, površina, nagib)</button>
   </div>
   <div id="meni-podloga" class="meni" hidden>
     <button type="button" data-podloga="topo">Topografska</button>
@@ -120,6 +121,21 @@
       <span id="nav-napomena" class="sitno"></span>
     </div>
     <button id="btn-nav-kraj" class="dugme" type="button">Kraj</button>
+  </div>
+
+  <div id="mjerenje" class="mjerenje" hidden>
+    <div id="mj-nacin" class="segment" role="group" aria-label="Način mjerenja">
+      <button type="button" data-nacin="duzina" aria-pressed="true">Udaljenost</button>
+      <button type="button" data-nacin="povrsina" aria-pressed="false">Površina</button>
+    </div>
+    <p><b id="mj-rezultat"></b> <span class="sitno">(tačaka: <span id="mj-tacke">0</span>)</span></p>
+    <p id="mj-nagib" class="sitno"></p>
+    <p class="sitno">Dodirni kartu ili postavi nišan i dodaj tačku.</p>
+    <div class="red-dugmadi">
+      <button id="btn-mj-nisan" class="dugme glavno" type="button">Dodaj nišan</button>
+      <button id="btn-mj-ponisti" class="dugme" type="button">Poništi</button>
+      <button id="btn-mj-kraj" class="dugme" type="button">Kraj</button>
+    </div>
   </div>
 
   <div class="donji-dio">
@@ -171,6 +187,20 @@
   <p id="postavke-kes" class="red-info">Sačuvano pločica: —</p>
   <p class="sitno">Pločice koje si već vidio prikazuju se i bez signala. Obrisane se moraju ponovo preuzeti uz internet.</p>
   <button id="btn-kes-obrisi" class="dugme" type="button">Obriši keš karte</button>
+  <h3>Offline karte (MBTiles / SQLiteDB)</h3>
+  <p id="karte-podrska" class="sitno">Karta pripremljena u RMaps/MOBAC (fajl na telefonu) radi bez interneta i bez preuzimanja pločica.</p>
+  <button id="btn-karte-uvoz" class="dugme" type="button">Uvezi offline kartu</button>
+  <p id="karte-status" class="status" role="status"></p>
+  <ul id="karte-spisak" class="spisak"></ul>
+  <h3>Preuzmi područje za offline</h3>
+  <p class="sitno">Preuzima se područje koje je sada na karti (izabrana podloga i teren za N.V./nagib). Za cijelo lovište koristi MBTiles fajl.</p>
+  <label>Najviše detalja<select id="pred-zoom"><option value="15">zoom 15 (pregled)</option><option value="16" selected>zoom 16</option><option value="17">zoom 17 (najviše)</option></select></label>
+  <p id="pred-procjena" class="sitno"></p>
+  <progress id="pred-napredak" max="100" value="0" hidden></progress>
+  <div class="red-dugmadi">
+    <button id="btn-pred-preuzmi" class="dugme glavno" type="button">Preuzmi područje</button>
+    <button id="btn-pred-prekini" class="dugme" type="button" hidden>Prekini</button>
+  </div>
 
   <h3>Tragovi</h3>
   <button id="btn-moji-tragovi" class="dugme" type="button">Moji tragovi</button>

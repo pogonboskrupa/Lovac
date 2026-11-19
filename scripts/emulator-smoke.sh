@@ -61,7 +61,36 @@ if [ -z "$max" ] || [ "$max" -lt 3 ]; then
   echo "Snimanje traga: stiglo ${max:-0} tačaka kroz native servis (očekivano ≥ 3)"
   diagnoza; exit 1
 fi
-adb shell dumpsys activity services $PKG | grep -q GpsService || { echo "GpsService ne radi tokom snimanja"; diagnoza; exit 1; }
+echo "---- dumpsys (informativno) ----"
+adb shell dumpsys activity services $PKG | grep -E "ServiceRecord|isForeground" | head -5 || true
+# Stanje servisa iz samog mosta (AndroidGps.isRunning) u zadnjem logu autotesta.
+last=$(grep -oE "TRAG_SERVIS (true|false)" logcat-js.txt | tail -1)
+[ "$last" = "TRAG_SERVIS true" ] || { echo "GpsService ne radi tokom snimanja ($last)"; diagnoza; exit 1; }
 echo "Snimanje traga OK ($max tačaka)"
+# ---- offline karta (MBTiles) kroz native SQLite + WebViewAssetLoader ----
+python3 - <<'PY'
+import base64, sqlite3, os
+if os.path.exists('test.mbtiles'):
+    os.remove('test.mbtiles')
+png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+c = sqlite3.connect('test.mbtiles')
+c.execute('create table metadata (name text, value text)')
+c.execute('create table tiles (zoom_level integer, tile_column integer, tile_row integer, tile_data blob)')
+c.executemany('insert into metadata values (?, ?)', [('name', 'Test karta'), ('bounds', '16.0,44.8,16.3,45.0'), ('format', 'png')])
+# z12, x 2231, y 1475 (XYZ) -> TMS red 4095 - 1475 = 2620
+c.execute('insert into tiles values (12, 2231, 2620, ?)', (png,))
+c.commit()
+PY
+adb shell am force-stop $PKG
+adb push test.mbtiles /data/local/tmp/test.mbtiles
+adb shell "cat /data/local/tmp/test.mbtiles | run-as $PKG sh -c 'mkdir -p files/karte && cat > files/karte/test.mbtiles'"
+adb logcat -c
+adb shell am start -W -n $PKG/.MainActivity -e autotest karte
+cekaj KARTE_PLOCICA 120 || { echo "KARTE_PLOCICA nije stigla"; adb logcat -d -s LovacJS:I | tail -20; diagnoza; exit 1; }
+adb logcat -d -s LovacJS:I | grep -E "KARTE_" | tee -a logcat-js.txt
+adb logcat -d -s LovacJS:I | grep -q "KARTE_SPISAK 1 test.mbtiles:12-12" || { echo "Spisak offline karata nije ispravan"; diagnoza; exit 1; }
+adb logcat -d -s LovacJS:I | grep -qE "KARTE_PLOCICA 200 image/png [1-9]" || { echo "Pločica iz MBTiles nije servirana"; diagnoza; exit 1; }
+echo "Offline karta OK"
+
 adb exec-out screencap -p > emulator.png || true
 echo "Emulator test OK"

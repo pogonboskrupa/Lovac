@@ -48,11 +48,17 @@ export async function updateRecord(store, id, patch) {
 export const getRecord = (store, id) => idbGet(store, id);
 export const listRecords = (store) => idbAll(store);
 // Brisanje šalje "nadgrobni" zapis (obrisan: true), da nestane i na serveru i drugim uređajima.
+// Redoslijed je bitan: nadgrobni zapis mora biti siguran u redu PRIJE lokalnog brisanja,
+// inače bi neuspio upis u red zauvijek ostavio zapis na serveru.
 export async function deleteRecord(store, id) {
   const cur = await idbGet(store, id);
-  await idbDelete(store, id);
   if (cur && !cur.tudji) {
-    await enqueue(store, id, { id, obrisan: true, rev: (cur.rev || 0) + 1, updated_at: Date.now() })
-      .catch((err) => console.error('red slanja', err));
+    try {
+      await enqueue(store, id, { id, obrisan: true, rev: (cur.rev || 0) + 1, updated_at: Date.now() });
+    } catch (err) {
+      alarm(`Brisanje nije sačuvano za slanje: ${err?.message || err}`);
+      throw err;
+    }
   }
+  await idbDelete(store, id);
 }

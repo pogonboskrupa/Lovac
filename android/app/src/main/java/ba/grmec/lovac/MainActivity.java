@@ -41,6 +41,7 @@ public class MainActivity extends Activity {
     private static final int REQ_LOCATION = 41;
     private static final int REQ_FILE = 51;
     private ValueCallback<Uri[]> fileCallback;
+    private KarteBridge karteBridge;
     private Uri cameraUri;
 
     private WebView webView;
@@ -73,6 +74,7 @@ public class MainActivity extends Activity {
         assetLoader = new WebViewAssetLoader.Builder()
                 .setDomain(HOST)
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .addPathHandler("/mbtiles/", new MbtilesPathHandler(this))
                 .build();
 
         WebSettings s = webView.getSettings();
@@ -145,6 +147,8 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new GpsBridge(this), "AndroidGps");
         webView.addJavascriptInterface(new ShareBridge(this), "AndroidShare");
         webView.addJavascriptInterface(new PrintBridge(this), "AndroidPrint");
+        karteBridge = new KarteBridge(this, webView);
+        webView.addJavascriptInterface(karteBridge, "AndroidKarte");
 
         if (savedInstanceState != null) webView.restoreState(savedInstanceState);
         else webView.loadUrl(startUrl(getIntent()));
@@ -153,7 +157,7 @@ public class MainActivity extends Activity {
     // CI emulator test pokreće snimanje sa "-e autotest trag"; drugo se ignoriše.
     static String startUrl(Intent intent) {
         String t = intent == null ? null : intent.getStringExtra("autotest");
-        return "trag".equals(t) ? START_URL + "?autotest=trag" : START_URL;
+        return "trag".equals(t) || "karte".equals(t) ? START_URL + "?autotest=" + t : START_URL;
     }
 
     private boolean openFileChooser(ValueCallback<Uri[]> cb, WebChromeClient.FileChooserParams params) {
@@ -201,6 +205,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == KarteBridge.REQ_KARTA) {
+            karteBridge.onResult(resultCode, data);
+            return;
+        }
         if (requestCode != REQ_FILE || fileCallback == null) return;
         Uri[] result = null;
         if (resultCode == RESULT_OK) {

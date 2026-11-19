@@ -60,3 +60,15 @@ test('backoff raste i ima gornju granicu', () => {
   assert.equal(nextDelay(3), 40000);
   assert.equal(nextDelay(30), 30 * 60000);
 });
+
+import { needsSending } from '../../static/js/sync.js';
+
+test('mreža sigurnosti: šta se šalje', () => {
+  assert.equal(needsSending('objekti', { sinhronizovano: false }), true);
+  assert.equal(needsSending('objekti', { sinhronizovano: true }), false);
+  assert.equal(needsSending('objekti', { sinhronizovano: false, tudji: true }), false);
+  assert.equal(needsSending('objekti', {}), false, 'stari zapis bez polja se ne šalje naslijepo');
+  assert.equal(needsSending('tragovi', { sinhronizovano: false, status: 'snima', vrsta: 'obilazak' }), false);
+  assert.equal(needsSending('tragovi', { sinhronizovano: false, status: 'snima', vrsta: 'potraga' }), true);
+  assert.equal(needsSending('tragovi', { sinhronizovano: false, status: 'gotovo' }), true);
+});

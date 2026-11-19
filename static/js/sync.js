@@ -92,6 +92,27 @@ export async function enqueue(store, recId, tombstone = null) {
   emitQueueChange();
 }
 
+// Mreža sigurnosti: vlastiti neposlani zapis kojeg (iz bilo kog razloga) nema u redu ulazi u red.
+export function needsSending(store, rec) {
+  if (rec.tudji || rec.sinhronizovano !== false) return false;
+  if (store === 'tragovi') return rec.status === 'gotovo' || rec.vrsta === 'potraga';
+  return true;
+}
+
+export async function reconcileQueue() {
+  const queued = new Set((await idbAll('red')).map((e) => e.id));
+  let added = 0;
+  for (const store of SYNC_STORES) {
+    for (const rec of await idbAll(store)) {
+      if (needsSending(store, rec) && !queued.has(`${store}:${rec.id}`)) {
+        await enqueue(store, rec.id);
+        added++;
+      }
+    }
+  }
+  return added;
+}
+
 async function markSynced(store, rec) {
   const cur = await idbGet(store, rec.id);
   if (cur && cur.rev === rec.rev && cur.sinhronizovano !== true) await idbPut(store, { ...cur, sinhronizovano: true });
@@ -120,6 +141,11 @@ export async function flushQueue({ force = false } = {}) {
     if (!sb || !me?.odobren || !(await sessionReady(sb))) {
       result.preostalo = await queueCount();
       return result;
+    }
+    try {
+      await reconcileQueue();
+    } catch (err) {
+      console.error('usklađivanje reda', err);
     }
     const now = Date.now();
     const entries = (await idbAll('red')).sort((a, b) => a.dodano - b.dodano);

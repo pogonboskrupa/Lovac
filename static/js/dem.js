@@ -84,3 +84,18 @@ export async function terrainAt(lat, lon, { allowNetwork = true } = {}) {
   const dzdy = (sample(data, t.px, t.py + k) - sample(data, t.px, t.py - k)) / (2 * k);
   return { visina: sample(data, t.px, t.py), uzbrdo: uphillAspect(dzdx, dzdy) };
 }
+
+// DEM pločice za područje (za N.V., nagib i termiku bez interneta).
+export async function predownloadDem(bounds, signal) {
+  const z = DEM_ZOOM;
+  const a = tilePixel(bounds.north, bounds.west, z);
+  const b = tilePixel(bounds.south, bounds.east, z);
+  let n = 0;
+  for (let x = a.x; x <= b.x; x++) {
+    for (let y = a.y; y <= b.y; y++) {
+      if (signal?.aborted) return n;
+      try { await tileBlob(DEM_URL(z, x, y), true); n++; } catch (err) { console.warn('DEM', err.message); }
+    }
+  }
+  return n;
+}

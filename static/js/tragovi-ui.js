@@ -285,6 +285,7 @@ export async function runRecordingAutotest() {
   const h = setInterval(() => {
     const cur = activeRecordings().find((r) => r.id === tr.id);
     console.info(`TRAG_TACAKA ${cur ? cur.tacke.length : -1}`);
+    console.info(`TRAG_SERVIS ${Boolean(globalThis.AndroidGps?.isRunning?.())}`);
   }, 2000);
-  setTimeout(async () => { clearInterval(h); await stopRecording(tr.id); console.info('TRAG_STOP'); }, 90000);
+  setTimeout(async () => { clearInterval(h); await stopRecording(tr.id); console.info('TRAG_STOP'); }, 180000);
 }
