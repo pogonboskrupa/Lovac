@@ -16,6 +16,8 @@ import { initObjekti } from './objekti-ui.js';
 import { initOpazanja } from './opazanja-ui.js';
 import { initDanas } from './danas-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
+import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
+import { initSync } from './sync.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
@@ -55,6 +57,7 @@ function enter(screen) {
     }
     for (const [name, fn] of [
       ['meniji', () => { wireMenu('btn-spiskovi', 'meni-spiskovi'); wireMenu('btn-dodaj', 'meni-dodaj'); }],
+      ['dijeljenje', () => setShareDialog(initDijeljenje())],
       ['navigacija', () => initNavigation(globalThis.L, map)],
       ['objekti', () => initObjekti(globalThis.L, map)],
       ['opazanja', () => initOpazanja(globalThis.L, map)],
@@ -194,6 +197,7 @@ onDomReady(() => {
     }],
     ['sesija', () => backgroundSession()],
     ['spiskovi', () => (isServerConfigured() ? refreshAllSpiskovi() : null)],
+    ['sinhronizacija', () => (isServerConfigured() ? initSync() : null)],
     ['sw', registerServiceWorker],
     ['azuriranje', updateCheck],
     ['autotest', () => {

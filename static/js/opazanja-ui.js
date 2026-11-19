@@ -7,6 +7,8 @@ import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
+import { shareDialog, memberName } from './dijeljenje-ui.js';
+import { VIDLJIVOST } from './zapisi.js';
 
 const STORE = 'opazanja';
 const LAST_KEY = 'lovac.opazanje.zadnja_vrsta';
@@ -66,7 +68,8 @@ export function initOpazanja(L, map) {
       L.circleMarker([o.lat, o.lon], {
         radius: 6 + Math.min(o.broj || 1, 10) / 2, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.9, className: 'op-tacka',
       }).bindPopup(`<b>${escapeHtml(lookupNaziv(vrste, o.vrsta))}</b> × ${o.broj}<br>${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))}`
-        + `<br>${escapeHtml(formatWhen(o.vrijeme))}${o.napomena ? `<br>${escapeHtml(o.napomena)}` : ''}`).addTo(layer);
+        + `<br>${escapeHtml(formatWhen(o.vrijeme))}${o.napomena ? `<br>${escapeHtml(o.napomena)}` : ''}`
+        + `${o.tudji ? `<br><i>Podijelio: ${escapeHtml(memberName(o.vlasnik_id))}</i>` : ''}`).addTo(layer);
     }
   };
 
@@ -195,10 +198,11 @@ export function initOpazanja(L, map) {
       <li class="trag-red" data-id="${escapeHtml(o.id)}">
         <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} × ${o.broj}</b>
         <span class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</span>
-        ${o.napomena ? `<span class="sitno">${escapeHtml(o.napomena)}</span>` : ''}</div>
+        ${o.napomena ? `<span class="sitno">${escapeHtml(o.napomena)}</span>` : ''}
+        <span class="sitno">${o.tudji ? `Podijelio: ${escapeHtml(memberName(o.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
         <div class="red-dugmadi">
           <button type="button" class="dugme" data-akcija="prikazi">Na karti</button>
-          <button type="button" class="dugme" data-akcija="obrisi">Obriši</button>
+          ${o.tudji ? '' : '<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button>'}
         </div>
       </li>`).join('');
     $('opazanja-spisak').querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
@@ -225,6 +229,8 @@ export function initOpazanja(L, map) {
   $('op-filter-vrsta').addEventListener('change', (e) => changeFilter({ vrsta: e.target.value }));
   $('op-na-karti').addEventListener('click', () => changeFilter({ naKarti: !filter.naKarti }));
   $('opazanja-spisak').addEventListener('click', async (e) => {
+    const share = e.target.closest('[data-akcija="dijeli"]');
+    if (share) { await shareDialog()?.open(STORE, share.closest('[data-id]').dataset.id); return; }
     const b = e.target.closest('[data-akcija="prikazi"]');
     if (!b) return;
     const o = await getRecord(STORE, b.closest('[data-id]').dataset.id);
@@ -245,5 +251,9 @@ export function initOpazanja(L, map) {
     return false;
   });
 
+  document.addEventListener('zapisi:promjena', () => {
+    renderLayer().catch((err) => console.error('opažanja', err));
+    if (!overview.hidden) renderOverview();
+  });
   renderLayer().catch((err) => console.error('opažanja', err));
 }

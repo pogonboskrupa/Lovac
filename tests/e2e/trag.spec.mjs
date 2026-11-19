@@ -96,7 +96,7 @@ test('browser: snimanje preko watchPosition i spisak tragova sa dužinom', async
   await expect(page.locator('#tragovi')).toBeVisible();
   const row = page.locator('#tragovi-spisak .trag-red');
   await expect(row).toHaveCount(1);
-  await expect(row.locator('.sitno')).toContainText(/1\d\d m/);
+  await expect(row.locator('.sitno').first()).toContainText(/1\d\d m/);
   expect(await page.evaluate(() => window.__nazad())).toBe(true);
   await expect(page.locator('#tragovi')).toBeHidden();
 });

@@ -9,6 +9,7 @@ import {
 import { idbPut, idbGet, idbAll, idbDelete } from './db.js';
 import { alarm } from './ui.js';
 import { uuid } from './zapisi.js';
+import { enqueue } from './sync.js';
 
 const NATIVE_POLL_MS = 3000;
 const RAW_WINDOW_MS = 4 * 60 * 1000;
@@ -36,12 +37,16 @@ export function hasNativeGps() {
 
 // Kritičan upis: neuspjeh se javlja glasno, nikad tihi catch.
 export async function saveTrack(trag) {
+  const rec = { ...trag, izmijenjen: Date.now(), rev: (trag.rev || 0) + 1, sinhronizovano: false };
   try {
-    await idbPut('tragovi', { ...trag, izmijenjen: Date.now() });
+    await idbPut('tragovi', rec);
   } catch (err) {
     alarm(`Trag "${trag.naziv}" nije sačuvan: ${err?.message || err}`);
     throw err;
   }
+  // Na server ide samo završen trag.
+  if (rec.status === 'gotovo' && !rec.tudji) await enqueue('tragovi', rec.id).catch((err) => console.error('red slanja', err));
+  return rec;
 }
 
 function emit() {
@@ -224,7 +229,12 @@ export async function finishRecovered(id) {
 }
 
 export async function deleteTrack(id) {
+  const cur = await idbGet('tragovi', id);
   await idbDelete('tragovi', id);
+  if (cur?.status === 'gotovo' && !cur.tudji) {
+    await enqueue('tragovi', id, { id, obrisan: true, rev: (cur.rev || 0) + 1, updated_at: Date.now() })
+      .catch((err) => console.error('red slanja', err));
+  }
 }
 
 export async function renameTrack(id, naziv) {

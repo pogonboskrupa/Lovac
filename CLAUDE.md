@@ -108,6 +108,13 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Admin spiskovi (`spiskovi.js`): zadani spisak u kodu samo za nazive (vrste objekata/divljači); `lovostaj` i `lovno_vrijeme` nemaju zadane vrijednosti. Za naziv starog zapisa koristi `getSpisakAll` (i neaktivni redovi).
 - Novi store u IndexedDB-u traži podizanje `DB_VERSION` u `db.js` (onupgradeneeded pravi samo store-ove koji fale).
 
+**Sinhronizacija (red slanja)**
+- `zapisi.saveRecord`/`deleteRecord` i `snimanje.saveTrack` (samo završen trag) stavljaju zapis u red (`sync.enqueue`, ključ `store:id`, dedup). Šalje se ZADNJA lokalna verzija (upsert `onConflict: 'id'`); brisanje ide kao nadgrobni zapis `obrisan: true`.
+- Unos u redu se briše SAMO ako je isti `seq` kao poslani: zapis može ponovo ući u red (izmjena/brisanje) dok slanje traje — inače se nadgrobni zapis izgubi.
+- Ručno "Pošalji sad" (`force`) čeka tekuće slanje pa kreće ponovo (tekuće ne zna za nove zapise).
+- Server (migracija 004, `cuvaj_rev`): stariji rev ne prepisuje noviji, vlasnik se ne mijenja. Tuđi zapisi stižu kroz `pullShared` (`tudji: true`), ne uređuju se i ne šalju nazad; kad ih vlasnik vrati na privatno, uklanjaju se lokalno.
+- Fotografije se (još) NE šalju na server — ostaju na telefonu.
+
 **Propisi, svjetlo, vjetar**
 - Sunce: puni NOAA algoritam u `sunce.js` (test protiv Python `astral`, tolerancija 1 min). Lovno vrijeme = admin pravilo (`propisi.js pickRule`: posebno za vrstu, inače opšte); bez pravila UI kaže "nije unio administrator", nikad zadana vrijednost.
 - Lovostaj: periodi 'MM-DD' se ponavljaju godišnje i mogu preći Novu godinu (`inPeriod`); vrsta bez ijednog reda = "Nije uneseno". Admin unosi datume kao dd.mm. (`parseDayMonth`).

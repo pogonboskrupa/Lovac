@@ -244,6 +244,11 @@ select {
 .od-vjetar .dugme { background: var(--povrsina); color: var(--tekst); }
 .od-vjetar .dugme[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); }
 
+/* Dijeljenje i red slanja */
+.znacka-dugme { min-height: 44px; border: 0; font: inherit; font-size: 14px; background: var(--upozorenje); color: var(--upozorenje-tekst); font-weight: 600; }
+.clanovi { max-height: 40vh; overflow-y: auto; margin: 8px 0; }
+.obj-ikona[data-tudji="true"] { border-radius: 8px; }
+
 /* Obavijesti */
 .traka-obavijest, .alarm {
   position: fixed; left: 8px; right: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 2000;

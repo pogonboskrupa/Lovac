@@ -9,6 +9,8 @@ import {
 } from './trag.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { shareFile } from './dijeljenje.js';
+import { shareDialog, memberName } from './dijeljenje-ui.js';
+import { VIDLJIVOST } from './zapisi.js';
 
 const LIVE_STYLE = { color: '#ff5a1f', weight: 4, opacity: 0.9, interactive: false };
 const SHOWN_STYLE = { color: '#2f7dff', weight: 4, opacity: 0.85, interactive: false };
@@ -105,13 +107,14 @@ export function initTragovi(L, map) {
     $('tragovi-prazno').hidden = tracks.length > 0;
     ul.innerHTML = tracks.map((t) => `
       <li class="trag-red" data-id="${escapeHtml(t.id)}">
-        <div class="trag-naslov"><b>${escapeHtml(t.naziv)}</b><span class="sitno">${escapeHtml(trackSummary(t))}</span></div>
+        <div class="trag-naslov"><b>${escapeHtml(t.naziv)}</b><span class="sitno">${escapeHtml(trackSummary(t))}</span>
+        <span class="sitno">${t.tudji ? `Podijelio: ${escapeHtml(memberName(t.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[t.vidljivost || 'privatno'])}`}</span></div>
         <div class="red-dugmadi">
           <button type="button" class="dugme" data-akcija="prikazi">Prikaži</button>
           <button type="button" class="dugme" data-akcija="uglacaj" aria-pressed="${t.uglacan}">${t.uglacan ? 'Original' : 'Uglačaj'}</button>
           <button type="button" class="dugme" data-akcija="gpx">GPX</button>
           <button type="button" class="dugme" data-akcija="kml">KML</button>
-          <button type="button" class="dugme" data-akcija="obrisi">Obriši</button>
+          ${t.tudji ? '' : '<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button>'}
         </div>
       </li>`).join('');
     ul.querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
@@ -139,6 +142,10 @@ export function initTragovi(L, map) {
       case 'uglacaj':
         await setSmoothed(id, !tr.uglacan);
         await renderList();
+        break;
+      case 'dijeli':
+        list.hidden = true;
+        await shareDialog()?.open('tragovi', id);
         break;
       case 'gpx':
         shareFile(trackFileName(tr, 'gpx'), 'application/gpx+xml', toGpx(tr, pts));

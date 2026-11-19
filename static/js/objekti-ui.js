@@ -9,6 +9,8 @@ import { formatDistance } from './trag.js';
 import { startNavigation } from './navigacija.js';
 import { initVjetar } from './vjetar-ui.js';
 import { isStandType, SEKTORI } from './vjetar.js';
+import { shareDialog, memberName } from './dijeljenje-ui.js';
+import { VIDLJIVOST } from './zapisi.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 
 const STORE = 'objekti';
@@ -19,7 +21,7 @@ function iconFor(vrste, kod) {
 }
 
 function markerHtml(vrste, o) {
-  return `<div class="obj-ikona" data-vrsta="${escapeHtml(o.vrsta)}" data-stanje="${escapeHtml(o.stanje)}" data-id="${escapeHtml(o.id)}">`
+  return `<div class="obj-ikona" data-vrsta="${escapeHtml(o.vrsta)}" data-stanje="${escapeHtml(o.stanje)}" data-id="${escapeHtml(o.id)}" data-tudji="${Boolean(o.tudji)}">`
     + `<svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrste, o.vrsta))}"/></svg></div>`;
 }
 
@@ -192,6 +194,9 @@ export function initObjekti(L, map) {
     $('od-naziv').textContent = o.naziv;
     $('od-info').textContent = `${lookupNaziv(vrsteAll, o.vrsta)} · ${STANJA[o.stanje] || o.stanje} · zadnji obilazak ${formatDateBs(o.zadnji_obilazak)}`;
     $('od-napomena').textContent = o.napomena || '';
+    $('od-vlasnik').textContent = o.tudji ? `Podijelio: ${memberName(o.vlasnik_id)}` : `Vidljivost: ${VIDLJIVOST[o.vidljivost || 'privatno']}`;
+    detail.dataset.tudji = String(Boolean(o.tudji));
+    ['btn-od-uredi', 'btn-od-obidjeno', 'btn-od-obrisi', 'btn-od-dijeli'].forEach((b) => { $(b).hidden = Boolean(o.tudji); });
     await renderPhotos($('od-foto'), o.fotografije || [], false);
     detail.dataset.stanje = o.stanje;
     detail.hidden = false;
@@ -200,6 +205,11 @@ export function initObjekti(L, map) {
   };
   const closeDetail = () => { detail.hidden = true; detailId = null; releaseUrls(); vjetar.hide(); };
   $('btn-od-zatvori').addEventListener('click', closeDetail);
+  $('btn-od-dijeli').addEventListener('click', async () => {
+    const id = detailId;
+    closeDetail();
+    await shareDialog()?.open(STORE, id);
+  });
   $('btn-od-uredi').addEventListener('click', async () => openForm(await getRecord(STORE, detailId)));
   $('btn-od-obidjeno').addEventListener('click', async () => {
     await updateRecord(STORE, detailId, { zadnji_obilazak: todayIso() });
@@ -268,6 +278,7 @@ export function initObjekti(L, map) {
     return false;
   });
 
+  document.addEventListener('zapisi:promjena', () => renderMarkers().catch((err) => console.error('objekti', err)));
   renderMarkers().catch((err) => console.error('objekti', err));
   return { renderMarkers };
 }

@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.1.8';
+  const APP_VER = 'v0.1.9';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -73,6 +73,7 @@
   <div class="gornja-traka">
     <span id="veza" class="znacka" data-veza="nepoznato"></span>
     <span id="bez-servera" class="znacka upozorenje" hidden>Server nije podešen</span>
+    <button id="red-znacka" class="znacka znacka-dugme" type="button" hidden></button>
     <span class="razmak"></span>
     <button id="btn-tema" class="ikona-dugme" type="button" aria-label="Dnevni / noćni prikaz"><svg class="ic"><use href="#ic-sun"/></svg></button>
     <button id="btn-podloga" class="ikona-dugme" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
@@ -171,6 +172,11 @@
     <button id="btn-propisi" class="dugme" type="button">Propisi i spiskovi</button>
   </div>
 
+  <h3>Slanje na server</h3>
+  <p id="postavke-red" class="red-info"></p>
+  <p id="postavke-red-greska" class="sitno"></p>
+  <button id="btn-posalji-sad" class="dugme" type="button">Pošalji sad</button>
+
   <h3>Nalog</h3>
   <p id="postavke-nalog" class="red-info"></p>
   <p class="red-info">Veza sa serverom: <b id="postavke-server"></b></p>
@@ -243,6 +249,7 @@
   <h3 id="od-naziv"></h3>
   <p id="od-info" class="sitno"></p>
   <p id="od-napomena"></p>
+  <p id="od-vlasnik" class="sitno"></p>
   <div id="od-vjetar" class="od-vjetar" hidden>
     <p id="od-vjetar-tekst"></p>
     <p id="od-vjetar-stanje" class="vjetar-stanje"></p>
@@ -254,6 +261,7 @@
     <button id="btn-od-vodi" class="dugme glavno" type="button">Vodi me do</button>
     <button id="btn-od-obidjeno" class="dugme" type="button">Obiđeno danas</button>
     <button id="btn-od-uredi" class="dugme" type="button">Uredi</button>
+    <button id="btn-od-dijeli" class="dugme" type="button">Dijeli</button>
     <button id="btn-od-obrisi" class="dugme" type="button">Obriši</button>
     <button id="btn-od-zatvori" class="dugme" type="button">Zatvori</button>
   </div>
@@ -354,6 +362,21 @@
   <p id="propisi-status" class="status" role="status"></p>
   <form id="propisi-forma" novalidate hidden></form>
   <ul id="propisi-spisak" class="spisak"></ul>
+</section>
+
+<section id="dijeljenje" class="dijalog" role="dialog" aria-labelledby="dijeljenje-naslov" hidden>
+  <h3 id="dijeljenje-naslov">Ko vidi ovaj zapis?</h3>
+  <div id="dijeljenje-izbor" class="segment" role="group" aria-label="Vidljivost">
+    <button type="button" data-vidljivost="privatno">Samo ja</button>
+    <button type="button" data-vidljivost="drustvo">Društvo</button>
+    <button type="button" data-vidljivost="izabrani">Izabrani lovci</button>
+  </div>
+  <p id="dijeljenje-opis" class="sitno"></p>
+  <div id="dijeljenje-clanovi" class="clanovi" hidden></div>
+  <div class="red-dugmadi">
+    <button id="btn-dijeljenje-sacuvaj" class="dugme glavno" type="button">Sačuvaj</button>
+    <button id="btn-dijeljenje-odustani" class="dugme" type="button">Odustani</button>
+  </div>
 </section>
 
 <section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>

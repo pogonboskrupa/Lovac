@@ -3,6 +3,7 @@
 
 import { idbPut, idbGet, idbAll, idbDelete } from './db.js';
 import { alarm } from './ui.js';
+import { enqueue } from './sync.js';
 
 export const VIDLJIVOST = { privatno: 'Samo ja', drustvo: 'Društvo', izabrani: 'Izabrani lovci' };
 
@@ -29,11 +30,13 @@ export function bumpRecord(rec, patch, now = Date.now()) {
 export async function saveRecord(store, rec) {
   try {
     await idbPut(store, rec);
-    return rec;
   } catch (err) {
     alarm(`Zapis nije sačuvan: ${err?.message || err}`);
     throw err;
   }
+  // Tuđi (podijeljeni) zapisi se ne šalju nazad; svoje šalje red kad bude veze.
+  if (!rec.tudji) await enqueue(store, rec.id).catch((err) => console.error('red slanja', err));
+  return rec;
 }
 
 export async function updateRecord(store, id, patch) {
@@ -44,4 +47,12 @@ export async function updateRecord(store, id, patch) {
 
 export const getRecord = (store, id) => idbGet(store, id);
 export const listRecords = (store) => idbAll(store);
-export const deleteRecord = (store, id) => idbDelete(store, id);
+// Brisanje šalje "nadgrobni" zapis (obrisan: true), da nestane i na serveru i drugim uređajima.
+export async function deleteRecord(store, id) {
+  const cur = await idbGet(store, id);
+  await idbDelete(store, id);
+  if (cur && !cur.tudji) {
+    await enqueue(store, id, { id, obrisan: true, rev: (cur.rev || 0) + 1, updated_at: Date.now() })
+      .catch((err) => console.error('red slanja', err));
+  }
+}
