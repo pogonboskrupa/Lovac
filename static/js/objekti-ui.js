@@ -3,10 +3,12 @@
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, updateRecord, getRecord, listRecords, deleteRecord } from './zapisi.js';
 import { STANJA, needsRepair, sortByDistance, todayIso, formatDateBs } from './objekti.js';
-import { savePhoto, photoUrl, deletePhoto } from './foto.js';
+import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
 import { formatDistance } from './trag.js';
 import { startNavigation } from './navigacija.js';
+import { initVjetar } from './vjetar-ui.js';
+import { isStandType, SEKTORI } from './vjetar.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 
 const STORE = 'objekti';
@@ -21,27 +23,13 @@ function markerHtml(vrste, o) {
     + `<svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrste, o.vrsta))}"/></svg></div>`;
 }
 
-// Object URL-ovi slika se oslobađaju kad se prikaz zatvori.
-const shownUrls = [];
-function releaseUrls() {
-  while (shownUrls.length) URL.revokeObjectURL(shownUrls.pop());
-}
-
-async function renderPhotos(container, ids, removable) {
-  releaseUrls();
-  const parts = [];
-  for (const id of ids) {
-    const url = await photoUrl(id);
-    if (!url) continue;
-    shownUrls.push(url);
-    parts.push(`<figure class="foto" data-foto="${escapeHtml(id)}"><img src="${url}" alt="Fotografija">`
-      + `${removable ? '<button type="button" class="foto-ukloni" aria-label="Ukloni fotografiju">×</button>' : ''}</figure>`);
-  }
-  container.innerHTML = parts.join('');
-}
+const photos = createPhotoStrip();
+const renderPhotos = (container, ids, removable) => photos.render(container, ids, removable);
+const releaseUrls = () => photos.release();
 
 export function initObjekti(L, map) {
   const layer = L.layerGroup().addTo(map);
+  const vjetar = initVjetar(L, map);
   const form = $('forma-objekt');
   const sheet = $('objekt-forma');
   const detail = $('objekt-detalj');
@@ -71,6 +59,13 @@ export function initObjekti(L, map) {
     $('objekt-pozicija').textContent = `Pozicija: ${editing.lat.toFixed(6)}, ${editing.lon.toFixed(6)} (${editing.izvorPozicije})`;
   };
 
+  // Dozvoljeni smjerovi vjetra (odakle duva) samo za čeke i zaklone.
+  const renderWindSectors = () => {
+    const show = isStandType(editing.vrsta);
+    $('objekt-vjetar-blok').hidden = !show;
+    $('objekt-vjetar').innerHTML = SEKTORI.map((n, i) => `<button type="button" data-sektor="${i}" aria-pressed="${editing.vjetar.includes(i)}">${n}</button>`).join('');
+  };
+
   const openForm = async (rec = null) => {
     const vrste = await getSpisak('objekat_vrste');
     const c = map.getCenter();
@@ -89,6 +84,8 @@ export function initObjekti(L, map) {
       + `<svg class="ic"><use href="#ic-obj-${escapeHtml(v.ikona || 'pin')}"/></svg><span>${escapeHtml(v.naziv)}</span></button>`).join('');
     setPressed($('objekt-vrste'), 'data-kod', editing.vrsta);
     setPressed($('objekt-stanje'), 'data-stanje', editing.stanje);
+    editing.vjetar = [...(rec?.dozvoljeni_vjetar || [])];
+    renderWindSectors();
     form.naziv.value = rec?.naziv || '';
     form.zadnji_obilazak.value = rec?.zadnji_obilazak || todayIso();
     form.napomena.value = rec?.napomena || '';
@@ -114,6 +111,14 @@ export function initObjekti(L, map) {
     if (!b) return;
     editing.vrsta = b.dataset.kod;
     setPressed($('objekt-vrste'), 'data-kod', editing.vrsta);
+    renderWindSectors();
+  });
+  $('objekt-vjetar').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sektor]');
+    if (!b) return;
+    const s = Number(b.dataset.sektor);
+    editing.vjetar = editing.vjetar.includes(s) ? editing.vjetar.filter((x) => x !== s) : [...editing.vjetar, s].sort();
+    renderWindSectors();
   });
   $('objekt-stanje').addEventListener('click', (e) => {
     const b = e.target.closest('[data-stanje]');
@@ -163,6 +168,7 @@ export function initObjekti(L, map) {
       zadnji_obilazak: form.zadnji_obilazak.value || null,
       napomena: form.napomena.value.trim(),
       fotografije: editing.foto,
+      dozvoljeni_vjetar: isStandType(editing.vrsta) ? editing.vjetar : [],
       lat: editing.lat,
       lon: editing.lon,
     };
@@ -189,8 +195,10 @@ export function initObjekti(L, map) {
     await renderPhotos($('od-foto'), o.fotografije || [], false);
     detail.dataset.stanje = o.stanje;
     detail.hidden = false;
+    if (isStandType(o.vrsta)) vjetar.show(o);
+    else { $('od-vjetar').hidden = true; vjetar.hide(); }
   };
-  const closeDetail = () => { detail.hidden = true; detailId = null; releaseUrls(); };
+  const closeDetail = () => { detail.hidden = true; detailId = null; releaseUrls(); vjetar.hide(); };
   $('btn-od-zatvori').addEventListener('click', closeDetail);
   $('btn-od-uredi').addEventListener('click', async () => openForm(await getRecord(STORE, detailId)));
   $('btn-od-obidjeno').addEventListener('click', async () => {

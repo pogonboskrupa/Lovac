@@ -91,6 +91,7 @@ export async function refreshAllSpiskovi() {
       console.warn('osvježavanje spiska', name, err.message);
     }
   }
+  globalThis.document?.dispatchEvent(new CustomEvent('spiskovi:promjena', { detail: { spisak: '*' } }));
 }
 
 export function invalidateSpisak(name) {

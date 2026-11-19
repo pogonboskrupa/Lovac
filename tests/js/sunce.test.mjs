@@ -1,0 +1,124 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { sunTimes, moonAge, moonPhaseName, moonIllumination } from '../../static/js/sunce.js';
+import {
+  pickRule, huntingWindow, huntingStatus, formatCountdown, seasonStatus, parseDayMonth, formatDayMonth, inPeriod,
+} from '../../static/js/propisi.js';
+
+// Referenca: Python astral 3 (Observer 44.88N 16.15E), vremena u UTC.
+const REF = [
+  ['2026-11-19', '05:58:06', '15:22:57', '05:25:26', '15:55:36'],
+  ['2026-06-21', '03:09:25', '18:45:00', '02:31:23', '19:23:02'],
+  ['2026-03-29', '04:42:16', '17:18:49', '04:12:16', '17:48:55'],
+  ['2026-12-21', '06:30:18', '15:16:35', '05:55:52', '15:51:01'],
+];
+const utc = (d, t) => Date.parse(`${d}T${t}Z`);
+const MIN = 60000;
+
+test('izlazak, zalazak i građanski sumrak: unutar 1 min od astral-a', () => {
+  for (const [d, rise, set, dawn, dusk] of REF) {
+    const s = sunTimes(Date.parse(`${d}T12:00:00Z`), 44.88, 16.15);
+    for (const [name, got, want] of [['izlazak', s.izlazak, rise], ['zalazak', s.zalazak, set], ['svitanje', s.svitanje, dawn], ['suton', s.suton, dusk]]) {
+      const diff = Math.abs(got - utc(d, want)) / MIN;
+      assert.ok(diff < 1, `${d} ${name}: razlika ${diff.toFixed(1)} min`);
+    }
+  }
+});
+
+test('starost i faza mjeseca (astral: 19.11.2026 = 8,82 dana)', () => {
+  const age = moonAge(Date.parse('2026-11-19T00:00:00Z'));
+  assert.ok(Math.abs(age - 8.82) < 0.7, String(age));
+  assert.equal(moonPhaseName(0.5), 'Mlađak');
+  assert.equal(moonPhaseName(7.4), 'Prva četvrt');
+  assert.equal(moonPhaseName(14.8), 'Uštap (pun mjesec)');
+  assert.equal(moonPhaseName(22.1), 'Zadnja četvrt');
+  assert.ok(moonIllumination(14.77) > 0.99);
+  assert.ok(moonIllumination(0) < 0.01);
+});
+
+const RULES = [
+  { id: 'opste', vrsta_kod: null, prije_izlaska_min: 60, poslije_zalaska_min: 60, aktivno: true },
+  { id: 'svinja', vrsta_kod: 'divlja_svinja', prije_izlaska_min: 120, poslije_zalaska_min: 120, aktivno: true },
+  { id: 'staro', vrsta_kod: 'srna', prije_izlaska_min: 5, poslije_zalaska_min: 5, aktivno: false },
+];
+
+test('pravilo lovnog vremena: posebno za vrstu, inače opšte; sklonjeno se ne koristi', () => {
+  assert.equal(pickRule(RULES, 'divlja_svinja').id, 'svinja');
+  assert.equal(pickRule(RULES, 'srna').id, 'opste');
+  assert.equal(pickRule(RULES, null).id, 'opste');
+  assert.equal(pickRule([], 'srna'), null, 'bez admin pravila nema izmišljenog lovnog vremena');
+});
+
+test('lovno vrijeme i odbrojavanje', () => {
+  const sun = { izlazak: utc('2026-11-19', '06:00:00'), zalazak: utc('2026-11-19', '15:30:00') };
+  const w = huntingWindow(sun, RULES[0]);
+  assert.equal(w.od, utc('2026-11-19', '05:00:00'));
+  assert.equal(w.do, utc('2026-11-19', '16:30:00'));
+  assert.deepEqual(huntingStatus(utc('2026-11-19', '04:00:00'), w), { stanje: 'prije', zaMs: 3600000 });
+  assert.deepEqual(huntingStatus(utc('2026-11-19', '16:00:00'), w), { stanje: 'traje', zaMs: 1800000 });
+  assert.equal(huntingStatus(utc('2026-11-19', '17:00:00'), w).stanje, 'poslije');
+  assert.equal(formatCountdown(3600000 + 15 * MIN), '1 h 15 min');
+  assert.equal(formatCountdown(4 * MIN + 30000), '5 min');
+});
+
+test('datum dd.mm. <-> MM-DD', () => {
+  assert.equal(parseDayMonth('1.5.'), '05-01');
+  assert.equal(parseDayMonth('31.12'), '12-31');
+  assert.equal(parseDayMonth(' 15. 10. '), '10-15');
+  assert.equal(parseDayMonth('32.1.'), null);
+  assert.equal(parseDayMonth('1.13.'), null);
+  assert.equal(parseDayMonth('x'), null);
+  assert.equal(formatDayMonth('05-01'), '1.5.');
+});
+
+test('period preko Nove godine', () => {
+  assert.equal(inPeriod('11-19', '10-01', '01-31'), true);
+  assert.equal(inPeriod('01-15', '10-01', '01-31'), true);
+  assert.equal(inPeriod('02-01', '10-01', '01-31'), false);
+  assert.equal(inPeriod('05-01', '05-01', '09-30'), true);
+  assert.equal(inPeriod('09-30', '05-01', '09-30'), true);
+  assert.equal(inPeriod('10-01', '05-01', '09-30'), false);
+});
+
+const LOVOSTAJ = [
+  { id: 'a', vrsta_kod: 'srna', kategorija_kod: 'srndac', otvoreno_od: '05-01', otvoreno_do: '09-30', aktivno: true },
+  { id: 'b', vrsta_kod: 'srna', kategorija_kod: 'srna', otvoreno_od: '09-01', otvoreno_do: '12-31', aktivno: true },
+  { id: 'c', vrsta_kod: 'zec', kategorija_kod: null, otvoreno_od: '10-01', otvoreno_do: '12-31', aktivno: true },
+  { id: 'd', vrsta_kod: 'zec', kategorija_kod: null, otvoreno_od: '01-01', otvoreno_do: '12-31', aktivno: false },
+];
+const day = (s) => new Date(`${s}T12:00:00`);
+
+test('lovostaj: otvoreno / lovostaj (sa sljedećim otvaranjem) / nije uneseno', () => {
+  assert.deepEqual(seasonStatus(LOVOSTAJ, 'zec', null, day('2026-11-19')), { stanje: 'otvoreno', do: '12-31', samoZa: [] });
+  const z = seasonStatus(LOVOSTAJ, 'zec', null, day('2026-03-01'));
+  assert.equal(z.stanje, 'lovostaj');
+  assert.equal(z.od, '10-01');
+  assert.equal(seasonStatus(LOVOSTAJ, 'medvjed', null, day('2026-11-19')).stanje, 'nepoznato');
+  assert.equal(seasonStatus(LOVOSTAJ, 'srna', 'srndac', day('2026-11-19')).stanje, 'lovostaj');
+  assert.equal(seasonStatus(LOVOSTAJ, 'srna', 'srna', day('2026-11-19')).stanje, 'otvoreno');
+  assert.deepEqual(seasonStatus(LOVOSTAJ, 'srna', null, day('2026-11-19')), { stanje: 'otvoreno', do: '12-31', samoZa: ['srna'] });
+  assert.equal(seasonStatus(LOVOSTAJ, 'srna', 'lane', day('2026-11-19')).stanje, 'lovostaj', 'kategorija bez reda nije otvorena');
+});
+
+import { buildPayload, parseKategorije, formatKategorije, EDITORI } from '../../static/js/propisi-admin.js';
+
+test('admin forma: datum dd.mm. postaje MM-DD, obavezna polja, broj u granicama', () => {
+  const f = EDITORI.lovostaj.fields;
+  assert.deepEqual(buildPayload(f, { vrsta_kod: 'srna', kategorija_kod: '', otvoreno_od: '1.5.', otvoreno_do: '30.9.', napomena: '', izvor: 'Odluka X', aktivno: true }, true).payload,
+    { vrsta_kod: 'srna', kategorija_kod: null, otvoreno_od: '05-01', otvoreno_do: '09-30', napomena: null, izvor: 'Odluka X', aktivno: true });
+  assert.match(buildPayload(f, { vrsta_kod: '', otvoreno_od: '1.5.', otvoreno_do: '30.9.' }, true).error, /Vrsta/);
+  assert.match(buildPayload(f, { vrsta_kod: 'srna', otvoreno_od: '31.2.', otvoreno_do: '30.9.' }, true).error, /dd\.mm\./);
+  const lv = EDITORI.lovno_vrijeme.fields;
+  assert.match(buildPayload(lv, { prije_izlaska_min: '300', poslije_zalaska_min: '60' }, true).error, /cijeli broj/);
+  assert.equal(buildPayload(lv, { vrsta_kod: '', prije_izlaska_min: '60', poslije_zalaska_min: '45', aktivno: true }, true).payload.vrsta_kod, null);
+});
+
+test('admin forma: kod se ne mijenja pri izmjeni; kategorije kod:Naziv', () => {
+  const f = EDITORI.vrste.fields;
+  const p = buildPayload(f, { kod: 'srna', naziv: 'Srna', kategorije: 'srndac:Srndać\nsrna:Srna', redoslijed: '10', aktivno: true }, false).payload;
+  assert.equal('kod' in p, false);
+  assert.deepEqual(p.kategorije, [{ kod: 'srndac', naziv: 'Srndać' }, { kod: 'srna', naziv: 'Srna' }]);
+  assert.equal(parseKategorije('bez dvotacke'), null);
+  assert.equal(formatKategorije([{ kod: 'a', naziv: 'A' }]), 'a:A');
+  assert.match(buildPayload(f, { kod: 'Loš Kod', naziv: 'x' }, true).error, /Kod/);
+});

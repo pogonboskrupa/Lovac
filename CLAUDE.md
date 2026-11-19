@@ -108,6 +108,13 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Admin spiskovi (`spiskovi.js`): zadani spisak u kodu samo za nazive (vrste objekata/divljači); `lovostaj` i `lovno_vrijeme` nemaju zadane vrijednosti. Za naziv starog zapisa koristi `getSpisakAll` (i neaktivni redovi).
 - Novi store u IndexedDB-u traži podizanje `DB_VERSION` u `db.js` (onupgradeneeded pravi samo store-ove koji fale).
 
+**Propisi, svjetlo, vjetar**
+- Sunce: puni NOAA algoritam u `sunce.js` (test protiv Python `astral`, tolerancija 1 min). Lovno vrijeme = admin pravilo (`propisi.js pickRule`: posebno za vrstu, inače opšte); bez pravila UI kaže "nije unio administrator", nikad zadana vrijednost.
+- Lovostaj: periodi 'MM-DD' se ponavljaju godišnje i mogu preći Novu godinu (`inPeriod`); vrsta bez ijednog reda = "Nije uneseno". Admin unosi datume kao dd.mm. (`parseDayMonth`).
+- Vjetar (Open-Meteo, `timeformat=unixtime`): keš po ćeliji 0,05°; prikazuje se SAMO sat koji obuhvata sada (`currentWind`), uz starost prognoze. Smjer = odakle duva; konus mirisa ide prema smjer+180.
+- DEM: Terrarium z13 u Cache API `dem-v1` (`dem.js terrainAt`); termika je samo pravilo palca i to UI kaže.
+- U e2e testovima `serveTiles` blokira Open-Meteo i DEM (404); testovi koji ih trebaju ih sami rutiraju. Za vrijeme: `page.clock.setFixedTime` + `test.use({ timezoneId: 'Europe/Sarajevo' })`.
+
 **UI**
 - Gornja traka i desna kolona: `.ikona-dugme` ima `flex: none` — inače flex na uskom ekranu stisne dugmad ispod 44 px.
 - WebView ne prikazuje `confirm()`/`alert()` bez `onJsConfirm`/`onJsAlert` u `WebChromeClient`: potvrda opasnih radnji ide drugim dodirom na isto dugme.

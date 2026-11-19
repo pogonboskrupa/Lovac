@@ -201,6 +201,49 @@ textarea {
 .nav-strelica { width: 48px; height: 48px; flex: none; fill: var(--naglasak); transition: transform 0.3s; }
 .nav-tekst { flex: 1; display: flex; flex-direction: column; font-size: 15px; }
 
+/* Opažanja */
+.segment-gust button { flex: 1 1 40%; }
+.brojac { display: flex; gap: 8px; align-items: center; }
+.brojac input { width: 96px; margin: 0; text-align: center; font-size: 20px; }
+select {
+  display: block; width: 100%; min-height: 48px; margin-top: 4px; padding: 0 12px; font-size: 16px;
+  color: var(--tekst); background: var(--povrsina); border: 1px solid var(--tekst-2); border-radius: 8px;
+}
+.zbir { margin: 0; padding-left: 20px; }
+.upozorenje-blok { padding: 10px 12px; border-radius: 8px; background: var(--upozorenje); color: var(--upozorenje-tekst); font-weight: 600; }
+.leaflet-popup-content { font-size: 15px; }
+
+/* Danas / propisi */
+.lovno-chip {
+  min-height: 44px; padding: 6px 12px; border: 0; border-radius: 10px; font-size: 15px; font-weight: 600;
+  background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena); text-align: left;
+}
+.lovno-chip[data-stanje="traje"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+.lovno-chip[data-stanje="prije"] { background: var(--gps-srednje); color: var(--gps-tekst); }
+.tabela-info { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.tabela-info dt { color: var(--tekst-2); }
+.tabela-info dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.danas-red { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--dugme); }
+.danas-red[data-stanje="otvoreno"] span { color: var(--tekst); }
+.danas-red[data-stanje="lovostaj"] span { color: var(--greska); font-weight: 600; }
+.danas-red[data-stanje="nepoznato"] span { color: var(--tekst-2); }
+.red-check { display: flex; align-items: center; gap: 10px; min-height: 48px; color: var(--tekst); }
+.red-check input { width: 24px; height: 24px; min-height: 0; margin: 0; }
+#propisi-forma { padding: 12px; margin: 12px 0; border-radius: 10px; background: var(--povrsina); }
+.trag-red[data-aktivno="false"] { opacity: 0.6; }
+
+/* Vjetar */
+.segment-8 button { flex: 1 1 20%; }
+.od-vjetar { margin: 8px 0; padding: 8px 10px; border-radius: 8px; background: var(--dugme); color: var(--dugme-tekst); }
+.od-vjetar p { margin: 4px 0; }
+.vjetar-stanje { font-weight: 700; }
+.vjetar-stanje[data-stanje="ok"] { color: var(--tekst); }
+.vjetar-stanje[data-stanje="ok"]::before { content: "✓ "; }
+.vjetar-stanje[data-stanje="ne"] { color: var(--greska); }
+.vjetar-stanje[data-stanje="ne"]::before { content: "✗ "; }
+.od-vjetar .dugme { background: var(--povrsina); color: var(--tekst); }
+.od-vjetar .dugme[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); }
+
 /* Obavijesti */
 .traka-obavijest, .alarm {
   position: fixed; left: 8px; right: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 2000;

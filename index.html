@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.1.7';
+  const APP_VER = 'v0.1.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -35,6 +35,7 @@
   <symbol id="ic-obj-auto" viewBox="0 0 24 24"><path d="M5 15l1.5-5h11l1.5 5M3 15h18v4H3zM6.5 19v2M17.5 19v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="ic-obj-pin" viewBox="0 0 24 24"><path d="M12 21s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
   <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M3 7h11M19 7h2M3 17h2M10 17h11" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16.5" cy="7" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="7.5" cy="17" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
@@ -79,11 +80,14 @@
     <button id="btn-postavke" class="ikona-dugme" type="button" aria-label="Postavke"><svg class="ic"><use href="#ic-settings"/></svg></button>
   </div>
   <div id="meni-spiskovi" class="meni" hidden>
+    <button type="button" id="btn-danas">Danas: lovno vrijeme i lovostaj</button>
     <button type="button" id="btn-tragovi">Moji tragovi</button>
     <button type="button" id="btn-objekti">Lovački objekti</button>
+    <button type="button" id="btn-opazanja">Opažanja divljači</button>
   </div>
   <div id="meni-dodaj" class="meni meni-dodaj" hidden>
     <button type="button" id="btn-dodaj-objekat">Lovački objekat</button>
+    <button type="button" id="btn-dodaj-opazanje">Opažanje divljači</button>
   </div>
   <div id="meni-podloga" class="meni" hidden>
     <button type="button" data-podloga="topo">Topografska</button>
@@ -99,6 +103,7 @@
     <button id="btn-centriraj" class="ikona-dugme" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
     <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
     <button id="btn-snimaj" class="ikona-dugme snimaj" type="button" aria-pressed="false" aria-label="Snimaj trag"><svg class="ic"><use href="#ic-record"/></svg></button>
+    <button id="btn-opazanje" class="ikona-dugme" type="button" aria-label="Opažanje divljači na mojoj poziciji"><svg class="ic"><use href="#ic-eye"/></svg></button>
     <button id="btn-dodaj" class="ikona-dugme glavno" type="button" aria-label="Dodaj na kartu"><svg class="ic"><use href="#ic-plus"/></svg></button>
   </div>
 
@@ -120,6 +125,7 @@
         <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
       </div>
     </div>
+    <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
     <div id="gps-status" class="gps-status" hidden>
       <span id="gps-tacnost" class="tacnost">GPS…</span>
       <span>fiks prije <span id="gps-starost">—</span></span>
@@ -127,6 +133,7 @@
     <button id="koord-traka" class="koord-traka" type="button" aria-label="Koordinate centra karte, dodir kopira">
       <span>WGS84 <b id="koord-wgs">—</b></span>
       <span>GK6 <b id="koord-gk">—</b></span>
+      <span>N.V. <b id="koord-nv">—</b></span>
     </button>
   </div>
 </main>
@@ -161,6 +168,7 @@
   <div id="postavke-admin" hidden>
     <h3>Administracija</h3>
     <button id="btn-korisnici" class="dugme" type="button">Korisnici i odobrenja</button>
+    <button id="btn-propisi" class="dugme" type="button">Propisi i spiskovi</button>
   </div>
 
   <h3>Nalog</h3>
@@ -209,6 +217,10 @@
       <button type="button" data-stanje="popravka">Treba popravka</button>
       <button type="button" data-stanje="sruseno">Srušeno</button>
     </div>
+    <div id="objekt-vjetar-blok" hidden>
+      <h3>Dobar vjetar za ovu čeku (odakle duva)</h3>
+      <div id="objekt-vjetar" class="segment segment-8" role="group" aria-label="Dozvoljeni smjerovi vjetra"></div>
+    </div>
     <label>Zadnji obilazak<input name="zadnji_obilazak" type="date"></label>
     <label>Napomena<textarea name="napomena" rows="3" maxlength="1000"></textarea></label>
     <h3>Fotografije</h3>
@@ -231,6 +243,12 @@
   <h3 id="od-naziv"></h3>
   <p id="od-info" class="sitno"></p>
   <p id="od-napomena"></p>
+  <div id="od-vjetar" class="od-vjetar" hidden>
+    <p id="od-vjetar-tekst"></p>
+    <p id="od-vjetar-stanje" class="vjetar-stanje"></p>
+    <p id="od-termika" class="sitno"></p>
+    <button id="btn-od-konus" class="dugme" type="button" aria-pressed="false">Konus mirisa na karti</button>
+  </div>
   <div id="od-foto" class="foto-red"></div>
   <div class="red-dugmadi">
     <button id="btn-od-vodi" class="dugme glavno" type="button">Vodi me do</button>
@@ -252,6 +270,90 @@
   </div>
   <p id="objekti-prazno" class="sitno">Nema objekata. Dodaju se dugmetom + na karti.</p>
   <ul id="objekti-spisak" class="spisak"></ul>
+</section>
+
+<section id="opazanje-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="op-naslov" hidden>
+  <form id="forma-opazanje" novalidate>
+    <header class="postavke-glava"><h2 id="op-naslov">Opažanje</h2><span id="op-vrijeme" class="sitno"></span></header>
+    <p id="op-pozicija" class="sitno"></p>
+    <h3>Vrsta</h3>
+    <div id="op-vrste" class="segment segment-gust" role="group" aria-label="Vrsta divljači"></div>
+    <h3>Broj grla</h3>
+    <div class="brojac">
+      <button id="op-broj-minus" class="ikona-dugme" type="button" aria-label="Manje"><svg class="ic"><use href="#ic-minus"/></svg></button>
+      <input name="broj" type="number" inputmode="numeric" min="1" max="999" value="1" aria-label="Broj grla">
+      <button id="op-broj-plus" class="ikona-dugme" type="button" aria-label="Više"><svg class="ic"><use href="#ic-plus"/></svg></button>
+    </div>
+    <h3>Spol / dob</h3>
+    <div id="op-kategorija" class="segment segment-gust" role="group" aria-label="Spol i dob"></div>
+    <p id="op-upozorenje" class="upozorenje-blok" role="alert" hidden></p>
+    <label>Napomena<textarea name="napomena" rows="2" maxlength="1000"></textarea></label>
+    <div id="op-foto" class="foto-red"></div>
+    <label class="dugme dugme-fajl">Dodaj fotografiju<input id="op-foto-input" type="file" accept="image/*" multiple hidden></label>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Sačuvaj</button>
+      <button type="button" id="btn-op-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>
+
+<section id="opazanja" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="opazanja-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="opazanja-naslov">Opažanja divljači</h2>
+    <button id="btn-opazanja-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <label>Vrsta<select id="op-filter-vrsta"></select></label>
+  <h3>Period</h3>
+  <div id="op-period" class="segment" role="group" aria-label="Period">
+    <button type="button" data-period="30">30 dana</button>
+    <button type="button" data-period="90">90 dana</button>
+    <button type="button" data-period="godina">Ova godina</button>
+    <button type="button" data-period="sve">Sve</button>
+  </div>
+  <h3>Prikaz na karti</h3>
+  <div id="op-prikaz" class="segment" role="group" aria-label="Prikaz">
+    <button type="button" data-prikaz="tacke">Tačke</button>
+    <button type="button" data-prikaz="gustina">Gustina</button>
+  </div>
+  <button id="op-na-karti" class="dugme" type="button" aria-pressed="true">Na karti: prikazano</button>
+  <h3>Zbir</h3>
+  <ul id="op-zbir" class="zbir"></ul>
+  <ul id="opazanja-spisak" class="spisak"></ul>
+</section>
+
+<section id="danas" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="danas-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="danas-naslov">Danas</h2>
+    <button id="btn-danas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="danas-mjesto" class="sitno"></p>
+  <h3>Svjetlo</h3>
+  <dl id="danas-svjetlo" class="tabela-info"></dl>
+  <h3>Lovno vrijeme</h3>
+  <p id="danas-lovno"></p>
+  <ul id="danas-lovno-vrste" class="zbir"></ul>
+  <h3>Šta se danas smije loviti</h3>
+  <ul id="danas-lovostaj" class="spisak"></ul>
+  <p id="danas-izvor" class="sitno"></p>
+  <p class="sitno">Lovostaj i lovno vrijeme unosi administrator društva. Aplikacija ne zamjenjuje važeće propise, odluke društva ni lovočuvara.</p>
+</section>
+
+<section id="propisi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="propisi-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="propisi-naslov">Propisi i spiskovi</h2>
+    <button id="btn-propisi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div id="propisi-tabovi" class="segment" role="group" aria-label="Spisak">
+    <button type="button" data-tab="lovostaj">Lovostaj</button>
+    <button type="button" data-tab="lovno_vrijeme">Lovno vrijeme</button>
+    <button type="button" data-tab="vrste">Vrste divljači</button>
+    <button type="button" data-tab="objekat_vrste">Vrste objekata</button>
+  </div>
+  <h3 id="propisi-naslov-tab"></h3>
+  <button id="btn-propisi-dodaj" class="dugme glavno" type="button">Dodaj novi red</button>
+  <p id="propisi-status" class="status" role="status"></p>
+  <form id="propisi-forma" novalidate hidden></form>
+  <ul id="propisi-spisak" class="spisak"></ul>
 </section>
 
 <section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>

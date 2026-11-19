@@ -46,3 +46,25 @@ export async function photoUrl(id) {
 }
 
 export const deletePhoto = (id) => idbDelete('fotografije', id);
+
+// Traka sličica za formu/detalje; object URL-ovi se oslobađaju pri ponovnom crtanju i zatvaranju.
+export function createPhotoStrip() {
+  const urls = [];
+  const release = () => { while (urls.length) URL.revokeObjectURL(urls.pop()); };
+  return {
+    async render(container, ids, removable) {
+      release();
+      const parts = [];
+      for (const id of ids) {
+        const url = await photoUrl(id);
+        if (!url) continue;
+        urls.push(url);
+        const safeId = String(id).replace(/[^0-9a-f-]/gi, '');
+        parts.push(`<figure class="foto" data-foto="${safeId}"><img src="${url}" alt="Fotografija">`
+          + `${removable ? '<button type="button" class="foto-ukloni" aria-label="Ukloni fotografiju">×</button>' : ''}</figure>`);
+      }
+      container.innerHTML = parts.join('');
+    },
+    release,
+  };
+}

@@ -12,6 +12,8 @@ export async function serveTiles(page, counter = { n: 0 }) {
   });
   // Provjera nove verzije ne smije ići na pravi server u testu.
   await page.route(/api\.github\.com|raw\.githubusercontent\.com/, (r) => r.fulfill({ status: 404, body: '{}' }));
+  // Vjetar i DEM ne smiju ići na prave servere u testovima.
+  await page.route(/api\.open-meteo\.com|elevation-tiles-prod/, (r) => r.fulfill({ status: 404, body: '' }));
   return counter;
 }
 

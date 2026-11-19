@@ -13,6 +13,9 @@ import { initPostavke } from './postavke.js';
 import { initTragovi, runRecordingAutotest } from './tragovi-ui.js';
 import { initAdmin } from './admin.js';
 import { initObjekti } from './objekti-ui.js';
+import { initOpazanja } from './opazanja-ui.js';
+import { initDanas } from './danas-ui.js';
+import { initPropisiAdmin } from './propisi-admin.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
@@ -54,6 +57,9 @@ function enter(screen) {
       ['meniji', () => { wireMenu('btn-spiskovi', 'meni-spiskovi'); wireMenu('btn-dodaj', 'meni-dodaj'); }],
       ['navigacija', () => initNavigation(globalThis.L, map)],
       ['objekti', () => initObjekti(globalThis.L, map)],
+      ['opazanja', () => initOpazanja(globalThis.L, map)],
+      ['danas', () => initDanas(map)],
+      ['propisi', () => initPropisiAdmin()],
     ]) {
       try { fn(); } catch (err) { console.error(name, err); }
     }
