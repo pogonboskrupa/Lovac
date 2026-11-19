@@ -152,6 +152,7 @@ input {
 .trag-naslov { display: flex; flex-direction: column; gap: 2px; }
 .trag-red .red-dugmadi { gap: 6px; margin-top: 8px; }
 .trag-red .dugme { padding: 0 12px; }
+.trag-red input { flex: 1; min-width: 120px; margin-top: 0; }
 .dijalog {
   position: fixed; left: 12px; right: 12px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 3500;
   padding: 16px; border-radius: 12px; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);

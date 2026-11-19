@@ -6,6 +6,7 @@ import { cachedProfile } from './auth.js';
 import { isServerConfigured } from './config.js';
 import { connectionQuality } from './net.js';
 import { checkForUpdate, installUpdate } from './update.js';
+import { refreshAdminVisibility } from './admin.js';
 
 const VEZA_TEKST = {
   nema: 'Bez veze',
@@ -47,6 +48,7 @@ async function refreshCacheCount() {
 function refreshStatic(appVer) {
   el('postavke-nalog').textContent = describeProfile(cachedProfile());
   el('postavke-verzija').textContent = appVer;
+  refreshAdminVisibility();
   el('postavke-server').textContent = isServerConfigured()
     ? VEZA_TEKST[connectionQuality()] || VEZA_TEKST.nepoznato
     : 'Server nije podešen';

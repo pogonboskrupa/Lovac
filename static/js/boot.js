@@ -11,6 +11,7 @@ import { initMap } from './map.js';
 import { initGps } from './gps.js';
 import { initPostavke } from './postavke.js';
 import { initTragovi, runRecordingAutotest } from './tragovi-ui.js';
+import { initAdmin } from './admin.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
@@ -45,6 +46,11 @@ function enter(screen) {
       initPostavke({ setBase, onLogout: doLogout, appVer: APP_VER });
     } catch (err) {
       console.error('postavke', err);
+    }
+    try {
+      initAdmin();
+    } catch (err) {
+      console.error('admin', err);
     }
     try {
       initTragovi(globalThis.L, map);
