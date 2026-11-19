@@ -272,6 +272,25 @@ input.boja { width: 48px; height: 48px; min-height: 48px; padding: 2px; margin: 
 
 progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasak); }
 
+/* Zajednički lov */
+.lov-panel {
+  position: absolute; left: 8px; right: 64px; top: calc(64px + env(safe-area-inset-top)); z-index: 1150;
+  padding: 8px 10px; border-radius: 10px; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+}
+.lov-panel p { margin: 6px 0; }
+.lov-panel-red { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lov-kompas { padding: 8px 10px; border-radius: 8px; font-weight: 700; background: var(--dugme); color: var(--dugme-tekst); }
+.lov-kompas[data-stanje="zabranjeno"] { background: var(--gps-lose); color: var(--gps-tekst); }
+.lov-kompas[data-stanje="dozvoljeno"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+.stan-marker { background: none; border: 0; }
+.stan-ikona {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 6px; font-weight: 800; font-size: 16px;
+  background: var(--povrsina); color: var(--tekst); border: 3px solid var(--tekst); box-shadow: var(--sjena);
+}
+.stan-ikona.moj { background: var(--naglasak); color: var(--naglasak-tekst); border-color: var(--naglasak-tekst); }
+.dijalog-gore { top: calc(64px + env(safe-area-inset-top)); bottom: auto; }
+#lov-stanovi input { flex: 1 1 80px; min-width: 70px; margin: 0; }
+
 /* Obavijesti */
 .traka-obavijest, .alarm {
   position: fixed; left: 8px; right: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 2000;

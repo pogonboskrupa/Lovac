@@ -129,6 +129,12 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Preuzimanje područja: samo topo i satelit (OSM pravila zabranjuju masovno preuzimanje), najviše `MAX_PREDOWNLOAD_TILES` (2500); preuzimaju se i DEM pločice.
 - Emulator test offline karte: CI pravi `test.mbtiles` (Python sqlite3), ubacuje ga sa `run-as`, a `-e autotest karte` loguje `KARTE_SPISAK` i `KARTE_PLOCICA`.
 
+**Zajednički lov (SIGURNOSNO)**
+- Geometrija u `sektori.js` (čista, test za svaki stepen): luk {od, do} u smjeru kazaljke, granice ZABRANJENE; automatski sektor prema SVAKOM drugom stanu lova (bez obzira na udaljenost), polovina širine = max(10°, atan(60 m / udaljenost)); ručni sektori od vođe; spajanje preko sjevera.
+- Kompas (`lov.js headingCheck`) ima toleranciju ±10° na sigurniju stranu; UI uvijek kaže da ne zamjenjuje pravila lova ni vođu lova i da kompas može griješiti.
+- Migracija 006: vođa lova je uloga PO REVIRU (`revir_vodje`, dodjeljuje admin); lov organizuje admin ili vođa tog revira; raspored vide samo učesnici, organizatori i admin. Telefoni su u tabeli `kontakti` (samo svoj red) i dostupni drugima jedino kroz `lov_telefoni()` za lov U TOKU — kolona u `korisnici` bi procurila svim lovcima.
+- Raspored se preuzima u IndexedDB (`lovovi`) i radi offline; organizacija traži internet.
+
 **Izvoz**
 - CSV za Excel (`odstrel.js toCsv`): BOM, `;`, decimalni zarez, `\r\n`; ćelija koja počinje sa `= + - @` dobija `'` (zaštita od formula).
 - PDF/štampa: `AndroidPrint.printHtml` (WebView u mostu mora živjeti dok sistem ne preuzme dokument); u browseru iframe `print()`. Izvještaj odstrela uvijek nosi napomenu da ne zamjenjuje službeni lovački dnevnik.

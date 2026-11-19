@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.2';
+  const APP_VER = 'v0.2.3';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -82,6 +82,7 @@
   </div>
   <div id="meni-spiskovi" class="meni" hidden>
     <button type="button" id="btn-danas">Danas: lovno vrijeme i lovostaj</button>
+    <button type="button" id="btn-lovovi">Zajednički lov</button>
     <button type="button" id="btn-slojevi">Slojevi (granice lovišta)</button>
     <button type="button" id="btn-tragovi">Moji tragovi</button>
     <button type="button" id="btn-objekti">Lovački objekti</button>
@@ -121,6 +122,20 @@
       <span id="nav-napomena" class="sitno"></span>
     </div>
     <button id="btn-nav-kraj" class="dugme" type="button">Kraj</button>
+  </div>
+
+  <div id="lov-panel" class="lov-panel" hidden>
+    <div class="lov-panel-red"><b id="lov-panel-naziv"></b><button id="btn-lov-panel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori raspored"><svg class="ic"><use href="#ic-close"/></svg></button></div>
+    <span id="lov-panel-uloga" class="sitno"></span>
+    <p id="lov-kompas" class="lov-kompas" data-stanje="nepoznato" role="status"></p>
+    <p class="sitno">Crveno = zabranjeni pravci pucanja. Ne zamjenjuje pravila lova ni vođu lova. Kompas telefona može griješiti — uvijek provjeri pogledom.</p>
+  </div>
+  <div id="lov-postavi" class="dijalog dijalog-gore" hidden>
+    <p>Pomjeri kartu tako da nišan bude tačno na mjestu stana.</p>
+    <div class="red-dugmadi">
+      <button id="btn-lov-postavi" class="dugme glavno" type="button">Postavi stan ovdje</button>
+      <button id="btn-lov-postavi-odustani" class="dugme" type="button">Odustani</button>
+    </div>
   </div>
 
   <div id="mjerenje" class="mjerenje" hidden>
@@ -495,6 +510,72 @@
   <div id="slojevi-server"></div>
   <p id="slojevi-prazno" class="sitno">Nema slojeva na telefonu.</p>
   <ul id="slojevi-spisak" class="spisak"></ul>
+</section>
+
+<section id="lovovi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lovovi-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="lovovi-naslov">Zajednički lov</h2>
+    <button id="btn-lovovi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p class="sitno">Raspored preuzmi dok ima interneta — poslije radi i bez signala. Ne zamjenjuje pravila lova ni vođu lova.</p>
+  <div class="red-dugmadi">
+    <button id="btn-lovovi-osvjezi" class="dugme" type="button">Preuzmi sa servera</button>
+    <button id="btn-lov-novi" class="dugme glavno" type="button" hidden>Novi lov</button>
+    <button id="btn-lov-reviri" class="dugme" type="button" hidden>Reviri i vođe lova</button>
+  </div>
+  <p id="lovovi-status" class="sitno" role="status"></p>
+  <p id="lovovi-prazno" class="sitno">Nema lovova na telefonu.</p>
+  <ul id="lovovi-spisak" class="spisak"></ul>
+</section>
+
+<section id="lov-novi" class="dijalog" role="dialog" aria-labelledby="lov-novi-naslov" hidden>
+  <form id="forma-lov-novi" novalidate>
+    <h3 id="lov-novi-naslov">Novi zajednički lov</h3>
+    <label>Naziv<input name="naziv" required maxlength="80" placeholder="npr. Pogon na divlje svinje"></label>
+    <label>Datum<input name="datum" type="date" required></label>
+    <label>Revir<select id="lov-novi-revir" name="revir"></select></label>
+    <label>Napomena<input name="napomena" maxlength="200"></label>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Napravi lov</button>
+      <button type="button" id="btn-lov-novi-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>
+
+<section id="lov-uredi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lov-uredi-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="lov-uredi-naslov"></h2>
+    <button id="btn-lov-uredi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="lov-uredi-stanje"></p>
+  <p id="lov-uredi-status" class="status" role="status"></p>
+  <ul id="lov-upozorenja" class="zbir upozorenje-tekst"></ul>
+  <div class="red-dugmadi">
+    <button id="btn-lov-uredi-karta" class="dugme" type="button">Raspored na karti</button>
+    <button id="btn-lov-pokreni" class="dugme glavno" type="button">Pokreni lov</button>
+    <button id="btn-lov-zavrsi" class="dugme" type="button">Završi lov</button>
+  </div>
+  <h3>Učesnici</h3>
+  <ul id="lov-ucesnici" class="spisak"></ul>
+  <div class="red-dugmadi">
+    <select id="lov-dodaj-clan" aria-label="Lovac"></select>
+    <select id="lov-dodaj-uloga" aria-label="Uloga"><option value="strijelac">Strijelac</option><option value="pogonic">Pogonič</option><option value="vodja">Vođa lova</option></select>
+    <button id="btn-lov-dodaj-clan" class="dugme" type="button">Dodaj učesnika</button>
+  </div>
+  <h3>Stanovi i zabranjeni pravci</h3>
+  <p class="sitno">Pravci prema drugim stanovima aplikacija računa sama. Ručno dodaj pravce prema putevima, kućama i sl. (od–do u stepenima od sjevera, u smjeru kazaljke).</p>
+  <button id="btn-lov-dodaj-stan" class="dugme glavno" type="button">Postavi stan na nišan karte</button>
+  <ul id="lov-stanovi" class="spisak"></ul>
+</section>
+
+<section id="reviri" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="reviri-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="reviri-naslov">Reviri i vođe lova</h2>
+    <button id="btn-reviri-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div class="red-dugmadi"><input id="revir-novi" placeholder="Naziv novog revira" aria-label="Naziv revira"><button id="btn-revir-dodaj" class="dugme" type="button">Dodaj revir</button></div>
+  <p id="reviri-status" class="status" role="status"></p>
+  <ul id="reviri-spisak" class="spisak"></ul>
 </section>
 
 <section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>

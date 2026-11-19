@@ -1,0 +1,341 @@
+// Zajednički lov: spisak (keš za offline), organizacija (admin / vođa revira), raspored na karti
+// sa zabranjenim pravcima i kompasom. SIGURNOSNA funkcija: ne zamjenjuje pravila lova ni vođu lova.
+
+import { getClient, cachedProfile } from './auth.js';
+import { idbPut, idbAll, idbGet } from './db.js';
+import { loadJSON, saveSoft } from './storage.js';
+import { memberName, refreshMembers } from './dijeljenje-ui.js';
+import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA } from './lov.js';
+import { standWarnings, sectorWedge } from './sektori.js';
+import { onGpsUpdate, currentHeading } from './gps.js';
+import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
+
+const STORE = 'lovovi';
+const $ = (id) => document.getElementById(id);
+const ULOGE = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
+const STATUS = { planiran: 'Planiran', u_toku: 'U toku', zavrsen: 'Završen' };
+export const NAPOMENA_SIGURNOST = 'Ne zamjenjuje pravila lova ni vođu lova. Kompas telefona može griješiti — uvijek provjeri pogledom.';
+
+async function q(promise) {
+  const { data, error } = await promise;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// Preuzima sve lovove koje server dozvoli, sa rasporedom, u keš (radi offline poslije).
+export async function downloadHunts() {
+  const sb = getClient();
+  const lovovi = await q(sb.from('lovovi').select('*'));
+  const reviri = await q(sb.from('reviri').select('*'));
+  for (const lov of lovovi) {
+    const ucesnici = await q(sb.from('lov_ucesnici').select('*').eq('lov_id', lov.id));
+    const stanovi = await q(sb.from('stanovi').select('*').eq('lov_id', lov.id));
+    const ids = stanovi.map((s) => s.id);
+    const sektori = ids.length ? await q(sb.from('sektori').select('*').in('stan_id', ids)) : [];
+    await idbPut(STORE, { id: lov.id, lov, ucesnici, stanovi, sektori, revir: reviri.find((r) => r.id === lov.revir_id) || null, preuzeto: Date.now() });
+  }
+  await idbPut('spiskovi', { id: 'reviri', rows: reviri, preuzeto: Date.now() });
+  return lovovi.length;
+}
+
+function standIcon(L, s, mine) {
+  return L.divIcon({
+    className: 'stan-marker',
+    html: `<div class="stan-ikona${mine ? ' moj' : ''}" data-broj="${s.broj}">${s.broj}</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  });
+}
+
+export function initLov(L, map) {
+  const list = $('lovovi');
+  const editor = $('lov-uredi');
+  const panel = $('lov-panel');
+  const layer = L.layerGroup();
+  let shown = null; // keširan lov koji je na karti
+  let selectedStand = null;
+  let editing = null;
+  let placing = false;
+
+  const me = () => cachedProfile();
+
+  // ---------------- raspored na karti ----------------
+  const drawSchedule = () => {
+    layer.clearLayers();
+    if (!shown) return;
+    const mine = myAssignment(shown, me()?.id);
+    const focus = selectedStand || mine?.stan;
+    for (const s of shown.stanovi) {
+      if (!Number.isFinite(s.lat)) continue;
+      L.marker([s.lat, s.lon], { icon: standIcon(L, s, s.id === mine?.stan?.id), keyboard: false })
+        .on('click', () => { selectedStand = s; drawSchedule(); updatePanel(); })
+        .addTo(layer);
+    }
+    if (focus && Number.isFinite(focus.lat)) {
+      for (const arc of sectorsForStand(focus, shown).lukovi) {
+        L.polygon(sectorWedge(focus, arc, 600), { interactive: false, color: '#c1121f', weight: 2, fillColor: '#c1121f', fillOpacity: 0.28, className: 'sektor-zabranjen' }).addTo(layer);
+      }
+    }
+  };
+
+  const updatePanel = () => {
+    if (!shown) { panel.hidden = true; return; }
+    const mine = myAssignment(shown, me()?.id);
+    const focus = selectedStand || mine?.stan;
+    $('lov-panel-naziv').textContent = `${shown.lov.naziv} · ${STATUS[shown.lov.status]}`;
+    $('lov-panel-uloga').textContent = mine
+      ? `${ULOGE[mine.uloga]}${mine.stan ? ` · stan ${mine.stan.broj}` : ''}${selectedStand && selectedStand !== mine.stan ? ` · prikazan stan ${selectedStand.broj}` : ''}`
+      : (focus ? `Prikazan stan ${focus.broj}` : 'Nisi učesnik ovog lova');
+    const k = $('lov-kompas');
+    if (!focus) { k.dataset.stanje = 'nepoznato'; k.textContent = 'Nema stana za provjeru pravca'; return; }
+    const st = headingCheck(currentHeading(), sectorsForStand(focus, shown).lukovi);
+    k.dataset.stanje = st;
+    k.textContent = st === 'zabranjeno' ? 'NE PUCAJ u ovom pravcu (zabranjeni sektor)'
+      : st === 'dozvoljeno' ? `Telefon ne pokazuje u zabranjeni sektor (±${KOMPAS_TOLERANCIJA}°)`
+        : 'Kompas nije dostupan — gledaj crvene sektore na karti';
+  };
+  onGpsUpdate(() => { if (shown) updatePanel(); });
+
+  const showSchedule = async (id) => {
+    shown = await idbGet(STORE, id);
+    selectedStand = null;
+    layer.addTo(map);
+    drawSchedule();
+    updatePanel();
+    panel.hidden = false;
+    list.hidden = true;
+    const mine = myAssignment(shown, me()?.id);
+    const s = mine?.stan || shown.stanovi.find((x) => Number.isFinite(x.lat));
+    if (s) map.setView([s.lat, s.lon], Math.max(map.getZoom(), 15));
+    document.dispatchEvent(new CustomEvent('lov:prikazan', { detail: { lov: shown } }));
+  };
+  const hideSchedule = () => {
+    shown = null;
+    layer.clearLayers();
+    map.removeLayer(layer);
+    panel.hidden = true;
+    document.dispatchEvent(new CustomEvent('lov:prikazan', { detail: { lov: null } }));
+  };
+  $('btn-lov-panel-zatvori').addEventListener('click', hideSchedule);
+
+  // ---------------- spisak ----------------
+  const canOrganizeAny = () => Boolean(me()?.is_admin) || loadJSON('lovac.vodja_revira', []).length > 0;
+
+  const renderList = async () => {
+    const all = (await idbAll(STORE)).sort((a, b) => String(b.lov.datum).localeCompare(String(a.lov.datum)));
+    const today = new Set(todaysHunts(all.map((x) => x.lov)).map((l) => l.id));
+    $('lovovi-prazno').hidden = all.length > 0;
+    $('btn-lov-novi').hidden = !canOrganizeAny();
+    $('btn-lov-reviri').hidden = !me()?.is_admin;
+    $('lovovi-spisak').innerHTML = all.map((x) => {
+      const mine = myAssignment(x, me()?.id);
+      return `<li class="trag-red" data-id="${escapeHtml(x.id)}" data-status="${x.lov.status}">
+        <div class="trag-naslov"><b>${escapeHtml(x.lov.naziv)}${today.has(x.id) ? ' · DANAS' : ''}</b>
+        <span class="sitno">${escapeHtml(x.lov.datum)} · ${escapeHtml(x.revir?.naziv || '')} · ${STATUS[x.lov.status]}
+        ${mine ? ` · ${ULOGE[mine.uloga]}${mine.stan ? `, stan ${mine.stan.broj}` : ''}` : ''}</span></div>
+        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="prikazi">Raspored na karti</button>
+        ${canOrganizeAny() ? '<button type="button" class="dugme" data-akcija="uredi">Organizuj</button>' : ''}</div>
+      </li>`;
+    }).join('');
+  };
+
+  const refresh = async () => {
+    $('lovovi-status').textContent = 'Preuzimam sa servera…';
+    try {
+      await refreshMembers().catch(() => {});
+      const n = await downloadHunts();
+      const vodje = await q(getClient().from('revir_vodje').select('*'));
+      saveSoft('lovac.vodja_revira', vodje.filter((v) => v.korisnik_id === me()?.id).map((v) => v.revir_id));
+      $('lovovi-status').textContent = `Preuzeto lovova: ${n}. Raspored radi i bez interneta.`;
+    } catch (err) {
+      $('lovovi-status').textContent = `Nema veze sa serverom — prikazan je keš (${err.message})`;
+    }
+    await renderList();
+  };
+
+  $('lovovi-spisak').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-akcija]');
+    if (!b) return;
+    const id = b.closest('[data-id]').dataset.id;
+    if (b.dataset.akcija === 'prikazi') await showSchedule(id);
+    if (b.dataset.akcija === 'uredi') await openEditor(id);
+  });
+  $('btn-lovovi').addEventListener('click', async () => {
+    $('meni-spiskovi').hidden = true;
+    list.hidden = false;
+    await renderList();
+    refresh();
+  });
+  $('btn-lovovi-zatvori').addEventListener('click', () => { list.hidden = true; });
+  $('btn-lovovi-osvjezi').addEventListener('click', refresh);
+
+  // ---------------- organizacija ----------------
+  const reviriCache = async () => (await idbGet('spiskovi', 'reviri'))?.rows || [];
+
+  $('btn-lov-novi').addEventListener('click', async () => {
+    const mojiReviri = loadJSON('lovac.vodja_revira', []);
+    const reviri = (await reviriCache()).filter((r) => r.aktivno !== false && (me()?.is_admin || mojiReviri.includes(r.id)));
+    $('lov-novi-revir').innerHTML = reviri.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.naziv)}</option>`).join('');
+    $('lov-novi').hidden = false;
+  });
+  $('btn-lov-novi-odustani').addEventListener('click', () => { $('lov-novi').hidden = true; });
+  $('forma-lov-novi').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    try {
+      const rows = await q(getClient().from('lovovi').insert({
+        revir_id: f.revir.value, naziv: f.naziv.value.trim(), datum: f.datum.value, napomena: f.napomena.value.trim() || null, organizator_id: me().id,
+      }).select('*'));
+      $('lov-novi').hidden = true;
+      await refresh();
+      await openEditor(rows[0].id);
+    } catch (err) {
+      $('lovovi-status').textContent = `Server odbio: ${err.message}`;
+    }
+  });
+
+  const run = async (fn, ok) => {
+    $('lov-uredi-status').textContent = 'Šaljem…';
+    try {
+      await fn();
+      $('lov-uredi-status').textContent = '';
+      if (ok) toast(ok);
+      await downloadHunts();
+      await openEditor(editing);
+      if (shown?.id === editing) await showSchedule(editing).then(() => { list.hidden = true; });
+    } catch (err) {
+      $('lov-uredi-status').textContent = `Nije uspjelo (potreban je internet): ${err.message}`;
+    }
+  };
+
+  const openEditor = async (id) => {
+    editing = id;
+    const x = await idbGet(STORE, id);
+    const members = loadJSON('lovac.clanovi', []);
+    $('lov-uredi-naslov').textContent = `${x.lov.naziv} (${x.lov.datum})`;
+    $('lov-uredi-stanje').textContent = `Status: ${STATUS[x.lov.status]}`;
+    $('btn-lov-pokreni').hidden = x.lov.status !== 'planiran';
+    $('btn-lov-zavrsi').hidden = x.lov.status !== 'u_toku';
+    $('lov-upozorenja').innerHTML = standWarnings(x.stanovi).map((w) => `<li>${escapeHtml(w)}</li>`).join('');
+    $('lov-ucesnici').innerHTML = x.ucesnici.map((u) => `<li class="trag-red" data-id="${escapeHtml(u.korisnik_id)}">
+      <b>${escapeHtml(memberName(u.korisnik_id))}</b> <span class="sitno">${ULOGE[u.uloga]}</span>
+      <button type="button" class="dugme" data-akcija="ukloni-ucesnika">Ukloni</button></li>`).join('') || '<li class="sitno">Nema učesnika.</li>';
+    const notIn = members.filter((m) => !x.ucesnici.some((u) => u.korisnik_id === m.id));
+    $('lov-dodaj-clan').innerHTML = notIn.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(memberName(m.id))}</option>`).join('');
+    const opts = (sel) => `<option value="">— niko —</option>${x.ucesnici.filter((u) => u.uloga !== 'pogonic')
+      .map((u) => `<option value="${escapeHtml(u.korisnik_id)}" ${u.korisnik_id === sel ? 'selected' : ''}>${escapeHtml(memberName(u.korisnik_id))}</option>`).join('')}`;
+    $('lov-stanovi').innerHTML = x.stanovi.sort((a, b) => a.broj - b.broj).map((s) => `<li class="trag-red" data-id="${escapeHtml(s.id)}">
+      <b>Stan ${s.broj}</b> <select data-akcija="dodijeli" aria-label="Strijelac na stanu ${s.broj}">${opts(s.korisnik_id)}</select>
+      <div class="sitno">${x.sektori.filter((k) => k.stan_id === s.id).map((k) => `${escapeHtml(k.razlog)} ${Math.round(k.od_azimut)}°–${Math.round(k.do_azimut)}°`).join('; ') || 'Nema ručnih sektora'}</div>
+      <div class="red-dugmadi">
+        <input name="od" inputmode="numeric" placeholder="od °" aria-label="Od azimuta">
+        <input name="do" inputmode="numeric" placeholder="do °" aria-label="Do azimuta">
+        <input name="razlog" placeholder="razlog (put, kuća…)" aria-label="Razlog">
+        <button type="button" class="dugme" data-akcija="sektor">Dodaj zabranjen pravac</button>
+        <button type="button" class="dugme" data-akcija="ukloni-stan">Ukloni stan</button>
+      </div></li>`).join('') || '<li class="sitno">Nema stanova.</li>';
+    $('lov-uredi-status').textContent = '';
+    list.hidden = true;
+    editor.hidden = false;
+  };
+
+  $('btn-lov-dodaj-clan').addEventListener('click', () => {
+    const id = $('lov-dodaj-clan').value;
+    if (!id) return;
+    run(() => q(getClient().from('lov_ucesnici').insert({ lov_id: editing, korisnik_id: id, uloga: $('lov-dodaj-uloga').value })), 'Učesnik dodan');
+  });
+  $('lov-ucesnici').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="ukloni-ucesnika"]');
+    if (!b) return;
+    const id = b.closest('[data-id]').dataset.id;
+    run(() => q(getClient().from('lov_ucesnici').delete().eq('lov_id', editing).eq('korisnik_id', id)), 'Učesnik uklonjen');
+  });
+  $('lov-stanovi').addEventListener('change', (e) => {
+    if (e.target.dataset.akcija !== 'dodijeli') return;
+    const id = e.target.closest('[data-id]').dataset.id;
+    run(() => q(getClient().from('stanovi').update({ korisnik_id: e.target.value || null }).eq('id', id)), 'Stan dodijeljen');
+  });
+  $('lov-stanovi').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija]');
+    if (!b || b.tagName !== 'BUTTON') return;
+    const row = b.closest('[data-id]');
+    const id = row.dataset.id;
+    if (b.dataset.akcija === 'ukloni-stan') run(() => q(getClient().from('stanovi').delete().eq('id', id)), 'Stan uklonjen');
+    if (b.dataset.akcija === 'sektor') {
+      const od = Number(row.querySelector('[name=od]').value);
+      const doA = Number(row.querySelector('[name=do]').value);
+      const razlog = row.querySelector('[name=razlog]').value.trim();
+      if (!Number.isFinite(od) || !Number.isFinite(doA) || od < 0 || od >= 360 || doA < 0 || doA > 360 || !razlog) {
+        $('lov-uredi-status').textContent = 'Zabranjen pravac: od i do u stepenima (0–360, u smjeru kazaljke) i razlog';
+        return;
+      }
+      run(() => q(getClient().from('sektori').insert({ stan_id: id, od_azimut: od, do_azimut: doA, razlog })), 'Zabranjen pravac dodan');
+    }
+  });
+
+  // Postavljanje stana: editor se skloni, lovac pomjeri kartu, nišan označi mjesto.
+  $('btn-lov-dodaj-stan').addEventListener('click', () => {
+    editor.hidden = true;
+    placing = true;
+    $('lov-postavi').hidden = false;
+  });
+  $('btn-lov-postavi-odustani').addEventListener('click', () => { placing = false; $('lov-postavi').hidden = true; editor.hidden = false; });
+  $('btn-lov-postavi').addEventListener('click', async () => {
+    const x = await idbGet(STORE, editing);
+    const c = map.getCenter();
+    placing = false;
+    $('lov-postavi').hidden = true;
+    await run(() => q(getClient().from('stanovi').insert({ lov_id: editing, broj: nextStandNumber(x.stanovi), lat: c.lat, lon: c.lng })), 'Stan postavljen');
+  });
+  $('btn-lov-pokreni').addEventListener('click', () => run(() => q(getClient().from('lovovi').update({ status: 'u_toku' }).eq('id', editing)), 'Lov je pokrenut'));
+  wireTwoTap($('btn-lov-zavrsi'), 'Dodirni ponovo za kraj lova', () => run(() => q(getClient().from('lovovi').update({ status: 'zavrsen' }).eq('id', editing)), 'Lov je završen'));
+  $('btn-lov-uredi-zatvori').addEventListener('click', () => { editor.hidden = true; list.hidden = false; renderList(); });
+  $('btn-lov-uredi-karta').addEventListener('click', () => showSchedule(editing).then(() => { editor.hidden = true; }));
+
+  // ---------------- reviri i vođe (admin) ----------------
+  const renderReviri = async () => {
+    const sb = getClient();
+    try {
+      const reviri = await q(sb.from('reviri').select('*'));
+      const vodje = await q(sb.from('revir_vodje').select('*'));
+      const members = loadJSON('lovac.clanovi', []);
+      $('reviri-spisak').innerHTML = reviri.map((r) => `<li class="trag-red" data-id="${escapeHtml(r.id)}"><b>${escapeHtml(r.naziv)}</b>
+        <span class="sitno">Vođe: ${vodje.filter((v) => v.revir_id === r.id).map((v) => escapeHtml(memberName(v.korisnik_id))).join(', ') || 'nema'}</span>
+        <div class="red-dugmadi"><select data-akcija="vodja">${members.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(memberName(m.id))}</option>`).join('')}</select>
+        <button type="button" class="dugme" data-akcija="postavi-vodju">Postavi za vođu</button>
+        <button type="button" class="dugme" data-akcija="ukloni-vodju">Ukloni vođu</button></div></li>`).join('') || '<li class="sitno">Nema revira.</li>';
+    } catch (err) {
+      $('reviri-status').textContent = `Nema veze sa serverom (${err.message})`;
+    }
+  };
+  $('btn-lov-reviri').addEventListener('click', async () => { $('reviri').hidden = false; await renderReviri(); });
+  $('btn-reviri-zatvori').addEventListener('click', () => { $('reviri').hidden = true; });
+  $('btn-revir-dodaj').addEventListener('click', async () => {
+    const naziv = $('revir-novi').value.trim();
+    if (!naziv) return;
+    try { await q(getClient().from('reviri').insert({ naziv })); $('revir-novi').value = ''; } catch (err) { $('reviri-status').textContent = err.message; }
+    await renderReviri();
+  });
+  $('reviri-spisak').addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-akcija]');
+    if (!b) return;
+    const row = b.closest('[data-id]');
+    const kid = row.querySelector('[data-akcija="vodja"]').value;
+    try {
+      if (b.dataset.akcija === 'postavi-vodju') await q(getClient().from('revir_vodje').insert({ revir_id: row.dataset.id, korisnik_id: kid }));
+      if (b.dataset.akcija === 'ukloni-vodju') await q(getClient().from('revir_vodje').delete().eq('revir_id', row.dataset.id).eq('korisnik_id', kid));
+    } catch (err) { $('reviri-status').textContent = err.message; }
+    await renderReviri();
+  });
+
+  registerBackHandler(() => {
+    if (!$('reviri').hidden) { $('reviri').hidden = true; return true; }
+    if (!$('lov-novi').hidden) { $('lov-novi').hidden = true; return true; }
+    if (placing) { $('btn-lov-postavi-odustani').click(); return true; }
+    if (!editor.hidden) { editor.hidden = true; return true; }
+    if (!list.hidden) { list.hidden = true; return true; }
+    return false;
+  });
+
+  return { showSchedule, current: () => shown };
+}
