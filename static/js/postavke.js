@@ -1,6 +1,6 @@
 // Ekran Postavke: izgled, podloga, keš karte, nalog, verzija i ažuriranje.
 
-import { applyTheme, toast } from './ui.js';
+import { applyTheme, toast, registerBackHandler, wireTwoTap } from './ui.js';
 import { tileCacheCount, clearTileCache } from './tiles.js';
 import { cachedProfile } from './auth.js';
 import { isServerConfigured } from './config.js';
@@ -13,7 +13,6 @@ const VEZA_TEKST = {
   dobra: 'Veza je dobra',
   nepoznato: 'Još nije provjereno',
 };
-const POTVRDA_MS = 4000;
 
 export function describeProfile(p) {
   if (!p) return 'Niste prijavljeni';
@@ -34,13 +33,6 @@ export function closeSettings() {
   if (s) s.hidden = true;
 }
 
-// Dugme Nazad na telefonu: prvo zatvara otvoreno, tek onda dozvoljava izlaz iz aplikacije.
-export function handleBack() {
-  if (isSettingsOpen()) { closeSettings(); return true; }
-  const menu = el('meni-podloga');
-  if (menu && !menu.hidden) { menu.hidden = true; return true; }
-  return false;
-}
 
 async function refreshCacheCount() {
   const out = el('postavke-kes');
@@ -65,19 +57,7 @@ function refreshStatic(appVer) {
 }
 
 function wireCacheButton() {
-  const btn = el('btn-kes-obrisi');
-  const normal = btn.textContent;
-  let timer = null;
-  const reset = () => { btn.textContent = normal; delete btn.dataset.potvrda; clearTimeout(timer); };
-  btn.addEventListener('click', async () => {
-    // WebView ne prikazuje confirm() dijalog, pa potvrda ide drugim dodirom.
-    if (!btn.dataset.potvrda) {
-      btn.dataset.potvrda = '1';
-      btn.textContent = 'Dodirni ponovo za brisanje';
-      timer = setTimeout(reset, POTVRDA_MS);
-      return;
-    }
-    reset();
+  wireTwoTap(el('btn-kes-obrisi'), 'Dodirni ponovo za brisanje', async () => {
     await clearTileCache();
     await refreshCacheCount();
     toast('Keš karte obrisan');
@@ -104,6 +84,11 @@ function wireUpdateButton(appVer) {
 }
 
 export function initPostavke({ setBase, onLogout, appVer }) {
+  registerBackHandler(() => {
+    if (!isSettingsOpen()) return false;
+    closeSettings();
+    return true;
+  });
   const open = () => {
     refreshStatic(appVer);
     refreshCacheCount();

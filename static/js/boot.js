@@ -6,10 +6,11 @@ import {
 } from './auth.js';
 import { setStorageReporter } from './storage.js';
 import { onQualityChange } from './net.js';
-import { showScreen, toast, alarm, initTheme } from './ui.js';
+import { showScreen, toast, alarm, initTheme, handleBack } from './ui.js';
 import { initMap } from './map.js';
 import { initGps } from './gps.js';
-import { initPostavke, handleBack } from './postavke.js';
+import { initPostavke } from './postavke.js';
+import { initTragovi, runRecordingAutotest } from './tragovi-ui.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
@@ -44,6 +45,11 @@ function enter(screen) {
       initPostavke({ setBase, onLogout: doLogout, appVer: APP_VER });
     } catch (err) {
       console.error('postavke', err);
+    }
+    try {
+      initTragovi(globalThis.L, map);
+    } catch (err) {
+      console.error('tragovi', err);
     }
     // Leaflet treba stvarnu veličinu kontejnera nakon što ekran postane vidljiv.
     requestAnimationFrame(() => map.invalidateSize());
@@ -167,6 +173,10 @@ onDomReady(() => {
     ['sesija', () => backgroundSession()],
     ['sw', registerServiceWorker],
     ['azuriranje', updateCheck],
+    ['autotest', () => {
+      if (new URLSearchParams(globalThis.location.search).get('autotest') === 'trag') return runRecordingAutotest();
+      return null;
+    }],
   ]);
   console.info('BOOT_OK', APP_VER);
 });

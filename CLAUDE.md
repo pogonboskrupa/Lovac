@@ -95,6 +95,9 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Snimanje traga**
 - Pauza se pamti kao vremenski intervali (trajno); inače native replay ubaci tačke iz pauze ili odbaci tačke prije nje. Stop zatvara otvoren interval.
 - Dijeljeni tajmer (crash-snimak više snimanja) gasi se tek kad NIJEDNO snimanje ne traje.
+- Arhitektura: `GpsService` (foreground, `START_STICKY`, wake lock) piše SVE tačke u `GpsBuffer` (`filesDir/gps-buffer.jsonl`); JS (`snimanje.js`) čita od bajt-pomaka preko `AndroidGps.read(offset)` i filtrira po intervalima traga (start/kraj/pauze) u `trag.js mergePoints`. Bafer se briše tek kad nema aktivnog NI nedovršenog traga.
+- `LocationListener` na Androidu ≤ 10 nema default metode: `onStatusChanged/onProviderEnabled/onProviderDisabled` moraju biti implementirane (inače AbstractMethodError).
+- Emulator test snimanja: `am start -e autotest trag` → JS loguje `TRAG_TACAKA n`, a skripta šalje `adb emu geo fix`. Autotest ne traži izuzeće od baterije (dijalog bi prekrio app).
 
 **Pločice**
 - Mrežno preuzimanje pločica ide kroz `createLimiter` (max 6 istovremeno, najnovije prvo, prekid na `tileunload`/`tileabort`); bez toga spor server i slab signal ugase sve zahtjeve odjednom. Keš pločica ima gornju granicu (`MAX_CACHED_TILES`).
@@ -102,7 +105,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **UI**
 - WebView ne prikazuje `confirm()`/`alert()` bez `onJsConfirm`/`onJsAlert` u `WebChromeClient`: potvrda opasnih radnji ide drugim dodirom na isto dugme.
 - Odjava na mrtvoj vezi: `signOut` visi, pa se čeka najviše `SIGNOUT_GRACE_MS`, a lokalni `sb-*` ključevi se brišu uvijek; ekran se mijenja odmah.
-- Dugme Nazad: `MainActivity` pita `window.__nazad()`; svaki novi overlay/list mora se zatvarati kroz `handleBack()` u `postavke.js`.
+- Dugme Nazad: `MainActivity` pita `window.__nazad()`; svaki novi overlay/list registruje zatvaranje sa `registerBackHandler()` iz `ui.js` (zadnji registrovan ide prvi).
 - Emoji ikonice izgledaju različito na OEM uređajima → SVG sprite (`<svg class="ic"><use href="#ic-…"/></svg>`).
 - Dnevni mod / jako sunce: svaka nova boja mora proći kontrast 4.5:1 i u dnevnoj temi.
 - Dodirne mete ≥ 44 px, polja ≥ 48 px, font polja ≥ 16 px (inače WebView zumira).

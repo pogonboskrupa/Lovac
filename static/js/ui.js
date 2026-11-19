@@ -66,3 +66,45 @@ export function initTheme() {
     applyTheme(document.documentElement.dataset.tema === 'dan' ? 'noc' : 'dan');
   });
 }
+
+// Dugme Nazad na telefonu (MainActivity pita window.__nazad()): zadnje otvoreno se zatvara prvo,
+// a tek kad ništa nije otvoreno, Android izlazi iz aplikacije.
+const backHandlers = [];
+
+export function registerBackHandler(fn) {
+  backHandlers.push(fn);
+}
+
+export function handleBack() {
+  for (let i = backHandlers.length - 1; i >= 0; i--) {
+    try {
+      if (backHandlers[i]()) return true;
+    } catch (err) {
+      console.error('nazad', err);
+    }
+  }
+  const menu = document.getElementById('meni-podloga');
+  if (menu && !menu.hidden) { menu.hidden = true; return true; }
+  return false;
+}
+
+// Potvrda opasne radnje drugim dodirom (WebView ne prikazuje confirm()).
+export function wireTwoTap(btn, confirmLabel, action, ms = 4000) {
+  const normal = btn.textContent;
+  let timer = null;
+  const reset = () => { btn.textContent = normal; delete btn.dataset.potvrda; clearTimeout(timer); };
+  btn.addEventListener('click', async (e) => {
+    if (!btn.dataset.potvrda) {
+      btn.dataset.potvrda = '1';
+      btn.textContent = confirmLabel;
+      timer = setTimeout(reset, ms);
+      return;
+    }
+    reset();
+    await action(e);
+  });
+}
+
+export function escapeHtml(s) {
+  return String(s ?? '').replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+}

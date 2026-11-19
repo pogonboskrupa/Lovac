@@ -125,9 +125,17 @@ public class MainActivity extends Activity {
 
         updateBridge = new UpdateBridge(this);
         webView.addJavascriptInterface(updateBridge, "AndroidUpdate");
+        webView.addJavascriptInterface(new GpsBridge(this), "AndroidGps");
+        webView.addJavascriptInterface(new ShareBridge(this), "AndroidShare");
 
         if (savedInstanceState != null) webView.restoreState(savedInstanceState);
-        else webView.loadUrl(START_URL);
+        else webView.loadUrl(startUrl(getIntent()));
+    }
+
+    // CI emulator test pokreće snimanje sa "-e autotest trag"; drugo se ignoriše.
+    static String startUrl(Intent intent) {
+        String t = intent == null ? null : intent.getStringExtra("autotest");
+        return "trag".equals(t) ? START_URL + "?autotest=trag" : START_URL;
     }
 
     private boolean hasLocationPermission() {

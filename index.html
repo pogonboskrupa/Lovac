@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.1.4';
+  const APP_VER = 'v0.1.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -21,6 +21,8 @@
   <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14" stroke="currentColor" stroke-width="2.5"/></symbol>
   <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" stroke="currentColor" stroke-width="2"/></symbol>
   <symbol id="ic-north" viewBox="0 0 24 24"><path d="M12 2 18 20 12 15 6 20Z" fill="currentColor"/></symbol>
+  <symbol id="ic-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol>
+  <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="5" cy="19" r="2.5" fill="currentColor"/><circle cx="19" cy="5" r="2.5" fill="currentColor"/><path d="M5 16.5V12c0-2 1.5-3 3.5-3h7c2 0 3.5-1 3.5-3V7.5" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="3 2"/></symbol>
   <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M3 7h11M19 7h2M3 17h2M10 17h11" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16.5" cy="7" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="7.5" cy="17" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
@@ -76,9 +78,18 @@
     <button id="btn-zoom-out" class="ikona-dugme" type="button" aria-label="Umanji"><svg class="ic"><use href="#ic-minus"/></svg></button>
     <button id="btn-centriraj" class="ikona-dugme" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
     <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
+    <button id="btn-snimaj" class="ikona-dugme snimaj" type="button" aria-pressed="false" aria-label="Snimaj trag"><svg class="ic"><use href="#ic-record"/></svg></button>
+    <button id="btn-tragovi" class="ikona-dugme" type="button" aria-label="Moji tragovi"><svg class="ic"><use href="#ic-route"/></svg></button>
   </div>
 
   <div class="donji-dio">
+    <div id="panel-snimanje" class="panel-snimanje" hidden>
+      <div class="snim-info"><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.</div>
+      <div class="red-dugmadi">
+        <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
+        <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
+      </div>
+    </div>
     <div id="gps-status" class="gps-status" hidden>
       <span id="gps-tacnost" class="tacnost">GPS…</span>
       <span>fiks prije <span id="gps-starost">—</span></span>
@@ -114,6 +125,9 @@
   <p class="sitno">Pločice koje si već vidio prikazuju se i bez signala. Obrisane se moraju ponovo preuzeti uz internet.</p>
   <button id="btn-kes-obrisi" class="dugme" type="button">Obriši keš karte</button>
 
+  <h3>Tragovi</h3>
+  <button id="btn-moji-tragovi" class="dugme" type="button">Moji tragovi</button>
+
   <h3>Nalog</h3>
   <p id="postavke-nalog" class="red-info"></p>
   <p class="red-info">Veza sa serverom: <b id="postavke-server"></b></p>
@@ -126,6 +140,23 @@
   <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
   <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
   <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
+</section>
+
+<section id="tragovi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="tragovi-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="tragovi-naslov">Moji tragovi</h2>
+    <button id="btn-tragovi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="tragovi-prazno" class="sitno">Još nema snimljenih tragova. Snimanje se pokreće dugmetom sa krugom na karti.</p>
+  <ul id="tragovi-spisak" class="spisak"></ul>
+</section>
+
+<section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>
+  <p id="oporavak-tekst"></p>
+  <div class="red-dugmadi">
+    <button id="btn-oporavak-nastavi" class="dugme glavno" type="button">Nastavi snimanje</button>
+    <button id="btn-oporavak-zavrsi" class="dugme" type="button">Završi trag</button>
+  </div>
 </section>
 
 <div id="nova-verzija" class="traka-obavijest" hidden>

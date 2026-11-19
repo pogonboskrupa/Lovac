@@ -104,7 +104,7 @@ input {
 }
 .sjever .ic { width: 18px; height: 18px; margin-top: -8px; }
 .sjever span { position: absolute; bottom: 2px; font-size: 11px; font-weight: 700; }
-.desna-kolona { position: absolute; right: 8px; top: 40%; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+.desna-kolona { position: absolute; right: 8px; top: calc(120px + env(safe-area-inset-top)); z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
 .donji-dio { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1000; padding: 0 8px calc(8px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .gps-status { display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 10px; background: var(--povrsina); box-shadow: var(--sjena); font-size: 14px; }
 .tacnost { padding: 2px 8px; border-radius: 6px; font-weight: 700; color: var(--gps-tekst); background: var(--gps-lose); }
@@ -139,6 +139,23 @@ input {
 }
 .segment button[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); font-weight: 600; }
 .list-preko .dugme { margin-top: 8px; }
+
+/* Snimanje traga */
+.ikona-dugme.snimaj { color: var(--gps-lose); }
+.ikona-dugme.snimaj[aria-pressed="true"] { background: var(--gps-lose); color: var(--gps-tekst); }
+.panel-snimanje { width: 100%; padding: 8px 10px; border-radius: 10px; background: var(--povrsina); box-shadow: var(--sjena); }
+.panel-snimanje .red-dugmadi { margin-top: 6px; }
+.panel-snimanje .dugme { flex: 1; }
+.snim-info { font-size: 15px; font-variant-numeric: tabular-nums; }
+.spisak { list-style: none; margin: 12px 0 0; padding: 0; }
+.trag-red { padding: 12px 0; border-bottom: 1px solid var(--dugme); }
+.trag-naslov { display: flex; flex-direction: column; gap: 2px; }
+.trag-red .red-dugmadi { gap: 6px; margin-top: 8px; }
+.trag-red .dugme { padding: 0 12px; }
+.dijalog {
+  position: fixed; left: 12px; right: 12px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 3500;
+  padding: 16px; border-radius: 12px; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+}
 
 /* Obavijesti */
 .traka-obavijest, .alarm {
