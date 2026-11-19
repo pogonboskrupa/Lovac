@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.3';
+  const APP_VER = 'v0.2.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -128,7 +128,7 @@
     <div class="lov-panel-red"><b id="lov-panel-naziv"></b><button id="btn-lov-panel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori raspored"><svg class="ic"><use href="#ic-close"/></svg></button></div>
     <span id="lov-panel-uloga" class="sitno"></span>
     <p id="lov-kompas" class="lov-kompas" data-stanje="nepoznato" role="status"></p>
-    <p class="sitno">Crveno = zabranjeni pravci pucanja. Ne zamjenjuje pravila lova ni vođu lova. Kompas telefona može griješiti — uvijek provjeri pogledom.</p>
+    <p class="sitno">Crveno = zabranjeno. Ne zamjenjuje pravila lova ni vođu lova; kompas može griješiti — provjeri pogledom.</p>
   </div>
   <div id="lov-postavi" class="dijalog dijalog-gore" hidden>
     <p>Pomjeri kartu tako da nišan bude tačno na mjestu stana.</p>
@@ -154,6 +154,10 @@
   </div>
 
   <div class="donji-dio">
+    <div id="uzivo" class="uzivo" hidden>
+      <button id="btn-sos" class="dugme dugme-sos" type="button">SOS</button>
+      <span id="uzivo-stanje" class="sitno">Uživo: tvoju poziciju vide učesnici dok lov traje</span>
+    </div>
     <div id="panel-snimanje" class="panel-snimanje" hidden>
       <div class="snim-info"><span id="snim-vrsta"></span><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.<span id="snim-krv"></span></div>
       <div id="potraga-dugmad" class="red-dugmadi" hidden>
@@ -230,6 +234,11 @@
   <p id="postavke-red" class="red-info"></p>
   <p id="postavke-red-greska" class="sitno"></p>
   <button id="btn-posalji-sad" class="dugme" type="button">Pošalji sad</button>
+
+  <h3>Moj telefon (za SOS u zajedničkom lovu)</h3>
+  <label>Broj telefona<input id="telefon" inputmode="tel" maxlength="20" placeholder="+387 61 123 456"></label>
+  <button id="btn-telefon-sacuvaj" class="dugme" type="button">Sačuvaj broj</button>
+  <p id="telefon-status" class="sitno">Broj vide samo učesnici lova dok lov traje.</p>
 
   <h3>Nalog</h3>
   <p id="postavke-nalog" class="red-info"></p>
@@ -450,6 +459,7 @@
     <label>Napomena<textarea name="napomena" rows="2" maxlength="1000"></textarea></label>
     <div id="ods-foto" class="foto-red"></div>
     <label class="dugme dugme-fajl">Dodaj fotografiju<input id="ods-foto-input" type="file" accept="image/*" multiple hidden></label>
+    <label id="ods-u-lov-red" class="red-check" hidden><input type="checkbox" id="ods-u-lov" checked> <span id="ods-u-lov-tekst"></span></label>
     <p id="ods-status" class="status" role="status"></p>
     <div class="red-dugmadi">
       <button id="btn-ods-sacuvaj" type="submit" class="dugme glavno">Sačuvaj</button>
@@ -576,6 +586,21 @@
   <div class="red-dugmadi"><input id="revir-novi" placeholder="Naziv novog revira" aria-label="Naziv revira"><button id="btn-revir-dodaj" class="dugme" type="button">Dodaj revir</button></div>
   <p id="reviri-status" class="status" role="status"></p>
   <ul id="reviri-spisak" class="spisak"></ul>
+</section>
+
+<section id="sos-poslan-dijalog" class="dijalog dijalog-sos" role="alertdialog" aria-labelledby="sos-poslan" hidden>
+  <p id="sos-poslan"></p>
+  <p id="sos-poslan-tekst" class="sos-tekst"></p>
+  <button id="btn-sos-poslan-zatvori" class="dugme" type="button">Zatvori</button>
+</section>
+
+<section id="sos-primljen" class="dijalog dijalog-sos" role="alertdialog" aria-labelledby="sos-primljen-naslov" hidden>
+  <h3 id="sos-primljen-naslov">SOS u lovu!</h3>
+  <p id="sos-primljen-tekst" class="sos-tekst"></p>
+  <div class="red-dugmadi">
+    <button id="btn-sos-vodi" class="dugme glavno" type="button">Vodi me do</button>
+    <button id="btn-sos-zatvori" class="dugme" type="button">Zatvori</button>
+  </div>
 </section>
 
 <section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>

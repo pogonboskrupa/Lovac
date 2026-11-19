@@ -291,6 +291,12 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .dijalog-gore { top: calc(64px + env(safe-area-inset-top)); bottom: auto; }
 #lov-stanovi input { flex: 1 1 80px; min-width: 70px; margin: 0; }
 
+.uzivo { width: 100%; display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 10px; background: var(--povrsina); box-shadow: var(--sjena); }
+.uzivo .sitno { flex: 1; }
+.dugme-sos { flex: none; min-width: 96px; min-height: 56px; font-size: 22px; font-weight: 800; letter-spacing: 2px; background: #c1121f; color: #ffffff; }
+.dijalog-sos { border: 3px solid #c1121f; }
+.sos-tekst { font-weight: 700; word-break: break-word; }
+
 /* Obavijesti */
 .traka-obavijest, .alarm {
   position: fixed; left: 8px; right: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 2000;

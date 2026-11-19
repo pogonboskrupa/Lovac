@@ -21,6 +21,7 @@ import { initMjerenje } from './mjerenje-ui.js';
 import { initPreuzimanje } from './preuzimanje-ui.js';
 import { initKarte, runKarteAutotest } from './karte-ui.js';
 import { initLov } from './lov-ui.js';
+import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
 import { initSync } from './sync.js';
@@ -74,6 +75,8 @@ function enter(screen) {
       ['preuzimanje', () => initPreuzimanje(map, activeBase)],
       ['karte', () => initKarte(globalThis.L, map)],
       ['lov', () => initLov(globalThis.L, map)],
+      ['uzivo', () => initUzivo(globalThis.L, map)],
+      ['kontakt', () => initKontakt()],
       ['propisi', () => initPropisiAdmin()],
     ]) {
       try { fn(); } catch (err) { console.error(name, err); }

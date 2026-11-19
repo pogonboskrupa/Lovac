@@ -134,6 +134,9 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Kompas (`lov.js headingCheck`) ima toleranciju ±10° na sigurniju stranu; UI uvijek kaže da ne zamjenjuje pravila lova ni vođu lova i da kompas može griješiti.
 - Migracija 006: vođa lova je uloga PO REVIRU (`revir_vodje`, dodjeljuje admin); lov organizuje admin ili vođa tog revira; raspored vide samo učesnici, organizatori i admin. Telefoni su u tabeli `kontakti` (samo svoj red) i dostupni drugima jedino kroz `lov_telefoni()` za lov U TOKU — kolona u `korisnici` bi procurila svim lovcima.
 - Raspored se preuzima u IndexedDB (`lovovi`) i radi offline; organizacija traži internet.
+- Uživo (migracija 007): `lov_pozicije` i `sos` samo za učesnike i SAMO dok je lov `u_toku`; pozicije se šalju svakih 20 s, SOS se prima prozivkom (20 s) + Realtime kad je dostupan. Bez push servisa obavijest stiže samo dok je app otvorena — UI to kaže.
+- SOS: dva kanala — server (ako ima veze) i UVIJEK SMS (`AndroidSms`, intent `smsto:`, lovac pritisne Pošalji; brojevi iz `lov_telefoni` keširani pri prikazu lova, bez mog broja). Tekst ima WGS84 + GK6 + link.
+- Panel lova mora ostati nizak (prekriva stanove na karti): SOS je u donjem dijelu ekrana, izvještaj u spisku lovova.
 
 **Izvoz**
 - CSV za Excel (`odstrel.js toCsv`): BOM, `;`, decimalni zarez, `\r\n`; ćelija koja počinje sa `= + - @` dobija `'` (zaštita od formula).

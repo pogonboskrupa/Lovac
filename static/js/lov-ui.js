@@ -9,6 +9,7 @@ import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingChe
 import { standWarnings, sectorWedge } from './sektori.js';
 import { onGpsUpdate, currentHeading } from './gps.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
+import { printHuntReport } from './uzivo-ui.js';
 
 const STORE = 'lovovi';
 const $ = (id) => document.getElementById(id);
@@ -108,6 +109,12 @@ export function initLov(L, map) {
     const s = mine?.stan || shown.stanovi.find((x) => Number.isFinite(x.lat));
     if (s) map.setView([s.lat, s.lon], Math.max(map.getZoom(), 15));
     document.dispatchEvent(new CustomEvent('lov:prikazan', { detail: { lov: shown } }));
+    // Status (npr. vođa je pokrenuo lov) se osvježava u pozadini dok ima veze.
+    const before = shown.lov.status;
+    downloadHunts().then(async () => {
+      const fresh = await idbGet(STORE, id);
+      if (shown?.id === id && fresh && fresh.lov.status !== before) await showSchedule(id);
+    }).catch(() => {});
   };
   const hideSchedule = () => {
     shown = null;
@@ -134,6 +141,7 @@ export function initLov(L, map) {
         <span class="sitno">${escapeHtml(x.lov.datum)} · ${escapeHtml(x.revir?.naziv || '')} · ${STATUS[x.lov.status]}
         ${mine ? ` · ${ULOGE[mine.uloga]}${mine.stan ? `, stan ${mine.stan.broj}` : ''}` : ''}</span></div>
         <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="prikazi">Raspored na karti</button>
+        ${x.lov.status !== 'planiran' ? '<button type="button" class="dugme" data-akcija="izvjestaj">Izvještaj (PDF)</button>' : ''}
         ${canOrganizeAny() ? '<button type="button" class="dugme" data-akcija="uredi">Organizuj</button>' : ''}</div>
       </li>`;
     }).join('');
@@ -159,6 +167,7 @@ export function initLov(L, map) {
     const id = b.closest('[data-id]').dataset.id;
     if (b.dataset.akcija === 'prikazi') await showSchedule(id);
     if (b.dataset.akcija === 'uredi') await openEditor(id);
+    if (b.dataset.akcija === 'izvjestaj') await printHuntReport(id);
   });
   $('btn-lovovi').addEventListener('click', async () => {
     $('meni-spiskovi').hidden = true;

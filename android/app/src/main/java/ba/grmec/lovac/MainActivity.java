@@ -149,6 +149,8 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new PrintBridge(this), "AndroidPrint");
         karteBridge = new KarteBridge(this, webView);
         webView.addJavascriptInterface(karteBridge, "AndroidKarte");
+        webView.addJavascriptInterface(new NotifBridge(this), "AndroidNotif");
+        webView.addJavascriptInterface(new SmsBridge(this), "AndroidSms");
 
         if (savedInstanceState != null) webView.restoreState(savedInstanceState);
         else webView.loadUrl(startUrl(getIntent()));

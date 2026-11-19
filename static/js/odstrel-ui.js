@@ -45,6 +45,9 @@ function harvestCategoryName(vrste, vrsta, kat) {
   return vrste.find((v) => v.kod === vrsta)?.kategorije?.find((k) => k.kod === kat)?.naziv || kat;
 }
 
+let activeHunt = null;
+document.addEventListener('lov:prikazan', (e) => { activeHunt = e.detail.lov; });
+
 export function initOdstrel(L, map) {
   const layer = L.layerGroup().addTo(map);
   const photos = createPhotoStrip();
@@ -114,6 +117,9 @@ export function initOdstrel(L, map) {
     await renderCategories();
     await photos.render($('ods-foto'), [], true);
     await showWarnings();
+    const inHunt = activeHunt?.lov.status === 'u_toku' && activeHunt.ucesnici.some((u) => u.korisnik_id === cachedProfile()?.id);
+    $('ods-u-lov-red').hidden = !inHunt;
+    if (inHunt) { $('ods-u-lov').checked = true; $('ods-u-lov-tekst').textContent = `Upiši i u zajednički lov "${activeHunt.lov.naziv}"`; }
     $('meni-dodaj').hidden = true;
     sheet.hidden = false;
   };
@@ -188,6 +194,7 @@ export function initOdstrel(L, map) {
       lon: draft.lon,
     });
     try { await saveRecord(STORE, rec); } catch { return; }
+    document.dispatchEvent(new CustomEvent('odstrel:upisan', { detail: { ...rec, uLov: !$('ods-u-lov-red').hidden && $('ods-u-lov').checked } }));
     $('ods-status').textContent = '';
     await closeForm(true);
     await renderLayer();
