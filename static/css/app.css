@@ -123,6 +123,23 @@ input {
 .gps-tacka::before { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #2f7dff; border: 3px solid #fff; box-shadow: 0 0 4px #000; }
 .gps-strelica { width: 28px; height: 28px; fill: #2f7dff; stroke: #fff; stroke-width: 1.5; transform-origin: 50% 50%; position: absolute; visibility: hidden; }
 
+/* Postavke */
+.list-preko {
+  position: fixed; inset: 0; z-index: 3000; overflow-y: auto; background: var(--pozadina); color: var(--tekst);
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+}
+.postavke-glava { display: flex; align-items: center; justify-content: space-between; }
+.postavke-glava h2 { margin: 0; font-size: 1.3rem; }
+.list-preko h3 { margin: 24px 0 8px; font-size: 1rem; color: var(--naglasak); }
+.red-info { margin: 6px 0; }
+.segment { display: flex; gap: 8px; flex-wrap: wrap; }
+.segment button {
+  flex: 1 1 30%; min-height: 48px; padding: 0 12px; border: 0; border-radius: 8px;
+  background: var(--dugme); color: var(--dugme-tekst); font-size: 16px;
+}
+.segment button[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); font-weight: 600; }
+.list-preko .dugme { margin-top: 8px; }
+
 /* Obavijesti */
 .traka-obavijest, .alarm {
   position: fixed; left: 8px; right: 8px; top: calc(64px + env(safe-area-inset-top)); z-index: 2000;

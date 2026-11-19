@@ -92,7 +92,13 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Pauza se pamti kao vremenski intervali (trajno); inače native replay ubaci tačke iz pauze ili odbaci tačke prije nje. Stop zatvara otvoren interval.
 - Dijeljeni tajmer (crash-snimak više snimanja) gasi se tek kad NIJEDNO snimanje ne traje.
 
+**Pločice**
+- Mrežno preuzimanje pločica ide kroz `createLimiter` (max 6 istovremeno, najnovije prvo, prekid na `tileunload`/`tileabort`); bez toga spor server i slab signal ugase sve zahtjeve odjednom. Keš pločica ima gornju granicu (`MAX_CACHED_TILES`).
+
 **UI**
+- WebView ne prikazuje `confirm()`/`alert()` bez `onJsConfirm`/`onJsAlert` u `WebChromeClient`: potvrda opasnih radnji ide drugim dodirom na isto dugme.
+- Odjava na mrtvoj vezi: `signOut` visi, pa se čeka najviše `SIGNOUT_GRACE_MS`, a lokalni `sb-*` ključevi se brišu uvijek; ekran se mijenja odmah.
+- Dugme Nazad: `MainActivity` pita `window.__nazad()`; svaki novi overlay/list mora se zatvarati kroz `handleBack()` u `postavke.js`.
 - Emoji ikonice izgledaju različito na OEM uređajima → SVG sprite (`<svg class="ic"><use href="#ic-…"/></svg>`).
 - Dnevni mod / jako sunce: svaka nova boja mora proći kontrast 4.5:1 i u dnevnoj temi.
 - Dodirne mete ≥ 44 px, polja ≥ 48 px, font polja ≥ 16 px (inače WebView zumira).

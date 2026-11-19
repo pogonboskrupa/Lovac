@@ -163,7 +163,28 @@ export async function refreshProfileInBackground() {
   }
 }
 
+const SIGNOUT_GRACE_MS = 3000;
+
+// Lokalne sesije servera (sb-*) se brišu uvijek, i kad server ne odgovara.
+// Inače bi se lovac po ponovnom pokretanju tiho vratio u app.
+export function clearServerSession() {
+  try {
+    for (const k of Object.keys(globalThis.localStorage)) {
+      if (k.startsWith('sb-')) globalThis.localStorage.removeItem(k);
+    }
+  } catch (err) {
+    console.warn('clearServerSession', err);
+  }
+}
+
 export async function logout() {
   removeKey(PROFILE_KEY);
-  try { await getClient()?.auth.signOut(); } catch (err) { console.warn('signOut', err); }
+  const sb = getClient();
+  try {
+    // Server se pita najviše nekoliko sekundi: na mrtvoj vezi poziv visi, ne pada.
+    if (sb) await Promise.race([sb.auth.signOut({ scope: 'local' }), new Promise((r) => { setTimeout(r, SIGNOUT_GRACE_MS); })]);
+  } catch (err) {
+    console.warn('signOut', err);
+  }
+  clearServerSession();
 }

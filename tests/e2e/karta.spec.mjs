@@ -47,10 +47,10 @@ test('izbor podloge se pamti', async ({ page }) => {
   await serveTiles(page);
   await page.goto('/');
   await page.locator('#btn-podloga').click();
-  await page.locator('[data-podloga="satelit"]').click();
-  await expect(page.locator('[data-podloga="satelit"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#meni-podloga [data-podloga="satelit"]').click();
+  await expect(page.locator('#meni-podloga [data-podloga="satelit"]')).toHaveAttribute('aria-pressed', 'true');
   await page.reload();
-  await expect(page.locator('[data-podloga="satelit"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#meni-podloga [data-podloga="satelit"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('GPS: tačnost u boji i Centriraj', async ({ page, context }) => {

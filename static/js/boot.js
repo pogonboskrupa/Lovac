@@ -9,6 +9,7 @@ import { onQualityChange } from './net.js';
 import { showScreen, toast, alarm, initTheme } from './ui.js';
 import { initMap } from './map.js';
 import { initGps } from './gps.js';
+import { initPostavke, handleBack } from './postavke.js';
 import { checkForUpdate, installUpdate } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
@@ -37,8 +38,13 @@ function enter(screen) {
   showScreen(screen);
   if (screen === 'mapa' && !mapReady) {
     mapReady = true;
-    const { map } = initMap(globalThis.L, 'karta');
+    const { map, setBase } = initMap(globalThis.L, 'karta');
     initGps(globalThis.L, map);
+    try {
+      initPostavke({ setBase, onLogout: doLogout, appVer: APP_VER });
+    } catch (err) {
+      console.error('postavke', err);
+    }
     // Leaflet treba stvarnu veličinu kontejnera nakon što ekran postane vidljiv.
     requestAnimationFrame(() => map.invalidateSize());
   }
@@ -53,6 +59,14 @@ function safetyNet(err) {
   } catch (e) {
     console.error('safetyNet', e);
   }
+}
+
+async function doLogout() {
+  // Prvi (sinhroni) dio odjave briše keširan profil; ekran se mijenja odmah,
+  // a odjava na serveru ide u pozadini.
+  const done = logout();
+  enter('prijava');
+  await done;
 }
 
 function readForm(form) {
@@ -78,10 +92,7 @@ function wireAuthForms() {
   };
   form?.addEventListener('submit', (e) => { e.preventDefault(); submit(e.submitter?.value || 'prijava'); });
   document.getElementById('btn-provjeri-odobrenje')?.addEventListener('click', () => backgroundSession(true));
-  document.getElementById('btn-odjava')?.addEventListener('click', async () => {
-    await logout();
-    enter('prijava');
-  });
+  document.getElementById('btn-odjava')?.addEventListener('click', doLogout);
 }
 
 async function backgroundSession(userAsked = false) {
@@ -138,6 +149,7 @@ onDomReady(() => {
     ['verzija', () => { document.querySelectorAll('.app-ver').forEach((el) => { el.textContent = APP_VER; }); }],
     ['tema', initTheme],
     ['pohrana', () => setStorageReporter(alarm)],
+    ['nazad', () => { globalThis.__nazad = handleBack; }],
     ['veza', wireConnectionBadge],
     ['forme', wireAuthForms],
     ['ekran', () => enter(decideStartScreen(cachedProfile(), isServerConfigured()))],
