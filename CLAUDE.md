@@ -138,6 +138,12 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - SOS: dva kanala — server (ako ima veze) i UVIJEK SMS (`AndroidSms`, intent `smsto:`, lovac pritisne Pošalji; brojevi iz `lov_telefoni` keširani pri prikazu lova, bez mog broja). Tekst ima WGS84 + GK6 + link.
 - Panel lova mora ostati nizak (prekriva stanove na karti): SOS je u donjem dijelu ekrana, izvještaj u spisku lovova.
 
+**Sekcije i pristup (migracija 008)**
+- Struktura: reviri (Krupa, Otoka, Jezerski) → sekcije (jedan grupovođa i jedan lovočuvar po sekciji). `grupovodje(korisnik_id, revir_id)` određuje ko smije praviti sekcije u kojem reviru (postavlja admin). Admin pravi/uređuje sve; grupovođa pravi sekciju u SVOM reviru, a revir/grupovođu/lovočuvara mijenja samo admin (trigger `zastiti_sekciju`).
+- Pristup: lovac traži (`sekcija_clanovi.status = 'ceka'`), grupovođa/admin odobrava; grupovođa može dodati spisak lovaca odmah kao `odobren`. Lovac se NE može sam odobriti niti dodati kao odobrenog. BEZ ODOBRENJA nema ulaza: `je_clan_sekcije()` daje pristup članovima i lovovima sekcije (`vidi_lov`).
+- Lov može imati `sekcija_id`; grupovođa ga organizuje samo za svoju sekciju i samo u revir te sekcije. U RLS politici podupit sa istim imenom kolone (`revir_id`) je tautologija: kolone vanjske tabele se kvalifikuju (`lovovi.revir_id`) — SQL test to hvata.
+- Klijent: `sekcije.js` (čista logika), `sekcije-ui.js` (ekran, keš u store `spiskovi/sekcije`); paneli "Upravljanje" pamte da su otvoreni (`otvoreno`), a lista se crta jednom poslije servera.
+
 **Izvoz**
 - CSV za Excel (`odstrel.js toCsv`): BOM, `;`, decimalni zarez, `\r\n`; ćelija koja počinje sa `= + - @` dobija `'` (zaštita od formula).
 - PDF/štampa: `AndroidPrint.printHtml` (WebView u mostu mora živjeti dok sistem ne preuzme dokument); u browseru iframe `print()`. Izvještaj odstrela uvijek nosi napomenu da ne zamjenjuje službeni lovački dnevnik.

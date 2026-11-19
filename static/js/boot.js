@@ -22,6 +22,7 @@ import { initPreuzimanje } from './preuzimanje-ui.js';
 import { initKarte, runKarteAutotest } from './karte-ui.js';
 import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
+import { initSekcije } from './sekcije-ui.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
@@ -76,6 +77,7 @@ function enter(screen) {
       ['preuzimanje', () => initPreuzimanje(map, activeBase)],
       ['karte', () => initKarte(globalThis.L, map)],
       ['lov', () => initLov(globalThis.L, map)],
+      ['sekcije', () => initSekcije()],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['kontakt', () => initKontakt()],
       ['propisi', () => initPropisiAdmin()],

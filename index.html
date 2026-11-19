@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.5';
+  const APP_VER = 'v0.2.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -95,7 +95,7 @@
     <button type="button" id="btn-danas">Danas: lovno vrijeme i lovostaj</button>
     <button type="button" id="btn-lovovi">Zajednički lov</button>
     <button type="button" id="btn-slojevi">Slojevi (granice lovišta)</button>
-    <button type="button" id="btn-sekcije" hidden>Sekcije i pristup</button>
+    <button type="button" id="btn-sekcije">Sekcije i pristup</button>
     <button type="button" id="btn-tragovi">Moji tragovi</button>
     <button type="button" id="btn-objekti">Lovački objekti</button>
     <button type="button" id="btn-opazanja">Opažanja divljači</button>
@@ -565,6 +565,7 @@
     <h3 id="lov-novi-naslov">Novi zajednički lov</h3>
     <label>Naziv<input name="naziv" required maxlength="80" placeholder="npr. Pogon na divlje svinje"></label>
     <label>Datum<input name="datum" type="date" required></label>
+    <label>Sekcija<select id="lov-novi-sekcija" name="sekcija"></select></label>
     <label>Revir<select id="lov-novi-revir" name="revir"></select></label>
     <label>Napomena<input name="napomena" maxlength="200"></label>
     <div class="red-dugmadi">
@@ -623,6 +624,48 @@
     <button id="btn-sos-vodi" class="dugme glavno" type="button">Vodi me do</button>
     <button id="btn-sos-zatvori" class="dugme" type="button">Zatvori</button>
   </div>
+</section>
+
+<section id="sekcije" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="sekcije-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="sekcije-naslov">Sekcije i pristup</h2>
+    <button id="btn-sekcije-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p class="sitno">Reviri imaju sekcije. U sekciju se ulazi samo uz odobrenje grupovođe: zatraži pristup, a grupovođa odobri ili odbije.</p>
+  <div class="red-dugmadi">
+    <button id="btn-sekcije-osvjezi" class="dugme" type="button">Osvježi sa servera</button>
+    <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
+  </div>
+  <p id="sekcije-status" class="status" role="status"></p>
+  <div id="grupovodje-blok" hidden>
+    <h3>Grupovođe po revirima (admin)</h3>
+    <ul id="grupovodje-spisak" class="spisak"></ul>
+    <div class="red-dugmadi">
+      <select id="grupovodja-korisnik" aria-label="Lovac"></select>
+      <select id="grupovodja-revir" aria-label="Revir"></select>
+      <button id="btn-grupovodja-dodaj" class="dugme" type="button">Postavi za grupovođu</button>
+    </div>
+  </div>
+  <div id="sekcije-spisak"></div>
+</section>
+
+<section id="sekcija-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="sekcija-forma-naslov" hidden>
+  <form id="forma-sekcija" novalidate>
+    <header class="postavke-glava"><h2 id="sekcija-forma-naslov">Nova sekcija</h2></header>
+    <label>Revir<select id="sekcija-revir" name="revir"></select></label>
+    <label>Naziv sekcije<input name="naziv" maxlength="60" placeholder="npr. Sekcija 1"></label>
+    <div id="sekcija-admin-polja" hidden>
+      <label>Grupovođa<select id="sekcija-grupovodja" name="grupovodja"></select></label>
+      <label>Lovočuvar<select id="sekcija-lovocuvar" name="lovocuvar"></select></label>
+    </div>
+    <h3>Spisak lovaca (odmah odobreni)</h3>
+    <div id="sekcija-lovci" class="clanovi"></div>
+    <p id="sekcija-forma-status" class="status" role="status"></p>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Napravi sekciju</button>
+      <button type="button" id="btn-sekcija-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
 </section>
 
 <section id="oporavak" class="dijalog" role="alertdialog" aria-labelledby="oporavak-tekst" hidden>

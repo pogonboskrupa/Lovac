@@ -14,6 +14,7 @@
    | `005_slojevi.sql` | granice lovišta/revira koje objavljuje admin |
    | `006_lov.sql` | zajednički lov: reviri, vođe, lovovi, stanovi, sektori, telefoni |
    | `007_lov_uzivo.sql` | pozicije učesnika, SOS, odstrel u lovu |
+   | `008_sekcije.sql` | reviri Krupa/Otoka/Jezerski, sekcije, grupovođe, lovočuvari, pristup uz odobrenje |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:
@@ -31,7 +32,10 @@
 - **Lovostaj** po vrsti (i spolu/dobi): periodi otvorenog lova dd.mm.–dd.mm., izvor propisa.
 - **Lovno vrijeme**: minuta prije izlaska / poslije zalaska sunca (opšte ili po vrsti).
 - **Vrste divljači** i **vrste lovačkih objekata** (sklanjanje umjesto brisanja).
-- **Reviri i vođe lova**: Spiskovi → Zajednički lov → Reviri i vođe lova.
+- **Grupovođe i sekcije**: Meni → Sekcije i pristup. Admin postavlja grupovođu po reviru, pravi i uređuje sekcije
+  (grupovođa + lovočuvar). Grupovođa može napraviti sekciju u svom reviru sa spiskom lovaca i odobrava zahtjeve
+  za pristup. **Bez odobrenja nema ulaza**: server ne daje članove ni lovove sekcije.
+- **Vođe revira** (Meni → Zajednički lov → Reviri i vođe lova) i dalje postoje za lov koji nije vezan za sekciju.
 
 Aplikacija ne sadrži nijedan datum lovostaja ni pravilo lovnog vremena — bez unosa admina piše "nije uneseno".
 

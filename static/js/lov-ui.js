@@ -10,6 +10,8 @@ import { standWarnings, sectorWedge } from './sektori.js';
 import { onGpsUpdate, currentHeading } from './gps.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { printHuntReport } from './uzivo-ui.js';
+import { MOJE_SEKCIJE_KEY, cachedSekcije, downloadSekcije } from './sekcije-ui.js';
+import { mySectionsAsLeader } from './sekcije.js';
 
 const STORE = 'lovovi';
 const $ = (id) => document.getElementById(id);
@@ -28,12 +30,13 @@ export async function downloadHunts() {
   const sb = getClient();
   const lovovi = await q(sb.from('lovovi').select('*'));
   const reviri = await q(sb.from('reviri').select('*'));
+  const sekcije = await q(sb.from('sekcije').select('*'));
   for (const lov of lovovi) {
     const ucesnici = await q(sb.from('lov_ucesnici').select('*').eq('lov_id', lov.id));
     const stanovi = await q(sb.from('stanovi').select('*').eq('lov_id', lov.id));
     const ids = stanovi.map((s) => s.id);
     const sektori = ids.length ? await q(sb.from('sektori').select('*').in('stan_id', ids)) : [];
-    await idbPut(STORE, { id: lov.id, lov, ucesnici, stanovi, sektori, revir: reviri.find((r) => r.id === lov.revir_id) || null, preuzeto: Date.now() });
+    await idbPut(STORE, { id: lov.id, lov, ucesnici, stanovi, sektori, revir: reviri.find((r) => r.id === lov.revir_id) || null, sekcija: sekcije.find((s) => s.id === lov.sekcija_id) || null, preuzeto: Date.now() });
   }
   await idbPut('spiskovi', { id: 'reviri', rows: reviri, preuzeto: Date.now() });
   return lovovi.length;
@@ -126,7 +129,8 @@ export function initLov(L, map) {
   $('btn-lov-panel-zatvori').addEventListener('click', hideSchedule);
 
   // ---------------- spisak ----------------
-  const canOrganizeAny = () => Boolean(me()?.is_admin) || loadJSON('lovac.vodja_revira', []).length > 0;
+  const canOrganizeAny = () => Boolean(me()?.is_admin) || loadJSON('lovac.vodja_revira', []).length > 0
+    || loadJSON(MOJE_SEKCIJE_KEY, []).length > 0;
 
   const renderList = async () => {
     const all = (await idbAll(STORE)).sort((a, b) => String(b.lov.datum).localeCompare(String(a.lov.datum)));
@@ -138,7 +142,7 @@ export function initLov(L, map) {
       const mine = myAssignment(x, me()?.id);
       return `<li class="trag-red" data-id="${escapeHtml(x.id)}" data-status="${x.lov.status}">
         <div class="trag-naslov"><b>${escapeHtml(x.lov.naziv)}${today.has(x.id) ? ' · DANAS' : ''}</b>
-        <span class="sitno">${escapeHtml(x.lov.datum)} · ${escapeHtml(x.revir?.naziv || '')} · ${STATUS[x.lov.status]}
+        <span class="sitno">${escapeHtml(x.lov.datum)} · ${escapeHtml(x.revir?.naziv || '')}${x.sekcija ? ` · ${escapeHtml(x.sekcija.naziv)}` : ''} · ${STATUS[x.lov.status]}
         ${mine ? ` · ${ULOGE[mine.uloga]}${mine.stan ? `, stan ${mine.stan.broj}` : ''}` : ''}</span></div>
         <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="prikazi">Raspored na karti</button>
         ${x.lov.status !== 'planiran' ? '<button type="button" class="dugme" data-akcija="izvjestaj">Izvještaj (PDF)</button>' : ''}
@@ -152,6 +156,7 @@ export function initLov(L, map) {
     try {
       await refreshMembers().catch(() => {});
       const n = await downloadHunts();
+      await downloadSekcije().catch((err) => console.warn('sekcije', err.message));
       const vodje = await q(getClient().from('revir_vodje').select('*'));
       saveSoft('lovac.vodja_revira', vodje.filter((v) => v.korisnik_id === me()?.id).map((v) => v.revir_id));
       $('lovovi-status').textContent = `Preuzeto lovova: ${n}. Raspored radi i bez interneta.`;
@@ -181,10 +186,30 @@ export function initLov(L, map) {
   // ---------------- organizacija ----------------
   const reviriCache = async () => (await idbGet('spiskovi', 'reviri'))?.rows || [];
 
+  // Sekcije u kojima smijem organizovati lov: admin sve, grupovođa svoje.
+  const organizableSections = async () => {
+    const all = (await cachedSekcije()).sekcije.filter((s) => s.aktivno !== false);
+    return me()?.is_admin ? all : mySectionsAsLeader(all, me()?.id);
+  };
+  // Bez prava na revir (samo grupovođa) lov MORA imati sekciju; server to provodi, ovdje se samo vodi lovca.
+  let sectionRequired = false;
+
   $('btn-lov-novi').addEventListener('click', async () => {
     const mojiReviri = loadJSON('lovac.vodja_revira', []);
-    const reviri = (await reviriCache()).filter((r) => r.aktivno !== false && (me()?.is_admin || mojiReviri.includes(r.id)));
+    const sections = await organizableSections();
+    const reviri = (await reviriCache()).filter((r) => r.aktivno !== false
+      && (me()?.is_admin || mojiReviri.includes(r.id) || sections.some((s) => s.revir_id === r.id)));
     $('lov-novi-revir').innerHTML = reviri.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.naziv)}</option>`).join('');
+    sectionRequired = !me()?.is_admin && !mojiReviri.length;
+    $('lov-novi-sekcija').innerHTML = (sectionRequired ? '' : '<option value="">— bez sekcije —</option>')
+      + sections.map((s) => `<option value="${escapeHtml(s.id)}" data-revir="${escapeHtml(s.revir_id)}">${escapeHtml(s.naziv)}</option>`).join('');
+    const sync = () => {
+      const o = $('lov-novi-sekcija').selectedOptions[0];
+      if (o?.dataset.revir) $('lov-novi-revir').value = o.dataset.revir;
+      $('lov-novi-revir').disabled = Boolean(o?.dataset.revir);
+    };
+    $('lov-novi-sekcija').onchange = sync;
+    sync();
     $('lov-novi').hidden = false;
   });
   $('btn-lov-novi-odustani').addEventListener('click', () => { $('lov-novi').hidden = true; });
@@ -193,7 +218,8 @@ export function initLov(L, map) {
     const f = e.target;
     try {
       const rows = await q(getClient().from('lovovi').insert({
-        revir_id: f.revir.value, naziv: f.naziv.value.trim(), datum: f.datum.value, napomena: f.napomena.value.trim() || null, organizator_id: me().id,
+        revir_id: f.revir.value, sekcija_id: f.sekcija.value || null, naziv: f.naziv.value.trim(), datum: f.datum.value,
+        napomena: f.napomena.value.trim() || null, organizator_id: me().id,
       }).select('*'));
       $('lov-novi').hidden = true;
       await refresh();
