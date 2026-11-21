@@ -36,6 +36,7 @@ export function initUzivo(L, map) {
   const online = () => connectionQuality() !== 'nema' && Boolean(getClient());
 
   const drawOthers = (rows) => {
+    document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows } }));
     others.clearLayers();
     for (const p of rows) {
       if (p.korisnik_id === me()?.id) continue;
@@ -106,6 +107,7 @@ export function initUzivo(L, map) {
     clearInterval(timer);
     timer = null;
     others.clearLayers();
+    document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [] } }));
     if (channel) { getClient()?.removeChannel(channel); channel = null; }
     $('uzivo').hidden = true;
   };

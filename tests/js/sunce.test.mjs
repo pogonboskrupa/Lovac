@@ -122,3 +122,45 @@ test('admin forma: kod se ne mijenja pri izmjeni; kategorije kod:Naziv', () => {
   assert.equal(formatKategorije([{ kod: 'a', naziv: 'A' }]), 'a:A');
   assert.match(buildPayload(f, { kod: 'Loš Kod', naziv: 'x' }, true).error, /Kod/);
 });
+
+import { daylightStatus } from '../../static/js/sunce.js';
+import { distanceM, bearingDeg, formatMemberDistance, arrowAngle, memberVectors } from '../../static/js/istrazivac.js';
+
+test('daylightStatus: zora, dan, sumrak, noć', () => {
+  const t = (h, m = 0) => Date.UTC(2026, 10, 19, h, m);
+  const today = { svitanje: t(5, 25), izlazak: t(6), zalazak: t(15, 23), suton: t(15, 56) };
+  const tomorrow = { ...today, svitanje: t(5, 27) + 86400000 };
+  assert.equal(daylightStatus(t(12), today).stanje, 'dan');
+  assert.match(daylightStatus(t(12), today).tekst, /^Svjetlo do \d\d:\d\d \(još \d+ h \d\d min\)$/);
+  assert.equal(daylightStatus(t(15, 30), today).stanje, 'sumrak');
+  assert.equal(daylightStatus(t(5, 40), today).stanje, 'zora');
+  assert.equal(daylightStatus(t(2), today).stanje, 'noc');
+  assert.equal(daylightStatus(t(20), today, tomorrow).stanje, 'noc');
+  assert.match(daylightStatus(t(20), today, tomorrow).tekst, /^Noć, svitanje \d\d:\d\d$/);
+  assert.equal(daylightStatus(t(12), { ...today, izlazak: null }).stanje, 'nepoznato');
+});
+
+test('istrazivac: udaljenost, smjer, strelica, filtriranje', () => {
+  const me = { lat: 44.88, lon: 16.15 };
+  const sjever = { lat: 44.89, lon: 16.15 };
+  assert.ok(Math.abs(distanceM(me, sjever) - 1112) < 5);
+  assert.ok(bearingDeg(me, sjever) < 0.01 || bearingDeg(me, sjever) > 359.99);
+  assert.ok(Math.abs(bearingDeg(me, { lat: 44.88, lon: 16.16 }) - 90) < 0.5);
+  assert.equal(formatMemberDistance(480), '480 m');
+  assert.equal(formatMemberDistance(1500), '1,5 km');
+  assert.equal(formatMemberDistance(12400), '12 km');
+  assert.equal(arrowAngle(90, 90), 0);
+  assert.equal(arrowAngle(10, 350), 20);
+  assert.equal(arrowAngle(90, null), 90);
+  const now = Date.parse('2026-11-19T10:00:00Z');
+  const rows = [
+    { korisnik_id: 'a', ...sjever, t: '2026-11-19T09:59:00Z' },
+    { korisnik_id: 'ja', ...me, t: '2026-11-19T10:00:00Z' },
+    { korisnik_id: 'b', lat: 44.881, lon: 16.15, t: '2026-11-19T09:58:00Z' },
+    { korisnik_id: 'stari', lat: 44.9, lon: 16.2, t: '2026-11-19T08:00:00Z' },
+  ];
+  const v = memberVectors(me, rows, 'ja', (id) => id.toUpperCase(), now);
+  assert.deepEqual(v.map((x) => x.id), ['b', 'a']);
+  assert.equal(v[0].ime, 'B');
+  assert.equal(v[0].starost, 2);
+});

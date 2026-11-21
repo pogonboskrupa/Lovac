@@ -84,3 +84,22 @@ export function moonPhaseName(age) {
   if (f < 0.784) return 'Zadnja četvrt';
   return 'Opadajući srp';
 }
+
+const p2 = (n) => String(n).padStart(2, '0');
+const hm = (ms) => `${p2(new Date(ms).getHours())}:${p2(new Date(ms).getMinutes())}`;
+
+function leftText(ms) {
+  const m = Math.max(0, Math.round(ms / 60000));
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${p2(m % 60)} min`;
+}
+
+// Stanje dnevnog svjetla: zora/dan/sumrak/noć. `tomorrow` treba za noć prije ponoći (sljedeće svitanje).
+export function daylightStatus(now, today, tomorrow = null) {
+  const { izlazak, zalazak, svitanje, suton } = today;
+  if ([izlazak, zalazak, svitanje, suton].some((v) => v == null)) return { stanje: 'nepoznato', tekst: 'Svjetlo: nema podataka' };
+  if (now >= izlazak && now < zalazak) return { stanje: 'dan', tekst: `Svjetlo do ${hm(zalazak)} (još ${leftText(zalazak - now)})` };
+  if (now >= zalazak && now < suton) return { stanje: 'sumrak', tekst: `Sumrak do ${hm(suton)} (još ${leftText(suton - now)})` };
+  if (now >= svitanje && now < izlazak) return { stanje: 'zora', tekst: `Zora, izlazak ${hm(izlazak)} (za ${leftText(izlazak - now)})` };
+  const next = now < svitanje ? svitanje : tomorrow?.svitanje;
+  return { stanje: 'noc', tekst: next ? `Noć, svitanje ${hm(next)}` : 'Noć' };
+}

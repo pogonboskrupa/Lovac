@@ -379,3 +379,26 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
   position: fixed; left: 50%; bottom: calc(var(--nav-h) + 24px); transform: translateX(-50%); z-index: 3200;
   max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 10px; background: var(--tekst); color: var(--pozadina);
 }
+
+/* Dnevno svjetlo */
+#svjetlo-chip[data-stanje="dan"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+#svjetlo-chip[data-stanje="sumrak"], #svjetlo-chip[data-stanje="zora"] { background: var(--gps-srednje); color: var(--gps-tekst); }
+#svjetlo-chip[data-stanje="noc"] { background: #1e293b; color: #ffffff; }
+
+/* Istraživač: nagib karte (samo pogled, dodiri su isključeni) + trake članova */
+#ekran-mapa { overflow: hidden; }
+#ekran-mapa.istrazivac #karta {
+  transform: perspective(900px) rotateX(48deg) scale(1.9); transform-origin: 50% 80%;
+}
+.istrazivac-traka {
+  position: absolute; left: 8px; right: 8px; top: var(--gore-2); z-index: 1050; display: flex; gap: 6px;
+  overflow-x: auto; pointer-events: none; padding-bottom: 2px;
+}
+.istrazivac-traka > * { pointer-events: auto; flex: none; }
+.istrazivac-traka > .sitno { background: var(--povrsina); padding: 4px 10px; border-radius: 999px; box-shadow: var(--sjena); }
+.clan-chip {
+  min-height: 44px; display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px; border: 0; border-radius: 999px;
+  background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena); font-size: 15px;
+}
+.clan-chip .strelica { width: 22px; height: 22px; color: #2563eb; }
+#btn-istrazivac[aria-pressed="true"] { background: #2563eb; color: #ffffff; }

@@ -184,3 +184,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Lovočuvar je PO REVIRU (`revir_lovocuvari`, postavlja admin) i prati samo čitanjem sve sekcije tog revira; grupovođa vodi sekciju; lovac može biti član više sekcija.
 - Ekran sekcije (`sekcija-ui.js` + čista logika `sekcija-podaci.js`, `poruke.js`): članovi i aktivnost u tekućem lovu (aktivan ≤ 10 min od pozicije), poruke, podaci o sekciji i lovu. Poruke: izlazna kutija u IndexedDB (`poruke`, `sinhronizovano:false`), slanje upsert `ignoreDuplicates`, osvježavanje 20 s otvoreno / 60 s u pozadini; obavijest samo dok je app otvorena.
 - Zamka: IndexedDB `getAll` vraća po id-u (UUID) — poruke se uvijek sortiraju po `created_at`; sporije čitanje ne smije prepisati svježe (`reloadPoruke` sa brojačem).
+
+**Dnevno svjetlo i Istraživač (v0.2.8)**
+- Čip `#svjetlo-chip` na mapi: zora/dan/sumrak/noć iz `sunce.js daylightStatus` (pozicija = GPS, inače centar karte; svjetlo = izlazak–zalazak, sumrak do građanskog sutona). Dodir otvara "Danas".
+- Istraživač (`istrazivac-ui.js`, dugme 3D): CSS nagib `#karta` (perspective + rotateX) je SAMO POGLED, pa su dragging/zoom dodirom isključeni (Leaflet ne preračunava perspektivu) i karta prati GPS; trake članova (smjer, strana svijeta, udaljenost) dolaze iz događaja `uzivo:pozicije` i vide se samo u tom modu. Strelice su sjever-gore, kao karta.
