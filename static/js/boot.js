@@ -24,6 +24,7 @@ import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
 import { initSekcijaEkran } from './sekcija-ui.js';
+import { initTok } from './tok-ui.js';
 import { initIstrazivac } from './istrazivac-ui.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
@@ -81,6 +82,7 @@ function enter(screen) {
       ['lov', () => initLov(globalThis.L, map)],
       ['sekcije', () => initSekcije()],
       ['sekcija-ekran', () => initSekcijaEkran(globalThis.L, map)],
+      ['tok', () => initTok()],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
       ['kontakt', () => initKontakt()],

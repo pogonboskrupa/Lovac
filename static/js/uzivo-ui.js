@@ -142,6 +142,7 @@ export function initUzivo(L, map) {
     document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [] } }));
     if (channel) { getClient()?.removeChannel(channel); channel = null; }
     $('uzivo').hidden = true;
+    document.dispatchEvent(new CustomEvent('lov:aktivan', { detail: { lov: null } }));
   };
 
   const arm = () => {
@@ -154,6 +155,7 @@ export function initUzivo(L, map) {
     stop();
     lov = rec;
     $('uzivo').hidden = false;
+    document.dispatchEvent(new CustomEvent('lov:aktivan', { detail: { lov: rec } }));
     // Ranije SOS-ove ovog lova ne prikazuj ponovo kao nove.
     loadJSON(`lovac.sos.vidjeni.${lov.id}`, []).forEach((id) => seenSos.add(id));
     await refreshPhones();

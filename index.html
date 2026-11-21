@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.9';
+  const APP_VER = 'v0.3.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -173,6 +173,7 @@
       <div id="uzivo" class="uzivo" hidden>
         <button id="btn-sos" class="dugme dugme-sos" type="button">SOS</button>
         <button id="btn-lokacija" class="dugme" type="button">Lokacija</button>
+        <button id="btn-tok" class="dugme" type="button" hidden>Tok</button>
         <span id="uzivo-stanje" class="sitno">Uživo: tvoju poziciju vide učesnici dok lov traje</span>
       </div>
       <div id="panel-snimanje" class="panel-snimanje" hidden>
@@ -238,6 +239,40 @@
 
   <h3>Izvori karata</h3>
   <p class="sitno">© OpenStreetMap, SRTM | © OpenTopoMap (CC-BY-SA) · © Esri, Maxar, Earthstar Geographics · © OpenStreetMap contributors.</p>
+</section>
+
+<div id="tok-baner" class="tok-baner" role="alert" hidden>
+  <span id="tok-baner-tekst"></span>
+  <button id="btn-tok-baner-ok" class="dugme" type="button">Razumijem</button>
+</div>
+
+<section id="tok-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="tok-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="tok-naslov">Tok lova</h2>
+    <button id="btn-tok-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="tok-stanje" class="tok-stanje" role="status"></p>
+  <div id="tok-vodja" hidden>
+    <h3>Komande vođe</h3>
+    <input id="tok-tekst" type="text" maxlength="200" placeholder="Napomena uz komandu (neobavezno)" aria-label="Napomena uz komandu">
+    <div class="red-dugmadi">
+      <button type="button" class="dugme" data-vrsta="pocetak_pogona">Početak pogona</button>
+      <button type="button" class="dugme" data-vrsta="kraj_pogona">Kraj pogona</button>
+      <button type="button" class="dugme" data-vrsta="okupljanje">Okupljanje</button>
+      <button type="button" class="dugme dugme-sos" data-vrsta="prekid">PREKID LOVA</button>
+    </div>
+  </div>
+  <h3>Moj status</h3>
+  <div id="tok-moje" class="segment" role="group" aria-label="Moj status u lovu">
+    <button type="button" data-vrsta="na_stanu" aria-pressed="false">Na stanu</button>
+    <button type="button" data-vrsta="napustio_stan" aria-pressed="false">Napuštam stan</button>
+    <button type="button" data-vrsta="pauza" aria-pressed="false">Pauza</button>
+  </div>
+  <h3>Učesnici</h3>
+  <ul id="tok-ucesnici" class="spisak"></ul>
+  <h3>Događaji</h3>
+  <ul id="tok-linija" class="spisak"></ul>
+  <p class="sitno">Komande i statusi ne zamjenjuju pravila lova ni vođu lova. Bez interneta se događaj sačuva i pošalje kad se veza vrati; obavijest stiže samo dok je aplikacija otvorena.</p>
 </section>
 
 <section id="lokacija-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lokacija-naslov" hidden>

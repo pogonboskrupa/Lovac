@@ -198,3 +198,33 @@ test('lokacija: postavke, svježina, inicijali, aktivni lov, spisak', () => {
   assert.deepEqual(list.map((m) => [m.id, m.stanje]), [['x', 'zivo'], ['y', 'nema'], ['z', 'nema']]);
   assert.ok(list[0].udaljenost > 1000);
 });
+
+import { canLead, newDogadjaj, mergeDogadjaji, driveState, memberStatus, elapsedText, alertsFor, isRlsDenied } from '../../static/js/tok.js';
+
+test('tok lova: vođa, događaji, stanje pogona i statusi', () => {
+  const lov = { lov: { organizator_id: 'org' }, ucesnici: [{ korisnik_id: 'v', uloga: 'vodja' }, { korisnik_id: 's', uloga: 'strijelac' }] };
+  assert.equal(canLead(lov, 'org', false), true);
+  assert.equal(canLead(lov, 'v', false), true);
+  assert.equal(canLead(lov, 's', false), false);
+  assert.equal(canLead(lov, 's', true), true);
+  assert.throws(() => newDogadjaj({ id: '1', lovId: 'l', autorId: 'a', vrsta: 'bum' }));
+  const mk = (id, autor, vrsta, min) => ({ id, autor_id: autor, vrsta, created_at: new Date(Date.UTC(2026, 10, 19, 8, min)).toISOString() });
+  const ev = mergeDogadjaji([mk('b', 's', 'na_stanu', 5)], [mk('a', 'v', 'pocetak_pogona', 1), mk('b', 's', 'na_stanu', 5)]);
+  assert.deepEqual(ev.map((e) => e.id), ['a', 'b']);
+  assert.equal(driveState([]).stanje, 'nije');
+  assert.equal(driveState(ev).stanje, 'pogon');
+  assert.equal(driveState([...ev, mk('c', 'v', 'okupljanje', 6)]).stanje, 'pogon');
+  assert.equal(driveState([...ev, mk('d', 'v', 'prekid', 7)]).stanje, 'prekid');
+  assert.equal(driveState([...ev, mk('d', 'v', 'prekid', 7), mk('e', 'v', 'pocetak_pogona', 9)]).stanje, 'pogon');
+  assert.equal(driveState([...ev, mk('f', 'v', 'kraj_pogona', 8)]).stanje, 'kraj');
+  assert.equal(memberStatus(ev, 's').stanje, 'na-stanu');
+  assert.equal(memberStatus([...ev, mk('g', 's', 'napustio_stan', 9)], 's').stanje, 'u-pokretu');
+  assert.equal(memberStatus(ev, 'x').stanje, 'nema');
+  assert.equal(elapsedText('2026-11-19T08:00:00Z', Date.parse('2026-11-19T08:42:30Z')), '42 min');
+  assert.equal(elapsedText('2026-11-19T08:00:00Z', Date.parse('2026-11-19T09:05:00Z')), '1 h 05 min');
+  assert.deepEqual(alertsFor(ev, 's', new Set()).map((e) => e.id), ['a']);
+  assert.deepEqual(alertsFor(ev, 's', new Set(['a'])), []);
+  assert.deepEqual(alertsFor(ev, 'v', new Set()), []);
+  assert.equal(isRlsDenied('new row violates row-level security policy'), true);
+  assert.equal(isRlsDenied('network down'), false);
+});

@@ -194,3 +194,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Pozicija se šalje čim je u kešu lov `u_toku` u kojem sam učesnik (`lokacija.js pickActiveHunt`, provjera svakih 60 s), NE samo dok je raspored otvoren; kraj lova gasi slanje i briše moju zadnju poziciju.
 - Ekran "Lokacija u lovu" (`lokacija-ui.js`, dugme Lokacija u traci uživo): uključi/isključi dijeljenje (zadano uključeno), učestalost 10/20/60 s, ko dijeli sa smjerom i udaljenošću, "Na karti" / "Vodi me". Isključivanje briše vlastitu poziciju (RLS politika `svoja_brisanje`); ako nema veze, brisanje se pamti (`lovac.lokacija.uklanjanje`) i ponavlja.
 - Markeri članova su krugovi sa inicijalima (svježina: uživo ≤ 2 min, zastarjelo ≤ 10, bez signala ≤ 30, poslije se ne crtaju).
+
+**Tok lova (migracija 011, v0.3.0)**
+- `lov_dogadjaji` (samo čitanje i dodavanje, bez izmjene): komande `pocetak_pogona/kraj_pogona/okupljanje/prekid` šalje organizator/admin ili učesnik sa ulogom `vodja` (`je_vodja_lova`), a statuse `na_stanu/napustio_stan/pauza` svaki učesnik za sebe; samo dok je lov `u_toku`.
+- Klijent `tok.js` (čista logika) + `tok-ui.js`: ekran "Tok lova" (dugme u traci uživo se pojavi čim je lov aktivan, `lov:aktivan`), izlazna kutija `lovac.tok.red` (upsert `ignoreDuplicates`; RLS odbijanje se odbacuje uz poruku), polling 15 s, baner + AndroidNotif za komande drugih (PREKID ostaje dok se ne potvrdi), dvostruki dodir za komande. Prekid traje do novog "Početak pogona". UI kaže da ne zamjenjuje pravila lova ni vođu lova.
