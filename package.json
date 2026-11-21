@@ -6,7 +6,8 @@
     "test": "node --test \"tests/js/**/*.test.mjs\"",
     "test:e2e": "playwright test --trace off",
     "test:sql": "bash scripts/sql-test.sh",
-    "serve": "node scripts/serve.mjs"
+    "serve": "node scripts/serve.mjs",
+    "build:html": "node scripts/build-html.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

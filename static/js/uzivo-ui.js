@@ -8,7 +8,7 @@ import { currentFix } from './gps.js';
 import { idbAll } from './db.js';
 import { pickActiveHunt, shareIntervalMs, sharingState, initialsOf } from './lokacija.js';
 import { getShareSettings, initLokacijaEkran } from './lokacija-ui.js';
-import { distanceM } from './istrazivac.js';
+import { rangeLabel } from './istrazivac.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
 import { memberName } from './dijeljenje-ui.js';
@@ -45,7 +45,6 @@ export function initUzivo(L, map) {
     lastRows = rows;
     document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows } }));
     others.clearLayers();
-    const mine = currentFix();
     for (const p of rows) {
       if (p.korisnik_id === me()?.id) continue;
       const stanje = sharingState(p.t);
@@ -58,9 +57,8 @@ export function initUzivo(L, map) {
         html: `<span class="uc-marker" data-stanje="${stanje}" data-uloga="${u?.uloga === 'pogonic' ? 'pogonic' : 'ostali'}">${escapeHtml(initialsOf(name))}</span>`,
         iconSize: [34, 34], iconAnchor: [17, 17],
       });
-      const dist = mine ? ` · ${Math.round(distanceM(mine, p))} m` : '';
       L.marker([p.lat, p.lon], { icon, keyboard: false })
-        .bindTooltip(`${name}${age > 1 ? ` (prije ${age} min)` : ''}${dist}`, { permanent: false }).addTo(others);
+        .bindTooltip(() => `${name}${age > 1 ? ` (prije ${age} min)` : ''}${currentFix() ? ` · ${rangeLabel(currentFix(), p)}` : ''}`, { permanent: false }).addTo(others);
     }
   };
 

@@ -1,0 +1,14 @@
+<section id="lov-novi" class="dijalog" role="dialog" aria-labelledby="lov-novi-naslov" hidden>
+  <form id="forma-lov-novi" novalidate>
+    <h3 id="lov-novi-naslov">Novi zajednički lov</h3>
+    <label>Naziv<input name="naziv" required maxlength="80" placeholder="npr. Pogon na divlje svinje"></label>
+    <label>Datum<input name="datum" type="date" required></label>
+    <label>Sekcija<select id="lov-novi-sekcija" name="sekcija"></select></label>
+    <label>Revir<select id="lov-novi-revir" name="revir"></select></label>
+    <label>Napomena<input name="napomena" maxlength="200"></label>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Napravi lov</button>
+      <button type="button" id="btn-lov-novi-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>

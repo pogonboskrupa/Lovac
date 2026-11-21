@@ -1,0 +1,17 @@
+<section id="propisi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="propisi-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="propisi-naslov">Propisi i spiskovi</h2>
+    <button id="btn-propisi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div id="propisi-tabovi" class="segment" role="group" aria-label="Spisak">
+    <button type="button" data-tab="lovostaj">Lovostaj</button>
+    <button type="button" data-tab="lovno_vrijeme">Lovno vrijeme</button>
+    <button type="button" data-tab="vrste">Vrste divljači</button>
+    <button type="button" data-tab="objekat_vrste">Vrste objekata</button>
+  </div>
+  <h3 id="propisi-naslov-tab"></h3>
+  <button id="btn-propisi-dodaj" class="dugme glavno" type="button">Dodaj novi red</button>
+  <p id="propisi-status" class="status" role="status"></p>
+  <form id="propisi-forma" novalidate hidden></form>
+  <ul id="propisi-spisak" class="spisak"></ul>
+</section>

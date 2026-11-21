@@ -228,3 +228,69 @@ test('tok lova: vođa, događaji, stanje pogona i statusi', () => {
   assert.equal(isRlsDenied('new row violates row-level security policy'), true);
   assert.equal(isRlsDenied('network down'), false);
 });
+
+import { normalizeText, matchesQuery } from '../../static/js/pretraga.js';
+import { yearsOf, harvestStats, statRows, UNKNOWN } from '../../static/js/odstrel-stat.js';
+import { prekidSmsText } from '../../static/js/tok.js';
+
+test('pretraga: dijakritici, velika slova, više riječi', () => {
+  assert.equal(normalizeText('Đurđević ŠUMA čćž'), 'durdevic suma ccz');
+  assert.equal(matchesQuery(['Jelen lopatar', 'Šuma Krupa'], 'suma jelen'), true);
+  assert.equal(matchesQuery(['Jelen'], 'srna'), false);
+  assert.equal(matchesQuery([null, undefined, 'x'], ''), true);
+  assert.equal(matchesQuery(['Čeka popravku'], 'CEKA'), true);
+});
+
+test('statistika odstrela: godina, vrsta, revir, sekcija, mjesec', () => {
+  const t = (y, m) => new Date(y, m, 15).getTime();
+  const list = [
+    { vrijeme: t(2026, 0), vrsta: 'jelen', tezina: 100, revir_id: 'R1', sekcija_id: 'S1', lovac: 'A' },
+    { vrijeme: t(2026, 0), vrsta: 'jelen', tezina: 80, revir_id: 'R1', sekcija_id: 'S2', lovac: 'B' },
+    { vrijeme: t(2026, 5), vrsta: 'srna', tezina: null, lovac: 'A' },
+    { vrijeme: t(2025, 5), vrsta: 'srna', tezina: 20, revir_id: 'R2', lovac: 'A' },
+  ];
+  assert.deepEqual(yearsOf(list), [2026, 2025]);
+  const s = harvestStats(list, { godina: 2026 });
+  assert.equal(s.ukupno.komada, 3);
+  assert.equal(s.ukupno.tezina, 180);
+  assert.equal(s.poVrsti[0].kljuc, 'jelen');
+  assert.equal(s.poVrsti[0].prosjek, 90);
+  assert.equal(s.poVrsti[1].prosjek, null);
+  assert.equal(s.poMjesecu[0], 2);
+  assert.equal(s.poMjesecu[5], 1);
+  assert.equal(s.poReviru.find((x) => x.kljuc === UNKNOWN).komada, 1);
+  assert.equal(harvestStats(list, { godina: 2026, sekcija: 'S1' }).ukupno.komada, 1);
+  assert.equal(harvestStats(list, { godina: 2026, revir: UNKNOWN }).ukupno.komada, 1);
+  assert.equal(harvestStats(list, { vrsta: 'srna' }).ukupno.komada, 2);
+  const rows = statRows(s, { vrsta: (k) => k.toUpperCase(), revir: (k) => `Revir ${k}`, sekcija: (k) => `Sek ${k}` });
+  assert.ok(rows.some((r) => r.grupa === 'Vrsta' && r.naziv === 'JELEN' && r.komada === 2));
+  assert.ok(rows.some((r) => r.naziv === 'Izvan lova / nije navedeno'));
+});
+
+test('prekidSmsText nosi naziv lova, vođu, napomenu i poziciju', () => {
+  const t = prekidSmsText('Pogon Grmeč', 'Goran', { lat: 44.88, lon: 16.15 }, 'Vuk u pogonu');
+  assert.match(t, /^PREKID LOVA "Pogon Grmeč" — svi staju! Javlja Goran\. Vuk u pogonu\. Moja pozicija: 44\.88000, 16\.15000\.$/);
+  assert.doesNotMatch(prekidSmsText('L', 'G', null), /pozicija/);
+});
+
+import { standBrief, scentDirection } from '../../static/js/stan.js';
+
+test('pregled stana: sigurnost, udaljenost, vjetar', () => {
+  assert.equal(scentDirection(270), 90);
+  assert.equal(scentDirection(10), 190);
+  const stand = { lat: 44.89, lon: 16.15, broj: 3 };
+  const fix = { lat: 44.88, lon: 16.15 };
+  const wind = { smjer: 270, brzina: 3.2 };
+  const b = standBrief({ heading: 5, arcs: [{ od: 0, do: 20 }], fix, stand, wind });
+  assert.equal(b.sigurnost, 'zabranjeno');
+  assert.equal(b.pravac.strana, 'S');
+  assert.equal(b.stan.strana, 'S');
+  assert.equal(b.stan.nasStanu, false);
+  assert.equal(b.vjetar.mirisKa, 'I');
+  assert.equal(standBrief({ heading: 180, arcs: [{ od: 0, do: 20 }], fix, stand, wind }).sigurnost, 'dozvoljeno');
+  const none = standBrief({ heading: null, arcs: [], fix: null, stand, wind: null });
+  assert.equal(none.sigurnost, 'nepoznato');
+  assert.equal(none.stan, null);
+  assert.equal(none.vjetar, null);
+  assert.equal(standBrief({ heading: 0, arcs: [], fix: stand, stand, wind: null }).stan.nasStanu, true);
+});

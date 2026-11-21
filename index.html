@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.0';
+  const APP_VER = 'v0.3.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -128,6 +128,7 @@
     <div class="lov-panel-red"><b id="lov-panel-naziv"></b><button id="btn-lov-panel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori raspored"><svg class="ic"><use href="#ic-close"/></svg></button></div>
     <span id="lov-panel-uloga" class="sitno"></span>
     <p id="lov-kompas" class="lov-kompas" data-stanje="nepoznato" role="status"></p>
+    <button id="btn-lov-stan" class="dugme" type="button" hidden>Pregled stana</button>
     <p class="sitno">Crveno = zabranjeno. Ne zamjenjuje pravila lova ni vođu lova; kompas može griješiti — provjeri pogledom.</p>
   </div>
   <div id="lov-postavi" class="dijalog dijalog-gore" hidden>
@@ -246,6 +247,23 @@
   <button id="btn-tok-baner-ok" class="dugme" type="button">Razumijem</button>
 </div>
 
+<section id="stan-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="stan-naslov-broj" hidden>
+  <header class="postavke-glava">
+    <h2 id="stan-naslov-broj">Stan</h2>
+    <button id="btn-stan-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="stan-sigurnost" class="stan-sigurnost" data-stanje="nepoznato" role="status"></p>
+  <dl class="stan-vrijednosti">
+    <dt>Pravac telefona</dt><dd id="stan-pravac" class="velika">—</dd>
+    <dt>Do stana</dt><dd id="stan-udaljenost" class="velika">—</dd>
+    <dt>Vjetar</dt><dd id="stan-vjetar"></dd>
+    <dt></dt><dd id="stan-vjetar-starost" class="sitno"></dd>
+    <dt>Svjetlo</dt><dd id="stan-svjetlo"></dd>
+  </dl>
+  <button id="btn-stan-vodi" class="dugme glavno" type="button">Vodi me do stana</button>
+  <p class="sitno">Ne zamjenjuje pravila lova ni vođu lova; kompas može griješiti — provjeri pogledom. Vjetar je prognoza, a ne mjerenje.</p>
+</section>
+
 <section id="tok-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="tok-naslov" hidden>
   <header class="postavke-glava">
     <h2 id="tok-naslov">Tok lova</h2>
@@ -272,7 +290,7 @@
   <ul id="tok-ucesnici" class="spisak"></ul>
   <h3>Događaji</h3>
   <ul id="tok-linija" class="spisak"></ul>
-  <p class="sitno">Komande i statusi ne zamjenjuju pravila lova ni vođu lova. Bez interneta se događaj sačuva i pošalje kad se veza vrati; obavijest stiže samo dok je aplikacija otvorena.</p>
+  <p class="sitno">Kod PREKIDA se uz server otvara i SMS svim učesnicima (pritisni Pošalji), jer obavijest stiže samo dok je aplikacija otvorena. Komande i statusi ne zamjenjuju pravila lova ni vođu lova. Bez interneta se događaj sačuva i pošalje kad se veza vrati; obavijest stiže samo dok je aplikacija otvorena.</p>
 </section>
 
 <section id="lokacija-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lokacija-naslov" hidden>
@@ -431,6 +449,7 @@
     <button type="button" data-filter="svi">Svi</button>
     <button type="button" data-filter="popravka">Treba popravka (za obilazak)</button>
   </div>
+  <input id="objekti-trazi" type="search" placeholder="Traži (naziv, vrsta, napomena…)" aria-label="Traži objekte" autocomplete="off">
   <p id="objekti-prazno" class="sitno">Nema objekata. Dodaju se dugmetom + na karti.</p>
   <ul id="objekti-spisak" class="spisak"></ul>
 </section>
@@ -465,6 +484,7 @@
     <h2 id="opazanja-naslov">Opažanja divljači</h2>
     <button id="btn-opazanja-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <input id="op-trazi" type="search" placeholder="Traži (vrsta, napomena…)" aria-label="Traži u opažanjima" autocomplete="off">
   <label>Vrsta<select id="op-filter-vrsta"></select></label>
   <h3>Period</h3>
   <div id="op-period" class="segment" role="group" aria-label="Period">
@@ -566,6 +586,7 @@
     <button id="btn-odstrel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <p class="sitno">Ne zamjenjuje službeni lovački dnevnik.</p>
+  <input id="ods-trazi" type="search" placeholder="Traži (vrsta, lovac, napomena…)" aria-label="Traži u odstrelu" autocomplete="off">
   <label>Vrsta<select id="ods-filter-vrsta"></select></label>
   <div id="ods-period" class="segment" role="group" aria-label="Period">
     <button type="button" data-period="30">30 dana</button>
@@ -577,8 +598,36 @@
   <div class="red-dugmadi">
     <button id="btn-ods-csv" class="dugme" type="button">Izvoz u Excel (CSV)</button>
     <button id="btn-ods-pdf" class="dugme" type="button">Štampa / PDF</button>
+    <button id="btn-ods-stat" class="dugme" type="button">Statistika po godini</button>
   </div>
   <ul id="odstrel-spisak" class="spisak"></ul>
+</section>
+
+<section id="odstrel-stat" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="ods-stat-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="ods-stat-naslov">Statistika odstrela</h2>
+    <button id="btn-ods-stat-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p class="sitno">Obuhvata zapise na ovom telefonu (tvoje i podijeljene sa tobom). Ne zamjenjuje službeni lovački dnevnik.</p>
+  <label>Godina<select id="ods-stat-godina"></select></label>
+  <label>Vrsta<select id="ods-stat-vrsta"></select></label>
+  <label>Revir<select id="ods-stat-revir"></select></label>
+  <label>Sekcija<select id="ods-stat-sekcija"></select></label>
+  <p id="ods-stat-ukupno" class="tok-stanje" role="status"></p>
+  <h3>Po mjesecima</h3>
+  <ul id="ods-stat-mjeseci" class="stat-mjeseci"></ul>
+  <h3>Po vrstama</h3>
+  <ul id="ods-stat-vrste" class="zbir"></ul>
+  <h3>Po revirima</h3>
+  <ul id="ods-stat-reviri" class="zbir"></ul>
+  <h3>Po sekcijama</h3>
+  <ul id="ods-stat-sekcije" class="zbir"></ul>
+  <h3>Po lovcima</h3>
+  <ul id="ods-stat-lovci" class="zbir"></ul>
+  <div class="red-dugmadi">
+    <button id="btn-ods-stat-csv" class="dugme" type="button">Izvoz u Excel (CSV)</button>
+    <button id="btn-ods-stat-pdf" class="dugme" type="button">Štampa / PDF</button>
+  </div>
 </section>
 
 <section id="potraga-start" class="dijalog" role="dialog" aria-labelledby="potraga-start-naslov" hidden>

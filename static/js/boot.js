@@ -24,6 +24,8 @@ import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
 import { initSekcijaEkran } from './sekcija-ui.js';
+import { initStan } from './stan-ui.js';
+import { initOdstrelStat } from './odstrel-stat-ui.js';
 import { initTok } from './tok-ui.js';
 import { initIstrazivac } from './istrazivac-ui.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
@@ -75,6 +77,7 @@ function enter(screen) {
       ['opazanja', () => initOpazanja(globalThis.L, map)],
       ['danas', () => initDanas(map)],
       ['odstrel', () => initOdstrel(globalThis.L, map)],
+      ['odstrel-stat', () => initOdstrelStat()],
       ['slojevi', () => initSlojevi(globalThis.L, map)],
       ['mjerenje', () => initMjerenje(globalThis.L, map)],
       ['preuzimanje', () => initPreuzimanje(map, activeBase)],
@@ -83,6 +86,7 @@ function enter(screen) {
       ['sekcije', () => initSekcije()],
       ['sekcija-ekran', () => initSekcijaEkran(globalThis.L, map)],
       ['tok', () => initTok()],
+      ['stan', () => initStan()],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
       ['kontakt', () => initKontakt()],

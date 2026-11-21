@@ -1,6 +1,7 @@
 // UI lovačkih objekata: markeri, forma (nov/izmjena), detalji, spisak i "Vodi me do".
 
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
+import { matchesQuery } from './pretraga.js';
 import { newRecord, saveRecord, updateRecord, getRecord, listRecords, deleteRecord } from './zapisi.js';
 import { STANJA, needsRepair, sortByDistance, todayIso, formatDateBs } from './objekti.js';
 import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
@@ -40,6 +41,7 @@ export function initObjekti(L, map) {
   let editing = null; // { rec|null, vrsta, stanje, foto[], removed[], lat, lon }
   let detailId = null;
   let listFilter = 'svi';
+  let searchText = '';
 
   const renderMarkers = async () => {
     vrsteAll = await getSpisakAll('objekat_vrste');
@@ -236,6 +238,7 @@ export function initObjekti(L, map) {
     const from = fix || { lat: map.getCenter().lat, lon: map.getCenter().lng };
     let items = await listRecords(STORE);
     if (listFilter === 'popravka') items = items.filter(needsRepair);
+    items = items.filter((o) => matchesQuery([o.naziv, o.napomena, STANJA[o.stanje], lookupNaziv(vrsteAll, o.vrsta)], searchText));
     items = sortByDistance(items, from);
     setPressed($('objekti-filter'), 'data-filter', listFilter);
     $('objekti-prazno').hidden = items.length > 0;
@@ -248,6 +251,7 @@ export function initObjekti(L, map) {
         </button>
       </li>`).join('');
   };
+  $('objekti-trazi').addEventListener('input', (e) => { searchText = e.target.value; renderList(); });
   $('objekti-filter').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-filter]');
     if (!b) return;

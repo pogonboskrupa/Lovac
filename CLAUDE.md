@@ -44,7 +44,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 ## Pravila rada
 
-- **Verzija na TRI mjesta, uvijek zajedno**: `index.html` (`APP_VER = 'vX.Y.Z'`), `sw.js` (`APP_VERSION`), `android/app/build.gradle` (`versionName` + `versionCode`, koji raste +1 pri svakoj izmjeni).
+- **Verzija na TRI mjesta, uvijek zajedno**: `html/index.tpl.html` (`APP_VER = 'vX.Y.Z'`, pa `npm run build:html`), `sw.js` (`APP_VERSION`), `android/app/build.gradle` (`versionName` + `versionCode`, koji raste +1 pri svakoj izmjeni).
 - **Šema brojeva**: Z ide 0→9, pa raste Y (v1.1.9 → v1.2.0, nikad v1.1.10). Isto važi za Y.
 - **Svaka gotova izmjena koda = release**: bump, commit (bosanski, objašnjava UZROK), push, provjera da je CI zelen i da Release ima APK — tek onda javiti korisniku.
 - **Testovi**:
@@ -198,3 +198,13 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Tok lova (migracija 011, v0.3.0)**
 - `lov_dogadjaji` (samo čitanje i dodavanje, bez izmjene): komande `pocetak_pogona/kraj_pogona/okupljanje/prekid` šalje organizator/admin ili učesnik sa ulogom `vodja` (`je_vodja_lova`), a statuse `na_stanu/napustio_stan/pauza` svaki učesnik za sebe; samo dok je lov `u_toku`.
 - Klijent `tok.js` (čista logika) + `tok-ui.js`: ekran "Tok lova" (dugme u traci uživo se pojavi čim je lov aktivan, `lov:aktivan`), izlazna kutija `lovac.tok.red` (upsert `ignoreDuplicates`; RLS odbijanje se odbacuje uz poruku), polling 15 s, baner + AndroidNotif za komande drugih (PREKID ostaje dok se ne potvrdi), dvostruki dodir za komande. Prekid traje do novog "Početak pogona". UI kaže da ne zamjenjuje pravila lova ni vođu lova.
+
+**HTML izvor, CI i potpisni ključ (v0.3.1)**
+- `index.html` je GENERISAN: izvor je `html/index.tpl.html` + `html/ekrani/<id>.html` (markeri `<!--@ekran:id-->`). Izmjene ekrana idu u `html/`, pa `npm run build:html`; test `html.test.mjs` pada ako se index.html razlikuje. Isto vrijedi za dodavanje ekrana: novi fajl u `html/ekrani/` + marker u šablonu.
+- CI: push se NE otkazuje (grupa po `github.sha`), Release job je serijski, a `latest` i `version.json` dobija samo najviša verzija (`sort -V`). Time uzastopni pushevi ne gube Release.
+- Potpisni ključ je u javnom repozitoriju — vidi `docs/SIGURNOST.md` (plan pri prebacivanju na novi nalog).
+
+**Pretraga, statistika, pregled stana (v0.3.1)**
+- `pretraga.js` (`matchesQuery`: bez dijakritika/velikih slova) u spiskovima odstrela, opažanja i objekata. Statistika odstrela (`odstrel-stat.js`, `odstrel-stat-ui.js`) računa nad lokalnim zapisima; zapis odstrela u lovu nosi `lov_id`, `revir_id`, `sekcija_id` (u `podaci` JSON-u, bez migracije), bez toga je "izvan lova". Godina je kalendarska — datumi lovne sezone se ne zakucavaju (propisi ih unosi admin).
+- Pregled stana (`stan.js`, `stan-ui.js`): pravac telefona, sigurnosno stanje sektora, udaljenost, vjetar, svjetlo; dugme u panelu lova.
+- PREKID lova šalje i SMS (`tok-ui.js smsPrekid`), brojevi iz `lov_telefoni`, bez mog broja.

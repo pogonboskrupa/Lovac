@@ -1,5 +1,7 @@
 // Istraživač: smjer i udaljenost članova u odnosu na mene (čista logika).
 
+import { compassName } from './geo.js';
+
 const R = 6371008.8;
 const rad = (d) => (d * Math.PI) / 180;
 
@@ -43,4 +45,10 @@ export function memberVectors(me, rows, myId, nameOf, now = Date.now(), maxAgeMs
       starost: Math.max(0, Math.round((now - Date.parse(r.t)) / 60000)),
     }))
     .sort((a, b) => a.udaljenost - b.udaljenost);
+}
+
+// Kratak opis "230 m SI" od mene do cilja; bez GPS-a prazan tekst.
+export function rangeLabel(from, to) {
+  if (!from || !to) return '';
+  return `${formatMemberDistance(distanceM(from, to))} ${compassName(bearingDeg(from, to))}`;
 }

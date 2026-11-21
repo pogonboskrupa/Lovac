@@ -66,3 +66,9 @@ export function alertsFor(events, myId, seen) {
 export function isRlsDenied(message) {
   return /row-level security|permission denied|insufficient/i.test(String(message));
 }
+
+// SMS rezerva za PREKID: ide i kad nema interneta (isti princip kao SOS).
+export function prekidSmsText(lovNaziv, vodja, fix, tekst = null) {
+  const pos = fix ? ` Moja pozicija: ${fix.lat.toFixed(5)}, ${fix.lon.toFixed(5)}.` : '';
+  return `PREKID LOVA "${lovNaziv}" — svi staju! Javlja ${vodja}.${tekst ? ` ${tekst}.` : ''}${pos}`;
+}

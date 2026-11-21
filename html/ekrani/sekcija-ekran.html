@@ -1,0 +1,28 @@
+<section id="sekcija-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="sk-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="sk-naslov">Sekcija</h2>
+    <select id="sk-izbor" aria-label="Izbor sekcije" hidden></select>
+  </header>
+  <p id="sk-podnaslov" class="sitno"></p>
+  <p id="sk-status" class="status" role="status"></p>
+  <div id="sk-prazno" hidden>
+    <p>Nisi član nijedne sekcije. Zatraži pristup od grupovođe: bez odobrenja se ne može ući.</p>
+    <button id="btn-sk-pristup" class="dugme glavno" type="button">Sekcije i pristup</button>
+  </div>
+  <div id="sk-sadrzaj" hidden>
+    <h3>Tekući lov</h3>
+    <div id="sk-lov" class="sk-lov"></div>
+    <h3>Članovi sekcije <span id="sk-broj" class="sitno"></span></h3>
+    <ul id="sk-clanovi" class="spisak"></ul>
+    <h3>Poruke</h3>
+    <p class="sitno">Poruke vide članovi sekcije, grupovođa, lovočuvar revira i administrator.</p>
+    <div id="sk-poruke" class="poruke" role="log" aria-live="polite"></div>
+    <div id="sk-brze" class="brze-poruke"></div>
+    <form id="forma-poruka" class="forma-poruka" novalidate>
+      <input name="tekst" maxlength="1000" placeholder="Poruka članovima sekcije" aria-label="Poruka" autocomplete="off">
+      <button type="submit" class="dugme glavno">Pošalji</button>
+    </form>
+    <h3>Podaci o sekciji i lovu</h3>
+    <div id="sk-podaci"></div>
+  </div>
+</section>

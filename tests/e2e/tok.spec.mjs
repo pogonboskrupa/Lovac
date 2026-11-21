@@ -156,3 +156,52 @@ test('tok lova: vođa vidi komande; dvostruki dodir šalje početak pogona', asy
   await expect(page.locator('#tok-stanje')).toContainText('Pogon u toku od');
   await expect(page.locator('#btn-tok')).toHaveText('Pogon');
 });
+
+test('PREKID: uz server otvara se i SMS sa brojevima učesnika (bez mog)', async ({ page }) => {
+  const server = makeServer();
+  await setup(page, server, GV);
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/lov_telefoni/, (r) => r.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify([
+      { korisnik_id: GV.id, telefon: '+387 61 000 111' },
+      { korisnik_id: LOVAC.id, telefon: '+387 61 222 333' },
+      { korisnik_id: LOVAC2.id, telefon: '+387 62 444 555' },
+    ]),
+  }));
+  await page.addInitScript(() => { window.__sms = []; window.AndroidSms = { posalji: (n, t) => window.__sms.push({ n, t }) }; });
+  await page.clock.install();
+  await page.goto('/');
+  await page.clock.runFor(7000);
+  await page.clock.runFor(61000);
+  await page.locator('#btn-tok').click();
+  await page.fill('#tok-tekst', 'Vuk u pogonu');
+  const btn = page.locator('#tok-vodja [data-vrsta="prekid"]');
+  await btn.click();
+  await btn.click();
+  await expect.poll(() => page.evaluate(() => window.__sms.length)).toBe(1);
+  const [sms] = await page.evaluate(() => window.__sms);
+  expect(sms.n).toBe('+38761222333;+38762444555');
+  expect(sms.t).toContain('PREKID LOVA "Pogon Grmeč"');
+  expect(sms.t).toContain('Vuk u pogonu');
+  expect(server.db.lov_dogadjaji.at(-1).vrsta).toBe('prekid');
+});
+
+test('pregled stana: sigurnost, udaljenost, vjetar i svjetlo u jednom pogledu', async ({ page }) => {
+  const server = makeServer();
+  await setup(page, server, LOVAC);
+  await page.clock.install();
+  await page.goto('/');
+  await page.clock.runFor(7000);
+  await page.clock.runFor(61000);
+  await page.evaluate((id) => document.dispatchEvent(new CustomEvent('lov:otvori', { detail: { id } })), LOV);
+  await expect(page.locator('#lov-panel')).toBeVisible();
+  await page.locator('#btn-lov-stan').click();
+  await expect(page.locator('#stan-ekran')).toBeVisible();
+  await expect(page.locator('#stan-naslov-broj')).toHaveText('Stan 1');
+  await expect(page.locator('#stan-udaljenost')).toHaveText('Na stanu');
+  await expect(page.locator('#stan-sigurnost')).toContainText('Kompas nije dostupan');
+  await expect(page.locator('#stan-vjetar')).toContainText('Nema prognoze vjetra');
+  await expect(page.locator('#stan-svjetlo')).not.toHaveText('');
+  expect(await page.evaluate(() => window.__nazad())).toBe(true);
+  await expect(page.locator('#stan-ekran')).toBeHidden();
+});

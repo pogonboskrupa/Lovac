@@ -6,11 +6,13 @@ import { connectionQuality } from './net.js';
 import { currentFix } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
+import { idbGet } from './db.js';
+import { smsNumbers } from './uzivo.js';
 import { memberName } from './dijeljenje-ui.js';
 import { toast, wireTwoTap, escapeHtml, registerBackHandler } from './ui.js';
 import {
   LEADER_EVENTS, MEMBER_EVENTS, EVENT_LABELS, canLead, newDogadjaj, mergeDogadjaji, driveState, memberStatus,
-  elapsedText, alertsFor, isRlsDenied,
+  elapsedText, alertsFor, isRlsDenied, prekidSmsText,
 } from './tok.js';
 
 const POLL_MS = 15000;
@@ -124,12 +126,25 @@ export function initTok() {
     render();
   };
 
+  // SMS rezerva (bez interneta): otvara SMS aplikaciju sa tekstom, vođa pritisne Pošalji.
+  const smsPrekid = async (tekst) => {
+    const rec = await idbGet('lovovi', lov.id).catch(() => null);
+    const numbers = smsNumbers(rec?.telefoni || lov.telefoni, me()?.id);
+    if (!numbers.length || !globalThis.AndroidSms?.posalji) {
+      toast(numbers.length ? 'SMS nije dostupan u ovom pregledniku' : 'Nema brojeva telefona učesnika — pozovi ih');
+      return;
+    }
+    globalThis.AndroidSms.posalji(numbers.join(';'), prekidSmsText(lov.lov.naziv, memberName(me().id), currentFix(), tekst));
+    toast(`SMS za ${numbers.length} učesnika je otvoren — pritisni Pošalji`);
+  };
+
   const send = async (vrsta, tekst = null) => {
     if (!lov) return;
     const e = newDogadjaj({ id: uuid(), lovId: lov.id, autorId: me().id, vrsta, tekst, fix: currentFix() });
     saveSoft(OUTBOX, [...loadJSON(OUTBOX, []), e]);
     render();
     navigator.vibrate?.(60);
+    if (vrsta === 'prekid') await smsPrekid(tekst);
     await flush();
     render();
   };

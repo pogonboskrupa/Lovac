@@ -4,7 +4,10 @@ import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, listRecords, deleteRecord, getRecord, VIDLJIVOST } from './zapisi.js';
 import { toCsv, reportHtml, summarizeHarvest, harvestWarnings, parseDecimalBs, formatDecimalBs, NAPOMENA_DNEVNIK } from './odstrel.js';
 import { filterObservations, periodRange } from './opazanja.js';
-import { pickRule, huntingWindow } from './propisi.js';
+import { matchesQuery } from './pretraga.js';
+import { harvestStats, statRows, yearsOf, UNKNOWN } from './odstrel-stat.js';
+import { cachedSekcije } from './sekcije-ui.js';
+import { pickRule, huntingWindow, seasonStatus } from './propisi.js';
 import { sunTimes } from './sunce.js';
 import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
@@ -55,7 +58,8 @@ export function initOdstrel(L, map) {
   const form = $('forma-odstrel');
   const list = $('odstrel');
   let draft = null;
-  let filter = { period: 'godina', vrsta: '' };
+  let filter = { period: 'godina', vrsta: '', trazi: '' };
+  let lastWarning = '';
 
   const setPressed = (container, attr, value) => {
     container.querySelectorAll(`[${attr}]`).forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(value))));
@@ -85,6 +89,9 @@ export function initOdstrel(L, map) {
     const el = $('ods-upozorenja');
     el.hidden = !w.length;
     el.innerHTML = w.map((x) => `<span>${escapeHtml(x)}</span>`).join('<br>');
+    el.setAttribute('role', 'alert');
+    if (w.length && w.join() !== lastWarning) navigator.vibrate?.([200, 100, 200]);
+    lastWarning = w.join();
     draft.potvrdjeno = false;
     $('btn-ods-sacuvaj').textContent = 'Sačuvaj';
     return w;
@@ -106,7 +113,11 @@ export function initOdstrel(L, map) {
       vrsta: vrste[0]?.kod, kategorija: null, foto: [], potvrdjeno: false,
       ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — nišan na sredini karte' }),
     };
-    $('ods-vrste').innerHTML = vrste.map((v) => `<button type="button" data-kod="${escapeHtml(v.kod)}">${escapeHtml(v.naziv)}</button>`).join('');
+    // Vrste koje su danas u lovostaju se označe odmah, prije izbora (pravila su iz admin spiska).
+    const lovostajRows = await getSpisakAll('lovostaj');
+    const inSeason = (kod) => seasonStatus(lovostajRows, kod, null, new Date()).stanje === 'lovostaj';
+    $('ods-vrste').innerHTML = vrste.map((v) => `<button type="button" data-kod="${escapeHtml(v.kod)}"${inSeason(v.kod) ? ' data-lovostaj="true"' : ''}>${escapeHtml(v.naziv)}${inSeason(v.kod) ? ' (lovostaj)' : ''}</button>`).join('');
+    lastWarning = '';
     setPressed($('ods-vrste'), 'data-kod', draft.vrsta);
     form.vrijeme.value = toLocalInput(Date.now());
     form.tezina.value = '';
@@ -180,7 +191,9 @@ export function initOdstrel(L, map) {
       $('ods-upozorenja').hidden = false;
       return;
     }
+    const uLov = !$('ods-u-lov-red').hidden && $('ods-u-lov').checked && activeHunt;
     const rec = newRecord({
+      ...(uLov ? { lov_id: activeHunt.id, revir_id: activeHunt.lov.revir_id, sekcija_id: activeHunt.lov.sekcija_id || null } : {}),
       vrsta: draft.vrsta,
       kategorija: draft.kategorija,
       vrijeme: new Date(form.vrijeme.value).getTime() || Date.now(),
@@ -206,7 +219,10 @@ export function initOdstrel(L, map) {
   // ---- spisak, zbir, izvoz ----
   const filtered = async () => {
     const { od, do: doT } = periodRange(filter.period);
-    return filterObservations(await listRecords(STORE), { vrsta: filter.vrsta || null, od, do: doT }).sort((a, b) => b.vrijeme - a.vrijeme);
+    const vrste = await getSpisakAll('vrste');
+    return filterObservations(await listRecords(STORE), { vrsta: filter.vrsta || null, od, do: doT })
+      .filter((o) => matchesQuery([lookupNaziv(vrste, o.vrsta), o.lovac, o.trofej, o.napomena, o.tudji ? memberName(o.vlasnik_id) : ''], filter.trazi))
+      .sort((a, b) => b.vrijeme - a.vrijeme);
   };
 
   const exportRows = async () => {
@@ -265,6 +281,7 @@ export function initOdstrel(L, map) {
     if (b) await shareDialog()?.open(STORE, b.closest('[data-id]').dataset.id);
   });
   $('ods-period').addEventListener('click', (e) => { const b = e.target.closest('[data-period]'); if (b) { filter.period = b.dataset.period; render(); } });
+  $('ods-trazi').addEventListener('input', (e) => { filter.trazi = e.target.value; render(); });
   $('ods-filter-vrsta').addEventListener('change', (e) => { filter.vrsta = e.target.value; render(); });
   $('btn-ods-csv').addEventListener('click', async () => {
     const d = new Date();

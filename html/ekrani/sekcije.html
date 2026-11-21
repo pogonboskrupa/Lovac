@@ -1,0 +1,32 @@
+<section id="sekcije" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="sekcije-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="sekcije-naslov">Sekcije i pristup</h2>
+    <button id="btn-sekcije-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p class="sitno">Reviri imaju sekcije. U sekciju se ulazi samo uz odobrenje grupovođe: zatraži pristup, a grupovođa odobri ili odbije.</p>
+  <div class="red-dugmadi">
+    <button id="btn-sekcije-osvjezi" class="dugme" type="button">Osvježi sa servera</button>
+    <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
+  </div>
+  <p id="sekcije-status" class="status" role="status"></p>
+  <div id="grupovodje-blok" hidden>
+    <h3>Grupovođe po revirima (admin)</h3>
+    <ul id="grupovodje-spisak" class="spisak"></ul>
+    <div class="red-dugmadi">
+      <select id="grupovodja-korisnik" aria-label="Lovac"></select>
+      <select id="grupovodja-revir" aria-label="Revir"></select>
+      <button id="btn-grupovodja-dodaj" class="dugme" type="button">Postavi za grupovođu</button>
+    </div>
+  </div>
+  <div id="lovocuvari-blok" hidden>
+    <h3>Lovočuvari po revirima (admin)</h3>
+    <p class="sitno">Lovočuvar prati sve sekcije svog revira (članove, lovove, poruke), bez upravljanja.</p>
+    <ul id="lovocuvari-spisak" class="spisak"></ul>
+    <div class="red-dugmadi">
+      <select id="lovocuvar-korisnik" aria-label="Lovac"></select>
+      <select id="lovocuvar-revir" aria-label="Revir"></select>
+      <button id="btn-lovocuvar-dodaj" class="dugme" type="button">Postavi za lovočuvara</button>
+    </div>
+  </div>
+  <div id="sekcije-spisak"></div>
+</section>

@@ -1,0 +1,28 @@
+<section id="tok-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="tok-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="tok-naslov">Tok lova</h2>
+    <button id="btn-tok-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="tok-stanje" class="tok-stanje" role="status"></p>
+  <div id="tok-vodja" hidden>
+    <h3>Komande vođe</h3>
+    <input id="tok-tekst" type="text" maxlength="200" placeholder="Napomena uz komandu (neobavezno)" aria-label="Napomena uz komandu">
+    <div class="red-dugmadi">
+      <button type="button" class="dugme" data-vrsta="pocetak_pogona">Početak pogona</button>
+      <button type="button" class="dugme" data-vrsta="kraj_pogona">Kraj pogona</button>
+      <button type="button" class="dugme" data-vrsta="okupljanje">Okupljanje</button>
+      <button type="button" class="dugme dugme-sos" data-vrsta="prekid">PREKID LOVA</button>
+    </div>
+  </div>
+  <h3>Moj status</h3>
+  <div id="tok-moje" class="segment" role="group" aria-label="Moj status u lovu">
+    <button type="button" data-vrsta="na_stanu" aria-pressed="false">Na stanu</button>
+    <button type="button" data-vrsta="napustio_stan" aria-pressed="false">Napuštam stan</button>
+    <button type="button" data-vrsta="pauza" aria-pressed="false">Pauza</button>
+  </div>
+  <h3>Učesnici</h3>
+  <ul id="tok-ucesnici" class="spisak"></ul>
+  <h3>Događaji</h3>
+  <ul id="tok-linija" class="spisak"></ul>
+  <p class="sitno">Kod PREKIDA se uz server otvara i SMS svim učesnicima (pritisni Pošalji), jer obavijest stiže samo dok je aplikacija otvorena. Komande i statusi ne zamjenjuju pravila lova ni vođu lova. Bez interneta se događaj sačuva i pošalje kad se veza vrati; obavijest stiže samo dok je aplikacija otvorena.</p>
+</section>

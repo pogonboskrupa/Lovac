@@ -1,0 +1,13 @@
+<section id="objekti" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="objekti-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="objekti-naslov">Lovački objekti</h2>
+    <button id="btn-objekti-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div id="objekti-filter" class="segment" role="group" aria-label="Filter">
+    <button type="button" data-filter="svi">Svi</button>
+    <button type="button" data-filter="popravka">Treba popravka (za obilazak)</button>
+  </div>
+  <input id="objekti-trazi" type="search" placeholder="Traži (naziv, vrsta, napomena…)" aria-label="Traži objekte" autocomplete="off">
+  <p id="objekti-prazno" class="sitno">Nema objekata. Dodaju se dugmetom + na karti.</p>
+  <ul id="objekti-spisak" class="spisak"></ul>
+</section>

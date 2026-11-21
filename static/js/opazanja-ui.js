@@ -2,6 +2,7 @@
 
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, listRecords, deleteRecord, getRecord } from './zapisi.js';
+import { matchesQuery } from './pretraga.js';
 import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount } from './opazanja.js';
 import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
@@ -39,6 +40,7 @@ export function initOpazanja(L, map) {
   const form = $('forma-opazanje');
   const overview = $('opazanja');
   let draft = null;
+  let searchText = '';
   let filter = { prikaz: 'tacke', vrsta: '', period: '30', naKarti: true, ...loadJSON(FILTER_KEY, {}) };
 
   const setPressed = (container, attr, value) => {
@@ -47,7 +49,9 @@ export function initOpazanja(L, map) {
 
   const filtered = async () => {
     const { od, do: doT } = periodRange(filter.period);
-    return filterObservations(await listRecords(STORE), { vrsta: filter.vrsta || null, od, do: doT });
+    const vrste = await getSpisakAll('vrste');
+    return filterObservations(await listRecords(STORE), { vrsta: filter.vrsta || null, od, do: doT })
+      .filter((o) => matchesQuery([lookupNaziv(vrste, o.vrsta), o.napomena], searchText));
   };
 
   const renderLayer = async () => {
@@ -227,6 +231,7 @@ export function initOpazanja(L, map) {
   $('op-prikaz').addEventListener('click', (e) => { const b = e.target.closest('[data-prikaz]'); if (b) changeFilter({ prikaz: b.dataset.prikaz }); });
   $('op-period').addEventListener('click', (e) => { const b = e.target.closest('[data-period]'); if (b) changeFilter({ period: b.dataset.period }); });
   $('op-filter-vrsta').addEventListener('change', (e) => changeFilter({ vrsta: e.target.value }));
+  $('op-trazi').addEventListener('input', (e) => { searchText = e.target.value; renderOverview(); renderLayer(); });
   $('op-na-karti').addEventListener('click', () => changeFilter({ naKarti: !filter.naKarti }));
   $('opazanja-spisak').addEventListener('click', async (e) => {
     const share = e.target.closest('[data-akcija="dijeli"]');

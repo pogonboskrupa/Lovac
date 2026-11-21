@@ -1,0 +1,33 @@
+<section id="objekt-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="objekt-forma-naslov" hidden>
+  <form id="forma-objekt" novalidate>
+    <header class="postavke-glava"><h2 id="objekt-forma-naslov">Nov lovački objekat</h2></header>
+    <h3>Vrsta</h3>
+    <div id="objekt-vrste" class="ikone-izbor" role="group" aria-label="Vrsta objekta"></div>
+    <label>Naziv<input name="naziv" maxlength="60" placeholder="npr. Čeka kod bukve"></label>
+    <h3>Stanje</h3>
+    <div id="objekt-stanje" class="segment" role="group" aria-label="Stanje">
+      <button type="button" data-stanje="ispravno">Ispravno</button>
+      <button type="button" data-stanje="popravka">Treba popravka</button>
+      <button type="button" data-stanje="sruseno">Srušeno</button>
+    </div>
+    <div id="objekt-vjetar-blok" hidden>
+      <h3>Dobar vjetar za ovu čeku (odakle duva)</h3>
+      <div id="objekt-vjetar" class="segment segment-8" role="group" aria-label="Dozvoljeni smjerovi vjetra"></div>
+    </div>
+    <label>Zadnji obilazak<input name="zadnji_obilazak" type="date"></label>
+    <label>Napomena<textarea name="napomena" rows="3" maxlength="1000"></textarea></label>
+    <h3>Fotografije</h3>
+    <div id="objekt-foto" class="foto-red"></div>
+    <label class="dugme dugme-fajl">Dodaj fotografiju<input id="objekt-foto-input" type="file" accept="image/*" multiple hidden></label>
+    <h3>Pozicija</h3>
+    <p id="objekt-pozicija" class="sitno"></p>
+    <div class="red-dugmadi">
+      <button type="button" id="btn-objekt-nisan" class="dugme">Na nišan karte</button>
+      <button type="button" id="btn-objekt-moja-lokacija" class="dugme">Na moju lokaciju</button>
+    </div>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Sačuvaj</button>
+      <button type="button" id="btn-objekt-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>

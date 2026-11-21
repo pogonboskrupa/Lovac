@@ -7,7 +7,8 @@ import { loadJSON, saveSoft } from './storage.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA } from './lov.js';
 import { standWarnings, sectorWedge } from './sektori.js';
-import { onGpsUpdate, currentHeading } from './gps.js';
+import { onGpsUpdate, currentHeading, currentFix } from './gps.js';
+import { rangeLabel } from './istrazivac.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { printHuntReport } from './uzivo-ui.js';
 import { MOJE_SEKCIJE_KEY, cachedSekcije, downloadSekcije } from './sekcije-ui.js';
@@ -73,6 +74,7 @@ export function initLov(L, map) {
       if (!Number.isFinite(s.lat)) continue;
       L.marker([s.lat, s.lon], { icon: standIcon(L, s, s.id === mine?.stan?.id), keyboard: false })
         .on('click', () => { selectedStand = s; drawSchedule(); updatePanel(); })
+        .bindTooltip(() => `Stan ${s.broj}${currentFix() ? ` · ${rangeLabel(currentFix(), s)}` : ''}`)
         .addTo(layer);
     }
     if (focus && Number.isFinite(focus.lat)) {
@@ -90,6 +92,7 @@ export function initLov(L, map) {
     $('lov-panel-uloga').textContent = mine
       ? `${ULOGE[mine.uloga]}${mine.stan ? ` · stan ${mine.stan.broj}` : ''}${selectedStand && selectedStand !== mine.stan ? ` · prikazan stan ${selectedStand.broj}` : ''}`
       : (focus ? `Prikazan stan ${focus.broj}` : 'Nisi učesnik ovog lova');
+    $('btn-lov-stan').hidden = !(focus && Number.isFinite(focus.lat));
     const k = $('lov-kompas');
     if (!focus) { k.dataset.stanje = 'nepoznato'; k.textContent = 'Nema stana za provjeru pravca'; return; }
     const st = headingCheck(currentHeading(), sectorsForStand(focus, shown).lukovi);
@@ -99,6 +102,10 @@ export function initLov(L, map) {
         : 'Kompas nije dostupan — gledaj crvene sektore na karti';
   };
   onGpsUpdate(() => { if (shown) updatePanel(); });
+  $('btn-lov-stan').addEventListener('click', () => {
+    const focus = selectedStand || myAssignment(shown, me()?.id)?.stan;
+    if (shown && focus) document.dispatchEvent(new CustomEvent('stan:otvori', { detail: { data: shown, stand: focus } }));
+  });
 
   const showSchedule = async (id) => {
     shown = await idbGet(STORE, id);

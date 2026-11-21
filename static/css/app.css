@@ -434,3 +434,24 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .tok-baner[data-vrsta="prekid"] { background: #b91c1c; color: #ffffff; }
 .tok-baner span { flex: 1; }
 #tok-linija li { padding: 6px 0; border-bottom: 1px solid var(--linija, rgba(128,128,128,.3)); }
+
+/* Pretraga i statistika */
+.list-preko input[type="search"] { width: 100%; min-height: 48px; font-size: 16px; padding: 8px 12px; margin: 8px 0; border-radius: 10px; border: 1px solid var(--linija, rgba(128,128,128,.5)); background: var(--povrsina); color: var(--tekst); box-sizing: border-box; }
+.stat-mjeseci { list-style: none; padding: 0; margin: 0; }
+.stat-mjeseci li { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.stat-mj { width: 36px; color: var(--tekst-2); }
+.stat-traka { height: 14px; min-width: 2px; border-radius: 4px; background: var(--naglasak); }
+
+/* Pregled stana */
+.stan-sigurnost { padding: 16px; border-radius: 12px; font-size: 22px; font-weight: 800; text-align: center; background: var(--povrsina); }
+.stan-sigurnost[data-stanje="zabranjeno"] { background: #b91c1c; color: #ffffff; }
+.stan-sigurnost[data-stanje="dozvoljeno"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+.stan-vrijednosti { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 16px 0; }
+.stan-vrijednosti dt { color: var(--tekst-2); align-self: center; }
+.stan-vrijednosti dd { margin: 0; }
+.stan-vrijednosti dd.velika { font-size: 30px; font-weight: 800; }
+
+/* Upozorenje lovostaja pri unosu odstrela mora biti uočljivo */
+#ods-upozorenja { padding: 12px 14px; border-radius: 10px; background: #b91c1c; color: #ffffff; font-size: 17px; font-weight: 700; }
+#ods-upozorenja[hidden] { display: none; }
+#ods-vrste [data-lovostaj="true"] { border: 2px solid #b91c1c; }
