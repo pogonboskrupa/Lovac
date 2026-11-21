@@ -294,3 +294,17 @@ test('pregled stana: sigurnost, udaljenost, vjetar', () => {
   assert.equal(none.vjetar, null);
   assert.equal(standBrief({ heading: 0, arcs: [], fix: stand, stand, wind: null }).stan.nasStanu, true);
 });
+
+import { menuTexts } from '../../static/js/meni-ui.js';
+
+test('meni: tekstovi pločica iz brojeva', () => {
+  const t = menuTexts({ lov: 'Pogon Grmeč', odstrelGodina: 12, opazanja30: 0, objekti: 14, popravka: 3, tragovi: 1, svjetlo: 'Svjetlo do 16:23' });
+  assert.equal(t['btn-lovovi'], 'U TOKU: Pogon Grmeč');
+  assert.equal(t['btn-odstrel-spisak'], '12 ove godine · statistika');
+  assert.equal(t['btn-opazanja'], 'Divljač na terenu');
+  assert.equal(t['btn-objekti'], '14 ukupno · 3 za popravku');
+  assert.equal(t['btn-danas'], 'Svjetlo do 16:23');
+  const empty = menuTexts({ lov: null, odstrelGodina: 0, opazanja30: 0, objekti: 0, popravka: 0, tragovi: 0, svjetlo: null });
+  assert.equal(empty['btn-lovovi'], 'Raspored, stanovi, sektori');
+  assert.equal(empty['btn-objekti'], 'Čeke, hranilišta, solila');
+});

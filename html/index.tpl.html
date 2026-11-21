@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.1';
+  const APP_VER = 'v0.3.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -41,6 +41,12 @@
   <symbol id="ic-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5Z" fill="currentColor"/></symbol>
   <symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20ZM9 4v13.5M15 6.5V20" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
   <symbol id="ic-group" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17" cy="9.5" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 20c0-3.4 2.7-5.5 6-5.5s6 2.1 6 5.5M15.5 14.7c2.9-.3 5.5 1.3 5.5 4.3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="ic-hunt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="ic-pin" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></symbol>
+  <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="6" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Zm6-2v14m6-12v14" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
@@ -90,16 +96,25 @@
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
   <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
-  <div id="meni-spiskovi" class="meni" hidden>
-    <button type="button" id="btn-danas">Danas: lovno vrijeme i lovostaj</button>
-    <button type="button" id="btn-lovovi">Zajednički lov</button>
-    <button type="button" id="btn-karte">Karte i offline (Teren, slojevi)</button>
-    <button type="button" id="btn-slojevi">Slojevi (granice lovišta)</button>
-    <button type="button" id="btn-sekcije">Sekcije i pristup</button>
-    <button type="button" id="btn-tragovi">Moji tragovi</button>
-    <button type="button" id="btn-objekti">Lovački objekti</button>
-    <button type="button" id="btn-opazanja">Opažanja divljači</button>
-    <button type="button" id="btn-odstrel-spisak">Evidencija odstrela</button>
+  <div id="meni-spiskovi" class="meni meni-grupe" hidden>
+    <h3 class="m-grupa">Lov</h3>
+    <div class="m-red">
+      <button type="button" id="btn-lovovi" class="meni-plocica"><svg class="ic"><use href="#ic-hunt"/></svg><span class="m-tekst"><span class="m-naslov">Zajednički lov</span><span class="m-opis" id="btn-lovovi-opis">Raspored, stanovi, sektori</span></span></button>
+      <button type="button" id="btn-sekcije" class="meni-plocica"><svg class="ic"><use href="#ic-group"/></svg><span class="m-tekst"><span class="m-naslov">Sekcije i pristup</span><span class="m-opis" id="btn-sekcije-opis">Članstvo i odobrenja</span></span></button>
+      <button type="button" id="btn-danas" class="meni-plocica"><svg class="ic"><use href="#ic-sun"/></svg><span class="m-tekst"><span class="m-naslov">Danas</span><span class="m-opis" id="btn-danas-opis">Lovno vrijeme i lovostaj</span></span></button>
+    </div>
+    <h3 class="m-grupa">Evidencija</h3>
+    <div class="m-red">
+      <button type="button" id="btn-odstrel-spisak" class="meni-plocica"><svg class="ic"><use href="#ic-target"/></svg><span class="m-tekst"><span class="m-naslov">Odstrel</span><span class="m-opis" id="btn-odstrel-spisak-opis">Evidencija i statistika</span></span></button>
+      <button type="button" id="btn-opazanja" class="meni-plocica"><svg class="ic"><use href="#ic-eye"/></svg><span class="m-tekst"><span class="m-naslov">Opažanja</span><span class="m-opis" id="btn-opazanja-opis">Divljač na terenu</span></span></button>
+      <button type="button" id="btn-objekti" class="meni-plocica"><svg class="ic"><use href="#ic-pin"/></svg><span class="m-tekst"><span class="m-naslov">Objekti</span><span class="m-opis" id="btn-objekti-opis">Čeke, hranilišta, solila</span></span></button>
+      <button type="button" id="btn-tragovi" class="meni-plocica"><svg class="ic"><use href="#ic-route"/></svg><span class="m-tekst"><span class="m-naslov">Moji tragovi</span><span class="m-opis" id="btn-tragovi-opis">Snimljene ture</span></span></button>
+    </div>
+    <h3 class="m-grupa">Karta</h3>
+    <div class="m-red">
+      <button type="button" id="btn-karte" class="meni-plocica"><svg class="ic"><use href="#ic-map"/></svg><span class="m-tekst"><span class="m-naslov">Karte i offline</span><span class="m-opis" id="btn-karte-opis">Teren, preuzimanje područja</span></span></button>
+      <button type="button" id="btn-slojevi" class="meni-plocica"><svg class="ic"><use href="#ic-layers"/></svg><span class="m-tekst"><span class="m-naslov">Slojevi</span><span class="m-opis" id="btn-slojevi-opis">Granice lovišta</span></span></button>
+    </div>
   </div>
   <div id="meni-dodaj" class="meni meni-dodaj" hidden>
     <button type="button" id="btn-dodaj-objekat">Lovački objekat</button>

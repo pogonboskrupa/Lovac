@@ -208,3 +208,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - `pretraga.js` (`matchesQuery`: bez dijakritika/velikih slova) u spiskovima odstrela, opažanja i objekata. Statistika odstrela (`odstrel-stat.js`, `odstrel-stat-ui.js`) računa nad lokalnim zapisima; zapis odstrela u lovu nosi `lov_id`, `revir_id`, `sekcija_id` (u `podaci` JSON-u, bez migracije), bez toga je "izvan lova". Godina je kalendarska — datumi lovne sezone se ne zakucavaju (propisi ih unosi admin).
 - Pregled stana (`stan.js`, `stan-ui.js`): pravac telefona, sigurnosno stanje sektora, udaljenost, vjetar, svjetlo; dugme u panelu lova.
 - PREKID lova šalje i SMS (`tok-ui.js smsPrekid`), brojevi iz `lov_telefoni`, bez mog broja.
+
+**Meni (v0.3.2)**
+- `#meni-spiskovi` je ploča iznad navigacije sa tri grupe (Lov, Evidencija, Karta) i pločicama (ikona, naziv, kratka informacija). Informacije (`meni-ui.js menuTexts`) dolaze iz lokalnih podataka pri otvaranju menija: lov u toku, broj odstrela ove godine, opažanja u 30 dana, objekti i popravke, tragovi, dnevno svjetlo. Id-evi dugmadi (`btn-lovovi`…) se ne mijenjaju — na njih se vežu moduli; opis je u `<id>-opis`.

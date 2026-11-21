@@ -455,3 +455,15 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 #ods-upozorenja { padding: 12px 14px; border-radius: 10px; background: #b91c1c; color: #ffffff; font-size: 17px; font-weight: 700; }
 #ods-upozorenja[hidden] { display: none; }
 #ods-vrste [data-lovostaj="true"] { border: 2px solid #b91c1c; }
+
+/* Meni: grupe sa pločicama (ikona, naziv, kratka informacija) */
+#meni-spiskovi.meni-grupe { display: block; padding: 4px 8px 8px; max-height: 70vh; }
+.m-grupa { margin: 10px 4px 6px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--tekst-2); }
+.m-red { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#meni-spiskovi .meni-plocica { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 10px; }
+#meni-spiskovi .meni-plocica .ic { flex: none; width: 28px; height: 28px; color: var(--naglasak); }
+.m-tekst { display: flex; flex-direction: column; min-width: 0; }
+.m-naslov { font-weight: 700; font-size: 16px; }
+.m-opis { font-size: 13px; color: var(--tekst-2); overflow-wrap: anywhere; }
+#btn-lovovi[data-aktivan="true"] { outline: 2px solid var(--gps-dobro); }
+#btn-lovovi[data-aktivan="true"] .m-opis { color: var(--tekst); font-weight: 700; }
