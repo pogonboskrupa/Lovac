@@ -5,6 +5,10 @@ import { getClient, cachedProfile } from './auth.js';
 import { idbGet, idbPut } from './db.js';
 import { connectionQuality } from './net.js';
 import { currentFix } from './gps.js';
+import { idbAll } from './db.js';
+import { pickActiveHunt, shareIntervalMs, sharingState, initialsOf } from './lokacija.js';
+import { getShareSettings, initLokacijaEkran } from './lokacija-ui.js';
+import { distanceM } from './istrazivac.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
 import { memberName } from './dijeljenje-ui.js';
@@ -31,21 +35,32 @@ export function initUzivo(L, map) {
   let timer = null;
   let channel = null;
   const seenSos = new Set();
+  let lastRows = [];
+  let lastSent = 0;
   const me = () => cachedProfile();
 
   const online = () => connectionQuality() !== 'nema' && Boolean(getClient());
 
   const drawOthers = (rows) => {
+    lastRows = rows;
     document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows } }));
     others.clearLayers();
+    const mine = currentFix();
     for (const p of rows) {
       if (p.korisnik_id === me()?.id) continue;
+      const stanje = sharingState(p.t);
+      if (stanje === 'nema') continue;
       const u = lov?.ucesnici.find((x) => x.korisnik_id === p.korisnik_id);
       const age = Math.round((Date.now() - Date.parse(p.t)) / 60000);
-      L.circleMarker([p.lat, p.lon], {
-        radius: 8, weight: 3, color: '#ffffff', fillOpacity: 0.95,
-        fillColor: u?.uloga === 'pogonic' ? '#f97316' : '#2563eb', className: 'ucesnik-uzivo',
-      }).bindTooltip(`${memberName(p.korisnik_id)}${age > 1 ? ` (prije ${age} min)` : ''}`, { permanent: false }).addTo(others);
+      const name = memberName(p.korisnik_id);
+      const icon = L.divIcon({
+        className: 'uc-ikona',
+        html: `<span class="uc-marker" data-stanje="${stanje}" data-uloga="${u?.uloga === 'pogonic' ? 'pogonic' : 'ostali'}">${escapeHtml(initialsOf(name))}</span>`,
+        iconSize: [34, 34], iconAnchor: [17, 17],
+      });
+      const dist = mine ? ` · ${Math.round(distanceM(mine, p))} m` : '';
+      L.marker([p.lat, p.lon], { icon, keyboard: false })
+        .bindTooltip(`${name}${age > 1 ? ` (prije ${age} min)` : ''}${dist}`, { permanent: false }).addTo(others);
     }
   };
 
@@ -71,23 +86,40 @@ export function initUzivo(L, map) {
     saveSoft(ODSTREL_RED, left);
   };
 
+  const iAmParticipant = () => Boolean(lov?.ucesnici?.some((u) => u.korisnik_id === me()?.id));
+  const REMOVE_KEY = 'lovac.lokacija.uklanjanje';
+
   const tick = async () => {
     if (!lov || lov.lov.status !== 'u_toku' || !online()) return;
     const sb = getClient();
     const fix = currentFix();
+    const share = getShareSettings();
     try {
-      if (fix) {
+      if (share.on && fix && iAmParticipant()) {
         await qUzivo(sb.from('lov_pozicije').upsert({ lov_id: lov.id, korisnik_id: me().id, lat: fix.lat, lon: fix.lon, acc: fix.acc, t: new Date().toISOString() },
           { onConflict: 'lov_id,korisnik_id' }));
+        lastSent = Date.now();
+        saveSoft(REMOVE_KEY, null);
+        document.dispatchEvent(new CustomEvent('uzivo:poslano'));
+      } else if (!share.on) {
+        await removeMyPosition(lov.id);
       }
       drawOthers(await qUzivo(sb.from('lov_pozicije').select('*').eq('lov_id', lov.id)));
       for (const s of newSosSince(await qUzivo(sb.from('sos').select('*').eq('lov_id', lov.id)), me()?.id, seenSos)) showSos(s);
-      $('uzivo-stanje').textContent = `Uživo: osvježeno ${new Date().toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })}`;
+      $('uzivo-stanje').textContent = share.on ? `Uživo: osvježeno ${new Date().toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })}`
+        : 'Lokacija isključena — drugi te ne vide';
     } catch (err) {
       $('uzivo-stanje').textContent = 'Uživo: nema veze sa serverom';
       console.warn('uživo', err.message);
     }
     await flushHarvest();
+  };
+
+  // Brisanje vlastite pozicije kad se dijeljenje isključi; ako nema veze, pokušaj se pamti.
+  const removeMyPosition = async (lovId) => {
+    saveSoft(REMOVE_KEY, lovId);
+    await qUzivo(getClient().from('lov_pozicije').delete().eq('lov_id', lovId).eq('korisnik_id', me().id));
+    saveSoft(REMOVE_KEY, null);
   };
 
   // Telefoni se preuzimaju dok ima veze, da SOS SMS radi i bez interneta.
@@ -112,17 +144,20 @@ export function initUzivo(L, map) {
     $('uzivo').hidden = true;
   };
 
-  document.addEventListener('lov:prikazan', async (e) => {
+  const arm = () => {
+    clearInterval(timer);
+    timer = setInterval(tick, shareIntervalMs(getShareSettings().interval));
+  };
+
+  const activate = async (rec) => {
+    if (lov?.id === rec.id && timer) { lov = rec; return; }
     stop();
-    lov = e.detail.lov;
-    if (!lov) return;
-    const active = lov.lov.status === 'u_toku';
-    $('uzivo').hidden = !active;
-    if (!active) return;
+    lov = rec;
+    $('uzivo').hidden = false;
     // Ranije SOS-ove ovog lova ne prikazuj ponovo kao nove.
     loadJSON(`lovac.sos.vidjeni.${lov.id}`, []).forEach((id) => seenSos.add(id));
     await refreshPhones();
-    timer = setInterval(tick, POLL_MS);
+    arm();
     tick();
     try {
       channel = getClient()?.channel(`sos-${lov.id}`)
@@ -132,7 +167,40 @@ export function initUzivo(L, map) {
     } catch (err) {
       console.warn('realtime', err.message);
     }
+  };
+
+  // Lov u toku u kojem sam učesnik šalje poziciju i bez otvorenog rasporeda; kraj lova gasi slanje.
+  const autoPick = async () => {
+    if (!me()) return;
+    const rec = pickActiveHunt(await idbAll('lovovi').catch(() => []), me().id);
+    if (rec) { await activate(rec); return; }
+    if (lov) {
+      const ended = lov.id;
+      stop();
+      lov = null;
+      removeMyPosition(ended).catch(() => {});
+    }
+  };
+
+  document.addEventListener('lov:prikazan', async (e) => {
+    const shown = e.detail.lov;
+    if (shown?.lov.status === 'u_toku') await activate(shown);
+    else await autoPick();
   });
+  document.addEventListener('lokacija:postavke', async (e) => {
+    if (lov) {
+      arm();
+      if (!e.detail.on) { try { await removeMyPosition(lov.id); } catch (err) { console.warn('uklanjanje pozicije', err.message); } }
+      tick();
+    }
+  });
+  setInterval(() => {
+    const pending = loadJSON(REMOVE_KEY, null);
+    if (pending && online() && getShareSettings().on === false) removeMyPosition(pending).catch(() => {});
+    autoPick();
+  }, 60000);
+  autoPick();
+  initLokacijaEkran(map, { lov: () => lov, rows: () => lastRows, lastSent: () => lastSent });
 
   // ---- SOS ----
   wireTwoTap($('btn-sos'), 'DODIRNI PONOVO — ŠALJE SOS', async () => {

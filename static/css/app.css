@@ -402,3 +402,20 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 }
 .clan-chip .strelica { width: 22px; height: 22px; color: #2563eb; }
 #btn-istrazivac[aria-pressed="true"] { background: #2563eb; color: #ffffff; }
+
+/* Status prebačen sa mape u Postavke; upozorenje o vezi ostaje na mapi samo kad veza nije dobra */
+.veza-upozorenje[data-veza="dobra"], .veza-upozorenje[data-veza="nepoznato"] { display: none; }
+.status-blok { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; }
+.status-blok .gps-status { box-shadow: none; padding: 0; background: none; }
+
+/* Dijeljenje lokacije */
+.uc-ikona { background: none; border: 0; }
+.uc-marker {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid #ffffff; box-shadow: var(--sjena); font: 700 13px/1 system-ui, sans-serif; color: #ffffff; background: #1d4ed8;
+}
+.uc-marker[data-uloga="pogonic"] { background: #c2410c; }
+.uc-marker[data-stanje="staro"] { opacity: 0.8; }
+.uc-marker[data-stanje="bez-signala"] { background: #475569; opacity: 0.7; }
+#lokacija-prekidac[aria-pressed="false"] { background: var(--povrsina); color: var(--tekst); }
+#lokacija-clanovi .clan-red[data-stanje="nema"] { opacity: 0.7; }

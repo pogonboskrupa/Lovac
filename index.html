@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.2.8';
+  const APP_VER = 'v0.2.9';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -84,15 +84,10 @@
     <button id="btn-podloga" class="ikona-dugme krug" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
   </div>
   <div class="status-red">
-    <span id="veza" class="znacka" data-veza="nepoznato"></span>
+    <span id="veza" class="znacka veza-upozorenje" data-veza="nepoznato"></span>
     <span id="bez-servera" class="znacka upozorenje" hidden>Server nije podešen</span>
     <button id="red-znacka" class="znacka znacka-dugme" type="button" hidden></button>
-    <div id="gps-status" class="gps-status" hidden>
-      <span id="gps-tacnost" class="tacnost">GPS…</span>
-      <span>fiks prije <span id="gps-starost">—</span></span>
-    </div>
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
-    <button id="svjetlo-chip" class="znacka znacka-dugme" type="button" hidden></button>
   </div>
   <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
   <div id="meni-spiskovi" class="meni" hidden>
@@ -177,6 +172,7 @@
     <div class="donji-dio">
       <div id="uzivo" class="uzivo" hidden>
         <button id="btn-sos" class="dugme dugme-sos" type="button">SOS</button>
+        <button id="btn-lokacija" class="dugme" type="button">Lokacija</button>
         <span id="uzivo-stanje" class="sitno">Uživo: tvoju poziciju vide učesnici dok lov traje</span>
       </div>
       <div id="panel-snimanje" class="panel-snimanje" hidden>
@@ -244,11 +240,37 @@
   <p class="sitno">© OpenStreetMap, SRTM | © OpenTopoMap (CC-BY-SA) · © Esri, Maxar, Earthstar Geographics · © OpenStreetMap contributors.</p>
 </section>
 
+<section id="lokacija-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lokacija-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="lokacija-naslov">Lokacija u lovu</h2>
+    <button id="btn-lokacija-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="lokacija-lov" class="sitno"></p>
+  <button id="lokacija-prekidac" class="dugme glavno" type="button" aria-pressed="true">Dijelim lokaciju</button>
+  <p id="lokacija-moje" class="sitno" role="status"></p>
+  <h3>Koliko često šaljem</h3>
+  <div id="lokacija-interval" class="segment" role="group" aria-label="Učestalost slanja"></div>
+  <h3>Učesnici lova</h3>
+  <ul id="lokacija-clanovi" class="spisak"></ul>
+  <p class="sitno">Lokaciju vide samo učesnici i organizatori dok lov traje. Slanje staje kad lov završi ili kad isključiš dijeljenje; tvoja zadnja pozicija se tada briše sa servera. Dijeljenje ne zamjenjuje pravila lova ni vođu lova.</p>
+</section>
+
 <section id="postavke" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="postavke-naslov" hidden>
   <header class="postavke-glava">
     <h2 id="postavke-naslov">Postavke</h2>
     <button id="btn-postavke-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+
+  <h3>Status</h3>
+  <div class="status-blok">
+    <span class="sitno">GPS</span>
+    <div id="gps-status" class="gps-status" hidden>
+      <span id="gps-tacnost" class="tacnost">GPS…</span>
+      <span>fiks prije <span id="gps-starost">—</span></span>
+    </div>
+    <span class="sitno">Dnevno svjetlo</span>
+    <button id="svjetlo-chip" class="znacka znacka-dugme" type="button" hidden></button>
+  </div>
 
   <h3>Izgled</h3>
   <div class="segment" role="group" aria-label="Tema">

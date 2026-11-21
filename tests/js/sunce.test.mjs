@@ -164,3 +164,37 @@ test('istrazivac: udaljenost, smjer, strelica, filtriranje', () => {
   assert.equal(v[0].ime, 'B');
   assert.equal(v[0].starost, 2);
 });
+
+import { normalizeShare, shareIntervalMs, sharingState, initialsOf, pickActiveHunt, shareList } from '../../static/js/lokacija.js';
+
+test('lokacija: postavke, svježina, inicijali, aktivni lov, spisak', () => {
+  assert.deepEqual(normalizeShare(undefined), { on: true, interval: 'normalno' });
+  assert.deepEqual(normalizeShare({ on: false, interval: 'cesto' }), { on: false, interval: 'cesto' });
+  assert.equal(normalizeShare({ interval: 'nesto' }).interval, 'normalno');
+  assert.equal(shareIntervalMs('stedi'), 60000);
+  assert.equal(shareIntervalMs('x'), 20000);
+  const now = Date.parse('2026-11-19T10:00:00Z');
+  const ago = (m) => new Date(now - m * 60000).toISOString();
+  assert.equal(sharingState(ago(1), now), 'zivo');
+  assert.equal(sharingState(ago(5), now), 'staro');
+  assert.equal(sharingState(ago(20), now), 'bez-signala');
+  assert.equal(sharingState(ago(45), now), 'nema');
+  assert.equal(initialsOf('Goran Grupovođa'), 'GG');
+  assert.equal(initialsOf('Ivo'), 'I');
+  const recs = [
+    { id: 'a', lov: { status: 'planiran', datum: '2026-11-20' }, ucesnici: [{ korisnik_id: 'ja' }] },
+    { id: 'b', lov: { status: 'u_toku', datum: '2026-11-19' }, ucesnici: [{ korisnik_id: 'ja' }] },
+    { id: 'c', lov: { status: 'u_toku', datum: '2026-11-19' }, ucesnici: [{ korisnik_id: 'drugi' }] },
+  ];
+  assert.equal(pickActiveHunt(recs, 'ja').id, 'b');
+  assert.equal(pickActiveHunt(recs, 'niko'), null);
+  const me = { lat: 44.88, lon: 16.15 };
+  const uc = [{ korisnik_id: 'ja' }, { korisnik_id: 'x', uloga: 'strijelac' }, { korisnik_id: 'y' }, { korisnik_id: 'z' }];
+  const rows = [
+    { korisnik_id: 'x', lat: 44.89, lon: 16.15, t: ago(1) },
+    { korisnik_id: 'y', lat: 44.881, lon: 16.15, t: ago(40) },
+  ];
+  const list = shareList(uc, rows, 'ja', (id) => id.toUpperCase(), me, now);
+  assert.deepEqual(list.map((m) => [m.id, m.stanje]), [['x', 'zivo'], ['y', 'nema'], ['z', 'nema']]);
+  assert.ok(list[0].udaljenost > 1000);
+});

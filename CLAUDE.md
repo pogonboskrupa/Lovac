@@ -188,3 +188,9 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Dnevno svjetlo i Istraživač (v0.2.8)**
 - Čip `#svjetlo-chip` na mapi: zora/dan/sumrak/noć iz `sunce.js daylightStatus` (pozicija = GPS, inače centar karte; svjetlo = izlazak–zalazak, sumrak do građanskog sutona). Dodir otvara "Danas".
 - Istraživač (`istrazivac-ui.js`, dugme 3D): CSS nagib `#karta` (perspective + rotateX) je SAMO POGLED, pa su dragging/zoom dodirom isključeni (Leaflet ne preračunava perspektivu) i karta prati GPS; trake članova (smjer, strana svijeta, udaljenost) dolaze iz događaja `uzivo:pozicije` i vide se samo u tom modu. Strelice su sjever-gore, kao karta.
+
+**Dijeljenje lokacije u lovu (migracija 010, v0.2.9)**
+- Status (veza, GPS tačnost, dnevno svjetlo) NIJE na mapi nego u Postavkama → Status (elementi zadržavaju id-eve); na mapi ostaje samo upozorenje kad veza nije dobra.
+- Pozicija se šalje čim je u kešu lov `u_toku` u kojem sam učesnik (`lokacija.js pickActiveHunt`, provjera svakih 60 s), NE samo dok je raspored otvoren; kraj lova gasi slanje i briše moju zadnju poziciju.
+- Ekran "Lokacija u lovu" (`lokacija-ui.js`, dugme Lokacija u traci uživo): uključi/isključi dijeljenje (zadano uključeno), učestalost 10/20/60 s, ko dijeli sa smjerom i udaljenošću, "Na karti" / "Vodi me". Isključivanje briše vlastitu poziciju (RLS politika `svoja_brisanje`); ako nema veze, brisanje se pamti (`lovac.lokacija.uklanjanje`) i ponavlja.
+- Markeri članova su krugovi sa inicijalima (svježina: uživo ≤ 2 min, zastarjelo ≤ 10, bez signala ≤ 30, poslije se ne crtaju).
