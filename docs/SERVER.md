@@ -15,6 +15,7 @@
    | `006_lov.sql` | zajednički lov: reviri, vođe, lovovi, stanovi, sektori, telefoni |
    | `007_lov_uzivo.sql` | pozicije učesnika, SOS, odstrel u lovu |
    | `008_sekcije.sql` | reviri Krupa/Otoka/Jezerski, sekcije, grupovođe, lovočuvari, pristup uz odobrenje |
+| `009_poruke_lovocuvar.sql` | lovočuvar po reviru (`revir_lovocuvari`), poruke sekcije (`poruke`) |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:

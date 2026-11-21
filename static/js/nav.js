@@ -17,13 +17,13 @@ function visible(id) {
 
 export function activeTab() {
   if (visible('postavke')) return 'postavke';
-  if (visible('karte')) return 'karte';
+  if (visible('sekcija-ekran')) return 'sekcija';
   if (visible('meni-spiskovi') || [...document.querySelectorAll('.list-preko')]
-    .some((s) => !s.hidden && s.id !== 'postavke' && s.id !== 'karte')) return 'meni';
+    .some((s) => !s.hidden && s.id !== 'postavke' && s.id !== 'sekcija-ekran')) return 'meni';
   return 'mapa';
 }
 
-const TAB_BUTTON = { mapa: 'nav-mapa', karte: 'btn-karte', meni: 'btn-spiskovi', postavke: 'btn-postavke' };
+const TAB_BUTTON = { mapa: 'nav-mapa', sekcija: 'btn-sekcija', meni: 'btn-spiskovi', postavke: 'btn-postavke' };
 
 function markActive() {
   const tab = activeTab();
@@ -52,11 +52,16 @@ export function initNav() {
     const menuWasOpen = !menu.hidden;
     closeAllScreens();
     if (btn.id === 'btn-spiskovi' && !menuWasOpen) menu.hidden = false;
-    if (btn.id === 'btn-karte') {
-      karte.hidden = false;
-      document.dispatchEvent(new CustomEvent('karte:otvorene'));
-    }
   }, true);
+
+  // "Karte i offline" je stavka Menija (Teren, offline karte, preuzimanje, slojevi).
+  const openKarte = () => {
+    closeAllScreens();
+    karte.hidden = false;
+    document.dispatchEvent(new CustomEvent('karte:otvorene'));
+  };
+  $('btn-karte').addEventListener('click', openKarte);
+  document.addEventListener('karte:otvori', openKarte);
 
   // Ista funkcija kao u Meniju.
   $('btn-slojevi-karte').addEventListener('click', () => {

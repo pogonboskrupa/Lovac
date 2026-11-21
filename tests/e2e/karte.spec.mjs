@@ -19,6 +19,7 @@ test('offline karta: prikaz preko native handlera, bez zahtjeva ispod najnižeg 
     localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 11 }));
   });
   await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   await expect(page.locator('#karte-spisak [data-id]')).toHaveCount(1);
   await expect(page.locator('#karte-spisak')).toContainText('zoom 13–15 · 50 MB');
@@ -30,6 +31,7 @@ test('offline karta: prikaz preko native handlera, bez zahtjeva ispod najnižeg 
   await expect.poll(() => requested.length).toBeGreaterThan(0);
   expect(requested.every((u) => /\/mbtiles\/grmec\.mbtiles\/1[3-5]\/\d+\/\d+$/.test(u))).toBe(true);
 
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   await page.locator('#btn-karte-uvoz').click();
   expect(await page.evaluate(() => window.__uvezi)).toBe(true);
@@ -44,6 +46,7 @@ test('u browseru (bez APK-a) uvoz offline karte jasno kaže da radi samo u aplik
   await fakeServerConfigUnset(page);
   await serveTiles(page);
   await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   await expect(page.locator('#karte-podrska')).toContainText('radi u aplikaciji na telefonu');
   await expect(page.locator('#btn-karte-uvoz')).toBeHidden();

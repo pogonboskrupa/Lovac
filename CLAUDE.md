@@ -177,3 +177,10 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - **SOS** ide svim aktivnim učesnicima lova koji je u toku tog dana.
 - **Vođa lova** je posebna uloga po reviru/sekciji (društvo ima više revira), nije isto što i admin. Šema za revire i vođe dolazi u fazi 3.
 - Supabase projekat (i kasnije repozitorij) će biti na drugom nalogu; URL/anon key vlasnik javlja kad napravi projekat. Granice lovišta (KML) i MBTiles stižu kasnije.
+
+**Sekcija (tab), lovočuvar po reviru, poruke, Teren (migracija 009, v0.2.7)**
+- Donja navigacija: Mapa / **ime sekcije** / Meni / Postavke. Tab "Karte" ne postoji; Karte i offline su stavka u Meniju (`karte:otvori`). Podloge na mapi: Topo, Satelit, Teren.
+- Teren = `teren.mbtiles` iz GitHub Release-a sa tagom `karte` (NIKAD "latest", vidi `docs/KARTE.md`); preuzima ga `AndroidKarte.preuzmi` (samo https/github.com/releases/download).
+- Lovočuvar je PO REVIRU (`revir_lovocuvari`, postavlja admin) i prati samo čitanjem sve sekcije tog revira; grupovođa vodi sekciju; lovac može biti član više sekcija.
+- Ekran sekcije (`sekcija-ui.js` + čista logika `sekcija-podaci.js`, `poruke.js`): članovi i aktivnost u tekućem lovu (aktivan ≤ 10 min od pozicije), poruke, podaci o sekciji i lovu. Poruke: izlazna kutija u IndexedDB (`poruke`, `sinhronizovano:false`), slanje upsert `ignoreDuplicates`, osvježavanje 20 s otvoreno / 60 s u pozadini; obavijest samo dok je app otvorena.
+- Zamka: IndexedDB `getAll` vraća po id-u (UUID) — poruke se uvijek sortiraju po `created_at`; sporije čitanje ne smije prepisati svježe (`reloadPoruke` sa brojačem).

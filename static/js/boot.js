@@ -1,6 +1,6 @@
 // Pokretanje: odluka o ekranu iz lokalnog stanja ODMAH, mreža samo u pozadini.
 
-import { isServerConfigured } from './config.js';
+import { isServerConfigured, GITHUB_REPO } from './config.js';
 import {
   cachedProfile, decideStartScreen, refreshProfileInBackground, register, login, logout,
 } from './auth.js';
@@ -23,6 +23,7 @@ import { initKarte, runKarteAutotest } from './karte-ui.js';
 import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
+import { initSekcijaEkran } from './sekcija-ui.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
@@ -57,7 +58,7 @@ function enter(screen) {
   showScreen(screen);
   if (screen === 'mapa' && !mapReady) {
     mapReady = true;
-    const { map, setBase, activeBase } = initMap(globalThis.L, 'karta');
+    const { map, setBase, activeBase, registerTeren } = initMap(globalThis.L, 'karta');
     initGps(globalThis.L, map);
     try {
       initPostavke({ setBase, onLogout: doLogout, appVer: APP_VER });
@@ -75,9 +76,10 @@ function enter(screen) {
       ['slojevi', () => initSlojevi(globalThis.L, map)],
       ['mjerenje', () => initMjerenje(globalThis.L, map)],
       ['preuzimanje', () => initPreuzimanje(map, activeBase)],
-      ['karte', () => initKarte(globalThis.L, map)],
+      ['karte', () => initKarte(globalThis.L, map, registerTeren, GITHUB_REPO)],
       ['lov', () => initLov(globalThis.L, map)],
       ['sekcije', () => initSekcije()],
+      ['sekcija-ekran', () => initSekcijaEkran(globalThis.L, map)],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['kontakt', () => initKontakt()],
       ['propisi', () => initPropisiAdmin()],

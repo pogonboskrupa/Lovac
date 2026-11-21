@@ -16,6 +16,7 @@ function makeServer() {
     grupovodje: [{ korisnik_id: GV.id, revir_id: R.krupa }],
     sekcije: [{ id: ID(200), revir_id: R.krupa, naziv: 'Krupa 1', grupovodja_id: GV.id, lovocuvar_id: null, aktivno: true }],
     sekcija_clanovi: [],
+    revir_lovocuvari: [],
     lovovi: [], lov_ucesnici: [], stanovi: [], sektori: [], revir_vodje: [],
   };
   let n = 1000;
@@ -160,11 +161,22 @@ test('admin: grupovođe po revirima, nova sekcija sa grupovođom i lovočuvarom,
   await setup(page, server, ADMIN);
   await openSekcije(page);
   await expect(page.locator('#grupovodje-blok')).toBeVisible();
+  await settled(page);
   await expect(page.locator('#grupovodje-spisak')).toContainText('Goran Grupovođa');
   await page.locator('#grupovodja-korisnik').selectOption(LOVAC.id);
   await page.locator('#grupovodja-revir').selectOption(R.otoka);
   await page.locator('#btn-grupovodja-dodaj').click();
   await expect.poll(() => server.db.grupovodje.length).toBe(2);
+  await settled(page);
+
+  // Lovočuvar se postavlja po REVIRU i prati sve sekcije tog revira.
+  await page.locator('#lovocuvar-korisnik').selectOption(LOVAC2.id);
+  await page.locator('#lovocuvar-revir').selectOption(R.krupa);
+  await page.locator('#btn-lovocuvar-dodaj').click();
+  await expect.poll(() => server.db.revir_lovocuvari.length).toBe(1);
+  expect(server.db.revir_lovocuvari[0]).toMatchObject({ korisnik_id: LOVAC2.id, revir_id: R.krupa });
+  await expect(page.locator('#lovocuvari-spisak')).toContainText('Luka Lovac');
+  await expect(page.locator('.sekcija-kartica', { hasText: 'Krupa 1' })).toContainText('Lovočuvar revira: Luka Lovac');
 
   await page.locator('#btn-sekcija-nova').click();
   await expect(page.locator('#sekcija-revir option')).toHaveCount(3);
@@ -172,16 +184,15 @@ test('admin: grupovođe po revirima, nova sekcija sa grupovođom i lovočuvarom,
   await page.locator('#sekcija-revir').selectOption(R.otoka);
   await page.fill('#forma-sekcija input[name=naziv]', 'Otoka 1');
   await page.locator('#sekcija-grupovodja').selectOption(LOVAC.id);
-  await page.locator('#sekcija-lovocuvar').selectOption(LOVAC2.id);
   await page.locator('#forma-sekcija button[type=submit]').click();
   await expect.poll(() => server.db.sekcije.length).toBe(2);
-  expect(server.db.sekcije[1]).toMatchObject({ naziv: 'Otoka 1', revir_id: R.otoka, grupovodja_id: LOVAC.id, lovocuvar_id: LOVAC2.id });
+  expect(server.db.sekcije[1]).toMatchObject({ naziv: 'Otoka 1', revir_id: R.otoka, grupovodja_id: LOVAC.id });
 
   const card = page.locator('.sekcija-kartica', { hasText: 'Krupa 1' });
   await card.locator('summary').click();
-  await card.locator('[data-lc]').selectOption(LOVAC2.id);
+  await card.locator('[data-gv]').selectOption(LOVAC2.id);
   await card.locator('[data-akcija="uloge"]').click();
-  await expect.poll(() => server.db.sekcije[0].lovocuvar_id).toBe(LOVAC2.id);
+  await expect.poll(() => server.db.sekcije[0].grupovodja_id).toBe(LOVAC2.id);
   await card.locator('[data-akcija="sakrij"]').click();
   await expect.poll(() => server.db.sekcije[0].aktivno).toBe(false);
   await expect(page.locator('.sekcija-kartica', { hasText: 'Krupa 1' })).toHaveCount(0);

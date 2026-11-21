@@ -29,9 +29,10 @@ test('tema se mijenja iz postavki i pamti', async ({ page }) => {
 
 test('podloga se bira iz postavki', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#btn-karte').click();
-  await page.locator('#karte [data-podloga="osm"]').click();
-  await expect(page.locator('#karte [data-podloga="osm"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#btn-podloga').click();
+  await expect(page.locator('#meni-podloga button')).toHaveText(['Topo', 'Satelit', 'Teren']);
+  await page.locator('#meni-podloga [data-podloga="satelit"]').click();
+  await expect(page.locator('#meni-podloga [data-podloga="satelit"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('dugme Nazad (window.__nazad) prvo zatvara postavke, tek onda dozvoljava izlaz', async ({ page }) => {
@@ -47,6 +48,7 @@ test('brisanje keša pločica traži drugi dodir (WebView nema confirm dijalog)'
   await page.goto('/');
   await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
   await page.waitForTimeout(800);
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   const broj = async () => Number((await page.locator('#postavke-kes').innerText()).match(/\d+/)?.[0] ?? -1);
   await expect.poll(broj).toBeGreaterThan(0);

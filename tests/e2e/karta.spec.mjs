@@ -71,7 +71,7 @@ test('dodirne mete su ≥ 44 px', async ({ page }) => {
   await serveTiles(page);
   await page.goto('/');
   await expect(page.locator('#ekran-mapa')).toBeVisible();
-  for (const sel of ['#btn-podloga', '#nav-mapa', '#btn-karte', '#btn-spiskovi', '#btn-postavke', '#btn-zoom-in', '#btn-zoom-out', '#btn-centriraj', '#btn-prati', '#koord-traka']) {
+  for (const sel of ['#btn-podloga', '#nav-mapa', '#btn-sekcija', '#btn-spiskovi', '#btn-postavke', '#btn-zoom-in', '#btn-zoom-out', '#btn-centriraj', '#btn-prati', '#koord-traka']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }

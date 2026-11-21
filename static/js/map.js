@@ -9,6 +9,15 @@ const VIEW_KEY = 'lovac.pogled';
 const LAYER_KEY = 'lovac.podloga';
 const DEFAULT_VIEW = { lat: 44.88, lon: 16.15, z: 11 };
 
+// Podloge na mapi: Topo, Satelit i Teren (karta društva sa servera, MBTiles koji se preuzme u aplikaciji).
+export const BASE_CHOICES = ['topo', 'satelit', 'teren'];
+
+// Teren bez preuzetog fajla se ne može prikazati; staro sačuvano (npr. OSM) pada na Topo.
+export function resolveBase(id, { terenReady }) {
+  if (id === 'teren') return terenReady ? 'teren' : 'topo';
+  return BASE_CHOICES.includes(id) && id !== 'teren' ? id : 'topo';
+}
+
 export function initMap(L, elementId) {
   const view = loadJSON(VIEW_KEY, DEFAULT_VIEW);
   const map = L.map(elementId, {
@@ -19,17 +28,34 @@ export function initMap(L, elementId) {
 
   const layers = new Map(BASE_LAYERS.map((b) => [b.id, createCachedTileLayer(L, b.url, b.options)]));
   let activeId = null;
-  const setBase = (id) => {
-    if (!layers.has(id)) id = BASE_LAYERS[0].id;
-    if (activeId) map.removeLayer(layers.get(activeId));
-    layers.get(id).addTo(map);
-    activeId = id;
-    saveSoft(LAYER_KEY, id);
+  let activeLayer = null;
+  let terenProvider = null; // () => L.TileLayer | null, registruje karte-ui kad je teren preuzet
+
+  // persist/explicit: izbor lovca se pamti, a pokušaj bez preuzetog terena javlja događaj da se ponudi preuzimanje.
+  const setBase = (id, { persist = true, explicit = true } = {}) => {
+    const terenLayer = terenProvider?.() || null;
+    const target = resolveBase(id, { terenReady: Boolean(terenLayer) });
+    if (explicit && id === 'teren' && target !== 'teren') document.dispatchEvent(new CustomEvent('teren:trazen'));
+    if (target !== activeId) {
+      if (activeLayer) map.removeLayer(activeLayer);
+      activeLayer = target === 'teren' ? terenLayer : layers.get(target);
+      activeLayer.addTo(map);
+      activeId = target;
+    }
+    if (persist && target === id) saveSoft(LAYER_KEY, id);
     document.querySelectorAll('[data-podloga]').forEach((b) => {
-      b.setAttribute('aria-pressed', String(b.dataset.podloga === id));
+      b.setAttribute('aria-pressed', String(b.dataset.podloga === target));
     });
   };
-  setBase(loadJSON(LAYER_KEY, BASE_LAYERS[0].id));
+  setBase(loadJSON(LAYER_KEY, 'topo'), { persist: false, explicit: false });
+
+  // Teren stiže kasnije (fajl se čita/preuzima): primijeni sačuvani izbor, a ako je uklonjen vrati Topo.
+  const registerTeren = (provider) => {
+    terenProvider = provider;
+    const saved = loadJSON(LAYER_KEY, 'topo');
+    if (activeId === 'teren' && !provider()) setBase('topo', { persist: false, explicit: false });
+    else if (saved === 'teren' && activeId !== 'teren') setBase('teren', { persist: false, explicit: false });
+  };
 
   map.on('zoomend', () => updateCoordBar(map));
   map.on('moveend', () => {
@@ -39,7 +65,7 @@ export function initMap(L, elementId) {
   });
   updateCoordBar(map);
   wireMapControls(map, setBase);
-  return { map, setBase, activeBase: () => activeId };
+  return { map, setBase, activeBase: () => activeId, registerTeren };
 }
 
 export function updateCoordBar(map) {

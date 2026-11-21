@@ -10,9 +10,9 @@ test.beforeEach(async ({ page }) => {
 
 const box = (page, sel) => page.locator(sel).boundingBox();
 
-test('donja navigacija: Mapa, Karte, Meni, Postavke (redom), Mapa je aktivna', async ({ page }) => {
+test('donja navigacija: Mapa, Sekcija, Meni, Postavke (redom), Mapa je aktivna', async ({ page }) => {
   const labels = await page.locator('.donja-nav > button').allInnerTexts();
-  expect(labels.map((t) => t.trim())).toEqual(['Mapa', 'Karte', 'Meni', 'Postavke']);
+  expect(labels.map((t) => t.trim())).toEqual(['Mapa', 'Sekcija', 'Meni', 'Postavke']);
   await expect(page.locator('#nav-mapa')).toHaveAttribute('aria-current', 'page');
   const vp = page.viewportSize();
   const nav = await box(page, '.donja-nav');
@@ -53,7 +53,7 @@ test('zoom lijevo dole sa nivoom, lociranje desno dole, oba iznad navigacije', a
   await expect(page.locator('#zoom-nivo')).toHaveText(String(before + 1));
 });
 
-test('Meni, Postavke i Karte su ekrani iznad mape; navigacija ostaje vidljiva i radi', async ({ page }) => {
+test('Meni, Postavke, Sekcija i Karte su ekrani iznad mape; navigacija ostaje vidljiva i radi', async ({ page }) => {
   await page.locator('#btn-spiskovi').click();
   await expect(page.locator('#meni-spiskovi')).toBeVisible();
   await expect(page.locator('#btn-spiskovi')).toHaveAttribute('aria-current', 'page');
@@ -62,13 +62,18 @@ test('Meni, Postavke i Karte su ekrani iznad mape; navigacija ostaje vidljiva i 
   await expect(page.locator('#meni-spiskovi')).toBeHidden();
   await expect(page.locator('#btn-postavke')).toHaveAttribute('aria-current', 'page');
   // Navigacija nije prekrivena otvorenim ekranom.
-  const nav = await box(page, '#btn-karte');
+  const nav = await box(page, '#btn-sekcija');
   const top = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('.donja-nav') !== null, [nav.x + nav.width / 2, nav.y + nav.height / 2]);
   expect(top).toBe(true);
+  await page.locator('#btn-sekcija').click();
+  await expect(page.locator('#sekcija-ekran')).toBeVisible();
+  await expect(page.locator('#postavke')).toBeHidden();
+  await expect(page.locator('#btn-sekcija')).toHaveAttribute('aria-current', 'page');
+  await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   await expect(page.locator('#karte')).toBeVisible();
-  await expect(page.locator('#postavke')).toBeHidden();
-  await expect(page.locator('#karte [data-podloga="topo"]')).toBeVisible();
+  await expect(page.locator('#sekcija-ekran')).toBeHidden();
+  await expect(page.locator('#teren-status')).toBeVisible();
   await expect(page.locator('#karte-spisak')).toBeAttached();
   await expect(page.locator('#btn-pred-preuzmi')).toBeAttached();
   await page.locator('#nav-mapa').click();

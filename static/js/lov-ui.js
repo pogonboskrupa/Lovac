@@ -372,5 +372,7 @@ export function initLov(L, map) {
     return false;
   });
 
+  document.addEventListener('lov:otvori', (e) => showSchedule(e.detail.id).then(() => { list.hidden = true; }).catch((err) => console.warn('lov', err)));
+
   return { showSchedule, current: () => shown };
 }

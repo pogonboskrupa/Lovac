@@ -27,17 +27,19 @@ export async function downloadSekcije() {
     sekcije: await qSek(sb.from('sekcije').select('*')),
     clanovi: await qSek(sb.from('sekcija_clanovi').select('*')),
     grupovodje: await qSek(sb.from('grupovodje').select('*')),
+    lovocuvari: await qSek(sb.from('revir_lovocuvari').select('*')),
     preuzeto: Date.now(),
   };
   await idbPut('spiskovi', { id: CACHE_ID, rows: data });
   const me = cachedProfile();
   saveSoft(MOJE_SEKCIJE_KEY, mySectionsAsLeader(data.sekcije, me?.id).map((s) => s.id));
+  globalThis.document?.dispatchEvent(new CustomEvent('sekcije:promjena'));
   return data;
 }
 
 export async function cachedSekcije() {
   const c = await idbGet('spiskovi', CACHE_ID);
-  return c?.rows || { reviri: [], sekcije: [], clanovi: [], grupovodje: [] };
+  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], ...(c?.rows || {}) };
 }
 
 const opt = (id, label, sel) => `<option value="${escapeHtml(id)}" ${sel ? 'selected' : ''}>${escapeHtml(label)}</option>`;
@@ -45,7 +47,7 @@ const opt = (id, label, sel) => `<option value="${escapeHtml(id)}" ${sel ? 'sele
 export function initSekcije() {
   const screen = $('sekcije');
   const form = $('sekcija-forma');
-  let data = { reviri: [], sekcije: [], clanovi: [], grupovodje: [] };
+  let data = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [] };
   const otvoreno = new Set(); // paneli "Upravljanje" ostaju otvoreni poslije svake radnje
   const me = () => cachedProfile();
   const users = () => loadJSON('lovac.clanovi', []);
@@ -81,14 +83,14 @@ export function initSekcije() {
       <label>Naziv sekcije<input data-naziv value="${escapeHtml(s.naziv)}" maxlength="60"></label>
       <button type="button" class="dugme" data-akcija="naziv">Sačuvaj naziv</button>
       ${isAdmin ? `<label>Grupovođa<select data-gv><option value="">— niko —</option>${users().map((u) => opt(u.id, memberName(u.id), u.id === s.grupovodja_id)).join('')}</select></label>
-        <label>Lovočuvar<select data-lc><option value="">— niko —</option>${users().map((u) => opt(u.id, memberName(u.id), u.id === s.lovocuvar_id)).join('')}</select></label>
-        <button type="button" class="dugme" data-akcija="uloge">Sačuvaj grupovođu i lovočuvara</button>` : ''}
+        <button type="button" class="dugme" data-akcija="uloge">Sačuvaj grupovođu</button>` : ''}
       <button type="button" class="dugme" data-akcija="sakrij">Sakrij sekciju</button>
     </details>`;
   };
 
   const cardHtml = (s) => {
-    const st = myStatus(s, data.clanovi, me()?.id, Boolean(me()?.is_admin));
+    const st = myStatus(s, data.clanovi, me()?.id, Boolean(me()?.is_admin), data.lovocuvari);
+    const lovocuvari = data.lovocuvari.filter((l) => l.revir_id === s.revir_id).map((l) => escapeHtml(memberName(l.korisnik_id))).join(', ') || '—';
     const members = data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren');
     const memberList = ['clan', 'grupovodja', 'lovocuvar', 'admin'].includes(st) && members.length
       ? `<span class="sitno">Članovi: ${members.map((c) => escapeHtml(memberName(c.korisnik_id))).join(', ')}</span>` : '';
@@ -97,7 +99,7 @@ export function initSekcije() {
         : st === 'clan' ? '<button type="button" class="dugme" data-akcija="napusti">Napusti sekciju</button>' : '';
     return `<li class="trag-red sekcija-kartica" data-id="${escapeHtml(s.id)}" data-pristup="${st}">
       <div class="trag-naslov"><b>${escapeHtml(s.naziv)}</b>
-        <span class="sitno">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar: ${s.lovocuvar_id ? escapeHtml(memberName(s.lovocuvar_id)) : '—'}</span>
+        <span class="sitno">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar revira: ${lovocuvari}</span>
         <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span>${memberList}</div>
       <div class="red-dugmadi">${buttons}</div>
       ${canManage(s, me()) ? manageHtml(s) : ''}
@@ -108,7 +110,13 @@ export function initSekcije() {
     const admin = Boolean(me()?.is_admin);
     $('btn-sekcija-nova').hidden = !creatableRevirIds(me(), data.grupovodje, data.reviri).length;
     $('grupovodje-blok').hidden = !admin;
+    $('lovocuvari-blok').hidden = !admin;
     if (admin) {
+      $('lovocuvari-spisak').innerHTML = data.lovocuvari.map((g) => `<li class="trag-red" data-uid="${escapeHtml(g.korisnik_id)}" data-revir="${escapeHtml(g.revir_id)}">
+        <b>${escapeHtml(memberName(g.korisnik_id))}</b> <span class="sitno">${escapeHtml(data.reviri.find((r) => r.id === g.revir_id)?.naziv || '')}</span>
+        <button type="button" class="dugme" data-akcija="ukloni-lc">Ukloni</button></li>`).join('') || '<li class="sitno">Još nema lovočuvara.</li>';
+      $('lovocuvar-korisnik').innerHTML = users().map((u) => opt(u.id, memberName(u.id))).join('');
+      $('lovocuvar-revir').innerHTML = data.reviri.map((r) => opt(r.id, r.naziv)).join('');
       $('grupovodje-spisak').innerHTML = data.grupovodje.map((g) => `<li class="trag-red" data-uid="${escapeHtml(g.korisnik_id)}" data-revir="${escapeHtml(g.revir_id)}">
         <b>${escapeHtml(memberName(g.korisnik_id))}</b> <span class="sitno">${escapeHtml(data.reviri.find((r) => r.id === g.revir_id)?.naziv || '')}</span>
         <button type="button" class="dugme" data-akcija="ukloni-gv">Ukloni</button></li>`).join('') || '<li class="sitno">Još nema grupovođa.</li>';
@@ -179,9 +187,7 @@ export function initSekcije() {
         break;
       }
       case 'uloge':
-        run(() => qSek(sb().from('sekcije').update({
-          grupovodja_id: card.querySelector('[data-gv]').value || null, lovocuvar_id: card.querySelector('[data-lc]').value || null,
-        }).eq('id', sid)), 'Grupovođa i lovočuvar sačuvani');
+        run(() => qSek(sb().from('sekcije').update({ grupovodja_id: card.querySelector('[data-gv]').value || null }).eq('id', sid)), 'Grupovođa sačuvan');
         break;
       case 'sakrij':
         run(() => qSek(sb().from('sekcije').update({ aktivno: false }).eq('id', sid)), 'Sekcija sakrivena');
@@ -200,6 +206,16 @@ export function initSekcije() {
     run(() => qSek(getClient().from('grupovodje').delete().eq('korisnik_id', row.dataset.uid).eq('revir_id', row.dataset.revir)), 'Grupovođa uklonjen');
   });
 
+  // ---- lovočuvari po revirima (admin): prate sve sekcije svog revira ----
+  $('btn-lovocuvar-dodaj').addEventListener('click', () => run(() => qSek(getClient().from('revir_lovocuvari')
+    .insert({ korisnik_id: $('lovocuvar-korisnik').value, revir_id: $('lovocuvar-revir').value })), 'Lovočuvar postavljen'));
+  $('lovocuvari-spisak').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="ukloni-lc"]');
+    if (!b) return;
+    const row = b.closest('[data-uid]');
+    run(() => qSek(getClient().from('revir_lovocuvari').delete().eq('korisnik_id', row.dataset.uid).eq('revir_id', row.dataset.revir)), 'Lovočuvar uklonjen');
+  });
+
   // ---- nova sekcija ----
   const openForm = () => {
     const allowed = creatableRevirIds(me(), data.grupovodje, data.reviri);
@@ -207,9 +223,7 @@ export function initSekcije() {
     const admin = Boolean(me()?.is_admin);
     $('sekcija-admin-polja').hidden = !admin;
     if (admin) {
-      const none = '<option value="">— niko —</option>';
-      $('sekcija-grupovodja').innerHTML = none + users().map((u) => opt(u.id, memberName(u.id))).join('');
-      $('sekcija-lovocuvar').innerHTML = none + users().map((u) => opt(u.id, memberName(u.id))).join('');
+      $('sekcija-grupovodja').innerHTML = '<option value="">— niko —</option>' + users().map((u) => opt(u.id, memberName(u.id))).join('');
     }
     $('sekcija-lovci').innerHTML = users().filter((u) => u.id !== me()?.id).map((u) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(u.id)}"> ${escapeHtml(memberName(u.id))}</label>`).join('')
       || '<p class="sitno">Spisak lovaca se preuzima uz internet.</p>';
@@ -232,7 +246,6 @@ export function initSekcije() {
       const row = (await qSek(getClient().from('sekcije').insert({
         revir_id: f.revir.value, naziv,
         grupovodja_id: admin ? (f.grupovodja.value || null) : me().id,
-        lovocuvar_id: admin ? (f.lovocuvar.value || null) : null,
         created_by: me().id,
       }).select('*')))[0];
       if (ids.length) await qSek(getClient().from('sekcija_clanovi').insert(ids.map((id) => ({ sekcija_id: row.id, korisnik_id: id, status: 'odobren' }))));

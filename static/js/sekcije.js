@@ -1,10 +1,11 @@
 // Čista logika sekcija: status pristupa, ko upravlja, grupisanje po reviru.
 // Pristup provodi SERVER (migracija 008); ovdje se samo prikazuje šta je dozvoljeno.
 
-export function myStatus(sekcija, clanovi, myId, isAdmin = false) {
+// Lovočuvar prati CIJELI revir (sve njegove sekcije); sekcija.lovocuvar_id je ranija, uža varijanta.
+export function myStatus(sekcija, clanovi, myId, isAdmin = false, lovocuvari = []) {
   if (isAdmin) return 'admin';
   if (sekcija.grupovodja_id === myId) return 'grupovodja';
-  if (sekcija.lovocuvar_id === myId) return 'lovocuvar';
+  if (sekcija.lovocuvar_id === myId || lovocuvari.some((l) => l.revir_id === sekcija.revir_id && l.korisnik_id === myId)) return 'lovocuvar';
   const c = clanovi.find((x) => x.sekcija_id === sekcija.id && x.korisnik_id === myId);
   if (!c) return 'nema';
   return c.status === 'odobren' ? 'clan' : 'ceka';
@@ -13,7 +14,7 @@ export function myStatus(sekcija, clanovi, myId, isAdmin = false) {
 const TEKST = {
   admin: 'Administrator: puni pristup',
   grupovodja: 'Ti si grupovođa ove sekcije',
-  lovocuvar: 'Ti si lovočuvar ove sekcije',
+  lovocuvar: 'Ti si lovočuvar revira: pratiš sekciju (bez upravljanja)',
   clan: 'Član sekcije',
   ceka: 'Zahtjev čeka odobrenje grupovođe',
   nema: 'Nema pristupa — zatraži ga od grupovođe',
