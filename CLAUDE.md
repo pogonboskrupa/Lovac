@@ -211,3 +211,8 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Meni (v0.3.2)**
 - `#meni-spiskovi` je ploča iznad navigacije sa tri grupe (Lov, Evidencija, Karta) i pločicama (ikona, naziv, kratka informacija). Informacije (`meni-ui.js menuTexts`) dolaze iz lokalnih podataka pri otvaranju menija: lov u toku, broj odstrela ove godine, opažanja u 30 dana, objekti i popravke, tragovi, dnevno svjetlo. Id-evi dugmadi (`btn-lovovi`…) se ne mijenjaju — na njih se vežu moduli; opis je u `<id>-opis`.
+
+**Postavke (v0.3.3)**
+- Ekran je podijeljen u kartice (`.p-kartica`) sa profilom na vrhu (inicijali, uloge iz keša sekcija — `profil.js profileRoles`, nikad iz imena; veza i broj neposlanih). Dijeljenje lokacije i telefon su i ovdje (isti `getShareSettings/setShareSettings` kao ekran lokacije).
+- Rezervna kopija (`rezerva.js`): izvoz mojih zapisa u JSON (bez fotografija, bez tuđih i obrisanih), uvoz samo DODAJE zapise kojih nema (nikad ne prepisuje) i šalje ih kroz red slanja. Služi i kao priprema za promjenu potpisnog ključa (docs/SIGURNOST.md).
+- Odjava sa neposlanim zapisima traži drugi dodir; bez njih je jedan dodir kao i prije.

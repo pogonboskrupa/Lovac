@@ -12,7 +12,7 @@ Stanje u trenutku pisanja: repozitorij je **javan**.
 
 ### Plan (uradi pri prebacivanju repozitorija na novi nalog)
 
-1. Prije promjene ključa u aplikaciji napravi izvoz/rezervnu kopiju svih zapisa (novi ključ znači
+1. Prije promjene ključa u aplikaciji napravi rezervnu kopiju (Postavke → Rezervna kopija) na svakom telefonu (novi ključ znači
    jednokratnu deinstalaciju stare aplikacije, a lokalni podaci se brišu).
 2. Napravi novi keystore van repozitorija, spremi ga u GitHub Secrets (`KEYSTORE_B64`, `KEYSTORE_PASSWORD`,
    `KEY_ALIAS`, `KEY_PASSWORD`) i u CI-ju ga dekodiraj pri buildu.

@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.2';
+  const APP_VER = 'v0.3.3';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -329,54 +329,82 @@
     <button id="btn-postavke-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
 
-  <h3>Status</h3>
-  <div class="status-blok">
-    <span class="sitno">GPS</span>
-    <div id="gps-status" class="gps-status" hidden>
-      <span id="gps-tacnost" class="tacnost">GPS…</span>
-      <span>fiks prije <span id="gps-starost">—</span></span>
+  <div class="p-profil" aria-live="polite">
+    <span id="p-avatar" class="p-avatar" aria-hidden="true">?</span>
+    <div class="p-profil-tekst">
+      <b id="p-ime"></b>
+      <div id="p-uloge" class="p-uloge"></div>
+      <span id="p-stanje" class="sitno"></span>
     </div>
-    <span class="sitno">Dnevno svjetlo</span>
-    <button id="svjetlo-chip" class="znacka znacka-dugme" type="button" hidden></button>
   </div>
 
-  <h3>Izgled</h3>
-  <div class="segment" role="group" aria-label="Tema">
-    <button type="button" data-tema-izbor="noc" aria-pressed="true">Noćni</button>
-    <button type="button" data-tema-izbor="dan" aria-pressed="false">Dnevni (jako sunce)</button>
+  <div class="p-kartica">
+    <h3>Status</h3>
+    <div class="status-blok">
+      <span class="sitno">GPS</span>
+      <div id="gps-status" class="gps-status" hidden>
+        <span id="gps-tacnost" class="tacnost">GPS…</span>
+        <span>fiks prije <span id="gps-starost">—</span></span>
+      </div>
+      <span class="sitno">Dnevno svjetlo</span>
+      <button id="svjetlo-chip" class="znacka znacka-dugme" type="button" hidden></button>
+    </div>
   </div>
 
-  <h3>Tragovi</h3>
-  <button id="btn-moji-tragovi" class="dugme" type="button">Moji tragovi</button>
+  <div class="p-kartica">
+    <h3>Izgled</h3>
+    <div class="segment" role="group" aria-label="Tema">
+      <button type="button" data-tema-izbor="noc" aria-pressed="true">Noćni</button>
+      <button type="button" data-tema-izbor="dan" aria-pressed="false">Dnevni (jako sunce)</button>
+    </div>
+  </div>
 
-  <div id="postavke-admin" hidden>
+  <div class="p-kartica">
+    <h3>Lokacija u lovu</h3>
+    <button id="p-dijeli" class="dugme glavno" type="button" aria-pressed="true">Dijelim lokaciju</button>
+    <p class="sitno">Učesnici lova vide gdje si samo dok lov traje. Isključivanje briše tvoju zadnju poziciju sa servera.</p>
+    <div id="p-interval" class="segment" role="group" aria-label="Učestalost slanja"></div>
+    <label>Broj telefona (za SOS i prekid lova)<input id="telefon" inputmode="tel" maxlength="20" placeholder="+387 61 123 456"></label>
+    <button id="btn-telefon-sacuvaj" class="dugme" type="button">Sačuvaj broj</button>
+    <p id="telefon-status" class="sitno">Broj vide samo učesnici lova dok lov traje.</p>
+  </div>
+
+  <div class="p-kartica">
+    <h3>Podaci i slanje</h3>
+    <p id="postavke-red" class="red-info"></p>
+    <p id="postavke-red-greska" class="sitno"></p>
+    <button id="btn-posalji-sad" class="dugme" type="button">Pošalji sad</button>
+    <button id="btn-moji-tragovi" class="dugme" type="button">Moji tragovi</button>
+    <h3>Rezervna kopija</h3>
+    <p class="sitno">Svi tvoji objekti, opažanja, odstrel i tragovi u jednom fajlu (bez fotografija). Uvoz samo dodaje ono čega nema na telefonu.</p>
+    <button id="btn-rezerva-izvoz" class="dugme" type="button">Napravi rezervnu kopiju</button>
+    <label class="dugme p-uvoz">Vrati iz kopije<input id="rezerva-ulaz" type="file" accept="application/json,.json,*/*" hidden></label>
+    <p id="rezerva-status" class="sitno" role="status"></p>
+  </div>
+
+  <div id="postavke-admin" class="p-kartica" hidden>
     <h3>Administracija</h3>
     <button id="btn-korisnici" class="dugme" type="button">Korisnici i odobrenja</button>
     <button id="btn-propisi" class="dugme" type="button">Propisi i spiskovi</button>
   </div>
 
-  <h3>Slanje na server</h3>
-  <p id="postavke-red" class="red-info"></p>
-  <p id="postavke-red-greska" class="sitno"></p>
-  <button id="btn-posalji-sad" class="dugme" type="button">Pošalji sad</button>
+  <div class="p-kartica">
+    <h3>Nalog</h3>
+    <p id="postavke-nalog" class="red-info"></p>
+    <p class="red-info">Veza sa serverom: <b id="postavke-server"></b></p>
+    <p id="postavke-odjava-upozorenje" class="sitno" hidden></p>
+    <button id="btn-postavke-odjava" class="dugme" type="button">Odjava</button>
+  </div>
 
-  <h3>Moj telefon (za SOS u zajedničkom lovu)</h3>
-  <label>Broj telefona<input id="telefon" inputmode="tel" maxlength="20" placeholder="+387 61 123 456"></label>
-  <button id="btn-telefon-sacuvaj" class="dugme" type="button">Sačuvaj broj</button>
-  <p id="telefon-status" class="sitno">Broj vide samo učesnici lova dok lov traje.</p>
-
-  <h3>Nalog</h3>
-  <p id="postavke-nalog" class="red-info"></p>
-  <p class="red-info">Veza sa serverom: <b id="postavke-server"></b></p>
-  <button id="btn-postavke-odjava" class="dugme" type="button">Odjava</button>
-
-  <h3>O aplikaciji</h3>
-  <p class="red-info">Lovačko društvo "Grmeč" <b id="postavke-verzija"></b></p>
-  <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
-  <p id="postavke-azur-status" class="red-info" role="status"></p>
-  <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
-  <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
-  <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
+  <div class="p-kartica">
+    <h3>O aplikaciji</h3>
+    <p class="red-info">Lovačko društvo "Grmeč" <b id="postavke-verzija"></b></p>
+    <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
+    <p id="postavke-azur-status" class="red-info" role="status"></p>
+    <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
+    <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
+    <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
+  </div>
 </section>
 
 <section id="tragovi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="tragovi-naslov" hidden>
