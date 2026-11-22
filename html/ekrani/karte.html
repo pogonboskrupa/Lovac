@@ -2,40 +2,61 @@
   <header class="postavke-glava">
     <h2 id="karte-naslov">Karte i offline</h2>
   </header>
-  <h3>Teren (karta društva)</h3>
-  <p id="teren-status" class="red-info"></p>
-  <p class="sitno">Teren je karta koju objavljuje društvo; preuzimaš je jednom (veliki fajl, koristi wifi), pa radi bez interneta. Bira se na mapi: dugme gore desno.</p>
-  <div class="red-dugmadi">
-    <button id="btn-teren-preuzmi" class="dugme glavno" type="button">Preuzmi teren</button>
-    <button id="btn-teren-ukloni" class="dugme" type="button" hidden>Ukloni teren</button>
+  <div class="sk-hero tr-hero" id="karte-hero">
+    <div class="sk-statovi sk-statovi-hero">
+      <div><b id="karte-hero-plocice">—</b><span>pločica u kešu</span></div>
+      <div><b id="karte-hero-karte">—</b><span>offline karata</span></div>
+      <div><b id="karte-hero-velicina">—</b><span>fajlova na telefonu</span></div>
+    </div>
   </div>
-  <button id="btn-slojevi-karte" class="dugme" type="button">Slojevi (granice lovišta, revira)</button>
-  <h3>Podloga karte</h3>
-  <div id="postavke-podloge" class="segment" role="group" aria-label="Podloga karte">
-    <button type="button" data-podloga="topo">Topo</button>
-    <button type="button" data-podloga="satelit">Satelit</button>
-    <button type="button" data-podloga="teren">Teren</button>
+  <p id="karte-savjet" class="karte-savjet" data-stanje="nema" role="status"></p>
+
+  <div class="p-kartica">
+    <h3>Podloga karte</h3>
+    <div id="postavke-podloge" class="segment" role="group" aria-label="Podloga karte">
+      <button type="button" data-podloga="topo">Topo</button>
+      <button type="button" data-podloga="satelit">Satelit</button>
+      <button type="button" data-podloga="teren">Teren</button>
+    </div>
+    <button id="btn-slojevi-karte" class="dugme" type="button">Slojevi (granice lovišta, revira)</button>
   </div>
 
-  <h3>Karta bez interneta</h3>
-  <p id="postavke-kes" class="red-info">Sačuvano pločica: —</p>
-  <p class="sitno">Pločice koje si već vidio prikazuju se i bez signala. Obrisane se moraju ponovo preuzeti uz internet.</p>
-  <button id="btn-kes-obrisi" class="dugme" type="button">Obriši keš karte</button>
-  <h3>Offline karte (MBTiles / SQLiteDB)</h3>
-  <p id="karte-podrska" class="sitno">Karta pripremljena u RMaps/MOBAC (fajl na telefonu) radi bez interneta i bez preuzimanja pločica.</p>
-  <button id="btn-karte-uvoz" class="dugme" type="button">Uvezi offline kartu</button>
-  <p id="karte-status" class="status" role="status"></p>
-  <ul id="karte-spisak" class="spisak"></ul>
-  <h3>Preuzmi područje za offline</h3>
-  <p class="sitno">Preuzima se područje koje je sada na karti (izabrana podloga i teren za N.V./nagib). Za cijelo lovište koristi MBTiles fajl.</p>
-  <label>Najviše detalja<select id="pred-zoom"><option value="15">zoom 15 (pregled)</option><option value="16" selected>zoom 16</option><option value="17">zoom 17 (najviše)</option></select></label>
-  <p id="pred-procjena" class="sitno"></p>
-  <progress id="pred-napredak" max="100" value="0" hidden></progress>
-  <div class="red-dugmadi">
-    <button id="btn-pred-preuzmi" class="dugme glavno" type="button">Preuzmi područje</button>
-    <button id="btn-pred-prekini" class="dugme" type="button" hidden>Prekini</button>
+  <div class="p-kartica">
+    <h3>Preuzmi područje za offline</h3>
+    <p class="sitno">Preuzima se područje koje je sada na karti (izabrana podloga i teren za N.V./nagib). Za cijelo lovište koristi MBTiles fajl.</p>
+    <label>Najviše detalja<select id="pred-zoom"><option value="15">zoom 15 (pregled)</option><option value="16" selected>zoom 16</option><option value="17">zoom 17 (najviše)</option></select></label>
+    <p id="pred-procjena" class="sitno"></p>
+    <progress id="pred-napredak" max="100" value="0" hidden></progress>
+    <div class="red-dugmadi">
+      <button id="btn-pred-preuzmi" class="dugme glavno" type="button">Preuzmi područje</button>
+      <button id="btn-pred-prekini" class="dugme" type="button" hidden>Prekini</button>
+    </div>
   </div>
 
-  <h3>Izvori karata</h3>
+  <div class="p-kartica">
+    <h3>Teren (karta društva)</h3>
+    <p id="teren-status" class="red-info"></p>
+    <p class="sitno">Teren je karta koju objavljuje društvo; preuzimaš je jednom (veliki fajl, koristi wifi), pa radi bez interneta. Bira se na mapi: dugme gore desno.</p>
+    <div class="red-dugmadi">
+      <button id="btn-teren-preuzmi" class="dugme glavno" type="button">Preuzmi teren</button>
+      <button id="btn-teren-ukloni" class="dugme" type="button" hidden>Ukloni teren</button>
+    </div>
+  </div>
+
+  <div class="p-kartica">
+    <h3>Offline karte (MBTiles / SQLiteDB)</h3>
+    <p id="karte-podrska" class="sitno">Karta pripremljena u RMaps/MOBAC (fajl na telefonu) radi bez interneta i bez preuzimanja pločica.</p>
+    <button id="btn-karte-uvoz" class="dugme" type="button">Uvezi offline kartu</button>
+    <p id="karte-status" class="status" role="status"></p>
+    <ul id="karte-spisak" class="spisak"></ul>
+  </div>
+
+  <div class="p-kartica">
+    <h3>Keš pločica</h3>
+    <p id="postavke-kes" class="red-info">Sačuvano pločica: —</p>
+    <p class="sitno">Pločice koje si već vidio prikazuju se i bez signala. Obrisane se moraju ponovo preuzeti uz internet.</p>
+    <button id="btn-kes-obrisi" class="dugme" type="button">Obriši keš karte</button>
+  </div>
+
   <p class="sitno">© OpenStreetMap, SRTM | © OpenTopoMap (CC-BY-SA) · © Esri, Maxar, Earthstar Geographics · © OpenStreetMap contributors.</p>
 </section>

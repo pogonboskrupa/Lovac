@@ -3,6 +3,8 @@
 
 import { loadJSON, saveSoft } from './storage.js';
 import { toast, escapeHtml, wireTwoTap } from './ui.js';
+import { tileCacheCount } from './tiles.js';
+import { offlineHero, offlineAdvice } from './pregled-karata.js';
 
 const ON_KEY = 'lovac.karte.prikazane';
 const $ = (id) => document.getElementById(id);
@@ -51,6 +53,17 @@ export function terenStatus(hasBridge, info) {
   return { stanje: 'preuzet', tekst: `Teren je na telefonu: ${mb(info.velicina || 0)}, zoom ${info.minzoom}–${info.maxzoom}.` };
 }
 
+async function renderHero(state) {
+  try {
+    const tiles = await tileCacheCount().catch(() => 0);
+    const items = offlineHero({ tiles, ...state });
+    for (const it of items) { const el = $(`karte-hero-${it.id}`); if (el) el.textContent = it.v; }
+    const a = offlineAdvice({ tiles, ...state });
+    $('karte-savjet').textContent = a.tekst;
+    $('karte-savjet').dataset.stanje = a.stanje;
+  } catch (err) { console.warn('hero karte', err); }
+}
+
 export function initKarte(L, map, registerTeren, repo) {
   const bridge = globalThis.AndroidKarte;
   const layers = new Map();
@@ -86,6 +99,11 @@ export function initKarte(L, map, registerTeren, repo) {
     document.dispatchEvent(new CustomEvent('karte:otvori'));
   });
 
+  let maps = [];
+  const hero = () => renderHero({ terenInfo, maps, hasBridge: Boolean(bridge) });
+  document.addEventListener('karte:otvorene', hero);
+  hero();
+
   if (!bridge) {
     $('karte-podrska').textContent = 'Uvoz offline karte (MBTiles/SQLiteDB) radi u aplikaciji na telefonu.';
     $('btn-karte-uvoz').hidden = true;
@@ -110,7 +128,9 @@ export function initKarte(L, map, registerTeren, repo) {
   const render = () => {
     let all = [];
     try { all = JSON.parse(bridge.spisak()); } catch (err) { console.error('karte', err); }
-    const { teren, ostale: maps } = splitMaps(all);
+    const split = splitMaps(all);
+    const teren = split.teren;
+    maps = split.ostale;
     const changed = JSON.stringify(teren) !== JSON.stringify(terenInfo);
     terenInfo = teren;
     if (changed) { terenLayer = null; registerTeren?.(provider); }
@@ -135,6 +155,7 @@ export function initKarte(L, map, registerTeren, repo) {
       });
     });
     sync(maps);
+    hero();
     return maps;
   };
 

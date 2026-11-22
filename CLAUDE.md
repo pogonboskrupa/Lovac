@@ -340,3 +340,10 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Postavke — tabovi i spremnost (v0.5.9)**
 - Četiri taba (`#p-tabovi`, `data-ptab`): Opšte (veličina teksta, izgled, lokacija u lovu, status), Podaci (spremnost, slanje, rezervna kopija), Nalog (administracija, PIN, odjava, O aplikaciji) i Profil lovca. `profil-ui.js setTab` prikazuje tačno jedan od `p-opste/p-podaci/p-nalog/p-profil`; e2e testovi koji diraju elemente iz drugog taba prvo kliknu tab. Id-evi elemenata se nisu mijenjali.
 - Kartica "Spremnost za rad bez interneta" (`postavke-pregled.js` čista logika, crtanje u `postavke.js renderReadiness`, događaj `postavke:podaci`): veza, zadnje uspješno slanje (`lovac.sync.zadnje`, upisuje `sync.flushQueue` kad je poslano ≥ 1), pohrana telefona (`navigator.storage.estimate`, upozorenje od 80 %; "Zaštiti pohranu" zove `storage.persist()` u try/catch), broj pločica i podsjetnik za rezervnu kopiju (`lovac.rezerva.zadnja`; nikad ili 30+ dana kad ima podataka). Funkcija `syncAgeText` se ne smije zvati `ageText` (već postoji u `vjetar.js`).
+
+**Istraživač, ploča lokacije, Karte i Slojevi (v0.6.0)**
+- Istraživač: blaži nagib (rotateX 40°, scale 1.6) da vrh ne guta kartu; u modu se sakrivaju status-red, svjetlo i lovno-chip, a traka članova ide više i ima dugme "Izađi iz 3D" (`[data-izlaz]`, iste je visine ≥ 44 px) — izlaz više ne traži ploču lokacije.
+- Ploča "Moja lokacija" je niža: dugmad u 3 kolone (ikona iznad teksta) i `max-height` najviše 48 % visine ekrana, ostatak se lista.
+- Karte i offline: hero (pločica u kešu, offline karata, veličina fajlova) + savjet o spremnosti (`pregled-karata.js offlineHero/offlineAdvice`; bez aplikacije fajlovi su "—", nikad izmišljeni) i kartice: Podloga, Preuzmi područje, Teren, Offline karte, Keš. Id-evi se nisu mijenjali.
+- Slojevi: hero (slojeva, prikazanih, elemenata), "Prikaži sve / Sakrij sve" (od 2 sloja), boja sloja i starost izvora na kartici (`layersSummary`, `layerSource`).
+- Admin dugmad iz Postavki (Propisi, Korisnici…) su u tabu Nalog — testovi prvo kliknu `#p-tabovi [data-ptab="nalog"]`.

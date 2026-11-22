@@ -1,6 +1,7 @@
 // Slojevi na karti: uvoz fajla, stil po sloju, "Sa servera" (objavio admin), objava društvu (admin).
 // Slojevi se čuvaju u IndexedDB i rade offline.
 
+import { layersSummary, layerSource } from './pregled-karata.js';
 import { importFiles, bboxOf, countFeatures } from './slojevi.js';
 import { idbPut, idbAll, idbDelete, idbGet } from './db.js';
 import { getClient, cachedProfile } from './auth.js';
@@ -67,11 +68,16 @@ export function initSlojevi(L, map) {
     const isAdmin = Boolean(cachedProfile()?.is_admin);
     const layers = (await idbAll(STORE)).sort((a, b) => String(a.naziv).localeCompare(String(b.naziv), 'bs'));
     $('slojevi-prazno').hidden = layers.length > 0;
+    $('slojevi-sve').hidden = layers.length < 2;
+    const sum = layersSummary(layers, countFeatures);
+    $('sl-hero-broj').textContent = String(sum.broj);
+    $('sl-hero-prikazanih').textContent = String(sum.prikazanih);
+    $('sl-hero-elemenata').textContent = String(sum.elemenata);
     $('slojevi-spisak').innerHTML = layers.map((s) => {
       const st = { ...DEFAULT_STIL, ...s.stil };
-      return `<li class="trag-red" data-id="${escapeHtml(s.id)}">
-        <div class="trag-naslov"><b>${escapeHtml(s.naziv)}</b>
-        <span class="sitno">${countFeatures(s.geojson)} elemenata · ${s.izvor === 'server' ? `sa servera, verzija ${s.verzija}` : 'uvezen fajl'}</span></div>
+      return `<li class="trag-red tr-kartica" data-id="${escapeHtml(s.id)}">
+        <div class="trag-naslov"><b><span class="sloj-boja" style="background:${escapeHtml(st.boja)}"></span>${escapeHtml(s.naziv)}</b>
+        <span class="sitno">${countFeatures(s.geojson)} elemenata · ${escapeHtml(layerSource(s))}</span></div>
         <div class="red-dugmadi">
           <label class="red-check"><input type="checkbox" data-akcija="vidljiv" ${st.vidljiv ? 'checked' : ''}> Prikaži</label>
           <label class="red-check"><input type="checkbox" data-akcija="popuna" ${st.popuna ? 'checked' : ''}> Popuna</label>
@@ -125,6 +131,14 @@ export function initSlojevi(L, map) {
       await render();
     }
   });
+
+  const setAll = async (vidljiv) => {
+    for (const s of await idbAll(STORE)) await idbPut(STORE, { ...s, stil: { ...DEFAULT_STIL, ...s.stil, vidljiv } });
+    await draw();
+    await render();
+  };
+  $('btn-slojevi-prikazi-sve').addEventListener('click', () => setAll(true));
+  $('btn-slojevi-sakrij-sve').addEventListener('click', () => setAll(false));
 
   $('slojevi-uvoz').addEventListener('change', async (e) => {
     const files = [...e.target.files];

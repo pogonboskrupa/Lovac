@@ -41,13 +41,14 @@ export function initIstrazivac(L, map) {
   const render = () => {
     const me = currentFix();
     if (!on) return;
-    if (!me) { bar.innerHTML = '<span class="sitno">Čekam GPS…</span>'; return; }
+    const izlaz = '<button type="button" class="istrazivac-izlaz" data-izlaz>Izađi iz 3D</button>';
+    if (!me) { bar.innerHTML = `${izlaz}<span class="sitno">Čekam GPS…</span>`; return; }
     const v = memberVectors(me, rows, cachedProfile()?.id, memberName);
-    bar.innerHTML = v.length
+    bar.innerHTML = izlaz + (v.length
       ? v.map((m) => `<button type="button" class="clan-chip" data-uid="${escapeHtml(m.id)}" aria-label="${escapeHtml(m.ime)}, ${compassName(m.smjer)}, ${formatMemberDistance(m.udaljenost)}">
           <svg class="ic strelica" style="transform:rotate(${Math.round(arrowAngle(m.smjer, 0))}deg)"><use href="#ic-arrow"/></svg>
           <span><b>${escapeHtml(m.ime.split(' ')[0])}</b> ${compassName(m.smjer)} ${formatMemberDistance(m.udaljenost)}${m.starost > 1 ? ` · ${m.starost} min` : ''}</span></button>`).join('')
-      : '<span class="sitno">Nema članova koji dijele lokaciju (lov u toku + internet).</span>';
+      : '<span class="sitno">Nema članova koji dijele lokaciju (lov u toku + internet).</span>');
   };
 
   const setOn = (value) => {
@@ -65,6 +66,7 @@ export function initIstrazivac(L, map) {
 
   btn.addEventListener('click', () => setOn(!on));
   bar.addEventListener('click', (e) => {
+    if (e.target.closest('[data-izlaz]')) { setOn(false); return; }
     const c = e.target.closest('[data-uid]');
     const r = c && rows.find((x) => x.korisnik_id === c.dataset.uid);
     if (!r) return;
