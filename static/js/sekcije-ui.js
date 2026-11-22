@@ -5,7 +5,7 @@ import { getClient, cachedProfile } from './auth.js';
 import { idbGet, idbPut } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { refreshMembers, memberName } from './dijeljenje-ui.js';
-import {
+import { creationMode,
   myStatus, pristupText, canManage, creatableRevirIds, groupByRevir, pendingRequests, candidatesToAdd, validateSekcija, mySectionsAsLeader,
 } from './sekcije.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
@@ -63,6 +63,8 @@ export function initSekcije() {
     }
   };
 
+  const invitedBy = (sid, uid) => data.clanovi.find((c) => c.sekcija_id === sid && c.korisnik_id === uid && c.status === 'ceka')?.pozvao_id || null;
+
   const manageHtml = (s) => {
     const members = data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren');
     const pending = pendingRequests(s.id, data.clanovi);
@@ -70,7 +72,7 @@ export function initSekcije() {
     const isAdmin = Boolean(me()?.is_admin);
     return `<details class="uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Upravljanje sekcijom${pending.length ? ` · zahtjeva: ${pending.length}` : ''}</summary>
       ${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak">${pending.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}">
-        <b>${escapeHtml(memberName(c.korisnik_id))}</b>
+        <b>${escapeHtml(memberName(c.korisnik_id))}</b>${c.pozvao_id ? `<span class="sitno"> · predložio: ${escapeHtml(memberName(c.pozvao_id))} (novi nalog)</span>` : ''}
         <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button>
         <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div></li>`).join('')}</ul>` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
       <h4>Članovi (${members.length})</h4>
@@ -97,11 +99,13 @@ export function initSekcije() {
     const buttons = st === 'nema' ? '<button type="button" class="dugme glavno" data-akcija="zatrazi">Zatraži pristup</button>'
       : st === 'ceka' ? '<button type="button" class="dugme" data-akcija="povuci">Povuci zahtjev</button>'
         : st === 'clan' ? '<button type="button" class="dugme" data-akcija="napusti">Napusti sekciju</button>' : '';
+    const mode = creationMode(st);
+    const newBtn = mode ? `<button type="button" class="dugme" data-akcija="novi-lovac">${mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava grupovođa)'}</button>` : '';
     return `<li class="trag-red sekcija-kartica" data-id="${escapeHtml(s.id)}" data-pristup="${st}">
       <div class="trag-naslov"><b>${escapeHtml(s.naziv)}</b>
         <span class="sitno">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar revira: ${lovocuvari}</span>
         <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span>${memberList}</div>
-      <div class="red-dugmadi">${buttons}</div>
+      <div class="red-dugmadi">${buttons}${newBtn}</div>
       ${canManage(s, me()) ? manageHtml(s) : ''}
     </li>`;
   };
@@ -166,10 +170,17 @@ export function initSekcije() {
       case 'napusti':
         run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', me().id)), 'Gotovo');
         break;
+      case 'novi-lovac':
+        document.dispatchEvent(new CustomEvent('lovac:novi', { detail: { sekcijaId: sid } }));
+        break;
       case 'odobri':
-        run(() => qSek(sb().from('sekcija_clanovi').update({ status: 'odobren' }).eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Pristup odobren');
+        if (invitedBy(sid, uid)) run(() => qSek(sb().rpc('odobri_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Nalog i pristup odobreni');
+        else run(() => qSek(sb().from('sekcija_clanovi').update({ status: 'odobren' }).eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Pristup odobren');
         break;
       case 'odbij':
+        if (invitedBy(sid, uid)) { run(() => qSek(sb().rpc('odbij_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Predlog odbijen, nalog obrisan'); break; }
+        run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
+        break;
       case 'ukloni':
         run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
         break;

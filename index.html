@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.3';
+  const APP_VER = 'v0.3.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -393,6 +393,10 @@
     <p id="postavke-nalog" class="red-info"></p>
     <p class="red-info">Veza sa serverom: <b id="postavke-server"></b></p>
     <p id="postavke-odjava-upozorenje" class="sitno" hidden></p>
+    <h3>Promjena PIN-a</h3>
+    <label>Novi PIN (6 do 8 cifara)<input id="novi-pin" inputmode="numeric" maxlength="8" autocomplete="off"></label>
+    <button id="btn-pin-promijeni" class="dugme" type="button">Promijeni PIN</button>
+    <p id="pin-status" class="sitno" role="status"></p>
     <button id="btn-postavke-odjava" class="dugme" type="button">Odjava</button>
   </div>
 
@@ -855,6 +859,7 @@
     <div id="sk-lov" class="sk-lov"></div>
     <h3>Članovi sekcije <span id="sk-broj" class="sitno"></span></h3>
     <ul id="sk-clanovi" class="spisak"></ul>
+    <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
     <h3>Poruke</h3>
     <p class="sitno">Poruke vide članovi sekcije, grupovođa, lovočuvar revira i administrator.</p>
     <div id="sk-poruke" class="poruke" role="log" aria-live="polite"></div>
@@ -865,6 +870,29 @@
     </form>
     <h3>Podaci o sekciji i lovu</h3>
     <div id="sk-podaci"></div>
+  </div>
+</section>
+
+<section id="lovac-novi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="ln-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="ln-naslov">Novi lovac</h2>
+    <button id="btn-ln-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="ln-uputa" class="sitno"></p>
+  <form id="forma-lovac-novi" novalidate>
+    <label>Sekcija<select id="ln-sekcija" name="sekcija"></select></label>
+    <label>Ime<input name="ime" maxlength="40" autocomplete="off" required></label>
+    <label>Prezime<input name="prezime" maxlength="40" autocomplete="off" required></label>
+    <label>Nadimak ili broj člana (neobavezno)<input name="nadimak" maxlength="20" autocomplete="off"></label>
+    <label>PIN (6 do 8 cifara)<input name="pin" inputmode="numeric" maxlength="8" autocomplete="off" required></label>
+    <p class="sitno">PIN predaj lovcu lično. Preporuči mu da ga odmah promijeni u Postavke → Nalog.</p>
+    <button type="submit" id="btn-ln-posalji" class="dugme glavno">Napravi nalog</button>
+  </form>
+  <p id="ln-status" class="status" role="status"></p>
+  <div id="ln-gotovo" class="p-kartica" hidden>
+    <h3>Nalog je napravljen</h3>
+    <p id="ln-gotovo-tekst"></p>
+    <button id="btn-ln-jos" class="dugme" type="button">Dodaj još jednog</button>
   </div>
 </section>
 

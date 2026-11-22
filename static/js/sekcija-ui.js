@@ -11,7 +11,7 @@ import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { mySections, currentHunt, memberActivity, activityText, sectionMembers } from './sekcija-podaci.js';
-import { myStatus, pendingRequests, pristupText } from './sekcije.js';
+import { myStatus, pendingRequests, pristupText, creationMode } from './sekcije.js';
 import {
   validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES,
 } from './poruke.js';
@@ -202,6 +202,9 @@ export function initSekcijaEkran(L, map) {
     const lovocuvari = ctx.lovocuvari.filter((l) => l.revir_id === s.revir_id).map((l) => memberName(l.korisnik_id));
     const cur = currentHunt(lovovi, s.id);
     $('sk-podnaslov').textContent = `Revir ${revir?.naziv || ''} · ${pristupText(st)}`;
+    const mode = creationMode(st);
+    $('btn-sk-novi').hidden = !mode;
+    $('btn-sk-novi').textContent = mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava grupovođa)';
     $('sk-lov').innerHTML = huntCard(s, cur, users);
 
     // članovi i aktivnost
@@ -273,6 +276,7 @@ export function initSekcijaEkran(L, map) {
     render();
     refresh({ withHunts: true });
   });
+  $('btn-sk-novi').addEventListener('click', () => document.dispatchEvent(new CustomEvent('lovac:novi', { detail: { sekcijaId: selected()?.id } })));
   $('btn-sk-pristup').addEventListener('click', () => { close(); $('btn-sekcije').click(); });
 
   screen.addEventListener('click', async (e) => {

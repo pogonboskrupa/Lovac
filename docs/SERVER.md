@@ -18,6 +18,7 @@
 | `009_poruke_lovocuvar.sql` | lovočuvar po reviru (`revir_lovocuvari`), poruke sekcije (`poruke`) |
 | `010_lokacija_dijeljenje.sql` | učesnik može obrisati svoju zadnju poziciju (isključivanje dijeljenja lokacije) |
 | `011_tok_lova.sql` | tok lova: komande vođe (početak/kraj pogona, okupljanje, prekid) i statusi učesnika (`lov_dogadjaji`) |
+| `012_kreiranje_korisnika.sql` | `kreiraj_korisnika` (nalog + članstvo; član samo predlaže), `odobri_pozvanog`, `odbij_pozvanog`, kolona `sekcija_clanovi.pozvao_id` |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:

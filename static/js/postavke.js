@@ -2,7 +2,7 @@
 
 import { applyTheme, toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { tileCacheCount, clearTileCache } from './tiles.js';
-import { cachedProfile } from './auth.js';
+import { cachedProfile, changePin } from './auth.js';
 import { isServerConfigured } from './config.js';
 import { connectionQuality } from './net.js';
 import { checkForUpdate, installUpdate } from './update.js';
@@ -99,6 +99,20 @@ function wireShare() {
   document.addEventListener('lokacija:postavke', renderShare);
 }
 
+function wirePin() {
+  el('btn-pin-promijeni').addEventListener('click', async () => {
+    const status = el('pin-status');
+    status.textContent = 'Mijenjam…';
+    try {
+      await changePin(el('novi-pin').value);
+      el('novi-pin').value = '';
+      status.textContent = 'PIN je promijenjen. Od sada se prijavljuješ novim PIN-om.';
+    } catch (err) {
+      status.textContent = /fetch|network|timeout/i.test(err.message) ? 'Potreban je internet za promjenu PIN-a.' : err.message;
+    }
+  });
+}
+
 function wireBackup(appVer) {
   const status = el('rezerva-status');
   el('btn-rezerva-izvoz').addEventListener('click', async () => {
@@ -190,6 +204,7 @@ export function initPostavke({ setBase, onLogout, appVer }) {
     await onLogout();
   });
   wireShare();
+  wirePin();
   wireBackup(appVer);
   document.addEventListener('sekcije:promjena', () => { if (isSettingsOpen()) renderProfile(); });
   wireCacheButton();

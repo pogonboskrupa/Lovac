@@ -11,6 +11,12 @@ export function myStatus(sekcija, clanovi, myId, isAdmin = false, lovocuvari = [
   return c.status === 'odobren' ? 'clan' : 'ceka';
 }
 
+// Ko smije praviti naloge u sekciji: admin/grupovođa/lovočuvar direktno, običan član samo predlaže.
+export function creationMode(status) {
+  if (['admin', 'grupovodja', 'lovocuvar'].includes(status)) return 'direct';
+  return status === 'clan' ? 'predlog' : null;
+}
+
 const TEKST = {
   admin: 'Administrator: puni pristup',
   grupovodja: 'Ti si grupovođa ove sekcije',

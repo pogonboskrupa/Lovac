@@ -68,3 +68,13 @@ test('forma sekcije', () => {
 test('sekcije kojima sam grupovođa (za organizaciju lova)', () => {
   assert.deepEqual(mySectionsAsLeader(SEK, 'g1').map((s) => s.id), ['s1']);
 });
+
+import { creationMode } from '../../static/js/sekcije.js';
+test('ko smije praviti naloge: admin/grupovođa/lovočuvar direktno, član predlaže, ostali ne', () => {
+  assert.equal(creationMode('admin'), 'direct');
+  assert.equal(creationMode('grupovodja'), 'direct');
+  assert.equal(creationMode('lovocuvar'), 'direct');
+  assert.equal(creationMode('clan'), 'predlog');
+  assert.equal(creationMode('ceka'), null);
+  assert.equal(creationMode('nema'), null);
+});

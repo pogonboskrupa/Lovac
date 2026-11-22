@@ -126,6 +126,27 @@ export async function register({ ime, prezime, nadimak, pin }) {
   return storeProfile(profile);
 }
 
+// Nalog za drugog lovca pravi server (funkcija kreiraj_korisnika); sesija pravljača se NE mijenja.
+export async function provisionUser({ ime, prezime, nadimak, pin, sekcijaId }) {
+  validateCredentials({ ime, prezime, nadimak, pin });
+  if (!sekcijaId) throw new Error('Izaberi sekciju');
+  const nad = String(nadimak ?? '').trim();
+  const { data, error } = await getClient().rpc('kreiraj_korisnika', {
+    p_ime: ime.trim(), p_prezime: prezime.trim(), p_nadimak: nad, p_pin: String(pin),
+    p_email: syntheticEmail(ime, prezime, nad), p_sekcija: sekcijaId,
+  });
+  if (error) throw new Error(friendlyAuthError(error));
+  return data;
+}
+
+// Promjena vlastitog PIN-a (nalog koji je napravio drugi ima PIN koji je pravljač znao).
+export async function changePin(newPin) {
+  const err = validatePin(newPin);
+  if (err) throw new Error(err);
+  const { error } = await getClient().auth.updateUser({ password: String(newPin) });
+  if (error) throw new Error(friendlyAuthError(error));
+}
+
 export async function login({ ime, prezime, nadimak, pin }) {
   validateCredentials({ ime, prezime, nadimak, pin });
   const sb = getClient();

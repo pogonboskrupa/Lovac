@@ -49,7 +49,7 @@ test('polja forme su ≥ 48 px i font ≥ 16 px (WebView inače zumira)', async 
   await fakeServerConfigHanging(page);
   await page.goto('/');
   for (const name of ['ime', 'prezime', 'nadimak', 'pin']) {
-    const el = page.locator(`input[name=${name}]`);
+    const el = page.locator(`#forma-prijava input[name=${name}]`);
     expect((await el.boundingBox()).height).toBeGreaterThanOrEqual(48);
     expect(await el.evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(16);
   }

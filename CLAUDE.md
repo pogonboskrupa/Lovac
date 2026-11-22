@@ -216,3 +216,9 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Ekran je podijeljen u kartice (`.p-kartica`) sa profilom na vrhu (inicijali, uloge iz keša sekcija — `profil.js profileRoles`, nikad iz imena; veza i broj neposlanih). Dijeljenje lokacije i telefon su i ovdje (isti `getShareSettings/setShareSettings` kao ekran lokacije).
 - Rezervna kopija (`rezerva.js`): izvoz mojih zapisa u JSON (bez fotografija, bez tuđih i obrisanih), uvoz samo DODAJE zapise kojih nema (nikad ne prepisuje) i šalje ih kroz red slanja. Služi i kao priprema za promjenu potpisnog ključa (docs/SIGURNOST.md).
 - Odjava sa neposlanim zapisima traži drugi dodir; bez njih je jedan dodir kao i prije.
+
+**Kreiranje naloga lovaca (migracija 012, v0.3.4)**
+- Nalog se pravi SERVEROM: `kreiraj_korisnika(...)` (SECURITY DEFINER) upisuje u `auth.users` + `auth.identities` (bcrypt PIN, kolone tokena ne smiju biti NULL), jer klijent nikad ne drži `service_role` ključ i `signUp` bi zamijenio sesiju pravljača. Interni email računa KLIJENT (`syntheticEmail`, isti kod kao pri prijavi) i server samo provjerava oblik i domenu — tako se prijava i nalog nikad ne razilaze.
+- Admin, lovočuvar revira sekcije i grupovođa sekcije prave odobren nalog i odmah ga dodaju u sekciju; običan odobreni član samo PREDLAŽE (nalog neodobren, zahtjev `ceka` sa `pozvao_id`, max 5 odjednom) dok grupovođa/admin ne pozove `odobri_pozvanog` (nalog + članstvo) ili `odbij_pozvanog` (briše nikad odobren nalog). Klijent za zahtjeve sa `pozvao_id` koristi te funkcije, ne tabelu.
+- SQL stub `auth.users` ima dodatne kolone i `auth.identities`. PIN koji pravljač zna se mijenja u Postavke → Nalog (`changePin`).
+- Lovac ne može sam sebi napraviti nalog u tuđoj sekciji ni odobriti predlog.
