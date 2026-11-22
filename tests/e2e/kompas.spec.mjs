@@ -77,3 +77,11 @@ test('moja pozicija na karti je nišan (krug sa križem), a plavi snop pravca os
   await heading(page, 270);
   await expect.poll(() => page.locator('.gps-stozac').evaluate((e) => e.style.visibility)).toBe('visible');
 });
+
+test('nišan pozicije je 10 % manji od ranijih 34 px', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.gps-nisan')).toHaveCount(1);
+  const b = await page.locator('.gps-nisan').boundingBox();
+  expect(b.width).toBeGreaterThan(30);
+  expect(b.width).toBeLessThan(31.5);
+}); 

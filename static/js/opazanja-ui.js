@@ -4,7 +4,8 @@ import { speciesBadge, sortObservations, groupByMonthOf, observationLight, light
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, listRecords, deleteRecord, getRecord } from './zapisi.js';
 import { matchesQuery } from './pretraga.js';
-import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount } from './opazanja.js';
+import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observerLabel } from './opazanja.js';
+import { cachedProfile } from './auth.js';
 import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
@@ -56,6 +57,32 @@ export function initOpazanja(L, map) {
       .filter((o) => matchesQuery([lookupNaziv(vrste, o.vrsta), o.napomena], searchText));
   };
 
+  // Kartica opažanja na karti: ko je vidio, šta, kad; vlasnik može podijeliti i obrisati (drugi dodir).
+  const popupFor = (o, vrste) => {
+    const el = document.createElement('div');
+    el.className = 'op-popup';
+    el.dataset.id = o.id;
+    el.innerHTML = `<b>${escapeHtml(lookupNaziv(vrste, o.vrsta))}</b> × ${o.broj}
+      <div class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</div>
+      <div class="op-vidio">Vidio: <b>${escapeHtml(observerLabel(o, cachedProfile(), memberName))}</b></div>
+      ${o.napomena ? `<div class="sitno">${escapeHtml(o.napomena)}</div>` : ''}
+      ${o.tudji ? '' : '<div class="red-dugmadi"><button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button></div>'}`;
+    el.querySelector('[data-akcija="dijeli"]')?.addEventListener('click', () => { map.closePopup(); shareDialog()?.open(STORE, o.id); });
+    const del = el.querySelector('[data-akcija="obrisi"]');
+    if (del) {
+      wireTwoTap(del, 'Dodirni ponovo za brisanje', async () => {
+        const rec = await getRecord(STORE, o.id);
+        for (const f of rec?.fotografije || []) await deletePhoto(f);
+        await deleteRecord(STORE, o.id);
+        map.closePopup();
+        toast('Opažanje obrisano');
+        await renderOverview();
+        await renderLayer();
+      });
+    }
+    return el;
+  };
+
   const renderLayer = async () => {
     const vrste = await getSpisakAll('vrste');
     layer.clearLayers();
@@ -73,9 +100,7 @@ export function initOpazanja(L, map) {
       const color = colorFor(vrste, o.vrsta);
       L.circleMarker([o.lat, o.lon], {
         radius: 6 + Math.min(o.broj || 1, 10) / 2, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.9, className: 'op-tacka',
-      }).bindPopup(`<b>${escapeHtml(lookupNaziv(vrste, o.vrsta))}</b> × ${o.broj}<br>${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))}`
-        + `<br>${escapeHtml(formatWhen(o.vrijeme))}${o.napomena ? `<br>${escapeHtml(o.napomena)}` : ''}`
-        + `${o.tudji ? `<br><i>Podijelio: ${escapeHtml(memberName(o.vlasnik_id))}</i>` : ''}`).addTo(layer);
+      }).bindPopup(() => popupFor(o, vrste), { minWidth: 220 }).addTo(layer);
     }
   };
 
@@ -221,6 +246,7 @@ export function initOpazanja(L, map) {
           <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} × ${o.broj}</b>
           <span class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</span>
           ${o.napomena ? `<span class="sitno">${escapeHtml(o.napomena)}</span>` : ''}
+          <span class="sitno">Vidio: ${escapeHtml(observerLabel(o, cachedProfile(), memberName))}</span>
           <span class="sitno">${o.tudji ? `Podijelio: ${escapeHtml(memberName(o.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
         </div>
         <div class="red-dugmadi">

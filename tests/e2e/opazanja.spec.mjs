@@ -118,3 +118,25 @@ test('dodirne mete opažanja ≥ 44 px', async ({ page }) => {
   const inp = await page.locator('#forma-opazanje input[name=broj]').boundingBox();
   expect(inp.height).toBeGreaterThanOrEqual(48);
 });
+
+test('opažanje na karti: kartica pokazuje ko je vidio i može se obrisati (drugi dodir)', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 44.9012, longitude: 16.1234, accuracy: 6 });
+  await page.addInitScript(() => localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u1', ime: 'Goran', prezime: 'Lovac', odobren: true, is_admin: false })));
+  await page.goto('/');
+  await expect(page.locator('#gps-tacnost')).toHaveText('±6 m');
+  await quickObs(page, { vrsta: 'srna', plus: 1 });
+  await expect(page.locator('path.op-tacka')).toHaveCount(1);
+  await page.locator('path.op-tacka').dispatchEvent('click');
+  const kartica = page.locator('.leaflet-popup .op-popup');
+  await expect(kartica).toBeVisible();
+  await expect(kartica).toContainText('Vidio: ti (Goran Lovac)');
+  const del = kartica.locator('[data-akcija="obrisi"]');
+  expect((await del.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await del.click();
+  expect((await allObs(page)).length).toBe(1);
+  await del.click();
+  await expect.poll(async () => (await allObs(page)).length).toBe(0);
+  await expect(page.locator('path.op-tacka')).toHaveCount(0);
+  await expect(page.locator('.leaflet-popup')).toHaveCount(0);
+});

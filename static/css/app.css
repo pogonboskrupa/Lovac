@@ -1024,3 +1024,10 @@ svg[hidden] { display: none; }
 #ekran-mapa.istrazivac { overflow: clip; }
 .gps-nisan { filter: drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 2px rgba(0,0,0,.6)); }
 .p-prekidac-red { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-weight: 600; }
+
+/* Opažanje na karti: kartica sa ko je vidio i brisanjem */
+.op-popup .op-vidio { margin: 4px 0; }
+.op-popup .red-dugmadi { display: flex; gap: 6px; margin-top: 8px; }
+.op-popup .dugme { min-height: 44px; flex: 1; }
+/* Nišan moje pozicije: 10 % manji */
+.gps-nisan { width: 30.6px; height: 30.6px; margin: -15.3px 0 0 -15.3px; }

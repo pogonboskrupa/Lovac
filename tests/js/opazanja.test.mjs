@@ -50,3 +50,12 @@ test('broj grla je cijeli broj 1–999', () => {
   assert.equal(clampCount(5000), 999);
   assert.equal(clampCount('x'), 1);
 });
+
+import { observerLabel } from '../../static/js/opazanja.js';
+
+test('vidio: moje opažanje sa imenom, podijeljeno tuđe sa imenom vlasnika', () => {
+  const me = { ime: 'Adnan', prezime: 'Đulić' };
+  assert.equal(observerLabel({ tudji: false }, me, () => 'x'), 'ti (Adnan Đulić)');
+  assert.equal(observerLabel({ tudji: false }, null, () => 'x'), 'ti');
+  assert.equal(observerLabel({ tudji: true, vlasnik_id: 'u2' }, me, (id) => `ime-${id}`), 'ime-u2');
+});

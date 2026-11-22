@@ -53,3 +53,9 @@ export function periodRange(kind, now = Date.now()) {
   const days = Number(kind) || 30;
   return { od: now - days * 86400000, do: now };
 }
+
+// "Vidio": moje opažanje piše "ti (Ime Prezime)", podijeljeno tuđe ime vlasnika.
+export function observerLabel(o, me, nameOf) {
+  if (!o.tudji) return me ? `ti (${me.ime} ${me.prezime})` : 'ti';
+  return nameOf(o.vlasnik_id);
+}
