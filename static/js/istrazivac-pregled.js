@@ -1,6 +1,7 @@
 // Pregled u Istraživaču (čista logika): nagib pogleda, svježina pozicije člana, sažetak trake.
 
-import { formatMemberDistance } from './istrazivac.js';
+import { formatMemberDistance, distanceM } from './istrazivac.js';
+import { shouldRecordPoint, pushPoint } from './lovtrag.js';
 import { compassName } from './geo.js';
 
 export const NAGIBI = [
@@ -42,4 +43,41 @@ export function barSummary(vectors) {
 
 export function upLabel(bearing, tiltDeg) {
   return `Gore: ${compassName(bearing)} ${Math.round(bearing)}° · nagib ${tiltDeg}°`;
+}
+
+// ---- Detalj člana, mrvice traga (lokalno pamćenje kuda se kretao) ----
+
+// Redak detalja: "Adnan Đulić · 230 m JI · prije 2 min".
+export function detailLine(vec) {
+  const age = vec.starost > 1 ? `prije ${vec.starost} min` : 'upravo';
+  return `${vec.ime} · ${formatMemberDistance(vec.udaljenost)} ${compassName(vec.smjer)} · ${age}`;
+}
+
+// store = { lov, by: { uid: [{lat, lon, t}] } }; nova pozicija se pamti kad se član pomjerio ≥ 15 m ili je prošlo 90 s.
+export function crumbsAdd(store, row, max = 800) {
+  const cur = store && store.lov === row.lov_id ? store : { lov: row.lov_id ?? null, by: {} };
+  const t = typeof row.t === 'number' ? row.t : Date.parse(row.t);
+  if (!Number.isFinite(t)) return cur;
+  const list = cur.by[row.korisnik_id] || [];
+  const last = list[list.length - 1];
+  const point = { lat: row.lat, lon: row.lon, t };
+  if (last && t <= last.t) return cur;
+  if (!shouldRecordPoint(last, point, t)) return cur;
+  return { ...cur, by: { ...cur.by, [row.korisnik_id]: pushPoint(list, point, max) } };
+}
+
+// Trag sa servera (lov_tragovi) + lokalne mrvice; isto vrijeme se broji jednom, redoslijed po vremenu.
+export function mergeMemberTrail(serverRows, crumbs) {
+  const by = new Map();
+  for (const r of [...serverRows, ...crumbs]) {
+    const t = typeof r.t === 'number' ? r.t : Date.parse(r.t);
+    if (Number.isFinite(t)) by.set(t, { lat: r.lat, lon: r.lon, t });
+  }
+  return [...by.values()].sort((a, b) => a.t - b.t);
+}
+
+export function trailMeters(points) {
+  let d = 0;
+  for (let i = 1; i < points.length; i++) d += distanceM(points[i - 1], points[i]);
+  return d;
 }

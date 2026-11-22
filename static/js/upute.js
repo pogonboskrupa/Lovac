@@ -35,7 +35,7 @@ export const UPUTE = [
       ['Alati u ploči', 'Centriraj na mene, Prati me, Snimaj trag, Opažanje divljači, Istraživač (3D) i Kopiraj koordinate.'],
       ['Pravac gledanja', 'Kompas pokazuje u kojem smjeru gleda telefon. Ako telefon nema senzor, koristi se smjer kretanja ili piše da kompas nije dostupan. Kompas može griješiti (metal, magneti).'],
       ['Snimanje traga', 'Snima put dok hodaš, i kad je ekran ugašen. Može se pauzirati, dodati tačka ili slika. Trag kraći od 50 m se ne čuva. Na nekim telefonima treba isključiti štednju baterije za aplikaciju.'],
-      ['Istraživač (3D)', 'Nagnut pogled karte koji prati tebe. Kartu okrećeš sa dva prsta ili dugmadima, mijenjaš nagib, a dugme "Sjever gore" vraća pogled. Članovi koji dijele lokaciju vide se u traci sa smjerom i udaljenošću.'],
+      ['Istraživač (3D)', 'Nagnut pogled karte koji prati tebe. Jedan prst pomjera kartu (možeš istraživati teren van svoje pozicije, dugme ◎ te vraća), dva prsta je okreću, a dugme "Sjever gore" vraća pogled. Dodir na kolegu koji dijeli lokaciju pokazuje koliko je daleko od tebe, a prekidač prikazuje trag kuda se kretao. "Izađi iz 3D" je gore lijevo.'],
       ['Dijeljenje sa sekcijom', 'U istoj ploči možeš podijeliti lokaciju sa svojom sekcijom na 1 sat, 4 sata ili do kraja dana. Vide je članovi, grupovođa i lovočuvar te sekcije, a administrator ne (osim ako je u sekciji).'],
     ],
   },

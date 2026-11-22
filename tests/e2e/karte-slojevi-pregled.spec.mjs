@@ -63,7 +63,7 @@ test('Istraživač: vrh je čist, a dugme "Izađi iz 3D" gasi mod', async ({ pag
   await page.goto('/');
   await lok(page, '#btn-istrazivac');
   await expect(page.locator('#ekran-mapa')).toHaveClass(/istrazivac/);
-  const izlaz = page.locator('#istrazivac-traka [data-izlaz]');
+  const izlaz = page.locator('#btn-ist-izlaz');
   await expect(izlaz).toBeVisible();
   expect((await izlaz.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await izlaz.click();

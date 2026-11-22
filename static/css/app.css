@@ -980,7 +980,7 @@ svg[hidden] { display: none; }
 .upute-stavke dd { margin: 2px 0 0; line-height: 1.4; }
 
 /* Istraživač: dvostruko veći kontejner karte (pločice i za rotirani/nagnuti dio) i dodir bez browserovog listanja */
-#ekran-mapa.istrazivac #karta { inset: auto; left: -70%; top: -70%; width: 240%; height: 240%; touch-action: none; }
+#ekran-mapa.istrazivac #karta { inset: auto; left: -30%; top: -30%; width: 160%; height: 160%; touch-action: none; }
 #ekran-mapa.istrazivac { touch-action: none; }
 #btn-ist-ja[aria-pressed="false"] { background: #c2410c; color: #ffffff; }
 #ekran-mapa.istrazivac .leaflet-control-container { display: none; }
@@ -1005,3 +1005,16 @@ svg[hidden] { display: none; }
 }
 #lok-ploca[hidden] { display: none; }
 #ekran-mapa.lok-otvorena .mapa-dno { display: none; }
+
+/* Istraživač: "Izađi" gore lijevo, detalj odabranog člana (udaljenost, trag) */
+.istrazivac-izlaz { position: absolute; left: 8px; top: calc(env(safe-area-inset-top) + 12px); z-index: 1060; min-height: 48px; padding: 4px 18px; }
+.istrazivac-izlaz[hidden] { display: none; }
+#ekran-mapa.istrazivac .istrazivac-traka { top: calc(env(safe-area-inset-top) + 68px); right: 8px; }
+.istrazivac-detalj { position: absolute; left: 8px; top: calc(env(safe-area-inset-top) + 124px); width: min(240px, calc(100% - 130px)); z-index: 1055; padding: 8px 10px; border-radius: 14px; background: var(--povrsina); box-shadow: var(--sjena); }
+.istrazivac-detalj[hidden] { display: none; }
+.ist-detalj-glava { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.ist-detalj-glava .ikona-dugme { width: 44px; height: 44px; }
+.ist-detalj-udaljenost { margin: 2px 0; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ist-trag-red { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-weight: 600; }
+/* Veliki kontejner karte u 3D modu ne smije pomjeriti ekran (fokus/dodir na dugme bi ga programski skrolovao) */
+#ekran-mapa.istrazivac { overflow: clip; }

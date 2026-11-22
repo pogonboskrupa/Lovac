@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.7.0';
+  const APP_VER = 'v0.7.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -108,9 +108,21 @@
     <button id="red-znacka" class="znacka znacka-dugme" type="button" hidden></button>
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
+  <button id="btn-ist-izlaz" type="button" class="istrazivac-izlaz" hidden>Izađi iz 3D</button>
   <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
+  <div id="istrazivac-detalj" class="istrazivac-detalj" role="status" hidden>
+    <div class="ist-detalj-glava">
+      <b id="ist-detalj-ime"></b>
+      <button id="btn-ist-detalj-zatvori" type="button" class="ikona-dugme" aria-label="Zatvori detalj"><svg class="ic"><use href="#ic-close"/></svg></button>
+    </div>
+    <p id="ist-detalj-udaljenost" class="ist-detalj-udaljenost"></p>
+    <p id="ist-detalj-starost" class="sitno"></p>
+    <div class="ist-trag-red">
+      <button id="btn-ist-trag" type="button" class="lok-prekidac" role="switch" aria-checked="false" aria-label="Prikaži trag kretanja"><span class="lok-prekidac-ruka"></span></button>
+      <span>Prikaži trag kretanja</span>
+    </div>
+  </div>
   <div id="istrazivac-kontrole" class="istrazivac-kontrole" role="group" aria-label="Okretanje karte" hidden>
-    <span id="ist-hud" class="ist-hud" role="status">Gore: S 0° · nagib 40°</span>
     <button id="btn-ist-lijevo" type="button" class="ikona-dugme" aria-label="Okreni kartu ulijevo"><svg class="ic"><use href="#ic-rot-lijevo"/></svg></button>
     <button id="btn-ist-desno" type="button" class="ikona-dugme" aria-label="Okreni kartu udesno"><svg class="ic"><use href="#ic-rot-desno"/></svg></button>
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
