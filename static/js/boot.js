@@ -5,7 +5,7 @@ import {
   cachedProfile, decideStartScreen, refreshProfileInBackground, register, login, logout,
 } from './auth.js';
 import { setStorageReporter } from './storage.js';
-import { onQualityChange } from './net.js';
+import { onQualityChange, connectionDetail } from './net.js';
 import { showScreen, toast, alarm, initTheme, handleBack, wireMenu } from './ui.js';
 import { initMap } from './map.js';
 import { initGps } from './gps.js';
@@ -236,12 +236,22 @@ async function registerServiceWorker() {
   }
 }
 
+let lastWeakToast = 0;
+function offlineToast() {
+  // Najviše jednom u 5 min: lovac mora znati da signal ne valja, ali ne treba ga zasipati porukama.
+  if (Date.now() - lastWeakToast < 300000) return;
+  lastWeakToast = Date.now();
+  toast('Slab signal: aplikacija radi offline, a zapisi se šalju čim veza bude bolja');
+}
+
 function wireConnectionBadge() {
   const el = document.getElementById('veza');
   onQualityChange((q) => {
     if (!el) return;
-    el.dataset.veza = q;
-    el.textContent = { nema: 'Bez veze', slaba: 'Slaba veza', dobra: 'Veza OK' }[q] || '';
+    const d = connectionDetail();
+    el.dataset.veza = d;
+    el.textContent = { nema: 'Bez veze — radim offline', preslaba: 'Slab signal — radim offline', slaba: 'Slaba veza', dobra: 'Veza OK' }[d] || '';
+    if (d === 'preslaba') offlineToast();
   });
 }
 

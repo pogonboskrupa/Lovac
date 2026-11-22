@@ -3,6 +3,9 @@
 
 export const DEFAULT_TIMEOUT_MS = 12000;
 const SLOW_MS = 4000;
+// Signal koji tehnički postoji, ali zahtjevi ne prolaze (većina pada ili traje preko 8 s): za aplikaciju je isto što i bez veze.
+const UNUSABLE_MS = 8000;
+const UNUSABLE_FAIL_RATE = 0.6;
 const WINDOW = 6;
 
 const samples = [];
@@ -63,6 +66,7 @@ export function classifyQuality(list) {
   const oks = list.filter((s) => s.ok);
   const failRate = 1 - oks.length / list.length;
   const avg = oks.reduce((a, s) => a + s.ms, 0) / Math.max(1, oks.length);
+  if (failRate >= UNUSABLE_FAIL_RATE || avg > UNUSABLE_MS) return 'preslaba';
   if (failRate > 0.3 || avg > SLOW_MS) return 'slaba';
   return 'dobra';
 }
@@ -73,12 +77,42 @@ export function recordSample(ok, ms) {
   const q = classifyQuality(samples);
   if (q !== lastQuality) {
     lastQuality = q;
-    listeners.forEach((fn) => { try { fn(q); } catch (e) { console.error(e); } });
+    listeners.forEach((fn) => { try { fn(publicQuality(q), q); } catch (e) { console.error(e); } });
   }
 }
 
+// Za odluke ("smijem li zvati server?") preslaba veza je isto što i nema veze: app radi offline i ne čeka rokove.
+export function publicQuality(q) {
+  return q === 'preslaba' ? 'nema' : q;
+}
+
 export function connectionQuality() {
+  return publicQuality(lastQuality);
+}
+
+// Za prikaz korisniku: razlikuje "nema signala" od "signal preslab".
+export function connectionDetail() {
   return lastQuality;
+}
+
+// Dok je veza prekinuta ili preslaba, ništa drugo ne pravi zahtjeve pa se ocjena nikad ne bi popravila:
+// jedan lagan zahtjev na server svakih nekoliko sekundi pokazuje kad se veza oporavi.
+export async function probeConnection(url, timeoutMs = 8000) {
+  try {
+    await fetchWithTimeout(url, { method: 'GET', cache: 'no-store', mode: 'no-cors' }, timeoutMs);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function startConnectionProbe(url, { intervalMs = 30000, probe = probeConnection, setTimer = setInterval, clearTimer = clearInterval } = {}) {
+  const run = async () => {
+    if (lastQuality !== 'nema' && lastQuality !== 'preslaba') return;
+    await probe(url);
+  };
+  const id = setTimer(run, intervalMs);
+  return () => clearTimer(id);
 }
 
 export function onQualityChange(fn) {

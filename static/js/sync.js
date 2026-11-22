@@ -4,7 +4,8 @@
 
 import { idbGet, idbPut, idbAll, idbDelete } from './db.js';
 import { getClient, cachedProfile, isAuthRejection } from './auth.js';
-import { connectionQuality, onQualityChange } from './net.js';
+import { connectionQuality, onQualityChange, startConnectionProbe } from './net.js';
+import { SUPABASE_URL, isServerConfigured } from './config.js';
 import { loadJSON, saveSoft } from './storage.js';
 
 export const SYNC_STORES = ['objekti', 'opazanja', 'odstrel', 'tragovi'];
@@ -321,6 +322,7 @@ export function initSync() {
   // Kad se veza vrati, čekanje iz prethodnih neuspjeha se ne poštuje: lovac ne treba čekati do pola sata.
   onQualityChange((q) => { if (q !== 'nema') syncNow({ force: true }).catch((err) => console.warn('sinhronizacija', err)); });
   setInterval(tick, 60000);
+  if (isServerConfigured()) startConnectionProbe(`${SUPABASE_URL}/auth/v1/health`);
   setTimeout(tick, 3000);
   emitQueueChange();
 }

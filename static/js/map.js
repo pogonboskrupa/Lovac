@@ -93,6 +93,10 @@ function wireMapControls(map, setBase) {
     setBase(btn.dataset.podloga);
     menu.hidden = true;
   });
+  // Dodir na kartu zatvara plutajuće ploče (podloge, "+").
+  map.on('click', () => {
+    for (const id of ['meni-podloga', 'meni-dodaj']) { const m = document.getElementById(id); if (m) m.hidden = true; }
+  });
   document.getElementById('btn-zoom-in')?.addEventListener('click', () => map.zoomIn());
   document.getElementById('btn-zoom-out')?.addEventListener('click', () => map.zoomOut());
   // Dodir na okvir mijenja sistem: WGS84 → MGI 5 → MGI 6 → WGS84. Kopiranje je u "Moja lokacija".

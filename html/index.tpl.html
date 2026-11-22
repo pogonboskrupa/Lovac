@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.7.4';
+  const APP_VER = 'v0.7.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -123,6 +123,7 @@
     </div>
   </div>
   <div id="istrazivac-kontrole" class="istrazivac-kontrole" role="group" aria-label="Okretanje karte" hidden>
+    <span id="ist-n" class="ist-n" role="img" aria-label="Sjever"><svg viewBox="-20 -20 40 40" aria-hidden="true"><circle r="18"/><g id="ist-n-strelica"><path d="M0 -15 5 -2 0 -5 -5 -2Z" class="ist-n-s"/><path d="M0 15 4 3 0 6 -4 3Z" class="ist-n-j"/></g></svg><b>S</b></span>
     <button id="btn-ist-lijevo" type="button" class="ikona-dugme" aria-label="Okreni kartu ulijevo"><svg class="ic"><use href="#ic-rot-lijevo"/></svg></button>
     <button id="btn-ist-desno" type="button" class="ikona-dugme" aria-label="Okreni kartu udesno"><svg class="ic"><use href="#ic-rot-desno"/></svg></button>
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
@@ -184,6 +185,13 @@
       </div>
     </div>
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
+    <div class="lok-pravac" id="lok-auto">
+      <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Automatsko dijeljenje lokacije u lovu"><span class="lok-prekidac-ruka"></span></button>
+      <div class="lok-pravac-tekst">
+        <b>Automatski dijeli lokaciju u lovu</b>
+        <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: dok lov traje, učesnici vide tvoju poziciju.</span>
+      </div>
+    </div>
     <section id="lok-sekcija" class="lok-sekcija">
       <h3>Dijeli lokaciju sa sekcijom</h3>
       <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi i grupovođa sekcije.</p>

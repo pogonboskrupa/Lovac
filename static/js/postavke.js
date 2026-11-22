@@ -4,7 +4,7 @@ import { applyTheme, toast, registerBackHandler, wireTwoTap, escapeHtml } from '
 import { tileCacheCount, clearTileCache } from './tiles.js';
 import { cachedProfile, changePin } from './auth.js';
 import { isServerConfigured } from './config.js';
-import { connectionQuality } from './net.js';
+import { connectionDetail } from './net.js';
 import { checkForUpdate, installUpdate } from './update.js';
 import { refreshAdminVisibility } from './admin.js';
 import { cachedSekcije } from './sekcije-ui.js';
@@ -16,11 +16,13 @@ import { SHARE_INTERVALS } from './lokacija.js';
 import { listRecords, saveRecord } from './zapisi.js';
 import { shareFile } from './dijeljenje.js';
 import { storageSummary, syncText, backupAdvice } from './postavke-pregled.js';
+import { reliabilityItems, needsAttention } from './pouzdanost.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { buildBackup, parseBackup, recordsToImport, backupFileName, BACKUP_STORES } from './rezerva.js';
 
 const VEZA_TEKST = {
   nema: 'Bez veze',
+  preslaba: 'Slab signal — radim offline',
   slaba: 'Slaba veza',
   dobra: 'Veza je dobra',
   nepoznato: 'Još nije provjereno',
@@ -65,7 +67,7 @@ function refreshStatic(appVer) {
   renderProfile();
   renderShare();
   el('postavke-server').textContent = isServerConfigured()
-    ? VEZA_TEKST[connectionQuality()] || VEZA_TEKST.nepoznato
+    ? VEZA_TEKST[connectionDetail()] || VEZA_TEKST.nepoznato
     : 'Server nije podešen';
   document.querySelectorAll('[data-velicina]').forEach((b) => {
     b.setAttribute('aria-pressed', String(b.dataset.velicina === document.documentElement.dataset.velicina));
@@ -83,7 +85,7 @@ async function renderProfile() {
   const ctx = await cachedSekcije().catch(() => ({}));
   el('p-uloge').innerHTML = profileRoles(p, ctx).map((r) => `<span class="p-uloga" data-uloga="${r.kod}">${escapeHtml(r.tekst)}</span>`).join('');
   const n = await queueCount().catch(() => 0);
-  el('p-stanje').textContent = `${isServerConfigured() ? VEZA_TEKST[connectionQuality()] || VEZA_TEKST.nepoznato : 'Server nije podešen'} · ${n ? `čeka slanje: ${n}` : 'sve je poslano'}`;
+  el('p-stanje').textContent = `${isServerConfigured() ? VEZA_TEKST[connectionDetail()] || VEZA_TEKST.nepoznato : 'Server nije podešen'} · ${n ? `čeka slanje: ${n}` : 'sve je poslano'}`;
   const warn = el('postavke-odjava-upozorenje');
   warn.hidden = !n;
   warn.textContent = n ? `Imaš ${n} neposlanih zapisa. Odjava ih ne briše, ali se šalju tek kad se opet prijaviš.` : '';
@@ -109,7 +111,7 @@ function wireShare() {
 
 async function renderReadiness() {
   if (!el('sp-veza')) return;
-  el('sp-veza').textContent = isServerConfigured() ? VEZA_TEKST[connectionQuality()] || VEZA_TEKST.nepoznato : 'Server nije podešen';
+  el('sp-veza').textContent = isServerConfigured() ? VEZA_TEKST[connectionDetail()] || VEZA_TEKST.nepoznato : 'Server nije podešen';
   const n = await queueCount().catch(() => 0);
   el('sp-slanje').textContent = syncText(n, loadJSON('lovac.sync.zadnje', null));
   try {
@@ -136,6 +138,35 @@ async function renderReadiness() {
   const b = backupAdvice(loadJSON(BACKUP_KEY, null), ukupno > 0);
   el('sp-kopija').textContent = b.tekst;
   el('sp-kopija').dataset.stanje = b.stanje;
+}
+
+// Obavijesti i izuzeće od optimizacije baterije (samo u aplikaciji na telefonu).
+function renderReliability() {
+  const list = el('pouzdanost-lista');
+  if (!list) return;
+  const n = globalThis.AndroidNotif;
+  const g = globalThis.AndroidGps;
+  const hasBridge = Boolean(n?.imaDozvolu || g?.isIgnoringBattery);
+  let notif = null;
+  let battery = null;
+  try { if (n?.imaDozvolu) notif = Boolean(n.imaDozvolu()); } catch (err) { console.warn('obavijesti', err); }
+  try { if (g?.isIgnoringBattery) battery = Boolean(g.isIgnoringBattery()); } catch (err) { console.warn('baterija', err); }
+  const items = reliabilityItems({ hasBridge, notif, battery });
+  list.innerHTML = items.map((i) => `<li class="p-pouzdanost" data-stanje="${i.stanje}" data-id="${i.id}"><b>${escapeHtml(i.naslov)}</b><span class="sitno">${escapeHtml(i.tekst)}</span></li>`).join('');
+  el('p-pouzdanost').dataset.stanje = needsAttention(items) ? 'upozorenje' : 'ok';
+  el('btn-dozvoli-obavijesti').hidden = !(hasBridge && n?.trazi && notif === false);
+  el('btn-postavke-obavijesti').hidden = !(hasBridge && n?.postavke && notif === false);
+  el('btn-iskljuci-bateriju').hidden = !(hasBridge && g?.requestBatteryExemption && battery === false);
+}
+
+function wireReliability() {
+  el('btn-dozvoli-obavijesti').addEventListener('click', () => { try { globalThis.AndroidNotif.trazi(); } catch (err) { console.warn(err); } setTimeout(renderReliability, 1500); });
+  el('btn-postavke-obavijesti').addEventListener('click', () => { try { globalThis.AndroidNotif.postavke(); } catch (err) { console.warn(err); } });
+  el('btn-iskljuci-bateriju').addEventListener('click', () => { try { globalThis.AndroidGps.requestBatteryExemption(); } catch (err) { console.warn(err); } });
+  // Povratak iz sistemskih postavki: ponovo pročitaj stanje.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderReliability(); });
+  document.addEventListener('postavke:podaci', renderReliability);
+  renderReliability();
 }
 
 function wireReadiness() {
@@ -265,6 +296,7 @@ export function initPostavke({ setBase, onLogout, appVer }) {
   wireShare();
   wirePin();
   wireReadiness();
+  wireReliability();
   wireBackup(appVer);
   document.addEventListener('sekcije:promjena', () => { if (isSettingsOpen()) renderProfile(); });
   wireCacheButton();

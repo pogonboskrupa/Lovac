@@ -123,7 +123,10 @@ export function initSekcijaEkran(L, map) {
     if (isOpen() && document.visibilityState === 'visible') return;
     const m = news[news.length - 1];
     const s = ctx.sekcije.find((x) => x.id === m.sekcija_id);
-    globalThis.AndroidNotif?.prikazi?.(`${m.kanal === KANAL_RUKOVODSTVO ? 'Rukovodstvo' : (s?.naziv || 'Sekcija')} — ${memberName(m.autor_id)}`, m.tekst);
+    const naslov = `${m.kanal === KANAL_RUKOVODSTVO ? 'Rukovodstvo' : (s?.naziv || 'Sekcija')} — ${memberName(m.autor_id)}`;
+    // Poruke imaju vlastiti, običan kanal (ne alarmni kao SOS); starije aplikacije bez njega koriste opšti.
+    if (globalThis.AndroidNotif?.poruka) globalThis.AndroidNotif.poruka(naslov, m.tekst, news.length);
+    else globalThis.AndroidNotif?.prikazi?.(naslov, m.tekst);
   };
 
   const pullMessages = async () => {

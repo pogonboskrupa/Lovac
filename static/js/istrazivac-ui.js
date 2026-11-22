@@ -111,6 +111,7 @@ export function initIstrazivac(L, map) {
     karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni }) : '';
     $('btn-ist-kompas').setAttribute('aria-pressed', String(followCompass));
     $('btn-ist-nagib-tekst').textContent = `${tilt.stepeni}°`;
+    $('ist-n-strelica').setAttribute('transform', `rotate(${rot})`);
     $('btn-ist-ja').setAttribute('aria-pressed', String(following));
     render();
   };
@@ -131,7 +132,7 @@ export function initIstrazivac(L, map) {
           <span class="clan-lice">${escapeHtml(initialsOf(m.ime))}</span>
           <svg class="ic strelica" style="transform:rotate(${Math.round(arrowAngle(m.smjer, upBearing(rot)))}deg)"><use href="#ic-arrow"/></svg>
           <span><b>${escapeHtml(m.ime.split(' ')[0])}</b> ${compassName(m.smjer)} ${formatMemberDistance(m.udaljenost)}${m.starost > 1 ? ` · ${m.starost} min` : ''}</span></button>`).join('')
-      : '<span class="sitno">Nema članova koji dijele lokaciju (lov u toku + internet).</span>');
+      : '<span class="sitno">Nema kolega koji dijele lokaciju</span>');
   };
 
   const setOn = (value) => {

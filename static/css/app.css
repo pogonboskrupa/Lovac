@@ -110,7 +110,7 @@ input {
 .status-red > * { pointer-events: auto; }
 .znacka { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px 10px; border-radius: 999px; background: var(--povrsina); color: var(--tekst); font-size: 14px; box-shadow: var(--sjena); }
 .znacka:empty { display: none; }
-.znacka.upozorenje, .znacka[data-veza="nema"] { background: var(--upozorenje); color: var(--upozorenje-tekst); }
+.znacka.upozorenje, .znacka[data-veza="nema"], .znacka[data-veza="preslaba"] { background: var(--upozorenje); color: var(--upozorenje-tekst); }
 
 .meni {
   position: absolute; top: calc(72px + env(safe-area-inset-top)); right: 8px; z-index: 1001;
@@ -1031,3 +1031,22 @@ svg[hidden] { display: none; }
 .op-popup .dugme { min-height: 44px; flex: 1; }
 /* Nišan moje pozicije: 10 % manji */
 .gps-nisan { width: 30.6px; height: 30.6px; margin: -15.3px 0 0 -15.3px; }
+
+/* Obavijesti i baterija */
+.p-pouzdanost { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; margin: 6px 0; border-radius: 12px; background: var(--dugme); border-left: 6px solid var(--tekst-2); list-style: none; }
+.p-pouzdanost[data-stanje="ok"] { border-left-color: #2e7d32; }
+.p-pouzdanost[data-stanje="upozorenje"] { border-left-color: #c62828; }
+#p-pouzdanost[data-stanje="upozorenje"] { border: 2px solid #c62828; }
+/* Crvena značka nepročitanih poruka (kao na društvenim mrežama): puni krug sa brojem i prstenom boje navigacije */
+.donja-nav .znacka-broj { background: #e41e3f; color: #ffffff; box-shadow: 0 0 0 2px var(--povrsina, #1c1c1c); top: 0; right: 8px; min-width: 22px; height: 22px; line-height: 22px; font-size: 13px; }
+
+/* Istraživač: horizont kao nebo (umjesto crne), panel podloga iznad kontrola, kompas sa sjeverom */
+#ekran-mapa.istrazivac { background: linear-gradient(#0a1a2e 0%, #1d3a5c 28%, #4a7aa3 46%); }
+#meni-podloga { z-index: 1500; }
+#ekran-mapa.istrazivac #meni-podloga { top: calc(env(safe-area-inset-top) + 76px); }
+.istrazivac-kontrole { top: calc(var(--gore-2) + 36px); }
+.ist-n { grid-column: 1 / -1; justify-self: end; display: grid; place-items: center; width: 46px; height: 46px; margin-right: 24px; position: relative; }
+.ist-n svg { width: 46px; height: 46px; fill: rgba(16,24,20,.85); stroke: rgba(255,255,255,.7); stroke-width: 1.5; }
+.ist-n b { position: absolute; top: -4px; font-size: 11px; color: #ffffff; background: #c62828; border-radius: 8px; padding: 0 4px; line-height: 14px; }
+.ist-n-s { fill: #e41e3f; stroke: none; }
+.ist-n-j { fill: #cbd5e1; stroke: none; }

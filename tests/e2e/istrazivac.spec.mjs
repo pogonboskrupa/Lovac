@@ -169,3 +169,27 @@ test('Istraživač: kontrole su stvarno nacrtane iznad okrenute karte (preveliki
     expect(sa.equals(bez), `${sel} mora biti nacrtan na ekranu`).toBe(false);
   }
 });
+
+test('Istraživač dizajn: kompas sa sjeverom prati rotaciju, horizont je nebo, panel podloga je iznad kontrola', async ({ page }) => {
+  await serveTiles(page);
+  await page.goto('/');
+  await lok(page, '#btn-istrazivac');
+  await expect(page.locator('#ist-n')).toBeVisible();
+  const rot = () => page.locator('#ist-n-strelica').getAttribute('transform');
+  expect(await rot()).toBe('rotate(0)');
+  await page.locator('#btn-ist-desno').click();
+  await page.locator('#btn-ist-desno').click();
+  expect(await rot()).toBe('rotate(30)');
+  expect(await page.evaluate(() => getComputedStyle(document.getElementById('ekran-mapa')).backgroundImage)).toContain('linear-gradient');
+  await expect(page.locator('#istrazivac-traka')).toContainText('Nema kolega koji dijele lokaciju');
+
+  // panel podloga se otvara iznad kontrola (ne ispod njih)
+  await page.locator('#btn-podloga').click();
+  await expect(page.locator('#meni-podloga')).toBeVisible();
+  const pb = await page.locator('#meni-podloga').boundingBox();
+  const kb = await page.locator('#btn-ist-desno').boundingBox();
+  const cx = Math.min(kb.x + kb.width / 2, pb.x + pb.width - 5);
+  const cy = Math.max(kb.y + kb.height / 2, pb.y + 5);
+  const gore = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e && (e.closest('#meni-podloga') ? 'panel' : e.id || e.className); }, [cx, cy]);
+  if (pb.y + pb.height > kb.y && pb.x + pb.width > kb.x) expect(gore).toBe('panel');
+});
