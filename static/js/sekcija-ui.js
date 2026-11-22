@@ -10,7 +10,8 @@ import { isServerConfigured } from './config.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers } from './sekcija-podaci.js';
+import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip } from './sekcija-podaci.js';
+import { matchesQuery } from './pretraga.js';
 import { uuid } from './zapisi.js';
 import { trailEnabled } from './lov-tragovi-ui.js';
 import { avatarOf } from './profil-ui.js';
@@ -68,6 +69,8 @@ export function initSekcijaEkran(L, map) {
   // ---------- podaci ----------
   // Zadnje pokrenuto čitanje pobjeđuje: sporije čitanje započeto prije novog upisa ne smije prepisati svježe stanje.
   let porukeSeq = 0;
+  let memFilter = 'svi';
+  let memQuery = '';
   const reloadPoruke = async () => {
     const t = ++porukeSeq;
     const rows = await idbAll('poruke');
@@ -283,13 +286,27 @@ export function initSekcijaEkran(L, map) {
     $('sk-stat-clanova').textContent = String(rows.length);
     $('sk-stat-aktivnih').textContent = String(uc.filter((u) => memberActivity(u.korisnik_id, lov, uc, poz).stanje === 'aktivan').length);
     $('sk-stat-lovova').textContent = String(lovovi.filter((z) => z.lov.sekcija_id === s.id).length);
-    $('sk-clanovi').innerHTML = rows.map((r) => {
-      const a = memberActivity(r.id, lov, uc, poz);
+    const actOf = (id) => memberActivity(id, lov, uc, poz);
+    const cnt = huntersCounts(rows, actOf);
+    $('sk-brojevi').innerHTML = `<span class="sk-broj" data-b="aktivni"><b>${cnt.aktivni}</b> aktivnih</span>`
+      + `<span class="sk-broj" data-b="bez-signala"><b>${cnt.bezSignala}</b> bez signala</span>`
+      + `<span class="sk-broj" data-b="vodstvo"><b>${cnt.vodstvo}</b> vodstvo</span>`;
+    $('sk-filter').querySelectorAll('[data-mf]').forEach((b) => {
+      const f = CLAN_FILTERI.find((x) => x.id === b.dataset.mf);
+      b.textContent = `${f.naziv} (${cnt[f.id]})`;
+      b.setAttribute('aria-pressed', String(b.dataset.mf === memFilter));
+    });
+    const strip = faceStrip(rows);
+    $('sk-lica').innerHTML = strip.lica.map((r) => `<span class="sk-avatar sk-lice${avatarOf(r.id) ? ' ima-sliku' : ''}" data-stanje="${actOf(r.id).stanje}" title="${escapeHtml(r.ime)}"${avatarOf(r.id) ? ` style="background-image:url('${avatarOf(r.id)}')"` : ''}>${avatarOf(r.id) ? '' : escapeHtml(initialsOf(r.ime))}</span>`).join('')
+      + (strip.ostalo ? `<span class="sk-lice-vise">+${strip.ostalo}</span>` : '');
+    const shown = filterHunters(rows, actOf, memFilter, memQuery, matchesQuery);
+    $('sk-clanovi').innerHTML = shown.map((r) => {
+      const a = actOf(r.id);
       const ja = r.id === me()?.id;
-      return `<li class="clan-red" data-uid="${escapeHtml(r.id)}" data-stanje="${a.stanje}">
+      return `<li class="clan-red" data-uid="${escapeHtml(r.id)}" data-stanje="${a.stanje}" data-uloga="${r.uloga}">
         <span class="sk-avatar${avatarOf(r.id) ? ' ima-sliku' : ''}" aria-hidden="true"${avatarOf(r.id) ? ` style="background-image:url('${avatarOf(r.id)}')"` : ''}>${avatarOf(r.id) ? '' : escapeHtml(initialsOf(r.ime))}</span>
         <div class="clan-tekst"><b>${escapeHtml(r.ime)}${ja ? ' (ti)' : ''}</b>
-          <span class="sitno">${escapeHtml(ULOGE[r.uloga])}${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''}</span>
+          <span class="sitno"><span class="sk-znacka" data-uloga="${r.uloga}">${escapeHtml(ULOGE[r.uloga])}</span>${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''}</span>
           <span class="sitno aktivnost">${escapeHtml(activityText(a))}</span></div>
         <div class="clan-akcije">
           ${a.zadnje && Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="na-karti">Na karti</button>' : ''}
@@ -297,7 +314,7 @@ export function initSekcijaEkran(L, map) {
           ${canPing(st, r.uloga, me()?.id, r.id) ? '<button type="button" class="dugme" data-akcija="ping">Gdje si?</button>' : ''}
         </div>
       </li>`;
-    }).join('') || '<li class="sitno">Nema članova.</li>';
+    }).join('') || `<li class="sitno">${rows.length ? 'Nijedan lovac ne odgovara pretrazi.' : 'Nema članova.'}</li>`;
 
     // poruke
     const msgs = poruke.filter((m) => m.sekcija_id === s.id);
@@ -361,6 +378,11 @@ export function initSekcijaEkran(L, map) {
     render();
     refresh({ withHunts: true });
   });
+  $('sk-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mf]');
+    if (b) { memFilter = b.dataset.mf; render(); }
+  });
+  $('sk-pretraga').addEventListener('input', (e) => { memQuery = e.target.value; render(); });
   $('sk-nav').addEventListener('click', (e) => {
     const b = e.target.closest('[data-cilj]');
     if (b) $(b.dataset.cilj).scrollIntoView({ behavior: 'smooth', block: 'start' });

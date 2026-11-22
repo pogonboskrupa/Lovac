@@ -918,3 +918,23 @@ svg[hidden] { display: none; }
 #ekran-mapa.istrazivac .istrazivac-traka { top: calc(var(--gore-1) - 28px); }
 .istrazivac-izlaz { min-height: 44px; padding: 4px 14px; border: 0; border-radius: 999px; background: #2563eb; color: #ffffff; font-weight: 600; box-shadow: var(--sjena); }
 #lok-ploca { max-height: min(48vh, calc(100vh - 72px - env(safe-area-inset-top) - var(--nav-h) - 12px)); max-height: min(48dvh, calc(100dvh - 72px - env(safe-area-inset-top) - var(--nav-h) - 12px)); }
+
+/* Sekcija: istaknuti lovci */
+.sk-lica { display: flex; align-items: center; margin: 10px 0 4px; padding-left: 10px; }
+.sk-lice { width: 44px; height: 44px; margin-left: -10px; font-size: 14px; box-shadow: 0 0 0 2px var(--povrsina); }
+.sk-lice[data-stanje="aktivan"] { border-color: var(--gps-dobro); }
+.sk-lice[data-stanje="bez-signala"] { border-color: var(--gps-srednje); }
+.sk-lice-vise { margin-left: 8px; font-weight: 800; color: var(--tekst-2); }
+.sk-lovci { border: 2px solid var(--naglasak, #2e7d32); }
+.sk-brojevi { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.sk-broj { padding: 4px 10px; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); font-size: 14px; }
+.sk-broj[data-b="aktivni"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+.sk-broj[data-b="bez-signala"] { background: var(--gps-srednje); color: var(--gps-tekst); }
+#sk-pretraga { width: 100%; min-height: 48px; margin: 8px 0; font-size: 16px; box-sizing: border-box; }
+#sk-clanovi .clan-red { padding: 10px; margin: 6px 0; border-radius: 14px; background: var(--dugme); list-style: none; }
+#sk-clanovi .clan-red[data-uloga="grupovodja"], #sk-clanovi .clan-red[data-uloga="lovocuvar"] { border-left: 6px solid var(--naglasak, #2e7d32); }
+#sk-clanovi .sk-avatar { width: 52px; height: 52px; }
+#sk-clanovi .clan-akcije { padding-left: 62px; }
+.sk-znacka { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: var(--povrsina); font-weight: 700; font-size: 12px; }
+.sk-znacka[data-uloga="grupovodja"] { background: #1d4ed8; color: #ffffff; }
+.sk-znacka[data-uloga="lovocuvar"] { background: #7c3aed; color: #ffffff; }

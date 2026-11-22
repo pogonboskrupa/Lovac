@@ -12,6 +12,7 @@
     <div class="sk-hero">
       <div class="sk-hero-glava"><span id="sk-logo" class="sek-logo velik" role="img" aria-label="Logo sekcije"></span><span id="sk-uloga" class="sk-uloga"></span></div>
       <p id="sk-podnaslov" class="sk-podnaslov"></p>
+      <div id="sk-lica" class="sk-lica" aria-label="Lovci sekcije"></div>
       <div class="sk-statovi sk-statovi-hero">
         <div data-stat="clanova"><b id="sk-stat-clanova">0</b><span>članova</span></div>
         <div data-stat="aktivnih"><b id="sk-stat-aktivnih">0</b><span>aktivnih sada</span></div>
@@ -20,22 +21,30 @@
     </div>
     <nav id="sk-nav" class="sk-nav" aria-label="Dijelovi sekcije">
       <button type="button" data-cilj="sk-k-lov">Lov</button>
-      <button type="button" data-cilj="sk-k-clanovi">Članovi</button>
+      <button type="button" data-cilj="sk-k-clanovi">Lovci</button>
       <button type="button" data-cilj="sk-k-poruke">Poruke</button>
       <button id="sk-nav-ruk" type="button" data-cilj="sk-k-ruk" hidden>Rukovodstvo</button>
       <button type="button" data-cilj="sk-k-podaci">Podaci</button>
     </nav>
+
+    <section id="sk-k-clanovi" class="sk-kartica sk-lovci">
+      <h3>Lovci sekcije <span id="sk-broj" class="sitno"></span></h3>
+      <div id="sk-brojevi" class="sk-brojevi" aria-live="polite"></div>
+      <div id="sk-filter" class="segment" role="group" aria-label="Prikaz lovaca">
+        <button type="button" data-mf="svi" aria-pressed="true">Svi</button>
+        <button type="button" data-mf="aktivni" aria-pressed="false">Aktivni</button>
+        <button type="button" data-mf="vodstvo" aria-pressed="false">Vodstvo</button>
+      </div>
+      <input id="sk-pretraga" type="search" placeholder="Traži lovca" aria-label="Traži lovca" autocomplete="off">
+      <ul id="sk-clanovi" class="spisak"></ul>
+      <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
+    </section>
 
     <section id="sk-k-lov" class="sk-kartica">
       <h3>Tekući lov</h3>
       <div id="sk-lov" class="sk-lov"></div>
     </section>
 
-    <section id="sk-k-clanovi" class="sk-kartica">
-      <h3>Članovi sekcije <span id="sk-broj" class="sitno"></span></h3>
-      <ul id="sk-clanovi" class="spisak"></ul>
-      <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
-    </section>
 
     <section id="sk-k-poruke" class="sk-kartica">
       <h3>Poruke</h3>

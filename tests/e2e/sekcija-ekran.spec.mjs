@@ -251,3 +251,28 @@ test('pregled sekcije: hero sa ulogom i brojevima, avatari sa inicijalima, navig
   await expect.poll(() => page.evaluate(() => document.getElementById('sk-k-lov').getBoundingClientRect().top)).toBeLessThan(200);
   await page.locator('#sk-nav [data-cilj="sk-k-clanovi"]').click();
 });
+
+test('lovci sekcije su istaknuti: traka lica, brojevi, filter Aktivni/Vodstvo i pretraga', async ({ page }) => {
+  const server = makeServer();
+  await setup(page, server, LOVAC);
+  await openTab(page);
+  await expect(page.locator('#sk-lica .sk-lice')).toHaveCount(3);
+  await expect(page.locator('#sk-brojevi [data-b="aktivni"]')).toContainText('1 aktivnih');
+  await expect(page.locator('#sk-brojevi [data-b="bez-signala"]')).toContainText('2 bez signala');
+  const rows = page.locator('#sk-clanovi [data-uid]');
+  await page.locator('#sk-filter [data-mf="aktivni"]').click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('Goran Grupovođa');
+  await page.locator('#sk-filter [data-mf="vodstvo"]').click();
+  await expect(rows.first()).toHaveAttribute('data-uloga', 'grupovodja');
+  await page.locator('#sk-filter [data-mf="svi"]').click();
+  await expect(rows).toHaveCount(3);
+  await page.locator('#sk-pretraga').fill('grupovoda');
+  await expect(rows).toHaveCount(1);
+  await page.locator('#sk-pretraga').fill('xyz');
+  await expect(rows).toHaveCount(0);
+  await expect(page.locator('#sk-clanovi')).toContainText('Nijedan lovac ne odgovara pretrazi.');
+  // kartica lovaca je prva, ispred tekućeg lova
+  const y = async (id) => (await page.locator(id).boundingBox()).y;
+  expect(await y('#sk-k-clanovi')).toBeLessThan(await y('#sk-k-lov'));
+});

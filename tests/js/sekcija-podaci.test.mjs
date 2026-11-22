@@ -138,3 +138,28 @@ test('članovi koje grupovođa još može dodati u lov', () => {
   ];
   assert.deepEqual(addableMembers({ id: 'S1' }, clanovi, [{ korisnik_id: 'a' }]), ['b']);
 });
+
+import { huntersCounts, filterHunters, faceStrip } from '../../static/js/sekcija-podaci.js';
+import { matchesQuery } from '../../static/js/pretraga.js';
+
+const redovi = [
+  { id: 'g', uloga: 'grupovodja', ime: 'Goran Šabić' },
+  { id: 'l', uloga: 'lovocuvar', ime: 'Lejla Ćosić' },
+  { id: 'a', uloga: 'clan', ime: 'Adnan Đulić' },
+  { id: 'b', uloga: 'clan', ime: 'Berin Kos' },
+];
+const stanja = { g: 'aktivan', l: 'nije-u-lovu', a: 'aktivan', b: 'bez-signala' };
+const actOf = (id) => ({ stanje: stanja[id] });
+
+test('lovci sekcije: brojevi po stanju i vodstvo', () => {
+  assert.deepEqual(huntersCounts(redovi, actOf), { svi: 4, aktivni: 2, bezSignala: 1, vodstvo: 2 });
+});
+test('lovci sekcije: filter i pretraga bez dijakritika', () => {
+  assert.deepEqual(filterHunters(redovi, actOf, 'aktivni', '', matchesQuery).map((r) => r.id), ['g', 'a']);
+  assert.deepEqual(filterHunters(redovi, actOf, 'vodstvo', '', matchesQuery).map((r) => r.id), ['g', 'l']);
+  assert.deepEqual(filterHunters(redovi, actOf, 'svi', 'dulic', matchesQuery).map((r) => r.id), ['a']);
+});
+test('traka lica: prvih n i ostatak', () => {
+  assert.deepEqual(faceStrip(redovi, 3).ostalo, 1);
+  assert.equal(faceStrip(redovi, 10).lica.length, 4);
+});

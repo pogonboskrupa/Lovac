@@ -347,3 +347,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Karte i offline: hero (pločica u kešu, offline karata, veličina fajlova) + savjet o spremnosti (`pregled-karata.js offlineHero/offlineAdvice`; bez aplikacije fajlovi su "—", nikad izmišljeni) i kartice: Podloga, Preuzmi područje, Teren, Offline karte, Keš. Id-evi se nisu mijenjali.
 - Slojevi: hero (slojeva, prikazanih, elemenata), "Prikaži sve / Sakrij sve" (od 2 sloja), boja sloja i starost izvora na kartici (`layersSummary`, `layerSource`).
 - Admin dugmad iz Postavki (Propisi, Korisnici…) su u tabu Nalog — testovi prvo kliknu `#p-tabovi [data-ptab="nalog"]`.
+
+**Sekcija — istaknuti lovci (v0.6.1)**
+- Kartica "Lovci sekcije" je PRVA u tabu (ispred tekućeg lova): okvir u boji naglaska, brojevi (aktivnih / bez signala / vodstvo), filter Svi / Aktivni / Vodstvo sa brojem, pretraga bez dijakritika (`matchesQuery`) i redovi sa većim avatarom, značkom uloge (Grupovođa/Lovočuvar/Član) i obrubom za vodstvo. U heroju je traka lica (prvih 7, ostatak "+N") sa obrubom po aktivnosti. Čista logika: `sekcija-podaci.js huntersCounts/filterHunters/faceStrip`. Redoslijed redova se NE mijenja (vodstvo, pa članovi po prezimenu); filter/pretraga ga samo sužavaju. Nav dugme ka kartici se sada zove "Lovci", id ostaje `sk-k-clanovi`.

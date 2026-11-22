@@ -94,3 +94,33 @@ export function addableMembers(sekcija, clanovi, ucesnici) {
   const inHunt = new Set(ucesnici.map((u) => u.korisnik_id));
   return clanovi.filter((c) => c.sekcija_id === sekcija.id && c.status === 'odobren' && !inHunt.has(c.korisnik_id)).map((c) => c.korisnik_id);
 }
+
+// ---- Istaknut prikaz lovaca sekcije: brojevi po stanju, filter i pretraga ----
+export const CLAN_FILTERI = [
+  { id: 'svi', naziv: 'Svi' },
+  { id: 'aktivni', naziv: 'Aktivni' },
+  { id: 'vodstvo', naziv: 'Vodstvo' },
+];
+
+// rows = sectionMembers(...), actOf(id) = memberActivity za tog člana.
+export function huntersCounts(rows, actOf) {
+  return {
+    svi: rows.length,
+    aktivni: rows.filter((r) => actOf(r.id).stanje === 'aktivan').length,
+    bezSignala: rows.filter((r) => actOf(r.id).stanje === 'bez-signala').length,
+    vodstvo: rows.filter((r) => r.uloga !== 'clan').length,
+  };
+}
+
+export function filterHunters(rows, actOf, filter, query, match) {
+  return rows.filter((r) => {
+    if (filter === 'aktivni' && actOf(r.id).stanje !== 'aktivan') return false;
+    if (filter === 'vodstvo' && r.uloga === 'clan') return false;
+    return match([r.ime], query);
+  });
+}
+
+// Prvih n lica za traku u heroju; vodstvo prvo (rows je već tako poređan), ostatak ide u "+N".
+export function faceStrip(rows, n = 7) {
+  return { lica: rows.slice(0, n), ostalo: Math.max(0, rows.length - n) };
+}
