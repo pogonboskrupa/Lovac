@@ -117,7 +117,10 @@ test('dugme u navigaciji nosi ime sekcije; ekran pokazuje članove i ko je aktiv
   // tekući lov
   await expect(page.locator('#sk-lov')).toContainText('Pogon Grmeč');
   await expect(page.locator('#sk-lov')).toContainText('U TOKU');
-  await expect(page.locator('#sk-lov')).toContainText('aktivnih sada: 1');
+  await expect(page.locator('#sk-lov [data-stat="aktivnih"] b')).toHaveText('1');
+  await expect(page.locator('#sk-stat-aktivnih')).toHaveText('1');
+  await expect(page.locator('#sk-stat-clanova')).toHaveText('3');
+  await expect(page.locator('#sk-uloga')).toHaveText('Član');
   await expect(page.locator('#sk-lov')).toContainText('Moja uloga: Strijelac, stan 1');
   await expect(page.locator('#sk-lov')).toContainText('Divlja svinja: 1 kom., 85,5 kg');
   // svi podaci
@@ -228,4 +231,20 @@ test('dugme Nazad zatvara ekran sekcije', async ({ page }) => {
   await openTab(page);
   expect(await page.evaluate(() => window.__nazad())).toBe(true);
   await expect(page.locator('#sekcija-ekran')).toBeHidden();
+});
+
+test('pregled sekcije: hero sa ulogom i brojevima, avatari sa inicijalima, navigacija po dijelovima', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await setup(page, makeServer(), GV);
+  await openTab(page);
+  await expect(page.locator('#sk-uloga')).toHaveText('Grupovođa');
+  await expect(page.locator('#sk-stat-lovova')).toHaveText('1');
+  await expect(page.locator(`#sk-clanovi [data-uid="${GV.id}"] .sk-avatar`)).toHaveText('GG');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  for (const b of await page.locator('#sk-nav button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await page.locator('#sk-nav [data-cilj="sk-k-poruke"]').click();
+  await expect.poll(() => page.evaluate(() => document.getElementById('sk-k-poruke').getBoundingClientRect().top)).toBeLessThan(200);
+  await page.locator('#sk-nav [data-cilj="sk-k-lov"]').click();
+  await expect.poll(() => page.evaluate(() => document.getElementById('sk-k-lov').getBoundingClientRect().top)).toBeLessThan(200);
+  await page.locator('#sk-nav [data-cilj="sk-k-clanovi"]').click();
 });

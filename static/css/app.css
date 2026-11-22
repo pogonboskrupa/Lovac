@@ -481,3 +481,37 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .p-kartica .dugme { width: 100%; }
 .p-uvoz { display: flex; align-items: center; justify-content: center; margin-top: 8px; min-height: 48px; cursor: pointer; }
 #p-dijeli[aria-pressed="false"] { background: var(--dugme); color: var(--dugme-tekst); }
+
+/* Tab sekcije: hero, pločice sa brojevima, sticky navigacija, kartice, avatari */
+.sk-hero { margin: 8px 0 12px; padding: 14px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); border-left: 6px solid var(--naglasak); }
+.sk-uloga { display: inline-block; padding: 2px 12px; border-radius: 999px; background: var(--naglasak); color: var(--naglasak-tekst); font-size: 13px; font-weight: 800; }
+.sk-uloga:empty { display: none; }
+.sk-podnaslov { margin: 8px 0 12px; font-size: 15px; color: var(--tekst-2); }
+.sk-statovi { display: flex; gap: 8px; margin: 10px 0 4px; }
+.sk-statovi > div { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 12px; background: var(--dugme); color: var(--dugme-tekst); }
+.sk-statovi b { font-size: 24px; line-height: 1.1; }
+.sk-statovi span { font-size: 12px; text-align: center; }
+.sk-statovi-hero { margin-bottom: 0; }
+.sk-nav { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; padding: 8px 0; margin: 0 -2px 8px; overflow-x: auto; background: var(--pozadina); }
+.sk-nav button { flex: 1; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); font-size: 15px; font-weight: 600; white-space: nowrap; }
+.sk-kartica { margin: 0 0 14px; padding: 4px 14px 14px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); scroll-margin-top: 64px; }
+.sk-kartica > h3 { margin: 12px 0 8px; }
+.sk-lov { padding: 0; background: none; }
+.sk-lov-glava { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 18px; }
+.sk-lov .lov-status { padding: 2px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--dugme); color: var(--dugme-tekst); white-space: nowrap; }
+.sk-lov .lov-status[data-status="u_toku"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+.sk-lov .dugme { width: 100%; margin-top: 8px; }
+.sk-avatar { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--dugme); color: var(--dugme-tekst); font-weight: 800; border: 3px solid var(--tekst-2); box-sizing: border-box; }
+.clan-red[data-stanje="aktivan"] .sk-avatar { border-color: var(--gps-dobro); }
+.clan-red[data-stanje="bez-signala"] .sk-avatar { border-color: var(--gps-srednje); }
+.clan-red[data-stanje="pozvan"] .sk-avatar { border-color: #2f7dff; }
+.clan-red[data-stanje="nije-u-lovu"] .sk-avatar { opacity: 0.75; }
+.sk-lov h4 { margin: 16px 0 4px; }
+.sk-lov .clan-red .dugme { width: auto; margin-top: 0; flex: none; }
+.clan-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+#sk-clanovi .clan-red { flex-wrap: wrap; }
+.clan-akcije { display: flex; gap: 8px; width: 100%; padding-left: 54px; }
+.clan-akcije:empty { display: none; }
+.clan-akcije .dugme { flex: 1; margin-top: 0; }
+#btn-sk-novi { width: 100%; margin-top: 10px; }
+#sk-status:empty { display: none; }

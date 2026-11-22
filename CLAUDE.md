@@ -227,3 +227,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Grupovođa (ili admin) u tabu sekcije pravi lov jednim dodirom ("Novi lov za danas": naziv sa datumom, status `planiran`, sebe upisuje kao `vodja`), pokreće i završava ga, dodaje članove sa spiska i uklanja neprisutne (drugi dodir).
 - Odobreni član sekcije sam javlja prisustvo ("Prisutan sam"): `lov_ucesnici.samoprijava = true`, uloga uvijek `strijelac`, samo dok je lov `planiran`/`u_toku` i samo u lovu SVOJE sekcije (`moze_prijaviti_prisustvo`). Odjaviti se može samo svoju samoprijavu; one koje je dodao grupovođa ne može. Lovočuvar prati, ne prijavljuje se.
 - Kad grupovođa ukloni nekoga, `lov_uklonjeni` pamti da se ne može ponovo sam prijaviti dok ga grupovođa ponovo ne doda (trigger čisti zabranu). Radnje nad lovom traže internet; poslije svake se raspored ponovo preuzima.
+
+**Tab sekcije — dizajn (v0.3.6)**
+- Ekran je jedna kolona kartica: hero (uloga, brojevi članova/aktivnih/lovova), lijepljiva navigacija po dijelovima (Lov, Članovi, Poruke, Podaci — skroluje, ne mijenja panel, pa su svi elementi uvijek u DOM-u i vidljivi), kartica lova sa status značkom i brojevima, članovi sa avatarom (inicijali; obojen obrub = aktivnost) i dugmadima ispod teksta. Id-evi (`sk-lov`, `sk-clanovi`, `sk-poruke`…) se ne mijenjaju.

@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.5';
+  const APP_VER = 'v0.3.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -848,28 +848,54 @@
     <h2 id="sk-naslov">Sekcija</h2>
     <select id="sk-izbor" aria-label="Izbor sekcije" hidden></select>
   </header>
-  <p id="sk-podnaslov" class="sitno"></p>
   <p id="sk-status" class="status" role="status"></p>
   <div id="sk-prazno" hidden>
     <p>Nisi član nijedne sekcije. Zatraži pristup od grupovođe: bez odobrenja se ne može ući.</p>
     <button id="btn-sk-pristup" class="dugme glavno" type="button">Sekcije i pristup</button>
   </div>
   <div id="sk-sadrzaj" hidden>
-    <h3>Tekući lov</h3>
-    <div id="sk-lov" class="sk-lov"></div>
-    <h3>Članovi sekcije <span id="sk-broj" class="sitno"></span></h3>
-    <ul id="sk-clanovi" class="spisak"></ul>
-    <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
-    <h3>Poruke</h3>
-    <p class="sitno">Poruke vide članovi sekcije, grupovođa, lovočuvar revira i administrator.</p>
-    <div id="sk-poruke" class="poruke" role="log" aria-live="polite"></div>
-    <div id="sk-brze" class="brze-poruke"></div>
-    <form id="forma-poruka" class="forma-poruka" novalidate>
-      <input name="tekst" maxlength="1000" placeholder="Poruka članovima sekcije" aria-label="Poruka" autocomplete="off">
-      <button type="submit" class="dugme glavno">Pošalji</button>
-    </form>
-    <h3>Podaci o sekciji i lovu</h3>
-    <div id="sk-podaci"></div>
+    <div class="sk-hero">
+      <span id="sk-uloga" class="sk-uloga"></span>
+      <p id="sk-podnaslov" class="sk-podnaslov"></p>
+      <div class="sk-statovi sk-statovi-hero">
+        <div data-stat="clanova"><b id="sk-stat-clanova">0</b><span>članova</span></div>
+        <div data-stat="aktivnih"><b id="sk-stat-aktivnih">0</b><span>aktivnih sada</span></div>
+        <div data-stat="lovova"><b id="sk-stat-lovova">0</b><span>lovova</span></div>
+      </div>
+    </div>
+    <nav id="sk-nav" class="sk-nav" aria-label="Dijelovi sekcije">
+      <button type="button" data-cilj="sk-k-lov">Lov</button>
+      <button type="button" data-cilj="sk-k-clanovi">Članovi</button>
+      <button type="button" data-cilj="sk-k-poruke">Poruke</button>
+      <button type="button" data-cilj="sk-k-podaci">Podaci</button>
+    </nav>
+
+    <section id="sk-k-lov" class="sk-kartica">
+      <h3>Tekući lov</h3>
+      <div id="sk-lov" class="sk-lov"></div>
+    </section>
+
+    <section id="sk-k-clanovi" class="sk-kartica">
+      <h3>Članovi sekcije <span id="sk-broj" class="sitno"></span></h3>
+      <ul id="sk-clanovi" class="spisak"></ul>
+      <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
+    </section>
+
+    <section id="sk-k-poruke" class="sk-kartica">
+      <h3>Poruke</h3>
+      <p class="sitno">Poruke vide članovi sekcije, grupovođa, lovočuvar revira i administrator.</p>
+      <div id="sk-poruke" class="poruke" role="log" aria-live="polite"></div>
+      <div id="sk-brze" class="brze-poruke"></div>
+      <form id="forma-poruka" class="forma-poruka" novalidate>
+        <input name="tekst" maxlength="1000" placeholder="Poruka članovima sekcije" aria-label="Poruka" autocomplete="off">
+        <button type="submit" class="dugme glavno">Pošalji</button>
+      </form>
+    </section>
+
+    <section id="sk-k-podaci" class="sk-kartica">
+      <h3>Podaci o sekciji i lovu</h3>
+      <div id="sk-podaci"></div>
+    </section>
   </div>
 </section>
 

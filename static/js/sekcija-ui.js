@@ -12,6 +12,7 @@ import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers } from './sekcija-podaci.js';
 import { uuid } from './zapisi.js';
+import { initialsOf } from './lokacija.js';
 import { myStatus, pendingRequests, pristupText, creationMode } from './sekcije.js';
 import {
   validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES,
@@ -26,6 +27,7 @@ const READ_KEY = (id) => `lovac.sekcija.procitano.${id}`;
 const POLL_OPEN_MS = 20000;
 const POLL_BG_MS = 60000;
 const HUNT_REFRESH_MS = 60000;
+const ULOGE_SEKCIJE = { admin: 'Administrator', grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
 const ULOGE = { grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
 const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
 const STATUS_LOVA = { planiran: 'Planiran', u_toku: 'U toku', zavrsen: 'Završen' };
@@ -188,7 +190,8 @@ export function initSekcijaEkran(L, map) {
     if (lov.status === 'u_toku') html += `<button type="button" class="dugme" data-akcija="lov-zavrsi" data-lov="${escapeHtml(lov.id)}">Završi lov</button>`;
     const addable = addableMembers(s, ctx.clanovi, ucesnici);
     html += `<h4>Prisutni (${ucesnici.length})</h4><ul class="spisak" data-prisutni>${ucesnici.map((u) => `<li class="clan-red" data-uid="${escapeHtml(u.korisnik_id)}">
-        <span><b>${escapeHtml(memberName(u.korisnik_id))}</b>${u.samoprijava ? ' <span class="sitno">· prijavio se sam</span>' : ''}</span>
+        <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(memberName(u.korisnik_id)))}</span>
+        <span class="clan-tekst"><b>${escapeHtml(memberName(u.korisnik_id))}</b>${u.samoprijava ? ' <span class="sitno">· prijavio se sam</span>' : ''}</span>
         ${u.korisnik_id === me()?.id ? '' : '<button type="button" class="dugme" data-akcija="lov-ukloni">Ukloni</button>'}</li>`).join('')
       || '<li class="sitno">Još niko nije prisutan.</li>'}</ul>
       <h4>Dodaj iz sekcije</h4>
@@ -207,8 +210,13 @@ export function initSekcijaEkran(L, map) {
     const mineAssign = ucesnici.find((u) => u.korisnik_id === me()?.id);
     const stan = stanovi.find((x) => x.korisnik_id === me()?.id);
     const odstrel = live && extra.lovId === lov.id ? summarizeHarvest(extra.odstrel.map((o) => ({ vrsta: o.vrsta, tezina: o.tezina }))) : [];
-    return `<p><b>${escapeHtml(lov.naziv)}</b> · ${escapeHtml(String(lov.datum))} · <span class="lov-status" data-status="${lov.status}">${live ? 'U TOKU' : 'Sljedeći lov'}</span></p>
-      <p class="sitno">Učesnika: ${ucesnici.length}${live ? ` · aktivnih sada: ${aktivnih}` : ''} · stanova: ${stanovi.length}</p>
+    return `<div class="sk-lov-glava"><b>${escapeHtml(lov.naziv)}</b><span class="lov-status" data-status="${lov.status}">${live ? 'U TOKU' : lov.status === 'zavrsen' ? 'Završen' : 'Planiran'}</span></div>
+      <p class="sitno">${escapeHtml(String(lov.datum))}</p>
+      <div class="sk-statovi">
+        <div data-stat="prisutnih"><b>${ucesnici.length}</b><span>prisutnih</span></div>
+        ${live ? `<div data-stat="aktivnih"><b>${aktivnih}</b><span>aktivnih sada</span></div>` : ''}
+        <div data-stat="stanova"><b>${stanovi.length}</b><span>stanova</span></div>
+      </div>
       ${mineAssign ? `<p>Moja uloga: ${escapeHtml(U_LOVU[mineAssign.uloga] || mineAssign.uloga)}${stan ? `, stan ${stan.broj}` : ''}</p>` : ''}
       ${live ? `<p class="sitno">Odstrel u lovu: ${odstrel.length ? odstrel.map((o) => `${escapeHtml(lookupNaziv(vrste, o.vrsta))}: ${o.komada} kom., ${escapeHtml(formatDecimalBs(Math.round(o.tezina * 10) / 10))} kg`).join('; ') : 'još nema'} · SOS poruka: ${extra.sos.length}</p>` : ''}
       <button type="button" class="dugme glavno" data-akcija="raspored" data-lov="${escapeHtml(lov.id)}">Raspored na karti</button>
@@ -244,16 +252,23 @@ export function initSekcijaEkran(L, map) {
     const uc = cur?.zapis.ucesnici || [];
     const poz = extra.lovId && lov && extra.lovId === lov.id ? extra.pozicije : [];
     $('sk-broj').textContent = `(${rows.length})`;
+    $('sk-uloga').textContent = ULOGE_SEKCIJE[st] || '';
+    $('sk-uloga').dataset.uloga = st;
+    $('sk-stat-clanova').textContent = String(rows.length);
+    $('sk-stat-aktivnih').textContent = String(uc.filter((u) => memberActivity(u.korisnik_id, lov, uc, poz).stanje === 'aktivan').length);
+    $('sk-stat-lovova').textContent = String(lovovi.filter((z) => z.lov.sekcija_id === s.id).length);
     $('sk-clanovi').innerHTML = rows.map((r) => {
       const a = memberActivity(r.id, lov, uc, poz);
       const ja = r.id === me()?.id;
       return `<li class="clan-red" data-uid="${escapeHtml(r.id)}" data-stanje="${a.stanje}">
-        <span class="tackica" aria-hidden="true"></span>
+        <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(r.ime))}</span>
         <div class="clan-tekst"><b>${escapeHtml(r.ime)}${ja ? ' (ti)' : ''}</b>
           <span class="sitno">${escapeHtml(ULOGE[r.uloga])}${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''}</span>
           <span class="sitno aktivnost">${escapeHtml(activityText(a))}</span></div>
-        ${a.zadnje && Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="na-karti">Na karti</button>' : ''}
-        ${ja ? '' : '<button type="button" class="dugme" data-akcija="poruka">Poruka</button>'}
+        <div class="clan-akcije">
+          ${a.zadnje && Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="na-karti">Na karti</button>' : ''}
+          ${ja ? '' : '<button type="button" class="dugme" data-akcija="poruka">Poruka</button>'}
+        </div>
       </li>`;
     }).join('') || '<li class="sitno">Nema članova.</li>';
 
@@ -306,6 +321,10 @@ export function initSekcijaEkran(L, map) {
     updateNav();
     render();
     refresh({ withHunts: true });
+  });
+  $('sk-nav').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cilj]');
+    if (b) $(b.dataset.cilj).scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('btn-sk-novi').addEventListener('click', () => document.dispatchEvent(new CustomEvent('lovac:novi', { detail: { sekcijaId: selected()?.id } })));
   $('btn-sk-pristup').addEventListener('click', () => { close(); $('btn-sekcije').click(); });
