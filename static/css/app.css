@@ -772,3 +772,18 @@ svg[hidden] { display: none; }
 .div-akt-stup { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .div-akt-bar { position: relative; width: 100%; height: 56px; border-radius: 8px; background: var(--dugme); overflow: hidden; }
 .div-akt-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--naglasak); }
+
+/* Pregled po ulozi i prijava ulova */
+.pr-hero .sk-hero-glava { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tr-chip[data-uloga="admin"] { background: #7c2d12; color: #ffffff; }
+.tr-chip[data-uloga="lovocuvar"] { background: #14532d; color: #ffffff; }
+.tr-chip[data-uloga="grupovodja"] { background: #1e3a8a; color: #ffffff; }
+.tr-chip.prijavljeno { background: #14532d; color: #ffffff; }
+.tr-chip.prijavljeno[data-prijava="ceka"] { background: #b45309; }
+.pr-mjeseci { display: flex; gap: 4px; align-items: flex-end; height: 120px; margin: 4px 0 12px; }
+.pr-mj { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 100%; font-size: 12px; }
+.pr-mj-bar { position: relative; flex: 1; width: 100%; border-radius: 6px; background: var(--dugme); overflow: hidden; }
+.pr-mj-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--naglasak); }
+.pr-mj b { font-size: 12px; min-height: 14px; }
+.pr-hero .sk-statovi > div { min-width: 0; }
+.tr-kartica.ev-kartica { display: flex; flex-direction: column; gap: 4px; }

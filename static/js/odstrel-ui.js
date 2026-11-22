@@ -15,6 +15,7 @@ import { cachedProfile } from './auth.js';
 import { shareFile } from './dijeljenje.js';
 import { shareDialog, memberName } from './dijeljenje-ui.js';
 import { formatWhen } from './opazanja-ui.js';
+import { reportStateOf } from './prijave-ui.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 
 const STORE = 'odstrel';
@@ -245,6 +246,14 @@ export function initOdstrel(L, map) {
     { key: 'lovac', label: 'Odstrijelio' }, { key: 'lat', label: 'Širina' }, { key: 'lon', label: 'Dužina' }, { key: 'napomena', label: 'Napomena' },
   ];
 
+  const prijavaDugme = (id) => {
+    const st = reportStateOf(id);
+    if (st === 'poslana') return '<span class="tr-chip prijavljeno" data-prijava="poslana">Prijavljeno društvu</span>';
+    if (st === 'ceka') return '<span class="tr-chip prijavljeno" data-prijava="ceka">Prijava čeka slanje</span>';
+    if (st === 'povucena') return '<span class="tr-chip" data-prijava="povucena">Prijava povučena</span>';
+    return '<button type="button" class="dugme glavno" data-akcija="prijavi">Prijavi društvu</button>';
+  };
+
   const render = async () => {
     const vrste = await getSpisakAll('vrste');
     const sel = $('ods-filter-vrsta');
@@ -266,7 +275,7 @@ export function initOdstrel(L, map) {
         <span class="sitno">${escapeHtml(formatWhen(o.vrijeme))}${o.tezina != null ? ` · ${escapeHtml(formatDecimalBs(o.tezina))} kg` : ''} · ${escapeHtml(o.tudji ? memberName(o.vlasnik_id) : o.lovac || '')}</span>
         ${o.upozorenja?.length ? `<span class="sitno upozorenje-tekst">${escapeHtml(o.upozorenja.join(' '))}</span>` : ''}
         <span class="sitno">${o.tudji ? 'Podijeljeno sa tobom' : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
-        ${o.tudji ? '' : `<div class="red-dugmadi"><button type="button" class="dugme" data-akcija="dijeli">Dijeli</button>
+        ${o.tudji ? '' : `<div class="red-dugmadi">${prijavaDugme(o.id)}<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button>
           <button type="button" class="dugme" data-akcija="obrisi">Obriši</button></div>`}
       </li>`).join('');
     $('odstrel-spisak').querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
@@ -284,7 +293,10 @@ export function initOdstrel(L, map) {
   $('odstrel-spisak').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-akcija="dijeli"]');
     if (b) await shareDialog()?.open(STORE, b.closest('[data-id]').dataset.id);
+    const p = e.target.closest('[data-akcija="prijavi"]');
+    if (p) document.dispatchEvent(new CustomEvent('ulov:prijavi', { detail: { id: p.closest('[data-id]').dataset.id } }));
   });
+  document.addEventListener('prijave:promjena', () => { if (!list.hidden) render(); });
   $('ods-period').addEventListener('click', (e) => { const b = e.target.closest('[data-period]'); if (b) { filter.period = b.dataset.period; render(); } });
   $('ods-trazi').addEventListener('input', (e) => { filter.trazi = e.target.value; render(); });
   $('ods-filter-vrsta').addEventListener('change', (e) => { filter.vrsta = e.target.value; render(); });

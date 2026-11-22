@@ -28,6 +28,7 @@
 | `019_profil_lovca.sql` | `profili` (avatar, pas — vide svi odobreni), `profili_oprema` (samo vlasnik) |
 | `020_logo_sekcije.sql` | `sekcije.logo` (mala slika; bez nje aplikacija crta automatski logo) |
 | `021_ping_lokacije.sql` | "Gdje si?": zahtjev za lokaciju unutar sekcije (`lokacija_zahtjevi`), odgovor da/ne, vide samo pošiljalac i primalac |
+| `022_prijava_ulova.sql` | zvanična prijava ulova društvu (`ulov_prijave`): vide admin (sve revire), lovočuvar revira, grupovođa sekcije i vlasnik; ne mijenja se, vlasnik može povući |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:
