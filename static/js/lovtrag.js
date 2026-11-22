@@ -43,3 +43,9 @@ export function withLocalPoints(rows, localPoints, myId) {
   const have = new Set(rows.filter((r) => r.korisnik_id === myId).map((r) => Date.parse(r.t)));
   return [...rows, ...localPoints.filter((p) => !have.has(p.t)).map((p) => ({ korisnik_id: myId, lat: p.lat, lon: p.lon, t: p.t }))];
 }
+
+// Iz TRENUTNOG bafera izbaci samo poslane tačke (tačke snimljene dok je slanje trajalo ostaju).
+export function removeSentPoints(buffer, sent) {
+  const done = new Set(sent.map((p) => p.t));
+  return buffer.filter((p) => !done.has(p.t));
+}

@@ -250,6 +250,7 @@ export function initOdstrel(L, map) {
     const st = reportStateOf(id);
     if (st === 'poslana') return '<span class="tr-chip prijavljeno" data-prijava="poslana">Prijavljeno društvu</span>';
     if (st === 'ceka') return '<span class="tr-chip prijavljeno" data-prijava="ceka">Prijava čeka slanje</span>';
+    if (st === 'odbijena') return '<span class="tr-chip" data-prijava="odbijena">Prijava odbijena</span>';
     if (st === 'povucena') return '<span class="tr-chip" data-prijava="povucena">Prijava povučena</span>';
     return '<button type="button" class="dugme glavno" data-akcija="prijavi">Prijavi društvu</button>';
   };

@@ -3,11 +3,11 @@
 
 import { getClient, cachedProfile } from './auth.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { connectionQuality } from './net.js';
+import { connectionQuality, onQualityChange } from './net.js';
 import { getRecord } from './zapisi.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import {
-  REPORT_OUTBOX_KEY, REPORT_SENT_KEY, REPORT_WITHDRAWN_KEY, reportTargets, targetLabel, buildReport, reportState, addToOutbox, markSent,
+  REPORT_OUTBOX_KEY, REPORT_SENT_KEY, REPORT_WITHDRAWN_KEY, REPORT_REJECTED_KEY, isRejection, reportTargets, targetLabel, buildReport, reportState, addToOutbox, markSent,
 } from './prijave.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 
@@ -18,24 +18,47 @@ const online = () => connectionQuality() !== 'nema' && Boolean(getClient());
 
 // Stanje za karticu odstrela (čitanje iz lokalne pohrane, sinhrono).
 export function reportStateOf(id) {
-  return reportState(id, loadJSON(REPORT_OUTBOX_KEY, []), loadJSON(REPORT_SENT_KEY, []), loadJSON(REPORT_WITHDRAWN_KEY, []));
+  return reportState(id, loadJSON(REPORT_OUTBOX_KEY, []), loadJSON(REPORT_SENT_KEY, []), loadJSON(REPORT_WITHDRAWN_KEY, []), loadJSON(REPORT_REJECTED_KEY, []));
 }
 
+// Paket se šalje odjednom; ako ga server odbije, redovi idu pojedinačno da jedan odbijen red (npr. lovac više nije član
+// sekcije) ne blokira ostale. Odbijen red se izbacuje iz kutije i pamti kao "odbijena"; mrežna greška ostavlja red.
+let flushing = false;
 export async function flushReports() {
+  if (flushing || !online()) return 0;
   const box = loadJSON(REPORT_OUTBOX_KEY, []);
-  if (!box.length || !online()) return 0;
+  if (!box.length) return 0;
+  flushing = true;
+  const sb = getClient();
+  const send = (rows) => sb.from('ulov_prijave').upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+  const sentIds = [];
+  const rejectedIds = [];
   try {
-    const { error } = await getClient().from('ulov_prijave').upsert(box, { onConflict: 'id', ignoreDuplicates: true });
-    if (error) throw new Error(error.message);
-    const next = markSent(loadJSON(REPORT_OUTBOX_KEY, []), loadJSON(REPORT_SENT_KEY, []), box.map((r) => r.id));
-    saveSoft(REPORT_OUTBOX_KEY, next.outbox);
-    saveSoft(REPORT_SENT_KEY, next.sent);
-    document.dispatchEvent(new CustomEvent('prijave:promjena'));
-    return box.length;
+    const { error } = await send(box);
+    if (!error) sentIds.push(...box.map((r) => r.id));
+    else if (isRejection(error)) {
+      for (const row of box) {
+        const r = await send([row]);
+        if (!r.error) sentIds.push(row.id);
+        else if (isRejection(r.error)) rejectedIds.push(row.id);
+        else break; // mrežna greška: ostalo ostaje za sljedeći krug
+      }
+    }
   } catch (err) {
     console.warn('prijave slanje', err.message);
-    return 0;
+  } finally {
+    flushing = false;
   }
+  if (!sentIds.length && !rejectedIds.length) return 0;
+  const next = markSent(loadJSON(REPORT_OUTBOX_KEY, []), loadJSON(REPORT_SENT_KEY, []), [...sentIds, ...rejectedIds]);
+  saveSoft(REPORT_OUTBOX_KEY, next.outbox);
+  saveSoft(REPORT_SENT_KEY, next.sent.filter((id) => !rejectedIds.includes(id)));
+  if (rejectedIds.length) {
+    saveSoft(REPORT_REJECTED_KEY, [...new Set([...loadJSON(REPORT_REJECTED_KEY, []), ...rejectedIds])]);
+    toast('Neka prijava je odbijena: nisi član sekcije u tom reviru');
+  }
+  document.dispatchEvent(new CustomEvent('prijave:promjena'));
+  return sentIds.length;
 }
 
 export async function withdrawReport(id) {
@@ -87,7 +110,7 @@ export function initPrijave() {
   registerBackHandler(() => { if (box.hidden) return false; close(); return true; });
 
   document.addEventListener('ulov:prijavi', (e) => open(e.detail?.id));
-  document.addEventListener('veza:promjena', () => flushReports());
+  onQualityChange((q) => { if (q !== 'nema') flushReports(); }); // veza se vratila: pošalji odmah, ne čekaj minutu
   setInterval(flushReports, FLUSH_MS);
   setTimeout(flushReports, 5000);
 }

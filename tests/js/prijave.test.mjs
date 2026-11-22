@@ -77,3 +77,50 @@ test('pregled: povučene prijave se ne računaju; ukupno, godine, grupisanje, mj
 test('societyFigures: brojke društva iz keša sekcija', () => {
   assert.deepEqual(societyFigures(ctx), { reviri: 2, sekcija: 2, clanova: 1, lovocuvara: 1, grupovodja: 1 });
 });
+
+import { isRejection } from '../../static/js/prijave.js';
+import { collectPages } from '../../static/js/pregled.js';
+import { removeSentPoints } from '../../static/js/lovtrag.js';
+import { noteServerDate, serverNow, resetQualityForTests } from '../../static/js/net.js';
+import { incomingPings } from '../../static/js/ping.js';
+
+test('isRejection: RLS/dozvola je trajno odbijanje, mrežna greška nije', () => {
+  assert.equal(isRejection({ code: '42501', message: 'x' }), true);
+  assert.equal(isRejection({ status: 403, message: 'x' }), true);
+  assert.equal(isRejection({ message: 'new row violates row-level security policy' }), true);
+  assert.equal(isRejection({ message: 'Failed to fetch' }), false);
+  assert.equal(isRejection({ status: 503, message: 'server nedostupan' }), false);
+  assert.equal(isRejection(null), false);
+  assert.equal(reportState('a', [{ id: 'a' }], [], [], ['a']), 'odbijena');
+});
+
+test('collectPages: čita stranice dok ne stigne kraća (server vraća najviše 1000 redova)', async () => {
+  const data = Array.from({ length: 2350 }, (_, i) => ({ id: i }));
+  const calls = [];
+  const all = await collectPages(async (from, to) => { calls.push([from, to]); return data.slice(from, to + 1); }, 1000);
+  assert.equal(all.length, 2350);
+  assert.deepEqual(calls, [[0, 999], [1000, 1999], [2000, 2999]]);
+  assert.deepEqual(await collectPages(async () => [], 1000), []);
+  assert.equal((await collectPages(async (f) => (f === 0 ? new Array(1000).fill(1) : []), 1000)).length, 1000, 'tačno puna stranica traži provjeru sljedeće');
+});
+
+test('removeSentPoints: ostaju tačke snimljene dok je slanje trajalo', () => {
+  const sent = [{ t: 1 }, { t: 2 }];
+  const current = [{ t: 1 }, { t: 2 }, { t: 3 }];
+  assert.deepEqual(removeSentPoints(current, sent), [{ t: 3 }]);
+  assert.deepEqual(removeSentPoints([], sent), []);
+});
+
+test('sat servera iz zaglavlja Date: zahtjevi ne zavise od sata telefona', () => {
+  resetQualityForTests();
+  const local = Date.parse('2026-11-22T10:20:00Z'); // telefon žuri 20 minuta
+  noteServerDate('Sun, 22 Nov 2026 10:00:00 GMT', local);
+  assert.equal(serverNow(local), Date.parse('2026-11-22T10:00:00Z'));
+  const rows = [{ id: '1', za_id: 'me', created_at: '2026-11-22T09:58:00Z' }]; // po serveru star 2 minute
+  assert.equal(incomingPings(rows, 'me', local).length, 0, 'po satu telefona (22 min) zahtjev bi se pogrešno krio');
+  assert.equal(incomingPings(rows, 'me', serverNow(local)).length, 1, 'po satu servera zahtjev je svjež');
+  noteServerDate('nije datum', local);
+  assert.equal(serverNow(local), Date.parse('2026-11-22T10:00:00Z'), 'neispravno zaglavlje ne mijenja pomak');
+  resetQualityForTests();
+  assert.equal(serverNow(local), local);
+});

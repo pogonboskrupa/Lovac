@@ -242,3 +242,31 @@ test('Pregled (lovočuvar): uloga i revir; (lovac): "Moje prijave" sa povlačenj
   await expect.poll(() => s2.db.ulov_prijave.find((r) => r.id === ID(950)).povucena).toBe(true);
   await ctx2.close();
 });
+
+test('Prijava ulova: jedan odbijen red ne blokira ostale (odbijena se izbacuje iz kutije, ostale se šalju)', async ({ page }) => {
+  const server = makeServer();
+  await setup(page, server, LOVAC);
+  const posted = [];
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/ulov_prijave/, (route) => {
+    const rows = [].concat(route.request().postDataJSON());
+    posted.push(rows.map((r) => r.id));
+    if (rows.some((r) => r.id === ID(910))) {
+      return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: 'new row violates row-level security policy' }) });
+    }
+    server.db.ulov_prijave = [...(server.db.ulov_prijave || []), ...rows];
+    return route.fulfill({ status: 201, body: '' });
+  });
+  await page.goto('/');
+  await putRec(page, 'odstrel', odstrel(ID(910)));
+  await putRec(page, 'odstrel', odstrel(ID(911), { vrsta: 'srna' }));
+  const row = (id, sek) => ({ id, lovac_id: LOVAC.id, revir_id: R.krupa, sekcija_id: sek, lov_id: null, vrsta: 'zec', kategorija: null, tezina: 3.5, vrijeme: new Date().toISOString() });
+  await page.evaluate((rows) => localStorage.setItem('lovac.prijave.red', JSON.stringify(rows)), [row(ID(910), ID(201)), row(ID(911), ID(200))]);
+  await page.evaluate(async () => { const m = await import('/static/js/prijave-ui.js'); await m.flushReports(); });
+  await expect.poll(() => (server.db.ulov_prijave || []).map((r) => r.id)).toEqual([ID(911)]);
+  expect(posted[0]).toEqual([ID(910), ID(911)]); // prvo paket, pa pojedinačno
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('lovac.prijave.red')))).toEqual([]);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('lovac.prijave.odbijene')))).toEqual([ID(910)]);
+  await openOdstrel(page);
+  await expect(page.locator(`#odstrel-spisak [data-id="${ID(910)}"] [data-prijava="odbijena"]`)).toHaveText('Prijava odbijena');
+  await expect(page.locator(`#odstrel-spisak [data-id="${ID(911)}"] [data-prijava="poslana"]`)).toBeVisible();
+});

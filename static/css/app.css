@@ -803,3 +803,9 @@ svg[hidden] { display: none; }
 .st-dijelovi { margin: 6px 0 0; padding: 0; list-style: none; }
 .st-dijelovi li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--dugme); }
 #st-kriteriji-forma input { margin-top: 4px; }
+
+/* Logo društva na ekranu prijave */
+.logo-prijava { display: block; width: 120px; height: 120px; margin: 8px auto 4px; object-fit: contain; }
+
+#st-godine { overflow-x: auto; flex-wrap: nowrap; }
+#st-godine button { flex: none; min-width: 72px; }

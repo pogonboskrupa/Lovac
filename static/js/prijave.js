@@ -6,6 +6,7 @@ import { myStatus } from './sekcije.js';
 export const REPORT_OUTBOX_KEY = 'lovac.prijave.red';
 export const REPORT_SENT_KEY = 'lovac.prijave.poslane';
 export const REPORT_WITHDRAWN_KEY = 'lovac.prijave.povucene';
+export const REPORT_REJECTED_KEY = 'lovac.prijave.odbijene';
 
 // Moguće odredište prijave: zapis iz lova nosi revir/sekciju; inače lovac bira među svojim sekcijama.
 export function reportTargets(rec, ctx, myId, isAdmin = false) {
@@ -47,11 +48,18 @@ export function buildReport(rec, target, myId) {
 }
 
 // Stanje prijave jednog zapisa: 'nema' | 'ceka' (u izlaznoj kutiji) | 'poslana' | 'povucena' (konačno: server ne vraća povučenu).
-export function reportState(id, outbox = [], sent = [], withdrawn = []) {
+export function reportState(id, outbox = [], sent = [], withdrawn = [], rejected = []) {
+  if (rejected.includes(id)) return 'odbijena';
   if (withdrawn.includes(id)) return 'povucena';
   if (sent.includes(id)) return 'poslana';
   if (outbox.some((r) => r.id === id)) return 'ceka';
   return 'nema';
+}
+
+// Odbijanje servera (RLS/dozvola) je trajno za taj red; mrežna greška nije i red ostaje u kutiji.
+export function isRejection(error) {
+  if (!error) return false;
+  return error.code === '42501' || Number(error.status) === 403 || /row-level security|permission denied|violates/i.test(String(error.message || ''));
 }
 
 export function addToOutbox(outbox, row) {

@@ -9,7 +9,7 @@ import { idbAll } from './db.js';
 import { pickActiveHunt, shareIntervalMs, sharingState, initialsOf } from './lokacija.js';
 import { getShareSettings, initLokacijaEkran } from './lokacija-ui.js';
 import { rangeLabel } from './istrazivac.js';
-import { shouldRecordPoint, pushPoint } from './lovtrag.js';
+import { shouldRecordPoint, pushPoint, removeSentPoints } from './lovtrag.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
 import { memberName } from './dijeljenje-ui.js';
@@ -105,13 +105,12 @@ export function initUzivo(L, map) {
       await qUzivo(getClient().from('lov_tragovi').upsert(
         chunk.map((p) => ({ lov_id: lov.id, korisnik_id: me().id, t: new Date(p.t).toISOString(), lat: p.lat, lon: p.lon })),
         { onConflict: 'lov_id,korisnik_id,t', ignoreDuplicates: true }));
-      saveSoft(trailKey(), buf.slice(i + chunk.length));
+      saveSoft(trailKey(), removeSentPoints(loadJSON(trailKey(), []), chunk));
     }
     document.dispatchEvent(new CustomEvent('lovtrag:poslano', { detail: { lovId: lov.id } }));
   };
 
-  const tick = async () => {
-    recordTrail();
+  const tickBody = async () => {
     if (!lov || lov.lov.status !== 'u_toku' || !online()) return;
     const sb = getClient();
     const fix = currentFix();
@@ -136,6 +135,15 @@ export function initUzivo(L, map) {
       console.warn('uživo', err.message);
     }
     await flushHarvest();
+  };
+
+  // Tačka traga se bilježi uvijek, a slanje ide jedan po jedan krug: sporo slanje se ne smije preklopiti sa sljedećim.
+  let ticking = false;
+  const tick = async () => {
+    recordTrail();
+    if (ticking) return;
+    ticking = true;
+    try { await tickBody(); } finally { ticking = false; }
   };
 
   // Brisanje vlastite pozicije kad se dijeljenje isključi; ako nema veze, pokušaj se pamti.

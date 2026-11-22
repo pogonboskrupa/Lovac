@@ -9,6 +9,18 @@ const samples = [];
 const listeners = new Set();
 let lastQuality = 'nepoznato';
 
+let serverOffsetMs = 0;
+
+// Sat servera iz zaglavlja `Date` odgovora (tačnost ~1 s): rokovi koje postavlja server ne smiju zavisiti od sata telefona.
+export function noteServerDate(headerValue, localNow = Date.now()) {
+  const t = Date.parse(headerValue || '');
+  if (Number.isFinite(t)) serverOffsetMs = t - localNow;
+}
+
+export function serverNow(localNow = Date.now()) {
+  return localNow + serverOffsetMs;
+}
+
 export class TimeoutError extends Error {
   constructor(ms) {
     super(`Server nije odgovorio za ${Math.round(ms / 1000)} s`);
@@ -31,6 +43,7 @@ export async function fetchWithTimeout(input, init = {}, timeoutMs = DEFAULT_TIM
   try {
     const res = await fetch(input, { ...init, signal: ctrl.signal });
     recordSample(true, Date.now() - started);
+    noteServerDate(res.headers?.get?.('date'));
     return res;
   } catch (err) {
     // Prekid koji je tražio pozivalac nije znak loše veze.
@@ -76,5 +89,6 @@ export function onQualityChange(fn) {
 export function resetQualityForTests() {
   samples.length = 0;
   lastQuality = 'nepoznato';
+  serverOffsetMs = 0;
   listeners.clear();
 }

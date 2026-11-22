@@ -11,7 +11,7 @@ import { formatDecimalBs } from './odstrel.js';
 import { formatWhen } from './opazanja-ui.js';
 import { MJESECI } from './divljac.js';
 import {
-  ULOGE_OPIS, viewerRole, activeReports, reportYears, byYear, totals, groupBy, byMonth, latestReports, societyFigures,
+  ULOGE_OPIS, collectPages, viewerRole, activeReports, reportYears, byYear, totals, groupBy, byMonth, latestReports, societyFigures,
 } from './pregled.js';
 import { withdrawReport } from './prijave-ui.js';
 import { registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
@@ -32,9 +32,11 @@ export function initPregled() {
     if (cached) { rows = cached.rows || []; fetchedAt = cached.at; }
     if (connectionQuality() === 'nema' || !getClient()) return { fresh: false };
     try {
-      const { data, error } = await getClient().from('ulov_prijave').select('*');
-      if (error) throw new Error(error.message);
-      rows = data || [];
+      rows = await collectPages(async (from, to) => {
+        const { data, error } = await getClient().from('ulov_prijave').select('*').order('id').range(from, to);
+        if (error) throw new Error(error.message);
+        return data || [];
+      });
       fetchedAt = Date.now();
       await idbPut('arhiva', { id: CACHE_ID, rows, at: fetchedAt });
       return { fresh: true };

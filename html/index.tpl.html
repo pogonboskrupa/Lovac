@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#11160f">
 <title>Lovačko društvo "Grmeč"</title>
+<link rel="icon" type="image/png" href="static/img/logo-192.png">
+<link rel="apple-touch-icon" href="static/img/logo-192.png">
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.5.3';
+  const APP_VER = 'v0.5.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -61,6 +63,7 @@
 </svg>
 
 <main id="ekran-prijava" class="ekran ekran-forma" hidden>
+  <img class="logo-prijava" src="static/img/logo-192.png" width="120" height="120" alt="Lovačko društvo Grmeč">
   <h1>Lovačko društvo "Grmeč"</h1>
   <form id="forma-prijava" autocomplete="off" novalidate>
     <label>Ime<input name="ime" required maxlength="40" autocapitalize="words"></label>

@@ -3,7 +3,7 @@
 
 import { getClient, cachedProfile } from './auth.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { connectionQuality } from './net.js';
+import { connectionQuality, serverNow } from './net.js';
 import { memberName } from './dijeljenje-ui.js';
 import { newPing, incomingPings, newAnswers, requestText, answerText, cooldownLeft } from './ping.js';
 import { toast } from './ui.js';
@@ -75,7 +75,7 @@ export function initPing() {
       console.warn('ping poll', err.message);
       return;
     }
-    const incoming = incomingPings(rows, me.id);
+    const incoming = incomingPings(rows, me.id, serverNow());
     if (!incoming.length) {
       if (!busy) { box.hidden = true; current = null; }
     } else if (!current || !incoming.some((r) => r.id === current.id)) {
@@ -85,7 +85,7 @@ export function initPing() {
       $('ping-tekst').textContent = requestText(memberName(current.od_id)); // spisak članova je možda stigao tek sada
     }
     const seen = loadJSON(SEEN_KEY, []);
-    const answers = newAnswers(rows, me.id, seen);
+    const answers = newAnswers(rows, me.id, seen, serverNow());
     for (const r of answers) {
       const text = answerText(r, memberName(r.za_id));
       toast(text);

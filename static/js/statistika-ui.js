@@ -161,7 +161,7 @@ export function initStatistika() {
     $('st-opseg').innerHTML = options.map((o) => `<option value="${escapeHtml(o.kljuc)}"${o.kljuc === scope?.kljuc ? ' selected' : ''}>${escapeHtml(o.naziv)}</option>`).join('');
     $('st-opseg').closest('label').hidden = options.length < 2;
     const y = new Date().getFullYear();
-    const years = ['sve', ...Array.from({ length: 4 }, (_, i) => String(y - i))];
+    const years = ['sve', ...Array.from({ length: 10 }, (_, i) => String(y - i))];
     $('st-godine').innerHTML = years.map((v) => `<button type="button" data-godina="${v}" aria-pressed="${v === year}">${v === 'sve' ? 'Sve' : v}</button>`).join('');
   };
 

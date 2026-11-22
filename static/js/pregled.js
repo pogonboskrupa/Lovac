@@ -73,3 +73,14 @@ export function societyFigures(ctx) {
     grupovodja: new Set(sek.map((s) => s.grupovodja_id).filter(Boolean)).size,
   };
 }
+
+// Server vraća najviše ~1000 redova po zahtjevu: stranice se čitaju dok ne stigne kraća od `size`.
+export async function collectPages(fetchPage, size = 1000, maxPages = 100) {
+  const all = [];
+  for (let i = 0; i < maxPages; i++) {
+    const page = await fetchPage(i * size, i * size + size - 1);
+    all.push(...page);
+    if (page.length < size) break;
+  }
+  return all;
+}
