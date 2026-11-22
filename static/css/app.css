@@ -938,3 +938,16 @@ svg[hidden] { display: none; }
 .sk-znacka { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: var(--povrsina); font-weight: 700; font-size: 12px; }
 .sk-znacka[data-uloga="grupovodja"] { background: #1d4ed8; color: #ffffff; }
 .sk-znacka[data-uloga="lovocuvar"] { background: #7c3aed; color: #ffffff; }
+
+/* Kompas u ploči Moja lokacija */
+.kompas { display: flex; align-items: center; gap: 12px; margin: 6px 0; padding: 6px 8px; border-radius: 14px; background: var(--dugme); }
+.kompas-ciferblat { flex: none; width: 84px; height: 84px; }
+.kompas-krug { fill: var(--povrsina); stroke: var(--tekst-2); stroke-width: 2; }
+#kompas-ruza { transition: transform .25s linear; transform-origin: 0 0; transform-box: view-box; }
+.kompas-sjever { fill: #c62828; }
+.kompas-jug { fill: var(--tekst-2); }
+.kompas-slovo { fill: var(--tekst); font-size: 14px; font-weight: 800; }
+.kompas-slovo-s { fill: #c62828; }
+.kompas-oznaka { fill: var(--naglasak, #1d4ed8); }
+.kompas-tekstovi { display: flex; flex-direction: column; min-width: 0; }
+.kompas-stepeni { font-size: 22px; font-variant-numeric: tabular-nums; }

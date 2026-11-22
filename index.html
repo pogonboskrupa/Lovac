@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.6.3';
+  const APP_VER = 'v0.6.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -143,6 +143,25 @@
       <span>fiks prije <span id="gps-starost">—</span></span>
     </div>
     <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+    <div class="kompas" id="kompas" role="group" aria-label="Pravac gledanja">
+      <svg class="kompas-ciferblat" viewBox="-50 -50 100 100" aria-hidden="true">
+        <circle r="46" class="kompas-krug"/>
+        <g id="kompas-ruza">
+          <path d="M0 -44 6 -30 0 -33 -6 -30Z" class="kompas-sjever"/>
+          <path d="M0 44 4 32 0 35 -4 32Z" class="kompas-jug"/>
+          <text y="-18" class="kompas-slovo kompas-slovo-s" text-anchor="middle">S</text>
+          <text x="30" y="5" class="kompas-slovo" text-anchor="middle">I</text>
+          <text y="28" class="kompas-slovo" text-anchor="middle">J</text>
+          <text x="-30" y="5" class="kompas-slovo" text-anchor="middle">Z</text>
+        </g>
+        <path d="M0 -50 5 -42 -5 -42Z" class="kompas-oznaka"/>
+      </svg>
+      <div class="kompas-tekstovi">
+        <b id="kompas-tekst" class="kompas-stepeni">—</b>
+        <span id="kompas-izvor" class="sitno" role="status">Čekam kompas…</span>
+        <span id="kompas-napomena" class="sitno"></span>
+      </div>
+    </div>
     <div class="lok-mreza" id="lok-akcije">
       <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj na mene</span></button>
       <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>

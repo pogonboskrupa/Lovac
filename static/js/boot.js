@@ -45,6 +45,7 @@ import { initStan } from './stan-ui.js';
 import { initOdstrelStat } from './odstrel-stat-ui.js';
 import { initTok } from './tok-ui.js';
 import { initIstrazivac } from './istrazivac-ui.js';
+import { initKompas } from './kompas-ui.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
@@ -122,6 +123,7 @@ function enter(screen) {
       ['profil-lovca', () => initProfilLovca()],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
+      ['kompas', () => initKompas()],
       ['kontakt', () => initKontakt()],
       ['propisi', () => initPropisiAdmin()],
     ]) {
