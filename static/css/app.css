@@ -940,17 +940,17 @@ svg[hidden] { display: none; }
 .sk-znacka[data-uloga="lovocuvar"] { background: #7c3aed; color: #ffffff; }
 
 /* Kompas u ploči Moja lokacija */
-.kompas { display: flex; align-items: center; gap: 12px; margin: 6px 0; padding: 6px 8px; border-radius: 14px; background: var(--dugme); }
-.kompas-ciferblat { flex: none; width: 84px; height: 84px; }
-.kompas-krug { fill: var(--povrsina); stroke: var(--tekst-2); stroke-width: 2; }
+.lok-kompas { display: flex; align-items: center; gap: 12px; margin: 6px 0; padding: 6px 8px; border-radius: 14px; background: var(--dugme); }
+.lok-kompas-ciferblat { flex: none; width: 72px; height: 72px; }
+.lok-kompas-krug { fill: var(--povrsina); stroke: var(--tekst-2); stroke-width: 2; }
 #kompas-ruza { transition: transform .25s linear; transform-origin: 0 0; transform-box: view-box; }
-.kompas-sjever { fill: #c62828; }
-.kompas-jug { fill: var(--tekst-2); }
-.kompas-slovo { fill: var(--tekst); font-size: 14px; font-weight: 800; }
-.kompas-slovo-s { fill: #c62828; }
-.kompas-oznaka { fill: var(--naglasak, #1d4ed8); }
-.kompas-tekstovi { display: flex; flex-direction: column; min-width: 0; }
-.kompas-stepeni { font-size: 22px; font-variant-numeric: tabular-nums; }
+.lok-kompas-sjever { fill: #c62828; }
+.lok-kompas-jug { fill: var(--tekst-2); }
+.lok-kompas-slovo { fill: var(--tekst); font-size: 14px; font-weight: 800; }
+.lok-kompas-slovo-s { fill: #c62828; }
+.lok-kompas-oznaka { fill: var(--naglasak, #1d4ed8); }
+.lok-kompas-tekstovi { display: flex; flex-direction: column; min-width: 0; }
+.lok-kompas-stepeni { font-size: 22px; font-variant-numeric: tabular-nums; }
 
 /* Istraživač: okretanje karte, kompaktna traka */
 .istrazivac-kontrole { position: absolute; right: 8px; top: calc(var(--gore-2) + 36px); z-index: 1050; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
@@ -969,3 +969,4 @@ svg[hidden] { display: none; }
 .clan-chip[data-svjezina="bez-signala"] { opacity: .75; }
 .clan-chip[data-najblizi] { box-shadow: 0 0 0 3px #2563eb, var(--sjena); }
 .ist-hud { align-self: flex-end; padding: 4px 10px; border-radius: 999px; background: var(--povrsina); box-shadow: var(--sjena); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.lok-kompas-napomena { margin: 0 0 6px; }

@@ -33,4 +33,4 @@ export function headingSource(compass, gps) {
   return { stepeni: null, izvor: null };
 }
 
-export const KOMPAS_NAPOMENA = 'Kompas može griješiti (metal, magneti, telefon u džepu). Ne zamjenjuje pravila lova ni vođu lova.';
+export const KOMPAS_NAPOMENA = 'Kompas može griješiti (metal, magneti). Ne zamjenjuje pravila lova ni vođu lova.';

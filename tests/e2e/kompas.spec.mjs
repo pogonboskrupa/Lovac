@@ -27,3 +27,22 @@ test('kompas ne pravi ploču previsokom i ne smeta dugmadi (≥ 44 px, ploča �
   await expect(page.locator('#lok-ploca')).toBeVisible();
   expect((await page.locator('#lok-ploca').boundingBox()).height).toBeLessThan(740 * 0.55);
 });
+
+test('kompas se raširi preko ploče (nema naslijeđene veličine 128 px kompasa iz panela lova) i tekst ostaje unutar okvira', async ({ page }) => {
+  await fakeServerConfigUnset(page);
+  await serveTiles(page);
+  await page.goto('/');
+  await page.locator('#btn-moja-lokacija').click();
+  await expect(page.locator('#kompas')).toBeVisible();
+  const ploca = await page.locator('#lok-ploca').boundingBox();
+  const kutija = await page.locator('#kompas').boundingBox();
+  expect(kutija.width).toBeGreaterThan(ploca.width - 40);
+  expect(kutija.height).toBeLessThan(130);
+  expect((await page.locator('#kompas-napomena').boundingBox()).y).toBeGreaterThanOrEqual(kutija.y + kutija.height - 1);
+  for (const id of ['#kompas-tekst', '#kompas-izvor']) {
+    const b = await page.locator(id).boundingBox();
+    expect(b.y, id).toBeGreaterThanOrEqual(kutija.y - 1);
+    expect(b.y + b.height, id).toBeLessThanOrEqual(kutija.y + kutija.height + 1);
+    expect(b.x + b.width, id).toBeLessThanOrEqual(kutija.x + kutija.width + 1);
+  }
+});
