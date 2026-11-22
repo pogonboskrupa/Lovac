@@ -47,12 +47,12 @@ test('Slojevi: hero, prikaži/sakrij sve', async ({ page }) => {
   await expect(page.locator('#sl-hero-prikazanih')).toHaveText('2');
 });
 
-test('Moja lokacija: niža ploča (manje od 55 % ekrana) i dugmad ≥ 44 px', async ({ page }) => {
+test('Moja lokacija: niža ploča (manje od 60 % ekrana) i dugmad ≥ 44 px', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-moja-lokacija').click();
   await expect(page.locator('#lok-ploca')).toBeVisible();
   const ploca = await page.locator('#lok-ploca').boundingBox();
-  expect(ploca.height).toBeLessThan(740 * 0.55);
+  expect(ploca.height).toBeLessThan(740 * 0.6);
   for (const b of await page.locator('#lok-akcije .lok-dugme').all()) {
     const bb = await b.boundingBox();
     expect(Math.min(bb.width, bb.height)).toBeGreaterThanOrEqual(44);

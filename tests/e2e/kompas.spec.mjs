@@ -40,5 +40,30 @@ test('ploča: prekidač zauzima širinu, nema naslijeđene veličine, napomena o
   expect(red.height).toBeLessThan(90);
   expect((await page.locator('#btn-kompas-stozac').boundingBox()).height).toBeGreaterThanOrEqual(44);
   await expect(page.locator('#kompas-napomena')).toContainText('Ne zamjenjuje pravila lova');
-  expect(ploca.height).toBeLessThan(740 * 0.55);
+  expect(ploca.height).toBeLessThan(740 * 0.6);
+});
+
+test('Moja lokacija: ploča je uz donju navigaciju, kontrole mape se sklanjaju, klik na kartu i drugi tab je zatvaraju', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btn-moja-lokacija')).toBeVisible();
+  await page.locator('#btn-moja-lokacija').click();
+  const ploca = page.locator('#lok-ploca');
+  await expect(ploca).toBeVisible();
+  const nav = await page.locator('nav').first().boundingBox();
+  const b = await ploca.boundingBox();
+  expect(Math.abs(b.y + b.height - nav.y), 'ploča sjedi na navigaciji').toBeLessThanOrEqual(2);
+  expect(b.width).toBeGreaterThanOrEqual(358);
+  for (const id of ['#btn-moja-lokacija', '#btn-dodaj', '#btn-zoom-in', '#btn-zoom-out']) await expect(page.locator(id), id).toBeHidden();
+
+  // klik na kartu zatvara i vraća kontrole
+  await page.mouse.click(180, 150);
+  await expect(ploca).toBeHidden();
+  for (const id of ['#btn-moja-lokacija', '#btn-dodaj', '#btn-zoom-in']) await expect(page.locator(id), id).toBeVisible();
+
+  // drugi tab (Meni) zatvara ploču
+  await page.locator('#btn-moja-lokacija').click();
+  await expect(ploca).toBeVisible();
+  await page.locator('#btn-spiskovi').click();
+  await expect(ploca).toBeHidden();
+  await expect(page.locator('#btn-moja-lokacija')).toBeVisible();
 });

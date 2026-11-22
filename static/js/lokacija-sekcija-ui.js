@@ -153,13 +153,21 @@ export function initMojaLokacija(L, map) {
     await loadSections({ download: true });
     renderCoords();
     renderShare();
-    panel.hidden = false;
+    setOpen(true);
     pull();
   };
-  const close = () => { panel.hidden = true; };
+  const screenEl = $('ekran-mapa');
+  // Dok je ploča otvorena, kontrole mape (zoom, +, moja lokacija) i donji paneli se sklanjaju: ploča je uz donju navigaciju.
+  const setOpen = (value) => {
+    panel.hidden = !value;
+    screenEl?.classList.toggle('lok-otvorena', value);
+  };
+  const close = () => setOpen(false);
 
   $('btn-moja-lokacija').addEventListener('click', () => (isOpen() ? close() : open()));
   $('btn-lok-zatvori').addEventListener('click', close);
+  // Dodir na kartu zatvara ploču.
+  map.on('click', () => { if (isOpen()) close(); });
   registerBackHandler(() => { if (!isOpen()) return false; close(); return true; });
   // Radnje koje vode na kartu zatvaraju ploču (njihovi rukovaoci su već odradili posao).
   $('lok-akcije').addEventListener('click', (e) => { if (e.target.closest('[data-zatvori]')) close(); });

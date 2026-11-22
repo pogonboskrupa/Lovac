@@ -996,3 +996,12 @@ svg[hidden] { display: none; }
 .lok-prekidac-ruka { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; border-radius: 50%; background: #ffffff; transition: left .15s; }
 .lok-prekidac[aria-checked="true"] .lok-prekidac-ruka { left: 20px; }
 .ist-t { font-weight: 800; font-size: 18px; }
+
+/* Moja lokacija: ploča uz donju navigaciju; kontrole mape se sklanjaju dok je otvorena */
+#lok-ploca {
+  top: auto; left: 0; right: 0; bottom: var(--nav-h); z-index: 1500; border-radius: 16px 16px 0 0; padding: 8px 12px 12px;
+  max-height: min(56vh, calc(100vh - 120px - env(safe-area-inset-top) - var(--nav-h)));
+  max-height: min(56dvh, calc(100dvh - 120px - env(safe-area-inset-top) - var(--nav-h)));
+}
+#lok-ploca[hidden] { display: none; }
+#ekran-mapa.lok-otvorena .mapa-dno { display: none; }

@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.6.9';
+  const APP_VER = 'v0.7.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -154,6 +154,14 @@
       <span>fiks prije <span id="gps-starost">—</span></span>
     </div>
     <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+    <div class="lok-mreza" id="lok-akcije">
+      <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj na mene</span></button>
+      <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>
+      <button id="btn-snimaj" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-record"/></svg><span>Snimaj trag</span></button>
+      <button id="btn-opazanje" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-eye"/></svg><span>Opažanje divljači</span></button>
+      <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač (3D)</span></button>
+      <button id="btn-lok-kopiraj" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Kopiraj koordinate</span></button>
+    </div>
     <div class="lok-pravac" id="kompas">
       <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja na karti">
         <span class="lok-prekidac-ruka"></span>
@@ -164,14 +172,6 @@
       </div>
     </div>
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
-    <div class="lok-mreza" id="lok-akcije">
-      <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj na mene</span></button>
-      <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>
-      <button id="btn-snimaj" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-record"/></svg><span>Snimaj trag</span></button>
-      <button id="btn-opazanje" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-eye"/></svg><span>Opažanje divljači</span></button>
-      <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač (3D)</span></button>
-      <button id="btn-lok-kopiraj" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Kopiraj koordinate</span></button>
-    </div>
     <section id="lok-sekcija" class="lok-sekcija">
       <h3>Dijeli lokaciju sa sekcijom</h3>
       <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi i grupovođa sekcije.</p>
