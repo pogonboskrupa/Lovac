@@ -881,3 +881,11 @@ svg[hidden] { display: none; }
 .tr-chip[data-doba="sumrak"] { background: #6d28d9; color: #ffffff; }
 .tr-chip[data-doba="noc"] { background: #1e3a8a; color: #ffffff; }
 .div-akt-stup b { min-height: 18px; font-size: 14px; }
+
+/* Sekcije i pristup: zahtjevi za odobrenje na vrhu, filter sa značkom, sklopivi blok uloga */
+.sk-zahtjevi { margin: 8px 0 14px; padding: 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); border-left: 6px solid #d97706; }
+.sk-zahtjevi h3 { margin: 0 0 8px; }
+.sk-zahtjevi .tr-kartica { background: var(--dugme); box-shadow: none; }
+#sekcije-filter .znacka-broj { margin-left: 6px; }
+#uloge-detalji { margin: 8px 0; }
+#sekcije-filter .znacka-broj { position: static; display: inline-grid; vertical-align: middle; }

@@ -74,3 +74,58 @@ export function validateSekcija({ naziv, revir_id }) {
 export function mySectionsAsLeader(sekcije, myId) {
   return sekcije.filter((s) => s.grupovodja_id === myId && s.aktivno !== false);
 }
+
+// ---- pregled sekcija (v0.5.8) ----
+
+// "Moje" sekcije: u kojima sam član/grupovođa/lovočuvar ili čekam odobrenje. Admin je u svakoj sekciji sa punim pristupom,
+// pa su za njega "moje" samo one u kojima je i izričito grupovođa ili član.
+export function isMine(sekcija, clanovi, myId, isAdmin = false, lovocuvari = []) {
+  const st = myStatus(sekcija, clanovi, myId, isAdmin, lovocuvari);
+  if (st === 'admin') {
+    return sekcija.grupovodja_id === myId || clanovi.some((c) => c.sekcija_id === sekcija.id && c.korisnik_id === myId);
+  }
+  return st !== 'nema';
+}
+
+// Zahtjevi koje JA smijem odobriti (grupovođa svoje sekcije, admin sve): [{sekcija, zahtjev}] najstariji prvi.
+export function approvalsForMe(data, user) {
+  const out = [];
+  for (const s of data.sekcije.filter((x) => x.aktivno !== false && canManage(x, user))) {
+    for (const z of pendingRequests(s.id, data.clanovi)) out.push({ sekcija: s, zahtjev: z });
+  }
+  return out.sort((a, b) => String(a.zahtjev.created_at || '9999').localeCompare(String(b.zahtjev.created_at || '9999'))); // bez datuma ide na kraj
+}
+
+export function sectionsOverview(data, user) {
+  const aktivne = data.sekcije.filter((s) => s.aktivno !== false);
+  const mine = aktivne.filter((s) => isMine(s, data.clanovi, user?.id, Boolean(user?.is_admin), data.lovocuvari));
+  return {
+    ukupno: aktivne.length,
+    moje: mine.length,
+    zaOdobrenje: approvalsForMe({ ...data, sekcije: aktivne }, user).length,
+    mojiZahtjevi: aktivne.filter((s) => myStatus(s, data.clanovi, user?.id, false, data.lovocuvari) === 'ceka').length,
+  };
+}
+
+export const SEKCIJE_FILTERI = [['moje', 'Moje'], ['zahtjevi', 'Za odobrenje'], ['slobodne', 'Bez pristupa'], ['sve', 'Sve']];
+
+// Filter + pretraga sekcija. `textOf(s)` daje tekst za pretragu (naziv, revir, grupovođa, članovi...).
+export function filterSections(data, user, { filter = 'sve', q = '', textOf = () => '', match = (fields, query) => fields.join(' ').toLowerCase().includes(String(query).toLowerCase()) } = {}) {
+  const id = user?.id;
+  const admin = Boolean(user?.is_admin);
+  return data.sekcije.filter((s) => s.aktivno !== false).filter((s) => {
+    if (filter === 'moje') return isMine(s, data.clanovi, id, admin, data.lovocuvari);
+    if (filter === 'zahtjevi') return canManage(s, user) && pendingRequests(s.id, data.clanovi).length > 0;
+    if (filter === 'slobodne') return myStatus(s, data.clanovi, id, false, data.lovocuvari) === 'nema';
+    return true;
+  }).filter((s) => !q || match([s.naziv, textOf(s)], q));
+}
+
+// Kratki tekst za pločicu u Meniju.
+export function menuSummary(data, user) {
+  const o = sectionsOverview(data, user);
+  if (o.zaOdobrenje) return `${o.zaOdobrenje} ${o.zaOdobrenje === 1 ? 'zahtjev čeka' : 'zahtjeva čeka'} tvoje odobrenje`;
+  if (o.mojiZahtjevi) return 'Tvoj zahtjev čeka odobrenje';
+  if (o.moje) return `Moje sekcije: ${o.moje}`;
+  return 'Članstvo i odobrenja';
+}

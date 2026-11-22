@@ -6,12 +6,15 @@ import { currentFix } from './gps.js';
 import { loadJSON } from './storage.js';
 import { sunTimes, daylightStatus } from './sunce.js';
 import { loadDog } from './pas-ui.js';
+import { cachedSekcije } from './sekcije-ui.js';
+import { cachedProfile } from './auth.js';
+import { menuSummary } from './sekcije.js';
 import { dogSummary } from './pas.js';
 
 const $ = (id) => document.getElementById(id);
 
 // Čista funkcija: tekstovi pločica iz brojeva (test ne dira DOM).
-export function menuTexts({ lov, odstrelGodina, opazanja30, objekti, popravka, tragovi, svjetlo, pas = null }) {
+export function menuTexts({ lov, odstrelGodina, opazanja30, objekti, popravka, tragovi, svjetlo, pas = null, sekcije = null }) {
   return {
     'btn-lovovi': lov ? `U TOKU: ${lov}` : 'Raspored, stanovi, sektori',
     'btn-odstrel-spisak': odstrelGodina ? `${odstrelGodina} ove godine · statistika` : 'Evidencija i statistika',
@@ -20,6 +23,7 @@ export function menuTexts({ lov, odstrelGodina, opazanja30, objekti, popravka, t
     'btn-tragovi': tragovi ? `${tragovi} snimljenih` : 'Snimljene ture',
     'btn-danas': svjetlo || 'Lovno vrijeme i lovostaj',
     'btn-pas': pas || 'Pozicija sa ogrlice',
+    'btn-sekcije': sekcije || 'Članstvo i odobrenja',
   };
 }
 
@@ -38,6 +42,7 @@ async function gather(activeHunt) {
     popravka: objekti.filter(needsRepair).length,
     tragovi: tragovi.length,
     pas: (() => { const d = loadDog(); const l = d.pozicije[d.pozicije.length - 1]; return l ? `${d.ime}: ${dogSummary(currentFix(), l, now)}` : null; })(),
+    sekcije: await cachedSekcije().then((d) => menuSummary(d, cachedProfile())).catch(() => null),
     svjetlo: daylightStatus(now, sunTimes(noon(), p.lat, p.lon), sunTimes(noon(1), p.lat, p.lon)).tekst,
   };
 }

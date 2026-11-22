@@ -101,3 +101,59 @@ test('rukovodstvo: ko ulazi u kanal i poruka rukovodstva nema sekciju', () => {
   assert.equal(m.tekst, 'Zdravo');
   assert.equal(newMsg2({ sekcija_id: 'S', autor_id: 'x', tekst: 'a' }).kanal, 'sekcija');
 });
+
+import { isMine, approvalsForMe, sectionsOverview, filterSections, menuSummary } from '../../static/js/sekcije.js';
+
+const D = {
+  reviri: [{ id: 'R1', naziv: 'Krupa' }, { id: 'R2', naziv: 'Otoka' }],
+  sekcije: [
+    { id: 'S1', revir_id: 'R1', naziv: 'Krupa 1', grupovodja_id: 'gv', aktivno: true },
+    { id: 'S2', revir_id: 'R1', naziv: 'Krupa 2', grupovodja_id: 'gv2', aktivno: true },
+    { id: 'S3', revir_id: 'R2', naziv: 'Otoka 1', grupovodja_id: null, aktivno: true },
+    { id: 'S4', revir_id: 'R2', naziv: 'Sakrivena', grupovodja_id: 'gv', aktivno: false },
+  ],
+  clanovi: [
+    { sekcija_id: 'S1', korisnik_id: 'l1', status: 'odobren' },
+    { sekcija_id: 'S1', korisnik_id: 'l2', status: 'ceka', created_at: '2026-11-02' },
+    { sekcija_id: 'S1', korisnik_id: 'l3', status: 'ceka', created_at: '2026-11-01' },
+    { sekcija_id: 'S2', korisnik_id: 'l1', status: 'ceka' },
+    { sekcija_id: 'S4', korisnik_id: 'l9', status: 'ceka' },
+  ],
+  lovocuvari: [{ revir_id: 'R2', korisnik_id: 'lc' }],
+};
+const U = (id, o = {}) => ({ id, odobren: true, ...o });
+
+test('sekcije: "moje" (član/grupovođa/lovočuvar/čeka; admin samo izričito), zahtjevi za odobrenje i pregled', () => {
+  const ma = (s, id, admin = false) => isMine(s, D.clanovi, id, admin, D.lovocuvari);
+  assert.equal(ma(D.sekcije[0], 'l1'), true);
+  assert.equal(ma(D.sekcije[1], 'l1'), true, 'zahtjev na čekanju je "moje"');
+  assert.equal(ma(D.sekcije[2], 'l1'), false);
+  assert.equal(ma(D.sekcije[2], 'lc'), true, 'lovočuvar revira');
+  assert.equal(ma(D.sekcije[0], 'adm', true), false, 'admin nije član svake sekcije');
+  assert.equal(ma({ ...D.sekcije[0], grupovodja_id: 'adm' }, 'adm', true), true);
+  // zahtjevi: grupovođa svoje, admin sve aktivne; najstariji prvi; sakrivena sekcija se ne računa
+  assert.deepEqual(approvalsForMe(D, U('gv')).map((x) => x.zahtjev.korisnik_id), ['l3', 'l2']);
+  assert.deepEqual(approvalsForMe(D, U('adm', { is_admin: true })).map((x) => x.zahtjev.korisnik_id), ['l3', 'l2', 'l1']);
+  assert.deepEqual(approvalsForMe(D, U('l1')), []);
+  assert.deepEqual(sectionsOverview(D, U('gv')), { ukupno: 3, moje: 1, zaOdobrenje: 2, mojiZahtjevi: 0 });
+  assert.deepEqual(sectionsOverview(D, U('l1')), { ukupno: 3, moje: 2, zaOdobrenje: 0, mojiZahtjevi: 1 });
+});
+
+test('sekcije: filteri Moje / Za odobrenje / Bez pristupa / Sve i pretraga', () => {
+  const f = (user, o) => filterSections(D, user, o).map((s) => s.id);
+  assert.deepEqual(f(U('l1'), { filter: 'moje' }), ['S1', 'S2']);
+  assert.deepEqual(f(U('l1'), { filter: 'slobodne' }), ['S3']);
+  assert.deepEqual(f(U('gv'), { filter: 'zahtjevi' }), ['S1']);
+  assert.deepEqual(f(U('l1'), { filter: 'zahtjevi' }), []);
+  assert.deepEqual(f(U('l1'), { filter: 'sve' }), ['S1', 'S2', 'S3'], 'sakrivena se ne prikazuje');
+  assert.deepEqual(f(U('l1'), { filter: 'sve', q: 'otoka' }), ['S3']);
+  assert.deepEqual(f(U('l1'), { filter: 'sve', q: 'petar', textOf: (s) => (s.id === 'S2' ? 'Grupovođa Petar' : '') }), ['S2']);
+});
+
+test('sekcije: tekst za pločicu u Meniju', () => {
+  assert.equal(menuSummary(D, U('gv')), '2 zahtjeva čekaju tvoje odobrenje'.replace('čekaju', 'čeka'));
+  assert.equal(menuSummary({ ...D, clanovi: [D.clanovi[1]] }, U('gv')), '1 zahtjev čeka tvoje odobrenje');
+  assert.equal(menuSummary(D, U('l1')), 'Tvoj zahtjev čeka odobrenje');
+  assert.equal(menuSummary({ ...D, clanovi: [D.clanovi[0]] }, U('l1')), 'Moje sekcije: 1');
+  assert.equal(menuSummary(D, U('niko')), 'Članstvo i odobrenja');
+});

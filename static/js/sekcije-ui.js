@@ -5,7 +5,9 @@ import { getClient, cachedProfile } from './auth.js';
 import { idbGet, idbPut } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { refreshMembers, memberName } from './dijeljenje-ui.js';
+import { matchesQuery } from './pretraga.js';
 import { creationMode,
+  sectionsOverview, approvalsForMe, filterSections, isMine, SEKCIJE_FILTERI, menuSummary,
   myStatus, pristupText, canManage, creatableRevirIds, groupByRevir, pendingRequests, candidatesToAdd, validateSekcija, mySectionsAsLeader,
 } from './sekcije.js';
 import { makeThumbnail } from './foto.js';
@@ -51,6 +53,8 @@ export function initSekcije() {
   const form = $('sekcija-forma');
   let data = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [] };
   const otvoreno = new Set(); // paneli "Upravljanje" ostaju otvoreni poslije svake radnje
+  let filterMode = null; // null = još nije izabrano: "Moje" ako lovac ima sekcije, inače "Sve"
+  let searchText = '';
   const me = () => cachedProfile();
   const users = () => loadJSON('lovac.clanovi', []);
 
@@ -145,9 +149,39 @@ export function initSekcije() {
       $('grupovodja-korisnik').innerHTML = users().map((u) => opt(u.id, memberName(u.id))).join('');
       $('grupovodja-revir').innerHTML = data.reviri.map((r) => opt(r.id, r.naziv)).join('');
     }
-    $('sekcije-spisak').innerHTML = groupByRevir(data.reviri, data.sekcije).map(({ revir, sekcije }) => `
+    $('uloge-detalji').hidden = !admin;
+
+    // pregled: brojevi, filter, pretraga i zahtjevi koje mogu odmah odobriti
+    const user = me();
+    const ov = sectionsOverview(data, user);
+    $('sks-moje').textContent = String(ov.moje);
+    $('sks-odobrenje').textContent = String(ov.zaOdobrenje);
+    $('sks-ukupno').textContent = String(ov.ukupno);
+    if (filterMode == null && data.sekcije.length) filterMode = ov.moje > 0 ? 'moje' : 'sve'; // izbor tek kad su sekcije stigle (prazan keš ne smije zaključati "Sve")
+    const activeFilter = filterMode || 'sve';
+    $('sekcije-filter').innerHTML = SEKCIJE_FILTERI.map(([k, n]) => `<button type="button" data-filter="${k}" aria-pressed="${k === activeFilter}">${n}${k === 'zahtjevi' && ov.zaOdobrenje ? ` <span class="znacka-broj">${ov.zaOdobrenje}</span>` : ''}</button>`).join('');
+    const textOf = (s) => [data.reviri.find((r) => r.id === s.revir_id)?.naziv, s.grupovodja_id ? memberName(s.grupovodja_id) : '',
+      ...data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren').map((c) => memberName(c.korisnik_id))].join(' ');
+    const visible = filterSections(data, user, { filter: activeFilter, q: searchText, textOf, match: matchesQuery });
+    const visibleIds = new Set(visible.map((s) => s.id));
+
+    const approvals = approvalsForMe(data, user);
+    const approvalsHtml = approvals.length ? `<section class="sk-zahtjevi" id="sekcije-zahtjevi"><h3>Čeka tvoje odobrenje (${approvals.length})</h3>
+      <ul class="spisak">${approvals.map(({ sekcija, zahtjev }) => `<li class="tr-kartica ev-kartica" data-id="${escapeHtml(sekcija.id)}" data-uid="${escapeHtml(zahtjev.korisnik_id)}">
+        <b>${escapeHtml(memberName(zahtjev.korisnik_id))}</b>
+        <span class="sitno">traži ulaz u: ${escapeHtml(sekcija.naziv)}${zahtjev.pozvao_id ? ` · predložio: ${escapeHtml(memberName(zahtjev.pozvao_id))} (novi nalog)` : ''}</span>
+        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij">Odbij</button></div></li>`).join('')}</ul></section>` : '';
+
+    const groups = groupByRevir(data.reviri, data.sekcije).map(({ revir, sekcije }) => ({
+      revir,
+      // moje sekcije prve u svakom reviru
+      sekcije: sekcije.filter((s) => visibleIds.has(s.id)).sort((a, b) => Number(isMine(b, data.clanovi, user?.id, Boolean(user?.is_admin), data.lovocuvari))
+        - Number(isMine(a, data.clanovi, user?.id, Boolean(user?.is_admin), data.lovocuvari))),
+    })).filter((g) => g.sekcije.length || activeFilter === 'sve');
+    $('sekcije-spisak').innerHTML = approvalsHtml + (groups.map(({ revir, sekcije }) => `
       <h3>Revir ${escapeHtml(revir.naziv)}</h3>
-      <ul class="spisak">${sekcije.map(cardHtml).join('') || '<li class="sitno">Nema sekcija u ovom reviru.</li>'}</ul>`).join('');
+      <ul class="spisak">${sekcije.map(cardHtml).join('') || '<li class="sitno">Nema sekcija u ovom reviru.</li>'}</ul>`).join('')
+      || '<p class="sitno" id="sekcije-prazno">Nema sekcija za ovaj prikaz. Probaj "Sve".</p>');
   };
 
   // Pri otvaranju ekrana odmah se crta keš; poslije radnje samo jednom, sa svježim podacima servera.
@@ -171,6 +205,12 @@ export function initSekcije() {
     if (!sid || !e.target.matches('details.uprava')) return;
     if (e.target.open) otvoreno.add(sid); else otvoreno.delete(sid);
   }, true);
+
+  $('sekcije-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-filter]');
+    if (b) { filterMode = b.dataset.filter; render(); }
+  });
+  $('sekcije-trazi').addEventListener('input', (e) => { searchText = e.target.value; render(); });
 
   // ---- akcije nad karticama ----
   $('sekcije-spisak').addEventListener('click', (e) => {

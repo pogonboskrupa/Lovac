@@ -160,6 +160,7 @@ test('admin: grupovođe po revirima, nova sekcija sa grupovođom i lovočuvarom,
   const server = makeServer();
   await setup(page, server, ADMIN);
   await openSekcije(page);
+  await page.locator('#uloge-detalji > summary').click(); // blok uloga je sklopiv
   await expect(page.locator('#grupovodje-blok')).toBeVisible();
   await settled(page);
   await expect(page.locator('#grupovodje-spisak')).toContainText('Goran Grupovođa');
