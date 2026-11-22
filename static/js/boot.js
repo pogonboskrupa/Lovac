@@ -143,6 +143,8 @@ function enter(screen) {
     }
     // Leaflet treba stvarnu veličinu kontejnera nakon što ekran postane vidljiv.
     requestAnimationFrame(() => map.invalidateSize());
+    // Ponovni ulazak na kartu (odjava pa prijava): veličina se mora izmjeriti ispočetka.
+    document.addEventListener('ekran:mapa', () => requestAnimationFrame(() => map.invalidateSize({ animate: false })));
   }
 }
 

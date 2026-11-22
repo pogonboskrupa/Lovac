@@ -21,3 +21,18 @@ test('pločice se preuzimaju najviše 6 istovremeno (spor server se ne guši)', 
   expect(max).toBeLessThanOrEqual(6);
 });
 
+
+test('pločice su canvas sa nacrtanim pikselima (ne <img> sa blob URL-om koji WebView zna ostaviti crnim)', async ({ page }) => {
+  await fakeServerConfigUnset(page);
+  await page.route(/api\.github\.com/, (r) => r.fulfill({ status: 404, body: '{}' }));
+  await page.route(TILE_HOSTS, (route) => route.fulfill({ status: 200, body: PNG, headers: { 'content-type': 'image/png', 'access-control-allow-origin': '*' } }));
+  await page.goto('/');
+  await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
+  const info = await page.evaluate(() => {
+    const t = document.querySelector('#karta .leaflet-tile-loaded');
+    return { tag: t.tagName, imgs: document.querySelectorAll('#karta img.leaflet-tile').length, w: t.width };
+  });
+  expect(info.tag).toBe('CANVAS');
+  expect(info.imgs).toBe(0);
+  expect(info.w).toBeGreaterThan(0);
+});

@@ -142,29 +142,53 @@ export async function loadTileWithRetry(url, signal, { load = loadTileBlob, dela
   throw lastErr;
 }
 
+// Slika iz blob-a se crta na canvas; blob URL postoji samo dok se slika dekodira (rezerva kad nema createImageBitmap).
+export async function drawBlobOnCanvas(blob, canvas) {
+  if (typeof createImageBitmap === 'function') {
+    const bmp = await createImageBitmap(blob);
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    canvas.getContext('2d').drawImage(bmp, 0, 0);
+    bmp.close?.();
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('Pločica se ne može prikazati'));
+      i.src = url;
+    });
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 let failedTiles = 0;
 let lastFailureNotice = 0;
 
 export function createCachedTileLayer(L, urlTemplate, options) {
   const Layer = L.TileLayer.extend({
+    // Pločica je <canvas>, ne <img> sa blob URL-om: WebView odbaci dekodiranu sliku iz memorije (ili blob URL
+    // nestane) pa pločica ostane crna; piksele u canvasu drži sama stranica.
     createTile(coords, done) {
-      const img = document.createElement('img');
-      img.alt = '';
-      img.setAttribute('role', 'presentation');
+      const canvas = document.createElement('canvas');
+      canvas.setAttribute('role', 'presentation');
       const ctrl = new AbortController();
-      img._ctrl = ctrl;
+      canvas._ctrl = ctrl;
       loadTileWithRetry(this.getTileUrl(coords), ctrl.signal)
-        .then((blob) => {
-          const objUrl = URL.createObjectURL(blob);
-          img._blobUrl = objUrl;
-          img.onload = () => done(null, img);
-          img.onerror = () => done(new Error('Pločica se ne može prikazati'), img);
-          img.src = objUrl;
+        .then(async (blob) => {
+          await drawBlobOnCanvas(blob, canvas);
+          if (!ctrl.signal.aborted) done(null, canvas);
         })
         .catch((err) => {
           // Prekinuta pločica više nije na karti, pa se ne prijavljuje Leaflet-u.
           if (ctrl.signal.aborted) return;
-          done(err, img);
+          done(err, canvas);
           // Mnogo pločica koje se ne učitaju ni poslije ponavljanja: jednom u minuti javi lovcu zašto je karta prazna.
           failedTiles += 1;
           if (failedTiles >= 4 && Date.now() - lastFailureNotice > 60000) {
@@ -173,19 +197,11 @@ export function createCachedTileLayer(L, urlTemplate, options) {
             globalThis.document?.dispatchEvent(new CustomEvent('plocice:greska'));
           }
         });
-      return img;
+      return canvas;
     },
   });
   const layer = new Layer(urlTemplate, options);
-  // Blob URL se oslobađa tek kad Leaflet ukloni pločicu, ne na onload.
-  layer.on('tileunload', (e) => {
-    const t = e.tile;
-    t?._ctrl?.abort();
-    if (t?._blobUrl) {
-      URL.revokeObjectURL(t._blobUrl);
-      t._blobUrl = null;
-    }
-  });
+  layer.on('tileunload', (e) => e.tile?._ctrl?.abort());
   layer.on('tileabort', (e) => e.tile?._ctrl?.abort());
   return layer;
 }

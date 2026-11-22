@@ -11,6 +11,8 @@ export function showScreen(name) {
     if (el) el.hidden = s !== name;
   });
   document.body.dataset.ekran = name;
+  // Karta skrivena iza prijave dobije resize (tastatura) i izmjeri se kao 0 px; bez ovoga se po povratku ne učita ni jedna pločica.
+  if (name === 'mapa') document.dispatchEvent(new CustomEvent('ekran:mapa'));
 }
 
 let toastTimer = null;
