@@ -27,10 +27,25 @@ test('arcPath: počinje u M i ima koraka+1 tačaka', () => {
 });
 
 test('dayArc: udjeli, sada unutar i izvan dana, nepoznato', () => {
-  assert.deepEqual(dayArc(500, sun), { izlazak: 0.1, zalazak: 0.9, sada: 0.5, izvan: false });
+  assert.deepEqual(dayArc(500, sun), { izlazak: 0.1, zalazak: 0.9, podne: 0.5, sada: 0.5, izvan: false });
   assert.equal(dayArc(-1, sun).izvan, true);
   assert.equal(dayArc(-1, sun).sada, 0);
   assert.equal(dayArc(1500, sun).sada, 1);
   assert.equal(dayArc(5, { ...sun, izlazak: null }), null);
   assert.equal(dayArc(5, null), null);
+});
+
+test('arcPoint: vrh luka je u podne, ne u sredini dana', () => {
+  const vrh = 0.4;
+  const najvisa = Array.from({ length: 101 }, (_, i) => i / 100).map((f) => ({ f, y: arcPoint(f, LUK, vrh).y }))
+    .reduce((m, p) => (p.y < m.y ? p : m));
+  assert.ok(Math.abs(najvisa.f - vrh) < 0.011);
+  assert.ok(Math.abs(arcPoint(vrh, LUK, vrh).y - (LUK.baza - LUK.uspon)) < 1e-9);
+  // krajevi ostaju na horizontu
+  assert.ok(Math.abs(arcPoint(0, LUK, vrh).y - LUK.baza) < 1e-9 && Math.abs(arcPoint(1, LUK, vrh).y - LUK.baza) < 1e-9);
+});
+
+test('dayArc: udio podneva iz sun.podne', () => {
+  assert.equal(dayArc(500, { ...sun, podne: 400 }).podne, 0.4);
+  assert.equal(dayArc(500, { ...sun, podne: null }).podne, 0.5);
 });

@@ -5,6 +5,7 @@ import { loadJSON, saveSoft, removeKey } from './storage.js';
 import { parseForecast, currentWind, ageText, formatWind, suitsStand, scentCone, thermalHint } from './vjetar.js';
 import { terrainAt } from './dem.js';
 import { sunTimes } from './sunce.js';
+import { hasWeather } from './vrijeme.js';
 
 const KEY_PREFIX = 'lovac.vjetar.';
 const REFRESH_MS = 60 * 60000;
@@ -23,15 +24,15 @@ function pruneCache(keep) {
   }
 }
 
-export async function windFor(lat, lon, { allowNetwork = connectionQuality() !== 'nema' } = {}) {
+export async function windFor(lat, lon, { allowNetwork = connectionQuality() !== 'nema', needWeather = false } = {}) {
   const key = cellKey(lat, lon);
   let fc = loadJSON(key, null);
   let error = null;
-  if (allowNetwork && (!fc || Date.now() - fc.preuzeto > REFRESH_MS || !currentWind(fc))) {
+  if (allowNetwork && (!fc || Date.now() - fc.preuzeto > REFRESH_MS || !currentWind(fc) || (needWeather && !hasWeather(fc)))) {
     try {
       const url = 'https://api.open-meteo.com/v1/forecast'
         + `?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}`
-        + '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=ms&timeformat=unixtime&forecast_days=3';
+        + '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation,cloud_cover,weather_code&wind_speed_unit=ms&timeformat=unixtime&forecast_days=3';
       const res = await fetchWithTimeout(url, {}, 10000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       fc = parseForecast(await res.json());

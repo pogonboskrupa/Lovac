@@ -56,7 +56,9 @@ test('Danas: svjetlo, lovno vrijeme po admin pravilu, šta se smije loviti; radi
   await expect(page.locator('#danas-luk .luk-zora')).toHaveCount(1);
   await expect(page.locator('#danas-luk .luk-dan')).toHaveCount(1);
   await expect(page.locator('#danas-luk .luk-sumrak')).toHaveCount(1);
-  await expect(page.locator('#danas-luk .luk-vrijeme')).toHaveCount(4);
+  await expect(page.locator('#danas-luk .luk-vrijeme')).toHaveCount(5);
+  await expect(page.locator('#danas-luk .luk-podne')).toHaveCount(1);
+  await expect(page.locator('#danas-luk .luk-naziv').nth(2)).toHaveText('Podne');
   await expect(page.locator('#danas-luk .luk-sada')).toHaveCount(1);
   await expect(page.locator('#danas-luk .luk-sada-tekst')).toHaveText('Sada 10:00');
   await expect(page.locator('#danas-luk-kartica')).toHaveAttribute('data-stanje', 'dan');
@@ -132,4 +134,45 @@ test('admin unosi lovostaj: datum dd.mm. ide na server kao MM-DD', async ({ page
   await expect.poll(() => sent.length).toBe(2);
   expect(sent[1]).toMatchObject({ table: 'lovno_vrijeme', method: 'PATCH', body: { poslije_zalaska_min: 45 } });
   expect(sent[1].url).toContain('id=eq.v1');
+});
+
+test('Danas: tab Vrijeme i vjetar — temperatura, smjer vjetra (kompas), sati; bez veze nema izmišljene prognoze', async ({ page }) => {
+  await setup(page);
+  const d0 = Date.parse('2026-11-19T00:00:00+01:00') / 1000;
+  const time = Array.from({ length: 72 }, (_, i) => d0 + i * 3600);
+  await page.route(/api\.open-meteo\.com/, (r) => r.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ hourly: {
+      time, wind_speed_10m: time.map(() => 4.2), wind_direction_10m: time.map(() => 225), wind_gusts_10m: time.map(() => 7),
+      temperature_2m: time.map((_, i) => i % 24), precipitation: time.map(() => 0), cloud_cover: time.map(() => 50), weather_code: time.map(() => 2),
+    } }),
+  }));
+  await page.goto('/');
+  await page.locator('#lovno-chip').waitFor({ state: 'hidden' }).catch(() => {});
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-danas').click();
+  await expect(page.locator('#danas-tab-vrijeme')).toBeHidden();
+  await page.locator('#danas-tabovi [data-tab="vrijeme"]').click();
+  await expect(page.locator('#danas-tab-svjetlo')).toBeHidden();
+  await expect(page.locator('#vr-temp')).toHaveText('10°');
+  await expect(page.locator('#vr-opis')).toHaveText('Djelimično oblačno');
+  await expect(page.locator('#vr-vjetar')).toContainText('Vjetar iz JZ');
+  await expect(page.locator('#vr-vjetar')).toContainText('prema SI');
+  await expect(page.locator('#vr-vjetar')).toContainText('umjeren vjetar');
+  // strelica kompasa pokazuje kamo vjetar duva: iz 225° → 45°
+  await expect(page.locator('#vr-kompas .kompas-strelica')).toHaveAttribute('transform', 'rotate(45 80 80)');
+  await expect(page.locator('#vr-sati .vr-sat.sada')).toContainText('10:00');
+  await expect(page.locator('#vr-sati .vr-sat').first()).toContainText('10:00');
+  await expect(page.locator('#vr-stanje')).toContainText('prognoza preuzeta');
+});
+
+test('Danas: bez prognoze (nema veze) tab Vrijeme to kaže, bez izmišljenih brojeva', async ({ page }) => {
+  await setup(page);
+  await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-danas').click();
+  await page.locator('#danas-tabovi [data-tab="vrijeme"]').click();
+  await expect(page.locator('#vr-stanje')).toContainText('Prognoza nije dostupna');
+  await expect(page.locator('#vr-temp')).toHaveText('—');
+  await expect(page.locator('#vr-sati .vr-sat')).toHaveCount(0);
 });

@@ -691,7 +691,7 @@ svg[hidden] { display: none; }
 .luk-sumrak { stroke: #7c3aed; }
 .luk-horizont { stroke: var(--tekst-2); stroke-width: 1.5; }
 .luk-oznaka { fill: var(--tekst-2); }
-.luk-vrijeme { fill: var(--tekst); font-size: 13px; font-weight: 800; }
+.luk-vrijeme { fill: var(--tekst); font-size: 12.5px; font-weight: 800; }
 .luk-naziv { fill: var(--tekst-2); font-size: 11px; }
 .luk-sada-linija { stroke: var(--tekst-2); stroke-width: 1.5; stroke-dasharray: 3 3; }
 .luk-sada { fill: #fbbf24; stroke: var(--tekst); stroke-width: 2.5; }
@@ -723,3 +723,22 @@ svg[hidden] { display: none; }
   #koord-traka .pill-red { gap: 5px; font-size: 13px; }
   #koord-traka .pill-oznaka { font-size: 11px; }
 }
+.luk-podne-linija { stroke: var(--tekst-2); stroke-width: 1; stroke-dasharray: 2 4; }
+.luk-podne { fill: none; stroke: var(--tekst); stroke-width: 2; }
+
+/* Danas → Vrijeme i vjetar */
+.vr-kartica { margin: 8px 0 12px; padding: 14px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); }
+.vr-sada { display: flex; align-items: center; gap: 14px; }
+.vr-temp { font-size: 44px; line-height: 1; }
+.vr-opis { display: flex; flex-direction: column; font-size: 18px; font-weight: 700; }
+.vr-vjetar-red { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.kompas { width: 128px; height: 128px; flex: none; }
+.kompas-krug { fill: none; stroke: var(--tekst-2); stroke-width: 2; }
+.kompas-strana { fill: var(--tekst-2); font-size: 14px; font-weight: 800; }
+.kompas-strelica path { fill: var(--naglasak); stroke: var(--tekst); stroke-width: 2; stroke-linejoin: round; }
+.vr-vjetar-tekst { margin: 0; line-height: 1.4; }
+.vr-sati { display: flex; gap: 8px; overflow-x: auto; margin: 0; padding: 4px 4px 6px; list-style: none; }
+.vr-sat { flex: none; min-width: 64px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 12px; background: var(--dugme); color: var(--dugme-tekst); }
+.vr-sat.sada { outline: 3px solid var(--naglasak); }
+.vr-h { font-size: 13px; font-weight: 700; }
+.vr-strelica { width: 22px; height: 22px; color: var(--dugme-tekst); }

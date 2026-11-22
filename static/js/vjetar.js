@@ -50,6 +50,7 @@ export function parseForecast(json, fetchedAt = Date.now()) {
     preuzeto: fetchedAt,
     sati: (h.time || []).map((t, i) => ({
       t: t * 1000, brzina: h.wind_speed_10m?.[i], smjer: h.wind_direction_10m?.[i], udari: h.wind_gusts_10m?.[i],
+      temp: h.temperature_2m?.[i], padavine: h.precipitation?.[i], oblaci: h.cloud_cover?.[i], kod: h.weather_code?.[i],
     })),
   };
 }

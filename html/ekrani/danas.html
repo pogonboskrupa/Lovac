@@ -4,6 +4,11 @@
     <button id="btn-danas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <p id="danas-mjesto" class="sitno"></p>
+  <div id="danas-tabovi" class="segment p-tabovi" role="tablist" aria-label="Danas">
+    <button type="button" role="tab" data-tab="svjetlo" aria-pressed="true">Svjetlo i lov</button>
+    <button type="button" role="tab" data-tab="vrijeme" aria-pressed="false">Vrijeme i vjetar</button>
+  </div>
+  <div id="danas-tab-svjetlo">
   <div id="danas-luk-kartica" class="luk-kartica">
     <p id="danas-luk-stanje" class="luk-stanje" role="status"></p>
     <svg id="danas-luk" class="luk" viewBox="0 0 320 150" role="img" aria-label="Dnevno svjetlo od svitanja do sumraka"></svg>
@@ -16,5 +21,21 @@
   <h3>Šta se danas smije loviti</h3>
   <ul id="danas-lovostaj" class="spisak"></ul>
   <p id="danas-izvor" class="sitno"></p>
+  </div>
+  <div id="danas-tab-vrijeme" hidden>
+    <div class="vr-kartica">
+      <div class="vr-sada">
+        <b id="vr-temp" class="vr-temp">—</b>
+        <span class="vr-opis"><span id="vr-opis">—</span><span id="vr-minmax" class="sitno"></span></span>
+      </div>
+      <div class="vr-vjetar-red">
+        <svg id="vr-kompas" class="kompas" viewBox="0 0 160 160" role="img" aria-label="Smjer vjetra"></svg>
+        <p id="vr-vjetar" class="vr-vjetar-tekst"></p>
+      </div>
+    </div>
+    <h3>Po satima</h3>
+    <ul id="vr-sati" class="vr-sati"></ul>
+    <p id="vr-stanje" class="sitno" role="status"></p>
+  </div>
   <p class="sitno">Lovostaj i lovno vrijeme unosi administrator društva. Aplikacija ne zamjenjuje važeće propise, odluke društva ni lovočuvara.</p>
 </section>

@@ -6,6 +6,10 @@ import { LUK, arcPoint, arcPath, dayArc } from './svjetlo-luk.js';
 import { pickRule, huntingWindow, huntingStatus, formatCountdown, seasonStatus, formatDayMonth } from './propisi.js';
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { currentFix } from './gps.js';
+import { windFor } from './vjetar-ui.js';
+import { ageText, formatWind } from './vjetar.js';
+import { compassName } from './geo.js';
+import { weatherLabel, currentHour, hoursOfDay, daySummary, windStrength, windBlowsTo } from './vrijeme.js';
 import { registerBackHandler, escapeHtml } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -57,25 +61,49 @@ function drawArc(svg, sun, now) {
     svg.appendChild(el);
     return el;
   };
+  const pt = (f) => arcPoint(f, LUK, a.podne);
+  const path = (f0, f1) => arcPath(f0, f1, LUK, 24, a.podne);
   add('line', { x1: LUK.rub - 6, x2: LUK.sirina - LUK.rub + 6, y1: LUK.baza, y2: LUK.baza, class: 'luk-horizont' });
-  add('path', { d: arcPath(0, a.izlazak), class: 'luk-zora' });
-  add('path', { d: arcPath(a.izlazak, a.zalazak), class: 'luk-dan' });
-  add('path', { d: arcPath(a.zalazak, 1), class: 'luk-sumrak' });
-  [[0, sun.svitanje, 'Svitanje'], [a.izlazak, sun.izlazak, 'Izlazak'], [a.zalazak, sun.zalazak, 'Zalazak'], [1, sun.suton, 'Suton']]
+  add('path', { d: path(0, a.izlazak), class: 'luk-zora' });
+  add('path', { d: path(a.izlazak, a.zalazak), class: 'luk-dan' });
+  add('path', { d: path(a.zalazak, 1), class: 'luk-sumrak' });
+  // kulminacija = podne: isprekidana vertikala od vrha luka do horizonta
+  const top = pt(a.podne);
+  add('line', { x1: top.x.toFixed(1), x2: top.x.toFixed(1), y1: top.y.toFixed(1), y2: LUK.baza, class: 'luk-podne-linija' });
+  add('circle', { cx: top.x.toFixed(1), cy: top.y.toFixed(1), r: 5, class: 'luk-podne' });
+  [[0, sun.svitanje, 'Svitanje'], [a.izlazak, sun.izlazak, 'Izlazak'], [a.podne, sun.podne, 'Podne'], [a.zalazak, sun.zalazak, 'Zalazak'], [1, sun.suton, 'Suton']]
     .forEach(([f, t, naziv], i) => {
-      const p = arcPoint(f);
+      const p = pt(f);
       add('circle', { cx: p.x.toFixed(1), cy: LUK.baza, r: 3, class: 'luk-oznaka' });
       // zora i sumrak traju ~30 min, pa bi oznake na tačkama luka ležale jedna na drugoj: stupci su jednaki
-      const x = (LUK.sirina / 4) * (i + 0.5);
+      const x = (LUK.sirina / 5) * (i + 0.5);
       add('text', { x: x.toFixed(1), y: LUK.baza + 18, class: 'luk-vrijeme', 'text-anchor': 'middle' }, hm(t));
       add('text', { x: x.toFixed(1), y: LUK.baza + 33, class: 'luk-naziv', 'text-anchor': 'middle' }, naziv);
     });
-  const p = arcPoint(a.sada);
+  const p = pt(a.sada);
   const y = a.izvan ? LUK.baza : p.y;
   add('line', { x1: p.x.toFixed(1), x2: p.x.toFixed(1), y1: y.toFixed(1), y2: LUK.baza, class: 'luk-sada-linija' });
   add('circle', { cx: p.x.toFixed(1), cy: y.toFixed(1), r: 9, class: a.izvan ? 'luk-sada luk-sada-noc' : 'luk-sada' });
-  const label = add('text', { x: Math.min(LUK.sirina - 24, Math.max(24, p.x)).toFixed(1), y: Math.max(12, y - 15).toFixed(1), class: 'luk-sada-tekst', 'text-anchor': 'middle' }, `Sada ${hm(now)}`);
-  label.setAttribute('aria-hidden', 'true');
+  add('text', { x: Math.min(LUK.sirina - 24, Math.max(24, p.x)).toFixed(1), y: Math.max(12, y - 15).toFixed(1), class: 'luk-sada-tekst', 'text-anchor': 'middle', 'aria-hidden': 'true' }, `Sada ${hm(now)}`);
+}
+
+const fmtTemp = (v) => (v == null ? '—' : `${Math.round(v)}°`);
+
+// Kompas: strelica pokazuje u koju stranu vjetar DUVA (suprotno od "odakle duva").
+function drawCompass(svg, fromDeg) {
+  svg.replaceChildren();
+  const add = (tag, attrs, text, parent = svg) => {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    if (text != null) el.textContent = text;
+    parent.appendChild(el);
+    return el;
+  };
+  add('circle', { cx: 80, cy: 80, r: 62, class: 'kompas-krug' });
+  [['S', 80, 14], ['I', 148, 85], ['J', 80, 154], ['Z', 12, 85]].forEach(([t, x, y]) => add('text', { x, y, class: 'kompas-strana', 'text-anchor': 'middle' }, t));
+  if (fromDeg == null) return;
+  const g = add('g', { transform: `rotate(${windBlowsTo(fromDeg)} 80 80)`, class: 'kompas-strelica' });
+  add('path', { d: 'M80 22 L96 70 L84 66 L84 126 L76 126 L76 66 L64 70 Z' }, null, g);
 }
 
 function statusSentence(st) {
@@ -97,6 +125,50 @@ export function initDanas(map) {
     chip.dataset.stanje = st.stanje;
     chip.textContent = statusSentence(st);
   };
+
+  let tab = 'svjetlo';
+  let weatherSeq = 0;
+
+  const renderVrijeme = async () => {
+    const seq = ++weatherSeq;
+    const p = where(map);
+    const stanje = $('vr-stanje');
+    stanje.textContent = 'Učitavam prognozu…';
+    const { fc, wind, error } = await windFor(p.lat, p.lon, { needWeather: true });
+    if (seq !== weatherSeq) return;
+    const now = Date.now();
+    const cur = currentHour(fc, now);
+    const hours = hoursOfDay(fc, now);
+    const sum = daySummary(hours);
+    $('vr-temp').textContent = fmtTemp(cur?.temp);
+    $('vr-opis').textContent = cur ? weatherLabel(cur.kod) : '—';
+    $('vr-minmax').textContent = sum ? ` Danas ${fmtTemp(sum.min)} – ${fmtTemp(sum.max)}${sum.padavine > 0 ? `, padavine ${String(sum.padavine).replace('.', ',')} mm` : ''}` : '';
+    drawCompass($('vr-kompas'), wind?.smjer ?? null);
+    $('vr-vjetar').innerHTML = wind
+      ? `<b>Vjetar iz ${escapeHtml(compassName(wind.smjer))}</b> (${Math.round(wind.smjer)}°), duva prema ${escapeHtml(compassName(windBlowsTo(wind.smjer)))}<br>${escapeHtml(formatWind(wind).replace(/^\S+ \(\d+°\) /, ''))} · ${escapeHtml(windStrength(wind.brzina))}`
+      : 'Smjer vjetra nije dostupan.';
+    $('vr-sati').innerHTML = hours.filter((h) => h.t + 3600000 > now).map((h) => `<li class="vr-sat${cur && h.t === cur.t ? ' sada' : ''}">
+        <span class="vr-h">${pad(new Date(h.t).getHours())}:00</span>
+        <b>${fmtTemp(h.temp)}</b>
+        <svg class="vr-strelica" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(${Math.round(windBlowsTo(h.smjer ?? 0))}deg)"><path d="M12 2 18 20 12 16 6 20Z" fill="currentColor"/></svg>
+        <span class="sitno">${h.brzina != null ? `${h.brzina.toFixed(1).replace('.', ',')} m/s` : '—'}</span>
+        ${h.padavine > 0 ? `<span class="sitno">${String(Math.round(h.padavine * 10) / 10).replace('.', ',')} mm</span>` : ''}</li>`).join('');
+    stanje.textContent = fc
+      ? `${ageText(fc.preuzeto)}${cur ? '' : '. Nema svježe prognoze, potreban je internet.'} · računato za ${p.opis}`
+      : `Prognoza nije dostupna${error ? ' (nema veze)' : ''}. Potreban je internet.`;
+  };
+
+  const setTab = (name) => {
+    tab = name;
+    $('danas-tab-svjetlo').hidden = name !== 'svjetlo';
+    $('danas-tab-vrijeme').hidden = name !== 'vrijeme';
+    $('danas-tabovi').querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === name)));
+    if (name === 'vrijeme') renderVrijeme();
+  };
+  $('danas-tabovi').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (b) setTab(b.dataset.tab);
+  });
 
   const render = async () => {
     const p = where(map);
@@ -144,6 +216,7 @@ export function initDanas(map) {
   const open = async () => {
     $('meni-spiskovi').hidden = true;
     await render();
+    setTab('svjetlo');
     panel.hidden = false;
   };
 

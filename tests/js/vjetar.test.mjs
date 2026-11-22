@@ -84,3 +84,36 @@ test('Terrarium DEM: dekodiranje, piksel u pločici, smjer uzbrdo', () => {
   assert.equal(Math.round(uphillAspect(0, -1)), 0, 'raste prema sjeveru (y piksela raste prema jugu)');
   assert.equal(uphillAspect(0, 0), null);
 });
+
+import { weatherLabel, hasWeather, currentHour, hoursOfDay, daySummary, windStrength, windBlowsTo } from '../../static/js/vrijeme.js';
+
+test('vrijeme: opis, jačina vjetra i smjer u koji duva', () => {
+  assert.equal(weatherLabel(0), 'Vedro');
+  assert.equal(weatherLabel(63), 'Kiša');
+  assert.equal(weatherLabel(95), 'Grmljavina');
+  assert.equal(weatherLabel(null), '—');
+  assert.equal(windStrength(0.2), 'bez vjetra');
+  assert.equal(windStrength(5), 'umjeren vjetar');
+  assert.equal(windStrength(20), 'olujni vjetar');
+  assert.equal(windBlowsTo(225), 45);
+  assert.equal(windBlowsTo(10), 190);
+});
+
+test('vrijeme: sati lokalnog dana, tekući sat i sažetak; stari keš bez temperature se prepoznaje', () => {
+  const d0 = new Date(2026, 10, 22).getTime();
+  const sati = Array.from({ length: 48 }, (_, i) => ({ t: d0 + i * 3600000, temp: i, padavine: i === 5 ? 1.25 : 0, brzina: 2, udari: i === 9 ? 9 : 4 }));
+  const fc = { preuzeto: 0, sati };
+  const now = d0 + 10.5 * 3600000;
+  assert.equal(hoursOfDay(fc, now).length, 24);
+  assert.equal(currentHour(fc, now).temp, 10);
+  assert.equal(currentHour(fc, d0 + 100 * 3600000), null);
+  assert.deepEqual(daySummary(hoursOfDay(fc, now)), { min: 0, max: 23, padavine: 1.3, najjaciUdar: 9 });
+  assert.equal(hasWeather(fc), true);
+  assert.equal(hasWeather({ sati: [{ t: 1, brzina: 2 }] }), false);
+  assert.equal(daySummary([]), null);
+});
+
+test('parseForecast nosi i temperaturu, padavine, oblake i kod vremena', () => {
+  const p = parseForecast({ hourly: { time: [1], wind_speed_10m: [1], wind_direction_10m: [90], wind_gusts_10m: [2], temperature_2m: [7.5], precipitation: [0.2], cloud_cover: [80], weather_code: [3] } });
+  assert.deepEqual(p.sati[0], { t: 1000, brzina: 1, smjer: 90, udari: 2, temp: 7.5, padavine: 0.2, oblaci: 80, kod: 3 });
+});
