@@ -90,6 +90,13 @@ export function movingTime(trag, now = Date.now()) {
   return Math.max(0, end - trag.start - paused);
 }
 
+// Trag kraći od ovoga se ne čuva u Moji tragovi (šetnja oko auta, slučajan start). Potraga je izuzeta: dokaz je i kratka.
+export const MIN_TRACK_M = 50;
+
+export function isTrackTooShort(tr) {
+  return tr.vrsta !== 'potraga' && trackDistance(tr.tacke) < MIN_TRACK_M;
+}
+
 export function trackDistance(points) {
   let d = 0;
   for (let i = 1; i < points.length; i++) d += haversine(points[i - 1], points[i]);

@@ -119,7 +119,8 @@ test('pad app-a tokom snimanja: dijalog oporavka nudi nastavak ili završetak', 
   await expect(page.locator('#oporavak')).toBeVisible();
   await page.locator('#btn-oporavak-zavrsi').click();
   await expect(page.locator('#oporavak')).toBeHidden();
-  await expect.poll(async () => (await tracksInDb(page))[0].status).toBe('gotovo');
+  // trag je prekratak (< 50 m), pa se završetkom odbacuje umjesto da završi u Moji tragovi
+  await expect.poll(async () => (await tracksInDb(page)).length).toBe(0);
 });
 
 test('izvoz GPX/KML ide kroz AndroidShare, uglačavanje se može vratiti, brisanje traži drugi dodir', async ({ page }) => {
@@ -168,4 +169,18 @@ test('dodirne mete snimanja ≥ 44 px', async ({ page }) => {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }
+});
+
+test('trag kraći od 50 m se ne čuva u Moji tragovi i javlja se razlog', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 44.88, longitude: 16.15, accuracy: 5 });
+  await page.goto('/');
+  await lok(page, '#btn-snimaj');
+  await expect(page.locator('#panel-snimanje')).toBeVisible();
+  await expect.poll(async () => (await tracksInDb(page)).length).toBe(1);
+  await page.locator('#btn-snim-stop').click();
+  await page.locator('#btn-snim-stop').click();
+  await expect(page.locator('#panel-snimanje')).toBeHidden();
+  await expect(page.locator('#poruka')).toContainText('kraći od 50 m');
+  await expect.poll(async () => (await tracksInDb(page)).length).toBe(0);
 });

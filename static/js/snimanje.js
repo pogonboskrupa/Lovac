@@ -4,7 +4,7 @@
 
 import {
   newTrack, pauseTrack, resumeTrack, stopTrack, mergePoints, autoPauseCheck,
-  createSnapshotTimer, defaultTrackName,
+  createSnapshotTimer, defaultTrackName, isTrackTooShort, trackDistance, MIN_TRACK_M,
 } from './trag.js';
 import { idbPut, idbGet, idbAll, idbDelete } from './db.js';
 import { alarm } from './ui.js';
@@ -184,6 +184,13 @@ export async function stopRecording(id) {
   const done = stopTrack(tr, Date.now());
   active.delete(id);
   snapshot.stop(id);
+  // Prekratak trag se ne čuva (ni lokalno ni na serveru).
+  if (isTrackTooShort(done)) {
+    await idbDelete('tragovi', id);
+    await stopSourceIfIdle();
+    emit();
+    return { ...done, odbaceno: true, duzina: trackDistance(done.tacke) };
+  }
   await saveTrack(done);
   await stopSourceIfIdle();
   emit();
@@ -232,6 +239,11 @@ export async function finishRecovered(id) {
   const withPts = { ...tr, tacke: mergePoints(tr.tacke, readNativeBufferAll(), tr) };
   const end = withPts.tacke.length ? withPts.tacke[withPts.tacke.length - 1].t : Date.now();
   const done = stopTrack(withPts, Math.max(end, tr.start));
+  if (isTrackTooShort(done)) {
+    await idbDelete('tragovi', id);
+    await stopSourceIfIdle();
+    return { ...done, odbaceno: true, duzina: trackDistance(done.tacke) };
+  }
   await saveTrack(done);
   await stopSourceIfIdle();
   return done;

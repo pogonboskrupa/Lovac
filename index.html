@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.4.1';
+  const APP_VER = 'v0.4.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -212,7 +212,6 @@
     <div class="kontrole-red">
       <div class="zoom-pill">
         <button id="btn-zoom-in" class="zoom-dugme" type="button" aria-label="Uvećaj"><svg class="ic"><use href="#ic-plus"/></svg></button>
-        <span id="zoom-nivo" class="zoom-nivo" aria-live="off">—</span>
         <button id="btn-zoom-out" class="zoom-dugme" type="button" aria-label="Umanji"><svg class="ic"><use href="#ic-minus"/></svg></button>
       </div>
       <div class="desna-kolona">
@@ -229,18 +228,16 @@
       </div>
       <div id="panel-snimanje" class="panel-snimanje" hidden>
         <div class="snim-info"><span id="snim-vrsta"></span><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.<span id="snim-krv"></span></div>
-        <div id="potraga-dugmad" class="red-dugmadi" hidden>
+        <div class="snim-dugmad">
+          <button id="btn-snim-tacka" class="dugme" type="button">Tačka</button>
+          <button id="btn-snim-slika" class="dugme" type="button">Slika</button>
+          <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
+          <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
+        </div>
+        <div id="potraga-dugmad" class="snim-dugmad snim-dugmad-3" hidden>
           <button id="btn-krv" class="dugme dugme-krv" type="button">Krv ovdje</button>
           <button id="btn-vodi-nazad" class="dugme" type="button">Vodi me nazad</button>
           <button id="btn-potraga-dijeli" class="dugme" type="button">Dijeli</button>
-        </div>
-        <div class="red-dugmadi">
-          <button id="btn-snim-tacka" class="dugme" type="button">Dodaj tačku</button>
-          <button id="btn-snim-slika" class="dugme" type="button">Dodaj sliku</button>
-        </div>
-        <div class="red-dugmadi">
-          <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
-          <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
         </div>
       </div>
     </div>

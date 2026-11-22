@@ -591,3 +591,34 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .ad-slika-ceka { opacity: 0.6; }
 .ad-slika .foto-ukloni { position: absolute; top: 2px; right: 2px; }
 .arhiva-red .obj-red-dugme { width: 100%; text-align: left; }
+
+/* ===== v0.4.2: kontrole uz donju navigaciju, ujednačene širine, ljepša dugmad, kompaktan panel snimanja ===== */
+/* Atribucija ide između lijeve i desne kolone kontrola, pa kontrole mogu sjesti odmah iznad navigacije. */
+.leaflet-bottom.leaflet-right { right: 72px; left: 72px; text-align: right; }
+.leaflet-control-attribution { font-size: 9px; line-height: 1.2; max-width: 100%; white-space: normal; }
+.mapa-dno { bottom: calc(var(--nav-h) + 8px); padding-bottom: 0; }
+.desna-kolona { gap: 8px; }
+.desna-kolona .ikona-dugme, .zoom-dugme, .zoom-pill { width: 56px; }
+.desna-kolona .ikona-dugme { height: 56px; border-radius: 18px; }
+.ikona-dugme.veliki { width: 56px; height: 56px; }
+.ikona-dugme.krug.veliki { border-radius: 18px; }
+.zoom-pill { border-radius: 18px; overflow: hidden; }
+.zoom-dugme { height: 52px; border-radius: 0; }
+.zoom-dugme + .zoom-dugme { border-top: 1px solid var(--dugme); }
+
+/* Dugmad: čvršći izgled, blagi sjaj i pritisak */
+.dugme { border-radius: 12px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 1px 3px rgba(0,0,0,.35); transition: transform .08s ease, filter .15s ease; }
+.dugme:active, .ikona-dugme:active, .zoom-dugme:active, .donja-nav button:active, .segment button:active { transform: scale(.97); filter: brightness(.9); }
+.dugme.glavno { box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 5px rgba(0,0,0,.4); }
+.ikona-dugme { border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), var(--sjena); }
+.ikona-dugme.glavno { background: var(--naglasak); color: var(--naglasak-tekst); }
+.donja-nav button { border-radius: 16px; transition: transform .08s ease, filter .15s ease; }
+.segment button { transition: transform .08s ease, filter .15s ease; }
+
+/* Panel snimanja: jedan red informacija i jedan red dugmadi jednake širine */
+.panel-snimanje { padding: 6px 8px; border-radius: 14px; }
+.snim-info { font-size: 14px; }
+.snim-dugmad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; }
+.snim-dugmad-3 { grid-template-columns: repeat(3, 1fr); }
+.snim-dugmad[hidden] { display: none; }
+.snim-dugmad .dugme { min-height: 44px; min-width: 0; margin: 0; padding: 0 4px; font-size: 14px; }

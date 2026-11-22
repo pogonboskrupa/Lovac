@@ -80,7 +80,6 @@ export function updateCoordBar(map) {
   const f = formatCoordMode(coordMode, c.lat, c.lng);
   set('koord-zona', f.oznaka);
   set('koord-gk', f.tekst);
-  set('zoom-nivo', String(Math.round(map.getZoom())));
 }
 
 function wireMapControls(map, setBase) {

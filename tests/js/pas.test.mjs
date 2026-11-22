@@ -139,3 +139,13 @@ test('arhiva lova: spisak, vrijeme, šta se lovilo, ko dodaje slike, pretraga', 
   assert.equal(matchesArchive(zap, '22.11.2026'), true);
   assert.equal(matchesArchive(zap, 'nesto drugo'), false);
 });
+
+import { isTrackTooShort, MIN_TRACK_M } from '../../static/js/trag.js';
+test('trag kraći od 50 m se ne čuva (potraga je izuzeta)', () => {
+  assert.equal(MIN_TRACK_M, 50);
+  const t = (vrsta, lat2) => ({ vrsta, tacke: [{ lat: 44.88, lon: 16.15, t: 0 }, { lat: lat2, lon: 16.15, t: 1000 }] });
+  assert.equal(isTrackTooShort(t('obilazak', 44.88020)), true);   // ~22 m
+  assert.equal(isTrackTooShort(t('obilazak', 44.8806)), false);   // ~67 m
+  assert.equal(isTrackTooShort(t('potraga', 44.88020)), false);
+  assert.equal(isTrackTooShort({ vrsta: 'obilazak', tacke: [] }), true);
+});

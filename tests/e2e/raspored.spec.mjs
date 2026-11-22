@@ -55,10 +55,18 @@ test('zoom lijevo dole sa nivoom, lociranje desno dole, oba iznad navigacije', a
   expect(zout.y + zout.height).toBeLessThanOrEqual(nav.y);
   expect(loc.x).toBeGreaterThan(vp.width / 2);
   expect(loc.y + loc.height).toBeLessThanOrEqual(nav.y);
-  await expect(page.locator('#zoom-nivo')).toHaveText(/^\d{1,2}$/);
-  const before = Number(await page.locator('#zoom-nivo').innerText());
+  // bez prikaza nivoa zuma; kontrole su tik iznad donje navigacije, a dugmad su jednake širine
+  await expect(page.locator('#zoom-nivo')).toHaveCount(0);
+  expect(nav.y - (zout.y + zout.height)).toBeLessThanOrEqual(16);
+  expect(nav.y - (loc.y + loc.height)).toBeLessThanOrEqual(16);
+  const add = await box(page, '#btn-dodaj');
+  expect(Math.round(zin.width)).toBe(56);
+  expect(Math.round(loc.width)).toBe(Math.round(zin.width));
+  expect(Math.round(add.width)).toBe(Math.round(zin.width));
+  const tilesBefore = await page.locator('#karta .leaflet-tile-loaded').count();
   await page.locator('#btn-zoom-in').click();
-  await expect(page.locator('#zoom-nivo')).toHaveText(String(before + 1));
+  await page.waitForTimeout(600);
+  expect(tilesBefore).toBeGreaterThan(0);
 });
 
 test('Meni, Postavke, Sekcija i Karte su ekrani iznad mape; navigacija ostaje vidljiva i radi', async ({ page }) => {

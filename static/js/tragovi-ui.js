@@ -5,7 +5,7 @@ import { addWaypoint,
   allTracks, unfinishedTracks, continueRecovered, finishRecovered, deleteTrack, setSmoothed,
 } from './snimanje.js';
 import {
-  movingTime, trackDistance, formatDistance, formatDuration, smoothPoints, toGpx, toKml, trackFileName,
+  movingTime, trackDistance, formatDistance, formatDuration, smoothPoints, toGpx, toKml, trackFileName, MIN_TRACK_M,
 } from './trag.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { shareFile } from './dijeljenje.js';
@@ -109,6 +109,7 @@ export function initTragovi(L, map) {
     const tr = current();
     if (!tr) return;
     const done = await stopRecording(tr.id);
+    if (done.odbaceno) { toast(`Trag je kraći od ${MIN_TRACK_M} m (${formatDistance(done.duzina)}) i nije sačuvan`, 5000); return; }
     toast(`Trag sačuvan: ${formatDistance(trackDistance(done.tacke))}`);
   });
 
