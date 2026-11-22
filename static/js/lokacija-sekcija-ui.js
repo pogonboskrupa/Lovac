@@ -201,6 +201,24 @@ export function initMojaLokacija(L, map) {
     map.setView([row.lat, row.lon], Math.max(map.getZoom(), 16), { animate: false });
   });
 
+  // "Gdje si?" → odgovor "da": odmah počni dijeliti sa tom sekcijom na 1 h (ako već dijelim drugu, prelazim na ovu).
+  document.addEventListener('lokacija:dijeli-sada', async (e) => {
+    const sekcijaId = e.detail?.sekcijaId;
+    if (!sekcijaId) return;
+    const cur = sharing();
+    if (cur && cur.sekcijaId !== sekcijaId && online()) removeMine(cur.sekcijaId).catch(() => {});
+    const until = shareUntil('1');
+    saveSoft(SEKCIJA_DIJELJENJE_KEY, { sekcijaId, do: cur?.sekcijaId === sekcijaId ? Math.max(cur.do, until) : until });
+    armSending();
+    if (isOpen()) renderShare();
+  });
+  // Odgovor "da" na moje pitanje: osvježi lokacije i pokaži tog lovca na karti.
+  document.addEventListener('lokacija:prikazi-clana', async (e) => {
+    await pull();
+    const row = rows.find((r) => r.korisnik_id === e.detail?.korisnikId);
+    if (row) map.setView([row.lat, row.lon], Math.max(map.getZoom(), 16), { animate: false });
+    else toast('Lokacija još nije stigla, pogledaj za koji trenutak');
+  });
   document.addEventListener('lokacija:postavke', () => { if (sharing()) armSending(); });
   onGpsUpdate(() => { if (isOpen()) { renderCoords(); renderShare(); } });
   document.addEventListener('sekcije:promjena', async () => { await loadSections(); if (isOpen()) renderShare(); });

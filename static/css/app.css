@@ -707,3 +707,19 @@ svg[hidden] { display: none; }
 .tr-chip[data-stanje="sruseno"] { background: #b91c1c; color: #ffffff; }
 #ods-zbir, #op-zbir { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
 #ods-zbir li, #op-zbir li { padding: 6px 12px; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); }
+
+/* v0.4.8: kontrole tik iznad navigacije (prazan .donji-dio je dodavao 8 px razmaka) */
+.mapa-dno { bottom: calc(var(--nav-h) - 4px); }
+/* gornja traka se može sakriti: ostaje samo kružno dugme za povratak */
+.gornja-traka { align-items: center; }
+.traka-prekidac { position: absolute; top: calc(68px + env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; }
+.traka-prekidac .ic { width: 24px; height: 24px; }
+.traka-prekidac .ic-prikazi { display: none; color: var(--gps-dobro); }
+.gornja-traka[data-sakrivena] #koord-traka { display: none; }
+.gornja-traka[data-sakrivena] .traka-prekidac .ic-sakrij { display: none; }
+.gornja-traka[data-sakrivena] .traka-prekidac .ic-prikazi { display: block; }
+@media (max-width: 370px) {
+  #koord-traka { padding: 6px 10px; }
+  #koord-traka .pill-red { gap: 5px; font-size: 13px; }
+  #koord-traka .pill-oznaka { font-size: 11px; }
+}

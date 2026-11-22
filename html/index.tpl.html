@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.4.7';
+  const APP_VER = 'v0.4.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -51,6 +51,7 @@
   <symbol id="ic-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-archive" viewBox="0 0 24 24"><path d="M3 5h18v4H3zM5 9v10h14V9M9.5 13h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-chev-gore" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
@@ -89,6 +90,7 @@
     <button id="koord-traka" class="pill-info" type="button" aria-label="Koordinate centra karte. Dodir mijenja sistem: WGS84, MGI 5, MGI 6">
       <span class="pill-red"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b><span class="pill-sep"></span><span id="koord-zona" class="pill-oznaka">WGS84</span><b id="koord-gk">—</b></span>
     </button>
+    <button id="btn-koord-sakrij" class="ikona-dugme krug traka-prekidac" type="button" aria-expanded="true" aria-label="Sakrij visinu i koordinate"><svg class="ic ic-sakrij"><use href="#ic-chev-gore"/></svg><svg class="ic ic-prikazi"><use href="#ic-mountain"/></svg></button>
     <button id="btn-podloga" class="ikona-dugme krug" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
   </div>
   <div class="status-red">
@@ -311,6 +313,7 @@
 <!--@ekran:sos-poslan-dijalog-->
 
 <!--@ekran:sos-primljen-->
+<!--@ekran:ping-dijalog-->
 
 <!--@ekran:sekcije-->
 

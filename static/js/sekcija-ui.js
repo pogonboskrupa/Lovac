@@ -23,6 +23,8 @@ import {
 import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
+import { canPing } from './ping.js';
+import { sendPing } from './ping-ui.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
 const NOTIF_KEY = 'lovac.sekcija.obavijest';
@@ -292,6 +294,7 @@ export function initSekcijaEkran(L, map) {
         <div class="clan-akcije">
           ${a.zadnje && Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="na-karti">Na karti</button>' : ''}
           ${ja ? '' : '<button type="button" class="dugme" data-akcija="poruka">Poruka</button>'}
+          ${canPing(st, r.uloga, me()?.id, r.id) ? '<button type="button" class="dugme" data-akcija="ping">Gdje si?</button>' : ''}
         </div>
       </li>`;
     }).join('') || '<li class="sitno">Nema članova.</li>';
@@ -449,6 +452,11 @@ export function initSekcijaEkran(L, map) {
     if (b.dataset.akcija === 'raspored') {
       close();
       document.dispatchEvent(new CustomEvent('lov:otvori', { detail: { id: b.dataset.lov } }));
+    }
+    if (b.dataset.akcija === 'ping') {
+      const s = selected();
+      if (s) await sendPing(s.id, b.closest('[data-uid]').dataset.uid);
+      return;
     }
     if (b.dataset.akcija === 'poruka') {
       const row = b.closest('[data-uid]');

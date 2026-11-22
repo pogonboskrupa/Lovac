@@ -33,6 +33,8 @@ import { initSlike } from './slike-ui.js';
 import { initMojaLokacija } from './lokacija-sekcija-ui.js';
 import { initPas } from './pas-ui.js';
 import { initVelicina } from './prikaz.js';
+import { initTraka } from './traka.js';
+import { initPing } from './ping-ui.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
 import { initMeni } from './meni-ui.js';
 import { initStan } from './stan-ui.js';
@@ -102,6 +104,8 @@ function enter(screen) {
       ['novi-lovac', () => initNoviLovac()],
       ['pas', () => initPas(globalThis.L, map)],
       ['moja-lokacija', () => initMojaLokacija(globalThis.L, map)],
+      ['traka', () => initTraka()],
+      ['ping', () => initPing()],
       ['slike', () => initSlike(globalThis.L, map)],
       ['kamere', () => initKamere(globalThis.L, map)],
       ['lov-tragovi', () => initLovTragovi(globalThis.L, map)],
