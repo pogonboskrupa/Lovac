@@ -99,7 +99,7 @@ function enter(screen) {
       ['odstrel-stat', () => initOdstrelStat()],
       ['slojevi', () => initSlojevi(globalThis.L, map)],
       ['mjerenje', () => initMjerenje(globalThis.L, map)],
-      ['preuzimanje', () => initPreuzimanje(map, activeBase)],
+      ['preuzimanje', () => initPreuzimanje(map, activeBase, globalThis.L)],
       ['karte', () => initKarte(globalThis.L, map, registerTeren, GITHUB_REPO)],
       ['lov', () => initLov(globalThis.L, map)],
       ['sekcije', () => initSekcije()],

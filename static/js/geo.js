@@ -217,3 +217,17 @@ export function formatCoordMode(mode, lat, lon) {
   }
   return { oznaka: 'WGS84', tekst: formatWgs84(lat, lon) };
 }
+
+// "Prati me": koliko je tačka udaljena od centra ekrana (0 = u sredini, 1 = na rubu; veći od 1 = izvan ekrana).
+export function offCenterRatio(point, size) {
+  const hx = size.x / 2;
+  const hy = size.y / 2;
+  if (!(hx > 0) || !(hy > 0)) return 0;
+  return Math.max(Math.abs(point.x - hx) / hx, Math.abs(point.y - hy) / hy);
+}
+
+export const FOLLOW_STOP_RATIO = 0.8;
+
+export function shouldStopFollow(point, size, threshold = FOLLOW_STOP_RATIO) {
+  return offCenterRatio(point, size) >= threshold;
+}

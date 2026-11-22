@@ -1,6 +1,6 @@
 // "Moja lokacija": pozicija, tačnost u boji, starost fiksa, Prati me / Centriraj, kompas.
 
-import { accuracyLevel, formatFixAge } from './geo.js';
+import { accuracyLevel, formatFixAge, shouldStopFollow } from './geo.js';
 import { toast } from './ui.js';
 import { loadJSON } from './storage.js';
 import { coneEnabled, STOZAC_KEY } from './kompas.js';
@@ -41,7 +41,7 @@ function notifyGps() {
 }
 
 export function initGps(L, map) {
-  const state = { fix: null, follow: false, watchId: null, heading: null, marker: null, circle: null };
+  const state = { fix: null, follow: false, watchId: null, heading: null, marker: null, circle: null, selfMove: false, dragging: false };
 
   const arrowIcon = L.divIcon({
     className: 'gps-ikona',
@@ -83,7 +83,7 @@ export function initGps(L, map) {
       elAcc.dataset.tacnost = level;
     }
     if (panel) panel.hidden = false;
-    if (state.follow) map.panTo([lat, lon], { animate: true });
+    if (state.follow && !state.dragging) followPan();
   };
 
   const onPos = (pos) => {
@@ -125,10 +125,18 @@ export function initGps(L, map) {
     }
   };
 
+  // Pomjeranje koje radi sama aplikacija ne smije se računati kao lovčevo (inače animacija prema novom fiksu ugasi praćenje).
+  function followPan() {
+    if (!state.fix) return;
+    state.selfMove = true;
+    map.once('moveend', () => { state.selfMove = false; });
+    map.panTo([state.fix.lat, state.fix.lon], { animate: true });
+  }
+
   const setFollow = (on) => {
     state.follow = on;
     btnFollow?.setAttribute('aria-pressed', String(on));
-    if (on && state.fix) map.panTo([state.fix.lat, state.fix.lon]);
+    if (on && state.fix) followPan();
   };
 
   btnFollow?.addEventListener('click', () => { start(); setFollow(!state.follow); });
@@ -137,8 +145,18 @@ export function initGps(L, map) {
     if (state.fix) map.setView([state.fix.lat, state.fix.lon], Math.max(map.getZoom(), 15), { animate: false });
     else toast('Čekam GPS…');
   });
-  // Ručno pomjeranje karte gasi praćenje, inače se karta "otima" lovcu.
-  map.on('dragstart', () => { if (state.follow) setFollow(false); });
+  // Praćenje se gasi tek kad lovac odvuče kartu tako da je njegova pozicija 80 % puta od centra do ruba ekrana;
+  // manji pomak se po otpuštanju vraća na poziciju.
+  map.on('dragstart', () => { state.dragging = true; });
+  map.on('move', () => {
+    if (!state.follow || state.selfMove || !state.fix) return;
+    const pt = map.latLngToContainerPoint([state.fix.lat, state.fix.lon]);
+    if (shouldStopFollow(pt, map.getSize())) setFollow(false);
+  });
+  map.on('dragend', () => {
+    state.dragging = false;
+    if (state.follow) followPan();
+  });
 
   setInterval(() => {
     if (state.fix && elAge) elAge.textContent = formatFixAge(Date.now() - state.fix.t);

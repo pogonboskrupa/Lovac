@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.7.2';
+  const APP_VER = 'v0.7.3';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -331,6 +331,17 @@
       <button id="btn-pred-preuzmi" class="dugme glavno" type="button">Preuzmi područje</button>
       <button id="btn-pred-prekini" class="dugme" type="button" hidden>Prekini</button>
     </div>
+  </div>
+
+  <div class="p-kartica" id="karte-podrucja-kartica">
+    <h3>Preuzeta područja <span id="podrucja-broj" class="sitno"></span></h3>
+    <p class="sitno">Područja koja si preuzeo za rad bez interneta. Pločice ostaju u kešu dok ga ne obrišeš; uklanjanje sa spiska samo briše bilješku.</p>
+    <div class="p-prekidac-red">
+      <button id="btn-podrucja-pokrivenost" type="button" class="lok-prekidac" role="switch" aria-checked="false" aria-label="Prikaži preuzeta područja na karti"><span class="lok-prekidac-ruka"></span></button>
+      <span>Prikaži preuzeta područja na karti</span>
+    </div>
+    <ul id="podrucja-spisak" class="spisak"></ul>
+    <p id="podrucja-prazno" class="sitno">Još nema preuzetih područja.</p>
   </div>
 
   <div class="p-kartica">

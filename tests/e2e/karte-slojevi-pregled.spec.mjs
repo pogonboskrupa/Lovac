@@ -27,7 +27,7 @@ test('Karte i offline: hero sa brojkama i savjet o spremnosti (bez aplikacije fa
   await expect(page.locator('#karte-hero-karte')).toHaveText('—');
   await expect.poll(async () => Number(await page.locator('#karte-hero-plocice').innerText())).toBeGreaterThan(0);
   await expect(page.locator('#karte-savjet')).toContainText(/preuzmi|Radi samo/i);
-  await expect(page.locator('#karte .p-kartica')).toHaveCount(5);
+  await expect(page.locator('#karte .p-kartica')).toHaveCount(6);
 });
 
 test('Slojevi: hero, prikaži/sakrij sve', async ({ page }) => {

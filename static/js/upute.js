@@ -36,6 +36,7 @@ export const UPUTE = [
       ['Pravac gledanja', 'Kompas pokazuje u kojem smjeru gleda telefon. Ako telefon nema senzor, koristi se smjer kretanja ili piše da kompas nije dostupan. Kompas može griješiti (metal, magneti).'],
       ['Snimanje traga', 'Snima put dok hodaš, i kad je ekran ugašen. Može se pauzirati, dodati tačka ili slika. Trag kraći od 50 m se ne čuva. Na nekim telefonima treba isključiti štednju baterije za aplikaciju.'],
       ['Istraživač (3D)', 'Nagnut pogled karte koji prati tebe. Jedan prst pomjera kartu (možeš istraživati teren van svoje pozicije, dugme ◎ te vraća), dva prsta je okreću, a dugme "Sjever gore" vraća pogled. Dodir na kolegu koji dijeli lokaciju pokazuje koliko je daleko od tebe, a prekidač prikazuje trag kuda se kretao. "Izađi iz 3D" je gore lijevo.'],
+      ['Prati me', 'Karta prati tvoju poziciju dok je uključeno. Manji pomak karte prstom se vraća na tebe; praćenje se isključuje tek kad odvučeš kartu tako da si 80 % puta od sredine do ruba ekrana.'],
       ['Dijeljenje sa sekcijom', 'U istoj ploči možeš podijeliti lokaciju sa svojom sekcijom na 1 sat, 4 sata ili do kraja dana. Vide je članovi, grupovođa i lovočuvar te sekcije, a administrator ne (osim ako je u sekciji).'],
     ],
   },
@@ -45,6 +46,7 @@ export const UPUTE = [
     stavke: [
       ['Čeka slanje', 'Broj zapisa koji još nisu na serveru. Šalju se sami; Postavke → Podaci ima dugme "Pošalji sad". Neposlano se nikad ne briše.'],
       ['Preuzmi područje', 'Meni → Karte i offline → Preuzmi područje spremi pločice vidljivog dijela karte (topo ili satelit). Uradi to kod kuće za lovište u koje ideš.'],
+      ['Preuzeta područja', 'Spisak preuzetih područja u Karte i offline pokazuje podlogu, zoom, broj pločica i datum. Prekidač ih crta isprekidanim okvirom na karti, a pri novom preuzimanju piše da je prikazani dio već preuzet.'],
       ['Teren i offline karte', 'Teren je karta društva koju preuzimaš jednom (veliki fajl, koristi wifi). Možeš uvesti i vlastitu MBTiles ili RMaps kartu sa telefona.'],
       ['Spremnost', 'Postavke → Podaci pokazuje vezu, zadnje slanje, zauzetu pohranu telefona, broj pločica i kad je zadnja rezervna kopija.'],
       ['Zapisi drugog naloga', 'Ako se na istom telefonu prijavi drugi lovac, njegovi neposlani zapisi se ne šalju pod tvojim imenom. Što server odbije, pojavi se u Postavke → Podaci i može se skinuti iz reda.'],
