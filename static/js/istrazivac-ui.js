@@ -7,6 +7,8 @@ import { memberVectors, formatMemberDistance, arrowAngle } from './istrazivac.js
 import { cachedProfile } from './auth.js';
 import { memberName } from './dijeljenje-ui.js';
 import { escapeHtml } from './ui.js';
+import { currentHeading } from './gps.js';
+import { ROT_KORAK, touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss } from './rotacija.js';
 
 const $ = (id) => document.getElementById(id);
 const DAY = 86400000;
@@ -37,6 +39,16 @@ export function initIstrazivac(L, map) {
   let rows = [];
   let on = false;
   let pausedUntil = 0;
+  let rot = 0;
+  let followCompass = false;
+  const controls = $('istrazivac-kontrole');
+  const karta = $('karta');
+
+  const applyRot = () => {
+    karta.style.transform = on ? mapTransformCss(rot) : '';
+    $('btn-ist-kompas').setAttribute('aria-pressed', String(followCompass));
+    render();
+  };
 
   const render = () => {
     const me = currentFix();
@@ -46,7 +58,7 @@ export function initIstrazivac(L, map) {
     const v = memberVectors(me, rows, cachedProfile()?.id, memberName);
     bar.innerHTML = izlaz + (v.length
       ? v.map((m) => `<button type="button" class="clan-chip" data-uid="${escapeHtml(m.id)}" aria-label="${escapeHtml(m.ime)}, ${compassName(m.smjer)}, ${formatMemberDistance(m.udaljenost)}">
-          <svg class="ic strelica" style="transform:rotate(${Math.round(arrowAngle(m.smjer, 0))}deg)"><use href="#ic-arrow"/></svg>
+          <svg class="ic strelica" style="transform:rotate(${Math.round(arrowAngle(m.smjer, upBearing(rot)))}deg)"><use href="#ic-arrow"/></svg>
           <span><b>${escapeHtml(m.ime.split(' ')[0])}</b> ${compassName(m.smjer)} ${formatMemberDistance(m.udaljenost)}${m.starost > 1 ? ` · ${m.starost} min` : ''}</span></button>`).join('')
       : '<span class="sitno">Nema članova koji dijele lokaciju (lov u toku + internet).</span>');
   };
@@ -56,15 +68,40 @@ export function initIstrazivac(L, map) {
     screen.classList.toggle('istrazivac', on);
     btn.setAttribute('aria-pressed', String(on));
     bar.hidden = !on;
+    controls.hidden = !on;
+    if (!on) { rot = 0; followCompass = false; }
     for (const h of ['dragging', 'touchZoom', 'doubleClickZoom']) map[h][on ? 'disable' : 'enable']();
     if (on) {
       const me = currentFix();
       if (me) map.setView([me.lat, me.lon], Math.max(map.getZoom(), 15));
     }
-    render();
+    applyRot();
   };
 
   btn.addEventListener('click', () => setOn(!on));
+  $('btn-ist-lijevo').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, -ROT_KORAK); applyRot(); });
+  $('btn-ist-desno').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, ROT_KORAK); applyRot(); });
+  $('btn-ist-sjever').addEventListener('click', () => { followCompass = false; rot = 0; applyRot(); });
+  $('btn-ist-kompas').addEventListener('click', () => {
+    followCompass = !followCompass;
+    const h = currentHeading();
+    if (followCompass && h != null) rot = rotationForHeading(h);
+    applyRot();
+  });
+  // Okretanje sa dva prsta (dragging/zoom su u ovom modu isključeni, pa gest ne smeta karti).
+  let lastAngle = null;
+  const two = (e) => (e.touches.length === 2
+    ? touchAngle({ x: e.touches[0].clientX, y: e.touches[0].clientY }, { x: e.touches[1].clientX, y: e.touches[1].clientY })
+    : null);
+  screen.addEventListener('touchstart', (e) => { if (on) lastAngle = two(e); }, { passive: true });
+  screen.addEventListener('touchmove', (e) => {
+    if (!on) return;
+    const a = two(e);
+    if (a == null) { lastAngle = null; return; }
+    if (lastAngle != null) { followCompass = false; rot = rotateBy(rot, gestureDelta(lastAngle, a)); applyRot(); }
+    lastAngle = a;
+  }, { passive: true });
+  screen.addEventListener('touchend', () => { lastAngle = null; }, { passive: true });
   bar.addEventListener('click', (e) => {
     if (e.target.closest('[data-izlaz]')) { setOn(false); return; }
     const c = e.target.closest('[data-uid]');
@@ -74,7 +111,8 @@ export function initIstrazivac(L, map) {
     map.panTo([r.lat, r.lon]);
   });
   document.addEventListener('uzivo:pozicije', (e) => { rows = e.detail.rows || []; render(); });
-  onGpsUpdate((fix) => {
+  onGpsUpdate((fix, heading) => {
+    if (on && followCompass && heading != null) { rot = rotationForHeading(heading); applyRot(); }
     render();
     if (on && fix && Date.now() > pausedUntil) map.setView([fix.lat, fix.lon], map.getZoom(), { animate: false });
   });

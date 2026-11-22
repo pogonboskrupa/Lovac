@@ -29,3 +29,28 @@ test('čip dnevnog svjetla pokazuje stanje; Istraživač nagne kartu i pokaže s
   await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
   await expect(page.locator('#istrazivac-traka')).toBeHidden();
 });
+
+test('Istraživač: karta se okreće dugmadima i prati kompas; strelice članova slijede rotaciju; Sjever gore vraća', async ({ page }) => {
+  await serveTiles(page);
+  await page.goto('/');
+  await lok(page, '#btn-istrazivac');
+  await expect(page.locator('#istrazivac-kontrole')).toBeVisible();
+  for (const b of await page.locator('#istrazivac-kontrole button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  const tr = () => page.evaluate(() => document.getElementById('karta').style.transform);
+  await page.locator('#btn-ist-desno').click();
+  expect(await tr()).toContain('rotateZ(15deg)');
+  await page.locator('#btn-ist-lijevo').click();
+  await page.locator('#btn-ist-lijevo').click();
+  expect(await tr()).toContain('rotateZ(345deg)');
+  await page.locator('#btn-ist-sjever').click();
+  expect(await tr()).toContain('rotateZ(0deg)');
+
+  await page.locator('#btn-ist-kompas').click();
+  await expect(page.locator('#btn-ist-kompas')).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: 270, absolute: true })));
+  await expect.poll(tr).toContain('rotateZ(270deg)');
+
+  await lok(page, '#btn-istrazivac');
+  await expect(page.locator('#istrazivac-kontrole')).toBeHidden();
+  expect(await tr()).toBe('');
+});

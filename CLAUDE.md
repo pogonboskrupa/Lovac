@@ -363,3 +363,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Kompas "Pravac gledanja" (v0.6.4)**
 - Ploča "Moja lokacija" ima kompas (`kompas.js` čista logika, `kompas-ui.js`): ruža sa S/I/J/Z se okreće suprotno od smjera telefona, pa je pravac gledanja uvijek na vrhu, uz tekst "JI 135°". Smjer dolazi iz `gps.js currentHeading` (`deviceorientationabsolute`; GPS smjer kretanja je rezerva i izvor se ispisuje), glađenje je kružno (`smoothHeading`: 359° → 1° ne prolazi kroz 180°). Bez senzora piše "Kompas nije dostupan na ovom telefonu", nikad izmišljen smjer. UI uvijek kaže da kompas može griješiti i ne zamjenjuje pravila lova ni vođu lova.
+
+**Istraživač: okretanje karte (v0.6.5)**
+- U Istraživaču se karta okreće sa dva prsta ili dugmadima desno (`#istrazivac-kontrole`: ulijevo/udesno za 15°, "Karta prati pravac gledanja", "Sjever gore"). Rotacija je dio CSS transforma pogleda (`rotacija.js mapTransformCss`: perspective → rotateX → rotateZ → scale), Leaflet se NE rotira (koordinate dodira bi bile pogrešne); izlaz iz moda vraća transform na prazno. Strelice članova se računaju relativno na smjer koji je na ekranu "gore" (`upBearing(rot)`), pa pokazuju pravi smjer i kad je karta okrenuta. Gest preko ±180° ne skače (`gestureDelta`). Traka članova je u jednom redu, a okvir koordinata se u modu sakriva da gornji dio ne zauzima kartu.

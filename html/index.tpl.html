@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.6.4';
+  const APP_VER = 'v0.6.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -18,6 +18,8 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-follow" viewBox="0 0 24 24"><path d="M12 2 20 21 12 17 4 21Z" fill="currentColor"/></symbol>
+  <symbol id="ic-rot-lijevo" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.1-5M5 3v5h5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-rot-desno" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5M19 3v5h-5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M12 2 19 20 12 16 5 20Z" fill="currentColor"/></symbol>
   <symbol id="ic-layers" viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5Zm-10 9 10 5 10-5M2 16l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
   <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"/></symbol>
@@ -107,6 +109,12 @@
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
   <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
+  <div id="istrazivac-kontrole" class="istrazivac-kontrole" role="group" aria-label="Okretanje karte" hidden>
+    <button id="btn-ist-lijevo" type="button" class="ikona-dugme" aria-label="Okreni kartu ulijevo"><svg class="ic"><use href="#ic-rot-lijevo"/></svg></button>
+    <button id="btn-ist-desno" type="button" class="ikona-dugme" aria-label="Okreni kartu udesno"><svg class="ic"><use href="#ic-rot-desno"/></svg></button>
+    <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
+    <button id="btn-ist-sjever" type="button" class="ikona-dugme" aria-label="Sjever gore"><span class="ist-s">S</span></button>
+  </div>
   <div id="lov-trag-legenda" class="istrazivac-traka lov-trag-legenda" hidden></div>
   <div id="meni-spiskovi" class="meni meni-grupe" hidden>
     <h3 class="m-grupa">Lov</h3>
