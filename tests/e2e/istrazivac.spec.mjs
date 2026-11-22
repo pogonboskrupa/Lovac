@@ -54,3 +54,32 @@ test('Istraživač: karta se okreće dugmadima i prati kompas; strelice članova
   await expect(page.locator('#istrazivac-kontrole')).toBeHidden();
   expect(await tr()).toBe('');
 });
+
+test('Istraživač pregled: sažetak, lica sa svježinom, najbliži istaknut, nagib kruži i pamti se, HUD smjera, centriraj na mene', async ({ page }) => {
+  await serveTiles(page);
+  await page.goto('/');
+  await lok(page, '#btn-istrazivac');
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [
+    { korisnik_id: 'x1', lat: 44.89, lon: 16.15, t: new Date().toISOString() },
+    { korisnik_id: 'x2', lat: 44.95, lon: 16.2, t: new Date(Date.now() - 8 * 60000).toISOString() },
+  ] } })));
+  await expect(page.locator('#ist-sazetak')).toContainText('2 člana · najbliži');
+  const chips = page.locator('#istrazivac-traka .clan-chip');
+  await expect(chips).toHaveCount(2);
+  await expect(chips.first()).toHaveAttribute('data-najblizi', '');
+  await expect(chips.first()).toHaveAttribute('data-svjezina', 'uzivo');
+  await expect(chips.nth(1)).toHaveAttribute('data-svjezina', 'zastarjelo');
+  await expect(chips.first().locator('.clan-lice')).toHaveText(/^[A-ZČĆŽŠĐ?]{1,2}$/);
+
+  await expect(page.locator('#ist-hud')).toContainText('nagib 40°');
+  await page.locator('#btn-ist-nagib').click();
+  await expect(page.locator('#ist-hud')).toContainText('nagib 55°');
+  expect(await page.evaluate(() => document.getElementById('karta').style.transform)).toContain('rotateX(55deg)');
+  await page.reload();
+  await lok(page, '#btn-istrazivac');
+  await expect(page.locator('#ist-hud')).toContainText('nagib 55°');
+  await page.locator('#btn-ist-desno').click();
+  await expect(page.locator('#ist-hud')).toContainText('Gore: S 345°');
+  await page.locator('#btn-ist-ja').click();
+  for (const b of await page.locator('#istrazivac-kontrole button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+});

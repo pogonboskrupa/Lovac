@@ -8,6 +8,9 @@ import { cachedProfile } from './auth.js';
 import { memberName } from './dijeljenje-ui.js';
 import { escapeHtml } from './ui.js';
 import { currentHeading } from './gps.js';
+import { initialsOf } from './lokacija.js';
+import { loadJSON, saveSoft } from './storage.js';
+import { tiltById, nextTilt, freshnessOf, barSummary, upLabel } from './istrazivac-pregled.js';
 import { ROT_KORAK, touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss } from './rotacija.js';
 
 const $ = (id) => document.getElementById(id);
@@ -43,10 +46,14 @@ export function initIstrazivac(L, map) {
   let followCompass = false;
   const controls = $('istrazivac-kontrole');
   const karta = $('karta');
+  let tiltId = tiltById(loadJSON('lovac.ist.nagib', null)).id;
 
   const applyRot = () => {
-    karta.style.transform = on ? mapTransformCss(rot) : '';
+    const tilt = tiltById(tiltId);
+    karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni }) : '';
     $('btn-ist-kompas').setAttribute('aria-pressed', String(followCompass));
+    $('btn-ist-nagib-tekst').textContent = `${tilt.stepeni}°`;
+    $('ist-hud').textContent = upLabel(upBearing(rot), tilt.stepeni);
     render();
   };
 
@@ -56,8 +63,10 @@ export function initIstrazivac(L, map) {
     const izlaz = '<button type="button" class="istrazivac-izlaz" data-izlaz>Izađi iz 3D</button>';
     if (!me) { bar.innerHTML = `${izlaz}<span class="sitno">Čekam GPS…</span>`; return; }
     const v = memberVectors(me, rows, cachedProfile()?.id, memberName);
+    const sum = barSummary(v);
     bar.innerHTML = izlaz + (v.length
-      ? v.map((m) => `<button type="button" class="clan-chip" data-uid="${escapeHtml(m.id)}" aria-label="${escapeHtml(m.ime)}, ${compassName(m.smjer)}, ${formatMemberDistance(m.udaljenost)}">
+      ? `<span class="ist-sazetak" id="ist-sazetak">${escapeHtml(sum.tekst)}</span>` + v.map((m) => `<button type="button" class="clan-chip" data-uid="${escapeHtml(m.id)}" data-svjezina="${freshnessOf(m.starost)}"${m.id === sum.najblizi ? ' data-najblizi' : ''} aria-label="${escapeHtml(m.ime)}, ${compassName(m.smjer)}, ${formatMemberDistance(m.udaljenost)}">
+          <span class="clan-lice">${escapeHtml(initialsOf(m.ime))}</span>
           <svg class="ic strelica" style="transform:rotate(${Math.round(arrowAngle(m.smjer, upBearing(rot)))}deg)"><use href="#ic-arrow"/></svg>
           <span><b>${escapeHtml(m.ime.split(' ')[0])}</b> ${compassName(m.smjer)} ${formatMemberDistance(m.udaljenost)}${m.starost > 1 ? ` · ${m.starost} min` : ''}</span></button>`).join('')
       : '<span class="sitno">Nema članova koji dijele lokaciju (lov u toku + internet).</span>');
@@ -81,6 +90,12 @@ export function initIstrazivac(L, map) {
   btn.addEventListener('click', () => setOn(!on));
   $('btn-ist-lijevo').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, -ROT_KORAK); applyRot(); });
   $('btn-ist-desno').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, ROT_KORAK); applyRot(); });
+  $('btn-ist-nagib').addEventListener('click', () => { tiltId = nextTilt(tiltId); saveSoft('lovac.ist.nagib', tiltId); applyRot(); });
+  $('btn-ist-ja').addEventListener('click', () => {
+    pausedUntil = 0;
+    const me = currentFix();
+    if (me) map.setView([me.lat, me.lon], map.getZoom(), { animate: false });
+  });
   $('btn-ist-sjever').addEventListener('click', () => { followCompass = false; rot = 0; applyRot(); });
   $('btn-ist-kompas').addEventListener('click', () => {
     followCompass = !followCompass;

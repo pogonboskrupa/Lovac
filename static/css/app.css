@@ -953,10 +953,19 @@ svg[hidden] { display: none; }
 .kompas-stepeni { font-size: 22px; font-variant-numeric: tabular-nums; }
 
 /* Istraživač: okretanje karte, kompaktna traka */
-.istrazivac-kontrole { position: absolute; right: 8px; top: calc(var(--gore-2) + 36px); z-index: 1050; display: flex; flex-direction: column; gap: 8px; }
+.istrazivac-kontrole { position: absolute; right: 8px; top: calc(var(--gore-2) + 36px); z-index: 1050; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 .istrazivac-kontrole[hidden] { display: none; }
-.istrazivac-kontrole .ikona-dugme { width: 48px; height: 48px; }
+.istrazivac-kontrole .ikona-dugme { width: 46px; height: 46px; }
 .istrazivac-kontrole .ikona-dugme[aria-pressed="true"] { background: #2563eb; color: #ffffff; }
 .ist-s { font-weight: 800; color: #c62828; }
 #ekran-mapa.istrazivac .istrazivac-traka { flex-wrap: nowrap; top: calc(var(--gore-1) - 36px); }
 #ekran-mapa.istrazivac #koord-okvir { display: none; }
+
+/* Istraživač: pregled — sažetak, lica članova sa svježinom, HUD smjera i nagiba */
+.ist-sazetak { align-self: center; padding: 6px 12px; border-radius: 999px; background: var(--povrsina); box-shadow: var(--sjena); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.clan-lice { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--dugme); color: var(--dugme-tekst); font-size: 12px; font-weight: 800; border: 3px solid var(--tekst-2); box-sizing: border-box; }
+.clan-chip[data-svjezina="uzivo"] .clan-lice { border-color: var(--gps-dobro); }
+.clan-chip[data-svjezina="zastarjelo"] .clan-lice { border-color: var(--gps-srednje); }
+.clan-chip[data-svjezina="bez-signala"] { opacity: .75; }
+.clan-chip[data-najblizi] { box-shadow: 0 0 0 3px #2563eb, var(--sjena); }
+.ist-hud { align-self: flex-end; padding: 4px 10px; border-radius: 999px; background: var(--povrsina); box-shadow: var(--sjena); font-size: 13px; font-weight: 700; white-space: nowrap; }

@@ -366,3 +366,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Istraživač: okretanje karte (v0.6.5)**
 - U Istraživaču se karta okreće sa dva prsta ili dugmadima desno (`#istrazivac-kontrole`: ulijevo/udesno za 15°, "Karta prati pravac gledanja", "Sjever gore"). Rotacija je dio CSS transforma pogleda (`rotacija.js mapTransformCss`: perspective → rotateX → rotateZ → scale), Leaflet se NE rotira (koordinate dodira bi bile pogrešne); izlaz iz moda vraća transform na prazno. Strelice članova se računaju relativno na smjer koji je na ekranu "gore" (`upBearing(rot)`), pa pokazuju pravi smjer i kad je karta okrenuta. Gest preko ±180° ne skače (`gestureDelta`). Traka članova je u jednom redu, a okvir koordinata se u modu sakriva da gornji dio ne zauzima kartu.
+
+**Istraživač 3D — pregled (v0.6.6)**
+- Čista logika `istrazivac-pregled.js`: nagib pogleda (blag 25° / srednji 40° / strm 55°, dugme u koloni kontrola kruži i pamti `lovac.ist.nagib`), svježina pozicije člana (`freshnessOf`: uživo ≤ 2 min, zastarjelo ≤ 10, inače bez signala — isti pragovi kao markeri na karti), sažetak trake (`barSummary`: broj članova i najbliži sa stranom svijeta i udaljenošću) i HUD "Gore: JI 135° · nagib 40°" (`upLabel`).
+- Traka: "Izađi iz 3D", sažetak, pa čipovi članova sa licem (inicijali, obrub po svježini), strelicom koja slijedi rotaciju i istaknutim najbližim (`data-najblizi`). Dugme "Centriraj na mene" (`#btn-ist-ja`) vraća praćenje poslije pomjeranja ka članu. Kolona kontrola ima 6 dugmadi od 46 px i mora stati iznad desne kolone mape.

@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.6.5';
+  const APP_VER = 'v0.6.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -110,9 +110,12 @@
   </div>
   <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
   <div id="istrazivac-kontrole" class="istrazivac-kontrole" role="group" aria-label="Okretanje karte" hidden>
+    <span id="ist-hud" class="ist-hud" role="status">Gore: S 0° · nagib 40°</span>
     <button id="btn-ist-lijevo" type="button" class="ikona-dugme" aria-label="Okreni kartu ulijevo"><svg class="ic"><use href="#ic-rot-lijevo"/></svg></button>
     <button id="btn-ist-desno" type="button" class="ikona-dugme" aria-label="Okreni kartu udesno"><svg class="ic"><use href="#ic-rot-desno"/></svg></button>
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
+    <button id="btn-ist-nagib" type="button" class="ikona-dugme" aria-label="Promijeni nagib pogleda"><span id="btn-ist-nagib-tekst" class="ist-s">40°</span></button>
+    <button id="btn-ist-ja" type="button" class="ikona-dugme" aria-label="Centriraj na mene"><svg class="ic"><use href="#ic-locate"/></svg></button>
     <button id="btn-ist-sjever" type="button" class="ikona-dugme" aria-label="Sjever gore"><span class="ist-s">S</span></button>
   </div>
   <div id="lov-trag-legenda" class="istrazivac-traka lov-trag-legenda" hidden></div>
