@@ -84,8 +84,12 @@ test('odjava iz postavki vodi na prijavu odmah, i kad server ne odgovara, i briÅ
 test('dodirne mete u postavkama su â‰¥ 44 px', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  for (const sel of ['#btn-postavke-zatvori', '[data-tema-izbor="noc"]', '[data-tema-izbor="dan"]']) {
+    const b = await page.locator(sel).boundingBox();
+    expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
+  }
   await page.locator('#p-tabovi [data-ptab="nalog"]').click();
-  for (const sel of ['#btn-postavke-zatvori', '[data-tema-izbor="noc"]', '[data-tema-izbor="dan"]',
+  for (const sel of [
     '#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju', '#btn-postavke-odjava']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
@@ -121,6 +125,7 @@ test('"Preuzmi zadnju verziju" je uvijek dostupno i u APK-u zove AndroidUpdate m
   });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-preuzmi-zadnju').click();
   expect(await page.evaluate(() => window.__pozvano)).toEqual([expect.stringMatching(/\/releases\/latest\/download\/app-debug\.apk$/)]);
 });
