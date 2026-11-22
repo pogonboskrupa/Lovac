@@ -72,7 +72,7 @@ const OSNOVA = [
     ],
   },
   {
-    kod: 'medvjed', naziv: 'Mrki medvjed', latinski: 'Ursus arctos', grupa: 'Krupna divljač',
+    kod: 'medvjed', naziv: 'Mrki medvjed', latinski: 'Ursus arctos', grupa: 'Zvijer',
     kratko: 'Najveća kopnena zvijer kod nas. Plašljiv, ali opasan kad je iznenađen ili brani mlade.',
     brojke: [['Težina', 'mužjak 150–300 kg, ženka 80–150 kg'], ['Visina u ramenu', '90–110 cm'], ['Vijek', '20–25 god.']],
     sekcije: [
@@ -337,7 +337,55 @@ function spoji(osnova) {
   return { ...osnova, kalendar: d.kalendar || [], aktivnost: d.aktivnost || null, sekcije: [...sekcije, ...(d.dodatno || []), lov] };
 }
 
-export const VRSTE_DIVLJACI = OSNOVA.map(spoji);
+// Izgled kartice: boja i znak emblema (tamne boje: bijeli znak prolazi kontrast 4.5:1) i kod grupe za filter.
+const ODLIKE = {
+  divlja_svinja: { boja: '#6b3f26', znak: 'DS', grupaKod: 'krupna' },
+  srna: { boja: '#92400e', znak: 'SR', grupaKod: 'krupna' },
+  medvjed: { boja: '#44403c', znak: 'MD', grupaKod: 'zvijer' },
+  vuk: { boja: '#334155', znak: 'VK', grupaKod: 'zvijer' },
+  cagalj: { boja: '#854d0e', znak: 'ČG', grupaKod: 'zvijer' },
+  fazan: { boja: '#9f1239', znak: 'FZ', grupaKod: 'sitna' },
+  zec: { boja: '#4d7c0f', znak: 'ZC', grupaKod: 'sitna' },
+};
+
+export const VRSTE_DIVLJACI = OSNOVA.map((o) => ({ ...spoji(o), ...(ODLIKE[o.kod] || { boja: '#475569', znak: '?', grupaKod: 'sitna' }) }));
+
+export const GRUPE = [['sve', 'Sve'], ['krupna', 'Krupna divljač'], ['sitna', 'Sitna divljač'], ['zvijer', 'Zvijeri']];
+
+// Dijelovi sadržaja po tabu u detalju vrste: svaki naslov ide u TAČNO jedan tab.
+export const DETALJ_TABOVI = [
+  ['pregled', 'Pregled', ['Izgled i karakteristike']],
+  ['biologija', 'Biologija', ['Biologija i razmnožavanje', 'Spol i dob (kako procijeniti)']],
+  ['ponasanje', 'Ponašanje', ['Ponašanje i prehrana', 'Tragovi i znakovi']],
+  ['lov', 'Lov i zdravlje', ['Značajno za lov', 'Poslije odstrela', 'Zdravlje i bolesti']],
+];
+
+export function sectionsOfTab(v, tab) {
+  const names = DETALJ_TABOVI.find(([k]) => k === tab)?.[2] || [];
+  return v.sekcije.filter(([naziv]) => names.includes(naziv));
+}
+
+export function filterByGroup(list, grupa) {
+  return grupa && grupa !== 'sve' ? list.filter((v) => v.grupaKod === grupa) : list;
+}
+
+// Doba dana kad je vrsta najaktivnija ("zora i sumrak").
+export function bestTimes(v) {
+  if (!v.aktivnost) return '';
+  const max = Math.max(...Object.values(v.aktivnost));
+  const names = { zora: 'zora', dan: 'dan', sumrak: 'sumrak', noc: 'noć' };
+  const top = ['zora', 'dan', 'sumrak', 'noc'].filter((k) => v.aktivnost[k] === max).map((k) => names[k]);
+  return top.length > 1 ? `${top.slice(0, -1).join(', ')} i ${top[top.length - 1]}` : top[0] || '';
+}
+
+// Šta se u prirodi dešava u datom mjesecu (1–12) — biološki kalendar, NIJE lovostaj.
+export function monthEvents(month, list = VRSTE_DIVLJACI) {
+  const out = [];
+  for (const v of list) {
+    for (const [kod, naziv, mjeseci] of v.kalendar || []) if (mjeseci.includes(month)) out.push({ vrsta: v.kod, nazivVrste: v.naziv, kod, dogadjaj: naziv });
+  }
+  return out;
+}
 
 export const MJESECI = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 export const DOBA_DANA = [['zora', 'Zora'], ['dan', 'Dan'], ['sumrak', 'Sumrak'], ['noc', 'Noć']];

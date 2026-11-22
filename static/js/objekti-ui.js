@@ -3,7 +3,7 @@
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { matchesQuery } from './pretraga.js';
 import { newRecord, saveRecord, updateRecord, getRecord, listRecords, deleteRecord } from './zapisi.js';
-import { STANJA, needsRepair, sortByDistance, todayIso, formatDateBs } from './objekti.js';
+import { STANJA, sortByDistance, todayIso, formatDateBs, visitStatus, visitText, filterObjects, sortObjects, typeCounts, OBJEKTI_SORT } from './objekti.js';
 import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
 import { formatDistance } from './trag.js';
@@ -233,27 +233,48 @@ export function initObjekti(L, map) {
   });
 
   // ---- spisak ----
+  let typeFilter = '';
+  let sortMode = 'blizu';
+  $('objekti-sort').innerHTML = OBJEKTI_SORT.map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
   const renderList = async () => {
     const fix = currentFix();
     const from = fix || { lat: map.getCenter().lat, lon: map.getCenter().lng };
-    let items = await listRecords(STORE);
-    $('obj-stat-ukupno').textContent = String(items.length);
-    $('obj-stat-popravka').textContent = String(items.filter((o) => o.stanje === 'popravka').length);
-    $('obj-stat-sruseno').textContent = String(items.filter((o) => o.stanje === 'sruseno').length);
-    if (listFilter === 'popravka') items = items.filter(needsRepair);
+    const all = await listRecords(STORE);
+    $('obj-stat-ukupno').textContent = String(all.length);
+    $('obj-stat-popravka').textContent = String(all.filter((o) => o.stanje === 'popravka').length);
+    $('obj-stat-sruseno').textContent = String(all.filter((o) => o.stanje === 'sruseno').length);
+    $('obj-stat-kasni').textContent = String(all.filter((o) => visitStatus(o).kasni).length);
+    // filteri po vrsti: samo vrste kojih ima, sa brojem
+    const counts = typeCounts(all);
+    if (typeFilter && !counts.some((c) => c.vrsta === typeFilter)) typeFilter = '';
+    $('objekti-vrste').innerHTML = [{ vrsta: '', komada: all.length }, ...counts].map((c) => `<button type="button" data-vrsta-filter="${escapeHtml(c.vrsta)}" aria-pressed="${c.vrsta === typeFilter}">${escapeHtml(c.vrsta ? lookupNaziv(vrsteAll, c.vrsta) : 'Sve vrste')} <span class="sitno">${c.komada}</span></button>`).join('');
+    $('objekti-vrste').hidden = counts.length < 2;
+    let items = filterObjects(all, { filter: listFilter, vrsta: typeFilter });
     items = items.filter((o) => matchesQuery([o.naziv, o.napomena, STANJA[o.stanje], lookupNaziv(vrsteAll, o.vrsta)], searchText));
-    items = sortByDistance(items, from);
+    items = sortObjects(sortByDistance(items, from), sortMode);
     setPressed($('objekti-filter'), 'data-filter', listFilter);
+    $('objekti-sort').value = sortMode;
     $('objekti-prazno').hidden = items.length > 0;
-    $('objekti-spisak').innerHTML = items.map((o) => `
-      <li class="trag-red obj-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}" data-stanje="${escapeHtml(o.stanje)}">
-        <span class="tr-chip" data-stanje="${escapeHtml(o.stanje)}">${escapeHtml(STANJA[o.stanje] || o.stanje)}</span>
+    $('objekti-spisak').innerHTML = items.map((o) => {
+      const v = visitStatus(o);
+      return `
+      <li class="trag-red obj-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}" data-stanje="${escapeHtml(o.stanje)}" data-kasni="${v.kasni}">
+        <div class="obj-chipovi">
+          <span class="tr-chip" data-stanje="${escapeHtml(o.stanje)}">${escapeHtml(STANJA[o.stanje] || o.stanje)}</span>
+          ${v.kasni ? `<span class="tr-chip" data-kasni="true">${v.dana == null ? 'Nije obilažen' : 'Dugo bez obilaska'}</span>` : ''}
+        </div>
         <button type="button" class="obj-red-dugme">
-          <svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrsteAll, o.vrsta))}"/></svg>
+          <span class="obj-ikona-krug" data-stanje="${escapeHtml(o.stanje)}"><svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrsteAll, o.vrsta))}"/></svg></span>
           <span class="trag-naslov"><b>${escapeHtml(o.naziv)}</b>
-          <span class="sitno">${escapeHtml(STANJA[o.stanje] || o.stanje)} · obilazak ${escapeHtml(formatDateBs(o.zadnji_obilazak))} · ${escapeHtml(formatDistance(o.udaljenost))}</span></span>
+          <span class="sitno">${escapeHtml(lookupNaziv(vrsteAll, o.vrsta))} · ${escapeHtml(formatDistance(o.udaljenost))}</span>
+          <span class="sitno">${escapeHtml(visitText(o))}${o.zadnji_obilazak ? ` (${escapeHtml(formatDateBs(o.zadnji_obilazak))})` : ''}</span></span>
         </button>
-      </li>`).join('');
+        <div class="obj-akcije">
+          <button type="button" class="dugme" data-akcija="vodi">Vodi me</button>
+          ${o.tudji ? '' : '<button type="button" class="dugme" data-akcija="obidjeno">Obiđen danas</button>'}
+        </div>
+      </li>`;
+    }).join('');
   };
   $('objekti-trazi').addEventListener('input', (e) => { searchText = e.target.value; renderList(); });
   $('objekti-filter').addEventListener('click', async (e) => {
@@ -262,10 +283,24 @@ export function initObjekti(L, map) {
     listFilter = b.dataset.filter;
     await renderList();
   });
+  $('objekti-vrste').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-vrsta-filter]');
+    if (b) { typeFilter = b.dataset.vrstaFilter; renderList(); }
+  });
+  $('objekti-sort').addEventListener('change', (e) => { sortMode = e.target.value; renderList(); });
   $('objekti-spisak').addEventListener('click', async (e) => {
     const row = e.target.closest('[data-id]');
     if (!row) return;
     const o = await getRecord(STORE, row.dataset.id);
+    if (!o) return;
+    const akcija = e.target.closest('[data-akcija]')?.dataset.akcija;
+    if (akcija === 'vodi') { list.hidden = true; startNavigation(o); return; }
+    if (akcija === 'obidjeno') {
+      await updateRecord(STORE, o.id, { zadnji_obilazak: todayIso() });
+      toast('Upisan obilazak danas');
+      await renderList();
+      return;
+    }
     list.hidden = true;
     map.setView([o.lat, o.lon], Math.max(map.getZoom(), 16));
     await openDetail(o.id);

@@ -8,6 +8,7 @@ import {
   movingTime, trackDistance, formatDistance, formatDuration, smoothPoints, toGpx, toKml, trackFileName, MIN_TRACK_M,
 } from './trag.js';
 import { matchesQuery } from './pretraga.js';
+import { routePath, trackStats, PERIODI, SORTIRANJA, filterPeriod, sortTracks, groupByMonth, lastDaysKm } from './tragovi-pregled.js';
 import { formatDecimalBs } from './odstrel.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { shareFile } from './dijeljenje.js';
@@ -208,21 +209,27 @@ export function initTragovi(L, map) {
     if (pts.length) map.fitBounds(shown.getBounds(), { padding: [40, 40], maxZoom: 17 });
   };
 
-  let trFilter = { tip: 'svi', q: '' };
-  const renderList = async () => {
-    const ul = $('tragovi-spisak');
-    const all = (await allTracks()).filter((t) => t.status === 'gotovo');
-    const tracks = all.filter((t) => (trFilter.tip === 'svi' || (trFilter.tip === 'potraga') === (t.vrsta === 'potraga'))
-      && matchesQuery([t.naziv, new Date(t.start).toLocaleDateString('bs-BA')], trFilter.q));
-    $('tragovi-prazno').hidden = all.length > 0;
-    $('tr-stat-broj').textContent = String(all.length);
-    $('tr-stat-km').textContent = formatDecimalBs(Math.round(all.reduce((s, t) => s + trackDistance(t.tacke), 0) / 100) / 10);
-    $('tr-stat-sati').textContent = formatDecimalBs(Math.round(all.reduce((s, t) => s + movingTime(t), 0) / 360000) / 10);
-    ul.innerHTML = tracks.map((t) => `
-      <li class="trag-red tr-kartica" data-id="${escapeHtml(t.id)}" data-vrsta="${t.vrsta === 'potraga' ? 'potraga' : 'obilazak'}">
-        <div class="trag-naslov"><span class="tr-chip" data-vrsta="${t.vrsta === 'potraga' ? 'potraga' : 'obilazak'}">${t.vrsta === 'potraga' ? 'Potraga' : 'Obilazak'}${t.tudji ? ' · podijeljen' : ''}</span>
-        <b>${escapeHtml(t.naziv)}</b><span class="sitno">${escapeHtml(trackSummary(t))}</span>
-        <span class="sitno">${t.tudji ? `Podijelio: ${escapeHtml(memberName(t.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[t.vidljivost || 'privatno'])}`}${(t.tackeInteresa || []).length ? ` · tačaka: ${t.tackeInteresa.length}` : ''}</span></div>
+  let trFilter = { tip: 'svi', q: '', period: 'sve', sort: 'novije' };
+  $('tr-period').innerHTML = PERIODI.map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+  $('tr-sort').innerHTML = SORTIRANJA.map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+  const DANI = ['N', 'P', 'U', 'S', 'Č', 'P', 'S'];
+  const cardHtml = (t) => {
+    const st = trackStats(t);
+    const vrsta = t.vrsta === 'potraga' ? 'potraga' : 'obilazak';
+    const path = routePath(pointsForDisplay(t));
+    return `
+      <li class="trag-red tr-kartica" data-id="${escapeHtml(t.id)}" data-vrsta="${vrsta}">
+        <div class="tr-glava">
+          <svg class="tr-mini" viewBox="0 0 96 64" role="img" aria-label="Oblik rute">${path ? `<path d="${path}" />` : ''}</svg>
+          <div class="trag-naslov"><span class="tr-chip" data-vrsta="${vrsta}">${vrsta === 'potraga' ? 'Potraga' : 'Obilazak'}${t.tudji ? ' · podijeljen' : ''}</span>
+          <b>${escapeHtml(t.naziv)}</b><span class="sitno">${escapeHtml(trackSummary(t))}</span></div>
+        </div>
+        <div class="tr-brojke">
+          <span data-brojka="brzina"><b>${st.brzinaKmh != null ? escapeHtml(formatDecimalBs(st.brzinaKmh)) : '—'}</b> km/h</span>
+          <span data-brojka="tacaka"><b>${st.tacaka}</b> tačaka</span>
+          <span data-brojka="poi"><b>${st.poi}</b> tačaka interesa</span>
+        </div>
+        <span class="sitno">${t.tudji ? `Podijelio: ${escapeHtml(memberName(t.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[t.vidljivost || 'privatno'])}`}</span>
         <button type="button" class="dugme glavno tr-glavno" data-akcija="prikazi">Prikaži na karti</button>
         <div class="tr-dugmad">
           <button type="button" class="dugme" data-akcija="uglacaj" aria-pressed="${t.uglacan}">${t.uglacan ? 'Original' : 'Uglačaj'}</button>
@@ -230,7 +237,26 @@ export function initTragovi(L, map) {
           <button type="button" class="dugme" data-akcija="kml">KML</button>
           ${t.tudji ? '' : '<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button>'}
         </div>
-      </li>`).join('') || '<li class="sitno">Nema tragova za ovaj filter.</li>';
+      </li>`;
+  };
+  const renderList = async () => {
+    const ul = $('tragovi-spisak');
+    const all = (await allTracks()).filter((t) => t.status === 'gotovo');
+    const tracks = sortTracks(filterPeriod(all.filter((t) => (trFilter.tip === 'svi' || (trFilter.tip === 'potraga') === (t.vrsta === 'potraga'))
+      && matchesQuery([t.naziv, new Date(t.start).toLocaleDateString('bs-BA')], trFilter.q)), trFilter.period), trFilter.sort);
+    $('tragovi-prazno').hidden = all.length > 0;
+    $('tr-stat-broj').textContent = String(all.length);
+    $('tr-stat-km').textContent = formatDecimalBs(Math.round(all.reduce((s, t) => s + trackDistance(t.tacke), 0) / 100) / 10);
+    $('tr-stat-sati').textContent = formatDecimalBs(Math.round(all.reduce((s, t) => s + movingTime(t), 0) / 360000) / 10);
+    const bars = lastDaysKm(all);
+    const max = Math.max(0.1, ...bars.map((b) => b.km));
+    $('tr-sedmica').innerHTML = bars.map((b, i) => `<div class="tr-stupac${i === bars.length - 1 ? ' danas' : ''}" data-km="${b.km}"><span class="tr-stupac-bar"><i style="height:${Math.round((b.km / max) * 100)}%"></i></span><b>${b.km ? escapeHtml(formatDecimalBs(b.km)) : ''}</b><span class="sitno">${DANI[b.dan]}</span></div>`).join('');
+    $('tr-period').value = trFilter.period;
+    $('tr-sort').value = trFilter.sort;
+    // po mjesecima samo kad je redoslijed po datumu; inače jedna lista
+    ul.innerHTML = (trFilter.sort === 'novije'
+      ? groupByMonth(tracks).map((g) => `<li class="tr-mjesec" role="presentation"><span>${escapeHtml(g.naziv)}</span><span class="sitno">${g.tracks.length} · ${escapeHtml(formatDecimalBs(Math.round(g.tracks.reduce((s, t) => s + trackDistance(t.tacke), 0) / 100) / 10))} km</span></li>${g.tracks.map(cardHtml).join('')}`).join('')
+      : tracks.map(cardHtml).join('')) || '<li class="sitno">Nema tragova za ovaj filter.</li>';
     ul.querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
       wireTwoTap(b, 'Dodirni ponovo', async () => {
         const id = b.closest('[data-id]').dataset.id;
@@ -248,6 +274,8 @@ export function initTragovi(L, map) {
     $('tr-filter').querySelectorAll('[data-tip]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     renderList();
   });
+  $('tr-period').addEventListener('change', (e) => { trFilter = { ...trFilter, period: e.target.value }; renderList(); });
+  $('tr-sort').addEventListener('change', (e) => { trFilter = { ...trFilter, sort: e.target.value }; renderList(); });
   $('tr-trazi').addEventListener('input', (e) => { trFilter = { ...trFilter, q: e.target.value }; renderList(); });
   $('tragovi-spisak').addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-akcija]');

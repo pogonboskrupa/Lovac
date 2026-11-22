@@ -813,3 +813,62 @@ svg[hidden] { display: none; }
 /* "Moja lokacija": ploča se može listati (donji dio sa dijeljenjem sekcije se inače odsiječe na nižim ekranima) */
 #lok-ploca { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   max-height: calc(100vh - 72px - env(safe-area-inset-top) - var(--nav-h) - 12px); max-height: calc(100dvh - 72px - env(safe-area-inset-top) - var(--nav-h) - 12px); }
+
+/* Moji tragovi: sličica rute, brojke, mjeseci, stupci zadnjih 7 dana */
+.tr-sedmica { margin: 8px 0; padding: 10px 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); }
+.tr-sedmica-stupci { display: flex; gap: 6px; align-items: flex-end; height: 84px; margin-top: 4px; }
+.tr-stupac { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 100%; font-size: 12px; }
+.tr-stupac-bar { position: relative; flex: 1; width: 100%; border-radius: 6px; background: var(--dugme); overflow: hidden; }
+.tr-stupac-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--naglasak); }
+.tr-stupac.danas .sitno { font-weight: 800; color: var(--tekst); }
+.tr-stupac b { font-size: 11px; min-height: 13px; }
+.tr-kontrole { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tr-kontrole select { width: 100%; }
+.tr-mjesec { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 4px 2px; font-weight: 800; list-style: none; }
+.tr-glava { display: flex; gap: 12px; align-items: center; }
+.tr-glava .trag-naslov { flex: 1; min-width: 0; }
+.tr-mini { flex: none; width: 96px; height: 64px; border-radius: 10px; background: var(--dugme); }
+.tr-mini path { fill: none; stroke: var(--naglasak); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.tr-kartica[data-vrsta="potraga"] .tr-mini path { stroke: #f87171; }
+.tr-brojke { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.tr-brojke span { padding: 4px 10px; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); font-size: 13px; }
+
+/* Objekti: ikona stanja, chipovi, brze akcije, filter po vrsti */
+.obj-vrste { overflow-x: auto; flex-wrap: nowrap; }
+.obj-vrste button { flex: none; }
+.obj-chipovi { display: flex; flex-wrap: wrap; gap: 6px; }
+.tr-chip[data-kasni="true"] { background: #b45309; color: #ffffff; }
+.obj-ikona-krug { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--dugme); color: var(--dugme-tekst); border: 3px solid #15803d; }
+.obj-ikona-krug[data-stanje="popravka"] { border-color: #d97706; }
+.obj-ikona-krug[data-stanje="sruseno"] { border-color: #dc2626; }
+.obj-ikona-krug .ic { width: 28px; height: 28px; color: inherit; }
+.obj-red .obj-red-dugme { min-height: 64px; }
+.obj-akcije { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.obj-akcije .dugme { margin: 0; min-width: 0; }
+.obj-akcije .dugme:only-child { grid-column: 1 / -1; }
+.tr-sort { margin: 8px 0; }
+
+/* Divljač (v0.5.6): mreža pločica, emblem, "ovaj mjesec", detalj sa tabovima */
+.div-mreza { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0; margin: 10px 0; list-style: none; }
+.div-plocica { margin: 0; }
+.div-plocica-dugme { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px; border: 0; border-radius: 16px; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena); text-align: left; font: inherit; }
+.div-emblem { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: #ffffff; font-weight: 800; font-size: 17px; letter-spacing: .02em; }
+.div-emblem.velik { width: 64px; height: 64px; font-size: 22px; }
+.div-cinjenice { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; font-size: 13px; color: var(--tekst-2); }
+.div-grupe { overflow-x: auto; flex-wrap: nowrap; }
+.div-grupe button { flex: none; }
+.div-mjesec { margin: 8px 0; padding: 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); }
+.div-mjesec h3 { margin: 0 0 8px; }
+.div-mjesec-lista { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 6px; padding: 0 0 4px; list-style: none; }
+.div-mjesec-lista li { flex: none; }
+.div-mjesec-lista button { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 6px 12px 6px 8px; border: 0; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); font: inherit; text-align: left; }
+.div-mjesec-lista button > span:not(.div-emblem) { display: flex; flex-direction: column; }
+.div-mjesec-lista .div-emblem { width: 40px; height: 40px; font-size: 15px; }
+.div-detalj-glava { display: flex; align-items: center; gap: 14px; margin: 12px 0 8px; }
+.div-detalj-glava h3 { margin: 0; }
+.div-detalj-glava > div { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.div-tabovi { overflow-x: auto; flex-wrap: nowrap; }
+.div-tabovi button { flex: none; }
+.div-detalj h4 { margin: 14px 0 4px; color: var(--naglasak); }
+.div-kal-glava .ovaj { color: var(--tekst); font-weight: 800; }
+.div-kal-celija.ovaj { outline: 2px solid var(--tekst); outline-offset: -1px; }

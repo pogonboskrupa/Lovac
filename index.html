@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.5.5';
+  const APP_VER = 'v0.5.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -540,10 +540,18 @@
       <div data-stat="sati"><b id="tr-stat-sati">0</b><span>sati</span></div>
     </div>
   </div>
+  <div class="tr-sedmica" aria-label="Kilometri zadnjih 7 dana">
+    <span class="sitno">Zadnjih 7 dana</span>
+    <div id="tr-sedmica" class="tr-sedmica-stupci" role="img" aria-label="Kilometri po danima"></div>
+  </div>
   <div id="tr-filter" class="segment p-tabovi" role="group" aria-label="Vrsta traga">
     <button type="button" data-tip="svi" aria-pressed="true">Svi</button>
     <button type="button" data-tip="obilazak" aria-pressed="false">Obilasci</button>
     <button type="button" data-tip="potraga" aria-pressed="false">Potrage</button>
+  </div>
+  <div class="tr-kontrole">
+    <label class="tr-sort">Period<select id="tr-period" aria-label="Period"></select></label>
+    <label class="tr-sort">Redoslijed<select id="tr-sort" aria-label="Redoslijed"></select></label>
   </div>
   <input id="tr-trazi" type="search" placeholder="Traži trag (naziv, datum)…" aria-label="Traži trag" autocomplete="off">
   <p id="tragovi-prazno" class="sitno">Još nema snimljenih tragova. Snimanje se pokreće dugmetom sa krugom na karti.</p>
@@ -623,12 +631,15 @@
     <button id="btn-objekti-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <div class="sk-hero tr-hero ev-hero">
-    <div class="sk-statovi sk-statovi-hero"><div data-stat="ukupno"><b id="obj-stat-ukupno">0</b><span>objekata</span></div><div data-stat="popravka"><b id="obj-stat-popravka">0</b><span>treba popravka</span></div><div data-stat="sruseno"><b id="obj-stat-sruseno">0</b><span>srušeno</span></div></div>
+    <div class="sk-statovi sk-statovi-hero"><div data-stat="ukupno"><b id="obj-stat-ukupno">0</b><span>objekata</span></div><div data-stat="popravka"><b id="obj-stat-popravka">0</b><span>treba popravka</span></div><div data-stat="sruseno"><b id="obj-stat-sruseno">0</b><span>srušeno</span></div><div data-stat="kasni"><b id="obj-stat-kasni">0</b><span>dugo bez obilaska</span></div></div>
   </div>
   <div id="objekti-filter" class="segment" role="group" aria-label="Filter">
     <button type="button" data-filter="svi">Svi</button>
-    <button type="button" data-filter="popravka">Treba popravka (za obilazak)</button>
+    <button type="button" data-filter="popravka">Treba popravka</button>
+    <button type="button" data-filter="kasni">Dugo bez obilaska</button>
   </div>
+  <div id="objekti-vrste" class="segment obj-vrste" role="group" aria-label="Vrsta objekta"></div>
+  <label class="tr-sort">Redoslijed<select id="objekti-sort" aria-label="Redoslijed"></select></label>
   <input id="objekti-trazi" type="search" placeholder="Traži (naziv, vrsta, napomena…)" aria-label="Traži objekte" autocomplete="off">
   <p id="objekti-prazno" class="sitno">Nema objekata. Dodaju se dugmetom + na karti.</p>
   <ul id="objekti-spisak" class="spisak"></ul>
@@ -1129,10 +1140,27 @@
     <h2 id="divljac-naslov">Divljač</h2>
     <button id="btn-divljac-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
-  <p class="sitno" id="divljac-napomena"></p>
-  <input id="divljac-trazi" type="search" placeholder="Traži (vrsta, trag, ishrana…)" aria-label="Traži divljač" autocomplete="off">
-  <p id="divljac-prazno" class="sitno" hidden>Nema vrste za taj upit.</p>
-  <ul id="divljac-spisak" class="spisak"></ul>
+
+  <div id="divljac-lista">
+    <p class="sitno" id="divljac-napomena"></p>
+    <section id="divljac-mjesec" class="div-mjesec" aria-label="U ovom mjesecu u prirodi">
+      <h3 id="divljac-mjesec-naslov">U ovom mjesecu</h3>
+      <ul id="divljac-mjesec-lista" class="div-mjesec-lista"></ul>
+      <p class="sitno">Biološki kalendar (parenje, mladi, rogovi, zimski san). Nije lovostaj.</p>
+    </section>
+    <input id="divljac-trazi" type="search" placeholder="Traži (vrsta, trag, ishrana…)" aria-label="Traži divljač" autocomplete="off">
+    <div id="divljac-grupe" class="segment div-grupe" role="group" aria-label="Grupa divljači"></div>
+    <p id="divljac-prazno" class="sitno" hidden>Nema vrste za taj upit.</p>
+    <ul id="divljac-spisak" class="div-mreza"></ul>
+  </div>
+
+  <article id="divljac-detalj" class="div-detalj" hidden>
+    <button id="btn-divljac-nazad" class="dugme" type="button">← Sve vrste</button>
+    <div id="divljac-detalj-glava" class="div-detalj-glava"></div>
+    <p id="divljac-detalj-sezona" class="div-sezona"></p>
+    <div id="divljac-tabovi" class="segment p-tabovi div-tabovi" role="tablist" aria-label="Dio opisa"></div>
+    <div id="divljac-detalj-sadrzaj"></div>
+  </article>
 </section>
 <section id="pregled" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="pregled-naslov" hidden>
   <header class="postavke-glava">

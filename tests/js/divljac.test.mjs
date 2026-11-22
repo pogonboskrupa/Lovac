@@ -56,3 +56,28 @@ test('divljač: biološki kalendar (12 mjeseci) i dnevna aktivnost (0–3) za sv
   assert.ok(med.some((r) => r.kod === 'san' && r.mjeseci[0] && r.mjeseci[6] === false), 'zimski san u januaru, ne u julu');
   assert.ok(activityRows(VRSTE_DIVLJACI.find((v) => v.kod === 'fazan')).find((a) => a.kod === 'noc').nivo === 0);
 });
+
+import { GRUPE, DETALJ_TABOVI, sectionsOfTab, filterByGroup, bestTimes, monthEvents } from '../../static/js/divljac.js';
+
+test('divljač: svaki dio sadržaja ide u TAČNO jedan tab detalja i ništa se ne gubi', () => {
+  for (const v of VRSTE_DIVLJACI) {
+    const used = DETALJ_TABOVI.flatMap(([k]) => sectionsOfTab(v, k).map(([n]) => n));
+    assert.deepEqual([...used].sort(), v.sekcije.map(([n]) => n).sort(), v.kod);
+    assert.equal(new Set(used).size, used.length, `${v.kod}: dupli dio`);
+  }
+});
+
+test('divljač: grupe, najaktivnije doba i događaji u mjesecu (biološki kalendar)', () => {
+  assert.deepEqual(GRUPE.map(([k]) => k), ['sve', 'krupna', 'sitna', 'zvijer']);
+  assert.deepEqual(filterByGroup(VRSTE_DIVLJACI, 'zvijer').map((v) => v.kod), ['medvjed', 'vuk', 'cagalj']);
+  assert.deepEqual(filterByGroup(VRSTE_DIVLJACI, 'sitna').map((v) => v.kod), ['fazan', 'zec']);
+  assert.equal(filterByGroup(VRSTE_DIVLJACI, 'sve').length, 7);
+  assert.equal(bestTimes(VRSTE_DIVLJACI.find((v) => v.kod === 'srna')), 'zora i sumrak');
+  assert.equal(bestTimes(VRSTE_DIVLJACI.find((v) => v.kod === 'divlja_svinja')), 'sumrak i noć');
+  const jul = monthEvents(7);
+  assert.ok(jul.some((e) => e.vrsta === 'srna' && e.kod === 'parenje'));
+  assert.ok(jul.some((e) => e.vrsta === 'medvjed' && e.kod === 'parenje'));
+  assert.ok(!jul.some((e) => e.vrsta === 'medvjed' && e.kod === 'san'), 'zimski san nije u julu');
+  assert.ok(monthEvents(1).some((e) => e.vrsta === 'medvjed' && e.kod === 'san'));
+  for (const v of VRSTE_DIVLJACI) assert.match(v.boja, /^#[0-9a-f]{6}$/i) && assert.ok(v.znak.length >= 2);
+});

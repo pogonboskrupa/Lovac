@@ -3,8 +3,25 @@
     <h2 id="divljac-naslov">Divljač</h2>
     <button id="btn-divljac-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
-  <p class="sitno" id="divljac-napomena"></p>
-  <input id="divljac-trazi" type="search" placeholder="Traži (vrsta, trag, ishrana…)" aria-label="Traži divljač" autocomplete="off">
-  <p id="divljac-prazno" class="sitno" hidden>Nema vrste za taj upit.</p>
-  <ul id="divljac-spisak" class="spisak"></ul>
+
+  <div id="divljac-lista">
+    <p class="sitno" id="divljac-napomena"></p>
+    <section id="divljac-mjesec" class="div-mjesec" aria-label="U ovom mjesecu u prirodi">
+      <h3 id="divljac-mjesec-naslov">U ovom mjesecu</h3>
+      <ul id="divljac-mjesec-lista" class="div-mjesec-lista"></ul>
+      <p class="sitno">Biološki kalendar (parenje, mladi, rogovi, zimski san). Nije lovostaj.</p>
+    </section>
+    <input id="divljac-trazi" type="search" placeholder="Traži (vrsta, trag, ishrana…)" aria-label="Traži divljač" autocomplete="off">
+    <div id="divljac-grupe" class="segment div-grupe" role="group" aria-label="Grupa divljači"></div>
+    <p id="divljac-prazno" class="sitno" hidden>Nema vrste za taj upit.</p>
+    <ul id="divljac-spisak" class="div-mreza"></ul>
+  </div>
+
+  <article id="divljac-detalj" class="div-detalj" hidden>
+    <button id="btn-divljac-nazad" class="dugme" type="button">← Sve vrste</button>
+    <div id="divljac-detalj-glava" class="div-detalj-glava"></div>
+    <p id="divljac-detalj-sezona" class="div-sezona"></p>
+    <div id="divljac-tabovi" class="segment p-tabovi div-tabovi" role="tablist" aria-label="Dio opisa"></div>
+    <div id="divljac-detalj-sadrzaj"></div>
+  </article>
 </section>

@@ -10,10 +10,18 @@
       <div data-stat="sati"><b id="tr-stat-sati">0</b><span>sati</span></div>
     </div>
   </div>
+  <div class="tr-sedmica" aria-label="Kilometri zadnjih 7 dana">
+    <span class="sitno">Zadnjih 7 dana</span>
+    <div id="tr-sedmica" class="tr-sedmica-stupci" role="img" aria-label="Kilometri po danima"></div>
+  </div>
   <div id="tr-filter" class="segment p-tabovi" role="group" aria-label="Vrsta traga">
     <button type="button" data-tip="svi" aria-pressed="true">Svi</button>
     <button type="button" data-tip="obilazak" aria-pressed="false">Obilasci</button>
     <button type="button" data-tip="potraga" aria-pressed="false">Potrage</button>
+  </div>
+  <div class="tr-kontrole">
+    <label class="tr-sort">Period<select id="tr-period" aria-label="Period"></select></label>
+    <label class="tr-sort">Redoslijed<select id="tr-sort" aria-label="Redoslijed"></select></label>
   </div>
   <input id="tr-trazi" type="search" placeholder="Traži trag (naziv, datum)…" aria-label="Traži trag" autocomplete="off">
   <p id="tragovi-prazno" class="sitno">Još nema snimljenih tragova. Snimanje se pokreće dugmetom sa krugom na karti.</p>
