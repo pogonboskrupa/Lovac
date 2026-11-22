@@ -46,6 +46,7 @@ import { initOdstrelStat } from './odstrel-stat-ui.js';
 import { initTok } from './tok-ui.js';
 import { initIstrazivac } from './istrazivac-ui.js';
 import { initKompas } from './kompas-ui.js';
+import { initUpute } from './upute-ui.js';
 import { initUzivo, initKontakt } from './uzivo-ui.js';
 import { initPropisiAdmin } from './propisi-admin.js';
 import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
@@ -124,6 +125,7 @@ function enter(screen) {
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
       ['kompas', () => initKompas()],
+      ['upute', () => initUpute()],
       ['kontakt', () => initKontakt()],
       ['propisi', () => initPropisiAdmin()],
     ]) {

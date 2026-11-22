@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.6.7';
+  const APP_VER = 'v0.6.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -541,6 +541,7 @@
   <div class="p-kartica">
     <h3>O aplikaciji</h3>
     <p class="red-info">Lovačko društvo "Grmeč" <b id="postavke-verzija"></b></p>
+    <button id="btn-upute" class="dugme glavno" type="button">Upute za korištenje</button>
     <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
     <p id="postavke-azur-status" class="red-info" role="status"></p>
     <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
@@ -1282,6 +1283,16 @@
     <div id="divljac-tabovi" class="segment p-tabovi div-tabovi" role="tablist" aria-label="Dio opisa"></div>
     <div id="divljac-detalj-sadrzaj"></div>
   </article>
+</section>
+<section id="upute" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="upute-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="upute-naslov">Upute za korištenje</h2>
+    <button id="btn-upute-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="upute-napomena" class="sitno"></p>
+  <input id="upute-pretraga" type="search" placeholder="Traži u uputama" aria-label="Traži u uputama" autocomplete="off">
+  <div id="upute-sadrzaj"></div>
+  <p id="upute-prazno" class="sitno" hidden>Ništa nije pronađeno.</p>
 </section>
 <section id="pregled" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="pregled-naslov" hidden>
   <header class="postavke-glava">

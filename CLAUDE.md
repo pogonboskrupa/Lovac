@@ -373,3 +373,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Ispravka ploče "Moja lokacija" (v0.6.7)**
 - Uzrok: klasa kompasa u ploči (`.kompas`, v0.6.4) se sudarila sa već postojećom `.kompas` (128×128 px) iz panela lova, pa je okvir bio uzak, a tekst je prelio preko ploče. Klase u ploči su sada `lok-kompas*` (id-evi `#kompas*` ostaju). Zamka: prije nove CSS klase pretraži `static/css/app.css` za isto ime; e2e test `kompas.spec.mjs` mjeri da okvir zauzima širinu ploče, da je nizak i da tekst ostaje unutra. Vizuelna provjera: Playwright snimak ekrana (`scratchpad`), ne samo asercije o prisustvu elemenata.
+
+**Upute za korištenje (v0.6.8)**
+- Postavke → Nalog → O aplikaciji → "Upute za korištenje" otvara ekran `#upute` (`upute-ui.js`, sadržaj u `upute.js`; radi bez interneta jer je u app shell-u). Sadržaj je podijeljen u sekcije (`UPUTE`: id, naslov, uvod, stavke `[naslov, tekst]`) koje se rastvaraju; pretraga bez dijakritika (`filterUpute`/`matchingItems`). Sekcije prate stvarne funkcije, pa se pri svakoj novoj ili promijenjenoj funkciji korisnik-vidljivo ažurira i `upute.js`.
+- Pravila sadržaja: bez datuma lovostaja i lovnog vremena (test to hvata — propise unosi administrator), uvijek napomena da aplikacija ne zamjenjuje pravila lova, vođu lova ni službeni lovački dnevnik.

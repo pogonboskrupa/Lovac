@@ -970,3 +970,10 @@ svg[hidden] { display: none; }
 .clan-chip[data-najblizi] { box-shadow: 0 0 0 3px #2563eb, var(--sjena); }
 .ist-hud { align-self: flex-end; padding: 4px 10px; border-radius: 999px; background: var(--povrsina); box-shadow: var(--sjena); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .lok-kompas-napomena { margin: 0 0 6px; }
+
+/* Upute za korištenje */
+#upute-pretraga { width: 100%; min-height: 48px; margin: 8px 0; font-size: 16px; box-sizing: border-box; }
+.upute-sekcija { margin: 10px 0; padding: 4px 14px 10px; border-radius: 14px; background: var(--povrsina); box-shadow: var(--sjena); }
+.upute-sekcija > summary { min-height: 48px; display: flex; align-items: center; font-weight: 800; font-size: 17px; cursor: pointer; }
+.upute-stavke dt { margin-top: 10px; font-weight: 700; }
+.upute-stavke dd { margin: 2px 0 0; line-height: 1.4; }
