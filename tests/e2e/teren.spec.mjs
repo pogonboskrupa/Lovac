@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 test('podloge na mapi su Topo, Satelit i Teren; u browseru Teren objašnjava da radi u aplikaciji', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-podloga').click();
-  await expect(page.locator('#meni-podloga button')).toHaveText(['Topo', 'Satelit', 'Teren']);
+  await expect(page.locator('#meni-podloga [data-podloga]')).toHaveText(['Topo', 'Satelit', 'Teren']);
   await page.locator('#meni-podloga [data-podloga="teren"]').click();
   await expect(page.locator('#poruka')).toContainText('Teren radi u aplikaciji');
   await expect(page.locator('#meni-podloga [data-podloga="topo"]')).toHaveAttribute('aria-pressed', 'true');

@@ -35,7 +35,7 @@ test('gornji lijevi okvir: jedan red koordinata (WGS84 pa MGI 5 pa MGI 6 dodirom
   await expect(page.locator('#koord-zona')).toHaveText('MGI 6');
   await page.locator('#koord-traka').click();
   await expect(page.locator('#koord-zona')).toHaveText('WGS84');
-  const pill = await box(page, '#koord-traka');
+  const pill = await box(page, '#koord-okvir');
   expect(pill.x).toBeLessThan(40);
   expect(pill.y).toBeLessThan(120);
   const layers = await box(page, '#btn-podloga');

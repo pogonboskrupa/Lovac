@@ -32,3 +32,27 @@ test('divljač: pretraga bez dijakritika i po sadržaju; kodovi vrsta postoje u 
   const kodovi = new Set(DEFAULT_SPISKOVI.vrste.map((v) => v.kod));
   for (const v of VRSTE_DIVLJACI.filter((x) => x.kod !== 'cagalj')) assert.ok(kodovi.has(v.kod), v.kod);
 });
+
+import { calendarRows, activityRows } from '../../static/js/divljac.js';
+
+test('divljač: svaka vrsta ima dodatne dijelove (spol/dob, zdravlje, poslije odstrela), a "Značajno za lov" ostaje zadnje', () => {
+  for (const v of VRSTE_DIVLJACI) {
+    const n = v.sekcije.map(([x]) => x);
+    for (const x of ['Spol i dob (kako procijeniti)', 'Zdravlje i bolesti', 'Poslije odstrela']) assert.ok(n.includes(x), `${v.kod}: ${x}`);
+    assert.equal(n[n.length - 1], 'Značajno za lov', v.kod);
+  }
+});
+
+test('divljač: biološki kalendar (12 mjeseci) i dnevna aktivnost (0–3) za svaku vrstu', () => {
+  for (const v of VRSTE_DIVLJACI) {
+    const rows = calendarRows(v);
+    assert.ok(rows.length >= 1, v.kod);
+    for (const r of rows) { assert.equal(r.mjeseci.length, 12); assert.ok(r.mjeseci.some(Boolean), `${v.kod}/${r.kod}`); }
+    const akt = activityRows(v);
+    assert.deepEqual(akt.map((a) => a.kod), ['zora', 'dan', 'sumrak', 'noc']);
+    for (const a of akt) assert.ok(a.nivo >= 0 && a.nivo <= 3);
+  }
+  const med = calendarRows(VRSTE_DIVLJACI.find((v) => v.kod === 'medvjed'));
+  assert.ok(med.some((r) => r.kod === 'san' && r.mjeseci[0] && r.mjeseci[6] === false), 'zimski san u januaru, ne u julu');
+  assert.ok(activityRows(VRSTE_DIVLJACI.find((v) => v.kod === 'fazan')).find((a) => a.kod === 'noc').nivo === 0);
+});

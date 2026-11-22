@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.5.0';
+  const APP_VER = 'v0.5.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -88,10 +88,11 @@
   <div class="nisan" aria-hidden="true"></div>
 
   <div class="gornja-traka">
-    <button id="koord-traka" class="pill-info" type="button" aria-label="Koordinate centra karte. Dodir mijenja sistem: WGS84, MGI 5, MGI 6">
-      <span class="pill-red"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b><span class="pill-sep"></span><span id="koord-zona" class="pill-oznaka">WGS84</span><b id="koord-gk">—</b></span>
-    </button>
-    <button id="btn-koord-sakrij" class="ikona-dugme krug traka-prekidac" type="button" aria-expanded="true" aria-label="Sakrij visinu i koordinate"><svg class="ic ic-sakrij"><use href="#ic-chev-gore"/></svg><svg class="ic ic-prikazi"><use href="#ic-mountain"/></svg></button>
+    <div id="koord-okvir" class="pill-info koord-okvir">
+      <button id="btn-nv" class="pill-dio" type="button" aria-expanded="true" aria-label="Nadmorska visina. Dodir sakriva visinu i koordinate"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b></button>
+      <span class="pill-sep"></span>
+      <button id="koord-traka" class="pill-dio" type="button" aria-label="Koordinate centra karte. Dodir mijenja sistem: WGS84, MGI 5, MGI 6"><span id="koord-zona" class="pill-oznaka">WGS84</span><b id="koord-gk">—</b></button>
+    </div>
     <button id="btn-podloga" class="ikona-dugme krug" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
   </div>
   <div class="status-red">
@@ -170,6 +171,8 @@
     <button type="button" data-podloga="topo">Topo</button>
     <button type="button" data-podloga="satelit">Satelit</button>
     <button type="button" data-podloga="teren">Teren</button>
+    <h4 class="meni-podnaslov">Koordinate na mapi</h4>
+    <button type="button" id="btn-koord-prikazi" aria-pressed="true">Prikaži visinu i koordinate</button>
   </div>
 
   <div id="navigacija" class="navigacija" hidden>

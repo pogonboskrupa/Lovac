@@ -30,7 +30,7 @@ test('tema se mijenja iz postavki i pamti', async ({ page }) => {
 test('podloga se bira iz postavki', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-podloga').click();
-  await expect(page.locator('#meni-podloga button')).toHaveText(['Topo', 'Satelit', 'Teren']);
+  await expect(page.locator('#meni-podloga [data-podloga]')).toHaveText(['Topo', 'Satelit', 'Teren']);
   await page.locator('#meni-podloga [data-podloga="satelit"]').click();
   await expect(page.locator('#meni-podloga [data-podloga="satelit"]')).toHaveAttribute('aria-pressed', 'true');
 });

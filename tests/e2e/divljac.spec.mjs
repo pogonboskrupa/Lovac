@@ -23,6 +23,17 @@ test('Meni → Divljač: sedam vrsta, kartica se rastvara, pretraga, lovostaj ni
   // administrator nije unio lovostaj: nema zadane vrijednosti
   await expect(svinja.locator('.div-sezona')).toContainText('Nije uneseno');
 
+  // dodatni dijelovi, biološki kalendar (nije lovostaj) i dnevna aktivnost
+  await expect(svinja).toContainText('Spol i dob (kako procijeniti)');
+  await expect(svinja).toContainText('Poslije odstrela');
+  await expect(svinja.locator('.div-kal-red[data-dogadjaj="parenje"] .div-kal-celija.on')).toHaveCount(3);
+  await expect(svinja.locator('.div-akt-stup')).toHaveCount(4);
+  await expect(svinja.locator('.div-akt-stup[data-doba="noc"]')).toHaveAttribute('data-nivo', '3');
+  await expect(svinja).toContainText('nije lovostaj');
+  const med = page.locator('#divljac-spisak [data-id="medvjed"]');
+  await med.locator('summary').click();
+  await expect(med.locator('.div-kal-red[data-dogadjaj="san"] .div-kal-celija.on')).toHaveCount(5);
+
   await page.fill('#divljac-trazi', 'čagalj');
   await expect(page.locator('#divljac-spisak .div-kartica')).toHaveCount(1);
   await page.fill('#divljac-trazi', 'nepostojeca rijec');

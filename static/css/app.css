@@ -710,19 +710,6 @@ svg[hidden] { display: none; }
 
 /* v0.4.8: kontrole tik iznad navigacije (prazan .donji-dio je dodavao 8 px razmaka) */
 .mapa-dno { bottom: calc(var(--nav-h) - 4px); }
-/* gornja traka se može sakriti: ostaje samo kružno dugme za povratak */
-.gornja-traka { align-items: center; }
-.traka-prekidac { position: absolute; top: calc(68px + env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; }
-.traka-prekidac .ic { width: 24px; height: 24px; }
-.traka-prekidac .ic-prikazi { display: none; color: var(--gps-dobro); }
-.gornja-traka[data-sakrivena] #koord-traka { display: none; }
-.gornja-traka[data-sakrivena] .traka-prekidac .ic-sakrij { display: none; }
-.gornja-traka[data-sakrivena] .traka-prekidac .ic-prikazi { display: block; }
-@media (max-width: 370px) {
-  #koord-traka { padding: 6px 10px; }
-  #koord-traka .pill-red { gap: 5px; font-size: 13px; }
-  #koord-traka .pill-oznaka { font-size: 11px; }
-}
 .luk-podne-linija { stroke: var(--tekst-2); stroke-width: 1; stroke-dasharray: 2 4; }
 .luk-podne { fill: none; stroke: var(--tekst); stroke-width: 2; }
 
@@ -754,3 +741,34 @@ svg[hidden] { display: none; }
 .div-tacke { margin: 0; padding-left: 20px; line-height: 1.45; }
 .div-tacke li { margin: 4px 0; }
 .div-sezona { margin: 6px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--dugme); color: var(--dugme-tekst); }
+
+/* Okvir visine i koordinata: dva dugmeta u jednoj tabletici (visina = sakrij, koordinate = promijeni sistem) */
+.gornja-traka { align-items: center; }
+.koord-okvir { gap: 0; padding: 0; overflow: hidden; }
+.pill-dio { display: flex; align-items: center; gap: 6px; min-height: 56px; padding: 6px 12px; border: 0; background: none; color: var(--tekst); font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#koord-traka { flex: 1; min-width: 0; overflow: hidden; }
+.koord-okvir .pill-sep { flex: none; }
+.koord-okvir[data-sakrivena] { flex: none; width: 56px; border-radius: 50%; justify-content: center; }
+.koord-okvir[data-sakrivena] .pill-sep, .koord-okvir[data-sakrivena] #koord-traka, .koord-okvir[data-sakrivena] #koord-nv { display: none; }
+.koord-okvir[data-sakrivena] .pill-dio { width: 56px; justify-content: center; padding: 0; }
+.meni-podnaslov { margin: 8px 12px 0; font-size: 13px; color: var(--tekst-2); }
+@media (max-width: 370px) {
+  .pill-dio { font-size: 13px; padding: 6px 8px; }
+  .pill-oznaka { font-size: 11px; }
+}
+.gornja-traka #btn-podloga { margin-left: auto; }
+
+/* Divljač: biološki kalendar i dnevna aktivnost */
+.div-kal { margin: 4px 0 8px; }
+.div-kal-red { display: grid; grid-template-columns: 96px repeat(12, 1fr); gap: 2px; align-items: center; margin: 3px 0; }
+.div-kal-glava { font-size: 11px; color: var(--tekst-2); text-align: center; }
+.div-kal-naziv { font-size: 12px; color: var(--tekst-2); line-height: 1.2; }
+.div-kal-celija { height: 18px; border-radius: 3px; background: var(--dugme); }
+.div-kal-celija.on[data-kod="parenje"] { background: #c2410c; }
+.div-kal-celija.on[data-kod="mladi"] { background: #15803d; }
+.div-kal-celija.on[data-kod="rogovi"] { background: #a16207; }
+.div-kal-celija.on[data-kod="san"] { background: #1d4ed8; }
+.div-akt { display: flex; gap: 8px; margin: 4px 0 8px; }
+.div-akt-stup { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.div-akt-bar { position: relative; width: 100%; height: 56px; border-radius: 8px; background: var(--dugme); overflow: hidden; }
+.div-akt-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--naglasak); }

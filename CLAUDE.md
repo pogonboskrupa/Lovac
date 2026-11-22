@@ -285,7 +285,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Kontrole uz navigaciju, "Gdje si?", sakrivanje trake (migracija 021, v0.4.8)**
 - `.mapa-dno` ima `bottom: calc(var(--nav-h) - 4px)`: prazan `.donji-dio` unutar flex kolone sa `gap` dodaje još 8 px, pa je stvarni razmak do navigacije ~4 px (test mjeri ≤ 6 px).
-- Gornja traka (N.V. + koordinate) se sakriva dugmetom `#btn-koord-sakrij` (`traka.js`, pamti se `lovac.traka.sakrivena`). Dugme je APSOLUTNO ispod dugmeta podloge (desno), ne u istom redu — u redu bi pill izgubio širinu i odsijecao koordinate na 360 px.
+- Gornja traka (`#koord-okvir`): dva dugmeta u jednoj tabletici — `#btn-nv` (visina; dodir SAKRIVA visinu i koordinate, ostaje samo ikona planine) i `#koord-traka` (koordinate; dodir mijenja sistem). Isti izbor je prekidač `#btn-koord-prikazi` u ploči podloga (`traka.js`, pamti se `lovac.traka.sakrivena`). Raniji posebni dugmić sa strelicom je uklonjen.
 - "Gdje si?" (`ping.js`, `ping-ui.js`, tabela `lokacija_zahtjevi`): pita član/grupovođa/lovočuvar sekcije člana ili grupovođu iste sekcije (dugme u listi članova taba sekcije). Primalac dobija dijalog Da/Ne (poll 15 s, obavijest samo dok je app otvorena); "Da" ne šalje lokaciju direktno nego pokreće isto dijeljenje sa sekcijom kao ručno (1 h, događaj `lokacija:dijeli-sada`), pa važi ista vidljivost (lovočuvar i članovi, ne admin). Zahtjev važi 15 min, isti par najviše jednom u 2 min (trigger + lokalna zaštita), zahtjev i odgovor traže internet sa obje strane. Pošiljalac dobija toast i obavijest o odgovoru i mapa se centrira na lovca (`lokacija:prikazi-clana`).
 
 **Danas: Vrijeme i vjetar, kulminacija u podne (v0.4.9)**
@@ -295,3 +295,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Divljač (v0.5.0)**
 - Meni → Divljač (`divljac.js` statični sadržaj + `divljac-ui.js`): sedam vrsta (divlja svinja, srndać, mrki medvjed, vuk, čagalj, fazan, zec) sa karticama koje se rastvaraju: izgled, biologija i razmnožavanje, ponašanje i prehrana, tragovi, značajno za lov; pretraga bez dijakritika. Brojke su orijentacione.
 - Propisi se NE zakucavaju: u tekstu nema datuma lovostaja ni lovnog vremena (test to hvata). Pod brojkama svake vrste piše lovostaj iz spiska koji unosi administrator (`seasonStatus`), a bez unosa "Nije uneseno". Za zaštićene vrste (medvjed, vuk) tekst samo upućuje na propise i odobrenje, bez tvrdnji o statusu u FBiH. Čagalj nema zadani kod u spisku vrsta (`cagalj`), pa mu lovostaj postoji tek kad ga administrator doda.
+
+**Bogatija Divljač (v0.5.1)**
+- Svaka vrsta ima dodatne dijelove (Spol i dob, Zdravlje i bolesti, Poslije odstrela; "Značajno za lov" je uvijek zadnje), biološki kalendar po mjesecima (parenje, mladi, rogovi, zimski san — izričito "nije lovostaj") i dnevnu aktivnost (zora/dan/sumrak/noć, nivo 0–3). Podaci su u `DOPUNE` u `divljac.js`, a crtanje u `divljac-ui.js`. Sadržaj je orijentacioni i treba ga pregledati lovočuvar/iskusan lovac.

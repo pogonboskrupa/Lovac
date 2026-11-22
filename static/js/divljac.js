@@ -6,7 +6,7 @@ import { matchesQuery } from './pretraga.js';
 
 export const DIVLJAC_NAPOMENA = 'Opšte informacije za orijentaciju; brojke variraju po području i godini. Ne zamjenjuju propise, lovnu osnovu društva, lovočuvara ni stručnu literaturu. Datume lovostaja unosi administrator društva.';
 
-export const VRSTE_DIVLJACI = [
+const OSNOVA = [
   {
     kod: 'divlja_svinja', naziv: 'Divlja svinja (vepar)', latinski: 'Sus scrofa', grupa: 'Krupna divljač',
     kratko: 'Najprilagodljivija krupna divljač: svejed, noćni, društven. Ranjena je opasna.',
@@ -206,6 +206,150 @@ export const VRSTE_DIVLJACI = [
     ],
   },
 ];
+
+// Dopune po vrsti: biološki kalendar (NIJE lovostaj), dnevna aktivnost (0–3) i dodatni dijelovi sadržaja.
+const DOPUNE = {
+  divlja_svinja: {
+    kalendar: [['parenje', 'Parenje (bukanje)', [11, 12, 1]], ['mladi', 'Prasenje', [3, 4, 5]]],
+    aktivnost: { zora: 2, dan: 1, sumrak: 3, noc: 3 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'Vepar: zdepast, krupna glava i vidljive ocale; krmača je vitkija, sa vidljivim sisama kad doji. Dob se najpouzdanije procjenjuje po zubima (izrast trajnih zuba) i razvijenosti ocala.',
+        'Prasad su prugasta prvih mjeseci, zatim smeđa; "nazime" su mlade životinje u drugoj godini.',
+        'Lovac mora prepoznati vodeću krmaču sa prasadi: sa čeke ili u pogonu ne pucaj na grupu bez jasnog razlikovanja životinje.',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Afrička svinjska kuga (ASK) ne prelazi na ljude, ali se lako širi i teško pogađa uzgoj svinja: ugibanje više životinja ili nađeni leševi se odmah prijavljuju veterinarskoj službi i lovočuvaru.',
+        'Trihineloza (parazit u mišićima) prenosi se na čovjeka jedenjem nepregledanog mesa: pregled na trihinelu je obavezan prije upotrebe.',
+        'Mjere bioosiguranja: ne prenositi dijelove i utrobu između lovišta, oprati i dezinfikovati obuću, nož i vozilo.',
+      ]],
+      ['Poslije odstrela', [
+        'Utrobu izvaditi što prije, a meso ohladiti. Uzorak mišića za pregled na trihinelu daj ovlaštenoj službi.',
+        'Otpad i utrobu odloži prema uputi veterinarske službe i lovočuvara (ne ostavljati bilo gdje, naročito u područjima sa ASK-om).',
+      ]],
+    ],
+  },
+  srna: {
+    kalendar: [['parenje', 'Parenje', [7, 8]], ['mladi', 'Laneta se rađaju', [5, 6]], ['rogovi', 'Rogovlje se mijenja', [10, 11, 12, 1, 2, 3, 4]]],
+    aktivnost: { zora: 3, dan: 1, sumrak: 3, noc: 1 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'Srndać ima rogove (mladi srndać tanke, slabo razgranate "šilaše"; stariji jače i biserasto rogovlje), srna nema rogove, a zimi ima pramen dlake ("kitu") ispod ogledala.',
+        'Laneta su pjegava prvih sedmica. Dob odraslih najpouzdanije govori stanje zuba.',
+        'Prije pucanja uvijek odredi spol i dob: odstrel je selektivan i radi se prema planu društva.',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Česti su nametnici: krpelji, plućni i želučani crvi; slabija životinja, hromost ili ponašanje bez straha su razlog da se oprezno procijeni stanje i prijavi sumnja na bolest.',
+        'Strvinu ili ugibanje više životinja prijavi lovočuvaru.',
+      ]],
+      ['Poslije odstrela', [
+        'Utrobu izvaditi što prije, meso ohladiti; rogovlje (trofej) čuvati prema pravilima društva.',
+      ]],
+    ],
+  },
+  medvjed: {
+    kalendar: [['parenje', 'Parenje', [5, 6, 7]], ['mladi', 'Mladunci se rađaju (u jazbini)', [1, 2]], ['san', 'Zimski san', [11, 12, 1, 2, 3]]],
+    aktivnost: { zora: 2, dan: 1, sumrak: 3, noc: 3 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'U prirodi je spol teško odrediti: mužjak je veći i masivnije glave; ženka je često sa mladima.',
+        'Mladi ostaju uz majku oko dvije godine: nikad ne prilazi medvjedici sa mladima.',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Medvjed može nositi trihinelu i druge parazite: meso se ne smije upotrijebiti bez pregleda; moguća je i bjesnoća.',
+        'Neobično ponašanje (bez straha od ljudi, zalaženje u naselja) prijavi lovočuvaru.',
+      ]],
+      ['Poslije odstrela', [
+        'Ako je odstrel zakonito odobren, o njemu se obavještavaju nadležni; meso na pregled na trihinelu prije upotrebe.',
+      ]],
+    ],
+  },
+  vuk: {
+    kalendar: [['parenje', 'Parenje', [2, 3]], ['mladi', 'Mladunci u jazbini', [4, 5]]],
+    aktivnost: { zora: 2, dan: 1, sumrak: 3, noc: 3 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'Procjena je teška: mužjaci su veći (do oko 45 kg); mlade u prvoj godini odaje kraća njuška i manji otisak.',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Moguća bjesnoća, šuga i paraziti (npr. ehinokok): leš ili životinju koja se ponaša čudno ne diraj golim rukama, nego odmah prijavi lovočuvaru i veterinarskoj službi.',
+      ]],
+      ['Poslije odstrela', [
+        'Ako je odstrel zakonito odobren: rukavice, prijava nadležnima i postupak po uputi veterinarske službe.',
+      ]],
+    ],
+  },
+  cagalj: {
+    kalendar: [['parenje', 'Parenje', [1, 2, 3]], ['mladi', 'Mladunci u jazbini', [4, 5]]],
+    aktivnost: { zora: 2, dan: 1, sumrak: 3, noc: 3 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'Spol se teško razlikuje na terenu; mladi su manji i svjetliji. Oprezno razlikovanje od lisice (manja, duži rep, uže njuška) i mladog vuka (veći).',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Može nositi trihinelu, ehinokok i bjesnoću: koristi rukavice pri rukovanju i meso/preparaciju ne konzumiraj bez veterinarske provjere.',
+      ]],
+      ['Poslije odstrela', [
+        'Postupak i evidencija po pravilima društva; nalaz neobičnog ponašanja ili ugibanja prijavi lovočuvaru.',
+      ]],
+    ],
+  },
+  fazan: {
+    kalendar: [['parenje', 'Parenje i polaganje jaja', [3, 4, 5]], ['mladi', 'Pilići', [5, 6, 7]]],
+    aktivnost: { zora: 3, dan: 2, sumrak: 3, noc: 0 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'Pijetao se prepoznaje po šarenom perju i dugom repu, koka po smeđem pjegavom perju i kraćem repu.',
+        'Mlad pijetao ima kratku, tupu ostrugu na nozi; starijem je duža i oštrija.',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Ptičja gripa (avijarna influenca): ako nađeš više uginulih ptica, ne diraj ih nego prijavi veterinarskoj službi i lovočuvaru.',
+        'Zdravo meso ima čist miris i svijetlu boju; pretjerano mršave ili bolesne ptice ne koristi.',
+      ]],
+      ['Poslije odstrela', [
+        'Ptice ohladiti i očistiti što prije; držati odvojeno od sirovog mesa druge divljači radi higijene.',
+      ]],
+    ],
+  },
+  zec: {
+    kalendar: [['parenje', 'Razmnožavanje (više legala)', [2, 3, 4, 5, 6, 7, 8, 9]]],
+    aktivnost: { zora: 2, dan: 1, sumrak: 3, noc: 3 },
+    dodatno: [
+      ['Spol i dob (kako procijeniti)', [
+        'Spol se ne razlikuje lako izvana. Mladi zec do oko 8 mjeseci ima "Stiedin čvor": otok na dnu prednje noge, iznad šapice, koji se osjeti pritiskom.',
+        'Mladi su sitniji, mekših ušiju i s mladenačkim izgledom.',
+      ]],
+      ['Zdravlje i bolesti', [
+        'Tularemija (zečja groznica) se može prenijeti na čovjeka dodirom: pri deranju koristi rukavice i oprezno rukuj sa pobolijelim zecom.',
+        'Ako su jetra pjegava ili uvećana, meso ne koristi; pojavu više uginulih zečeva prijavi lovočuvaru.',
+      ]],
+      ['Poslije odstrela', [
+        'Zeca izvaditi i ohladiti što prije; rukavice pri deranju.',
+      ]],
+    ],
+  },
+};
+
+function spoji(osnova) {
+  const d = DOPUNE[osnova.kod] || {};
+  const sekcije = [...osnova.sekcije];
+  const lov = sekcije.pop(); // "Značajno za lov" ostaje zadnje
+  return { ...osnova, kalendar: d.kalendar || [], aktivnost: d.aktivnost || null, sekcije: [...sekcije, ...(d.dodatno || []), lov] };
+}
+
+export const VRSTE_DIVLJACI = OSNOVA.map(spoji);
+
+export const MJESECI = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+export const DOBA_DANA = [['zora', 'Zora'], ['dan', 'Dan'], ['sumrak', 'Sumrak'], ['noc', 'Noć']];
+
+// Redovi kalendara: za svaki događaj 12 logičkih vrijednosti (jan–dec).
+export function calendarRows(v) {
+  return (v.kalendar || []).map(([kod, naziv, mjeseci]) => ({ kod, naziv, mjeseci: MJESECI.map((_, i) => mjeseci.includes(i + 1)) }));
+}
+
+export function activityRows(v) {
+  return v.aktivnost ? DOBA_DANA.map(([kod, naziv]) => ({ kod, naziv, nivo: v.aktivnost[kod] ?? 0 })) : [];
+}
 
 export function allSpeciesText(v) {
   return [v.naziv, v.latinski, v.grupa, v.kratko, ...v.brojke.flat(), ...v.sekcije.flatMap(([n, t]) => [n, ...t])];
