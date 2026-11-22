@@ -10,7 +10,10 @@ import { loadJSON, saveSoft } from './storage.js';
 export const SYNC_STORES = ['objekti', 'opazanja', 'odstrel', 'tragovi'];
 const LOCAL_ONLY = new Set(['sinhronizovano', 'tudji', 'vlasnik_id', 'udaljenost', 'fotografije', 'izmijenjen']);
 const BASE_DELAY = 5000;
-const MAX_DELAY = 30 * 60000;
+const MAX_DELAY = 10 * 60000;
+const NETWORK_RETRY_MS = 15000;
+export const SEND_DEADLINE_MS = 20000;
+export const PULL_DEADLINE_MS = 60000;
 const PULL_KEY = 'lovac.sync.zadnje.';
 const listeners = new Set();
 let flushing = null;
@@ -19,6 +22,29 @@ const iso = (ms) => new Date(ms ?? Date.now()).toISOString();
 
 export function nextDelay(attempts) {
   return Math.min(MAX_DELAY, BASE_DELAY * 2 ** Math.max(0, attempts));
+}
+
+// Mrtva veza ne pada nego VISI: bez roka bi jedno viseće slanje držalo cijeli red zauvijek.
+export function withDeadline(run, ms) {
+  const ctrl = new AbortController();
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      ctrl.abort();
+      const e = new Error('Veza ne odgovara (isteklo vrijeme)');
+      e.name = 'TimeoutError';
+      reject(e);
+    }, ms);
+  });
+  return Promise.race([Promise.resolve().then(() => run(ctrl.signal)), deadline]).finally(() => clearTimeout(timer));
+}
+
+// Greška veze (ne odbijanje servera): zapis nije kriv, pa se ne kažnjava sve dužim čekanjem.
+export function isNetworkFailure(err) {
+  if (!err) return false;
+  if (err.name === 'TimeoutError' || err.name === 'AbortError') return true;
+  if (err.status || err.statusCode || err.code) return false;
+  return /fetch|network|timeout|abort|failed to|load failed|offline|nije odgovorio/i.test(String(err.message || err));
 }
 
 export function toServerRow(store, rec, myId) {
@@ -120,7 +146,7 @@ async function markSynced(store, rec) {
 
 async function sessionReady(sb) {
   try {
-    const { data } = await sb.auth.getSession();
+    const { data } = await withDeadline(() => sb.auth.getSession(), 10000);
     return Boolean(data?.session);
   } catch {
     return false;
@@ -159,7 +185,8 @@ export async function flushQueue({ force = false } = {}) {
         continue;
       }
       try {
-        const { error } = await sb.from(e.store).upsert(toServerRow(e.store, rec, me.id), { onConflict: 'id' });
+        const row = toServerRow(e.store, rec, me.id);
+        const { error } = await withDeadline((signal) => sb.from(e.store).upsert(row, { onConflict: 'id' }).abortSignal(signal), SEND_DEADLINE_MS);
         if (error) throw error;
         // Zapis je mogao biti ponovo stavljen u red tokom slanja: briše se samo isti unos (seq).
         const still = await idbGet('red', e.id);
@@ -168,6 +195,11 @@ export async function flushQueue({ force = false } = {}) {
         result.poslano++;
       } catch (err) {
         result.greske++;
+        if (isNetworkFailure(err)) {
+          // Veza je kriva, ne zapis: kratko čekanje bez povećanja broja pokušaja; ostali bi također visili.
+          await idbPut('red', { ...e, sljedeci: Date.now() + NETWORK_RETRY_MS, greska: err?.message || String(err) });
+          break;
+        }
         const pokusaja = (e.pokusaja || 0) + 1;
         const jitter = Math.floor(Math.random() * 1000);
         await idbPut('red', { ...e, pokusaja, sljedeci: Date.now() + nextDelay(pokusaja) + jitter, greska: err?.message || String(err) });
@@ -225,7 +257,7 @@ export async function pullShared() {
 export async function syncNow({ force = false } = {}) {
   const res = await flushQueue({ force });
   try {
-    res.preuzeto = await pullShared();
+    res.preuzeto = await withDeadline(() => pullShared(), PULL_DEADLINE_MS);
   } catch (err) {
     res.preuzeto = 0;
     res.greskaPreuzimanja = err.message;
@@ -238,7 +270,8 @@ export function initSync() {
     if (connectionQuality() === 'nema') return;
     syncNow().catch((err) => console.warn('sinhronizacija', err));
   };
-  onQualityChange((q) => { if (q !== 'nema') tick(); });
+  // Kad se veza vrati, čekanje iz prethodnih neuspjeha se ne poštuje: lovac ne treba čekati do pola sata.
+  onQualityChange((q) => { if (q !== 'nema') syncNow({ force: true }).catch((err) => console.warn('sinhronizacija', err)); });
   setInterval(tick, 60000);
   setTimeout(tick, 3000);
   emitQueueChange();

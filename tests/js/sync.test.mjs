@@ -58,7 +58,7 @@ test('lokalna neposlana izmjena ima prednost nad starijom/istom sa servera', () 
 test('backoff raste i ima gornju granicu', () => {
   assert.equal(nextDelay(0), 5000);
   assert.equal(nextDelay(3), 40000);
-  assert.equal(nextDelay(30), 30 * 60000);
+  assert.equal(nextDelay(30), 10 * 60000);
 });
 
 import { needsSending } from '../../static/js/sync.js';
@@ -71,4 +71,28 @@ test('mreža sigurnosti: šta se šalje', () => {
   assert.equal(needsSending('tragovi', { sinhronizovano: false, status: 'snima', vrsta: 'obilazak' }), false);
   assert.equal(needsSending('tragovi', { sinhronizovano: false, status: 'snima', vrsta: 'potraga' }), true);
   assert.equal(needsSending('tragovi', { sinhronizovano: false, status: 'gotovo' }), true);
+});
+
+import { withDeadline, isNetworkFailure } from '../../static/js/sync.js';
+
+test('visi poziv se prekida rokom (inače red slanja ostaje zaglavljen)', async () => {
+  let aborted = false;
+  await assert.rejects(
+    withDeadline((signal) => new Promise(() => { signal.addEventListener('abort', () => { aborted = true; }); }), 30),
+    (e) => e.name === 'TimeoutError',
+  );
+  assert.equal(aborted, true);
+  assert.equal(await withDeadline(async () => 7, 1000), 7);
+});
+
+test('greška veze se razlikuje od odbijanja servera', () => {
+  assert.equal(isNetworkFailure(Object.assign(new Error('x'), { name: 'TimeoutError' })), true);
+  assert.equal(isNetworkFailure(new TypeError('Failed to fetch')), true);
+  assert.equal(isNetworkFailure({ code: '42501', message: 'row-level security' }), false);
+  assert.equal(isNetworkFailure({ status: 500, message: 'network' }), false);
+});
+
+test('greška iz klijenta (postgrest) o mrtvoj vezi je greška veze', () => {
+  assert.equal(isNetworkFailure({ message: 'TimeoutError: Server nije odgovorio za 12 s', code: '', details: '' }), true);
+  assert.equal(isNetworkFailure({ message: 'TypeError: Failed to fetch', code: '' }), true);
 });

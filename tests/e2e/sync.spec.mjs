@@ -23,6 +23,7 @@ async function setup(page, server) {
     const url = new URL(req.url());
     const table = url.pathname.split('/').pop();
     if (req.method() === 'POST') {
+      if (server.abort) return route.abort('failed');
       if (server.fail) return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"server privremeno nedostupan"}' });
       server.sent.push({ table, body: req.postDataJSON(), url: req.url() });
       return route.fulfill({ status: 201, body: '' });
@@ -180,4 +181,28 @@ test('zaštita: neposlan zapis kojeg nema u redu (npr. upis u red nije uspio) ip
     };
   }));
   await sendUntil(page, server, (x) => x.body.id === '44444444-0000-4000-8000-000000000001');
+});
+
+const redEntries = (page) => page.evaluate(() => new Promise((resolve) => {
+  const r = indexedDB.open('lovac');
+  r.onsuccess = () => { const q = r.result.transaction('red').objectStore('red').getAll(); q.onsuccess = () => resolve(q.result); };
+}));
+
+test('mrtva veza ne produžava čekanje: pokušaji se ne broje, ponovo za ~15 s; odbijanje servera (503) i dalje raste', async ({ page }) => {
+  const server = { abort: true, sent: [], shared: [] };
+  await setup(page, server);
+  await page.goto('/');
+  await addObject(page, 'Offline čeka');
+  await page.locator('#btn-posalji-sad').evaluate((b) => b.click());
+  await expect.poll(async () => (await redEntries(page))[0]?.greska ?? null, { timeout: 10000 }).not.toBeNull();
+  let e = (await redEntries(page))[0];
+  expect(e.pokusaja).toBe(0);
+  expect(e.sljedeci - Date.now()).toBeLessThanOrEqual(16000);
+
+  server.abort = false;
+  server.fail = true;
+  await page.locator('#btn-posalji-sad').evaluate((b) => b.click());
+  await expect.poll(async () => (await redEntries(page))[0]?.pokusaja, { timeout: 10000 }).toBeGreaterThan(0);
+  e = (await redEntries(page))[0];
+  expect(e.sljedeci - Date.now()).toBeGreaterThan(4000);
 });

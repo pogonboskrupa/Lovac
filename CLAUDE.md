@@ -350,3 +350,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Sekcija — istaknuti lovci (v0.6.1)**
 - Kartica "Lovci sekcije" je PRVA u tabu (ispred tekućeg lova): okvir u boji naglaska, brojevi (aktivnih / bez signala / vodstvo), filter Svi / Aktivni / Vodstvo sa brojem, pretraga bez dijakritika (`matchesQuery`) i redovi sa većim avatarom, značkom uloge (Grupovođa/Lovočuvar/Član) i obrubom za vodstvo. U heroju je traka lica (prvih 7, ostatak "+N") sa obrubom po aktivnosti. Čista logika: `sekcija-podaci.js huntersCounts/filterHunters/faceStrip`. Redoslijed redova se NE mijenja (vodstvo, pa članovi po prezimenu); filter/pretraga ga samo sužavaju. Nav dugme ka kartici se sada zove "Lovci", id ostaje `sk-k-clanovi`.
+
+**"Čeka slanje" predugo (v0.6.2)**
+- Uzrok: svaki neuspjeh slanja (i na mrtvoj vezi) je povećavao broj pokušaja, pa je odgoda rasla do 30 min i zapisi nisu išli čak ni kad se signal vrati. Sada: greška VEZE (`isNetworkFailure`: istek roka, "Failed to fetch"…) ne povećava `pokusaja`, ponovo se pokušava za 15 s i prekida krug (ostali zapisi bi također visili); odbijanje servera (npr. 503/RLS) i dalje raste, ali do najviše 10 min; kad se veza vrati (`onQualityChange`), `syncNow({ force: true })` ignoriše odgode.
+- Svaki poziv slanja i `pullShared` imaju vlastiti rok (`withDeadline`, `abortSignal`) povrh roka u `fetchWithTimeout`, da jedno viseće slanje ne drži `flushing` zauvijek.
