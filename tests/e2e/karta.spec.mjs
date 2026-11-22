@@ -75,3 +75,20 @@ test('dodirne mete su ≥ 44 px', async ({ page }) => {
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }
 });
+
+test('Moja lokacija: ploča se može listati do dijeljenja sa sekcijom i ne prelazi donju navigaciju (nizak ekran)', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 700 });
+  await page.goto('/');
+  await page.locator('#btn-moja-lokacija').click();
+  const m = await page.locator('#lok-ploca').evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { bottom: r.bottom, overflow: getComputedStyle(el).overflowY, scrollable: el.scrollHeight > el.clientHeight };
+  });
+  const nav = await page.locator('.donja-nav').boundingBox();
+  expect(m.overflow).toBe('auto');
+  expect(m.scrollable).toBe(true);
+  expect(m.bottom).toBeLessThanOrEqual(nav.y + 1);
+  await page.locator('#lok-sek-lista').scrollIntoViewIfNeeded();
+  const st = await page.locator('#lok-sek-lista').boundingBox();
+  expect(st.y + st.height).toBeLessThanOrEqual(nav.y + 1);
+});

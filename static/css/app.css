@@ -809,3 +809,7 @@ svg[hidden] { display: none; }
 
 #st-godine { overflow-x: auto; flex-wrap: nowrap; }
 #st-godine button { flex: none; min-width: 72px; }
+
+/* "Moja lokacija": ploča se može listati (donji dio sa dijeljenjem sekcije se inače odsiječe na nižim ekranima) */
+#lok-ploca { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  max-height: calc(100vh - 72px - env(safe-area-inset-top) - var(--nav-h) - 12px); max-height: calc(100dvh - 72px - env(safe-area-inset-top) - var(--nav-h) - 12px); }

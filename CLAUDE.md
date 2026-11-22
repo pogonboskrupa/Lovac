@@ -317,3 +317,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Slanje traga lova: `tick` je serijalizovan (`ticking`), a poslije svakog paketa se iz TRENUTNOG bafera izbacuju samo poslane tačke (`removeSentPoints`).
 - Rokovi koje postavlja server (zahtjev "Gdje si?" 15 min) računaju se po satu servera: `net.js noteServerDate/serverNow` (zaglavlje `Date` odgovora), ne po satu telefona.
 - Statistika (024) računa godinu i mjesec po `Europe/Sarajevo`, ne po UTC-u baze.
+
+**Pločice na slaboj vezi i ploča "Moja lokacija" (v0.5.5)**
+- Leaflet sam NE ponavlja pločicu koja nije stigla, pa na sporoj vezi (~1 KB/s, VPN) dijelovi karte ostanu crni. `tiles.js loadTileWithRetry` ponavlja do 3 puta (odgode 1,5 / 4 / 9 s), rok pokušaja raste (`tileTimeoutMs`: dobra veza 12 s, slaba 20 s, +50 % po pokušaju) i staje čim pločica napusti ekran. Kad se ≥ 4 pločice ne učitaju ni poslije ponavljanja, jednom u minuti stiže poruka (`plocice:greska` → toast u `map.js`) sa uputom da preuzme područje za rad bez interneta.
+- Ploča `#lok-ploca` ima `overflow-y: auto` i `max-height` do donje navigacije (`100dvh - gore - --nav-h`); prije je `.meni { overflow: hidden }` odsijecao dio sa dijeljenjem sekcije na nižim ekranima. Svaka nova ploča iznad navigacije mora imati vlastiti max-height i listanje.

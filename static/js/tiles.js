@@ -92,13 +92,18 @@ export async function clearTileCache() {
   }
 }
 
-export async function loadTileBlob(url, signal) {
+// Rok jednog pokušaja: sporija veza traži duži rok, a svaki ponovni pokušaj ga produžava (veza od ~1 KB/s ne stigne za 8 s).
+export function tileTimeoutMs(quality, attempt = 0) {
+  const base = quality === 'nema' ? 3000 : quality === 'slaba' ? 20000 : 12000;
+  return Math.round(base * (1 + attempt * 0.5));
+}
+
+export async function loadTileBlob(url, signal, attempt = 0) {
   const cache = await getTileCache();
   const hit = cache && await cache.match(url);
   if (hit) return hit.blob();
   return tileLimiter.run(async () => {
-    const q = connectionQuality();
-    const timeout = q === 'nema' ? 3000 : q === 'slaba' ? 15000 : 8000;
+    const timeout = tileTimeoutMs(connectionQuality(), attempt);
     const res = await fetchWithTimeout(url, { mode: 'cors', credentials: 'omit', signal }, timeout);
     if (!isImageResponse(res)) throw new Error(`Pločica nije slika (${res.status})`);
     if (cache) {
@@ -111,6 +116,35 @@ export async function loadTileBlob(url, signal) {
   }, signal);
 }
 
+export const TILE_RETRY_DELAYS = [1500, 4000, 9000];
+
+function sleepAbortable(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(abortError()); return; }
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => { clearTimeout(t); reject(abortError()); }, { once: true });
+  });
+}
+
+// Neuspjela pločica se pokušava ponovo (Leaflet sam ne ponavlja, pa dio karte ostane crn). Prekid (pločica je napustila
+// ekran) staje odmah; poslije zadnjeg pokušaja baca zadnju grešku.
+export async function loadTileWithRetry(url, signal, { load = loadTileBlob, delays = TILE_RETRY_DELAYS, sleep = sleepAbortable } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await load(url, signal, attempt);
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      lastErr = err;
+      if (attempt < delays.length) await sleep(delays[attempt], signal);
+    }
+  }
+  throw lastErr;
+}
+
+let failedTiles = 0;
+let lastFailureNotice = 0;
+
 export function createCachedTileLayer(L, urlTemplate, options) {
   const Layer = L.TileLayer.extend({
     createTile(coords, done) {
@@ -119,7 +153,7 @@ export function createCachedTileLayer(L, urlTemplate, options) {
       img.setAttribute('role', 'presentation');
       const ctrl = new AbortController();
       img._ctrl = ctrl;
-      loadTileBlob(this.getTileUrl(coords), ctrl.signal)
+      loadTileWithRetry(this.getTileUrl(coords), ctrl.signal)
         .then((blob) => {
           const objUrl = URL.createObjectURL(blob);
           img._blobUrl = objUrl;
@@ -129,7 +163,15 @@ export function createCachedTileLayer(L, urlTemplate, options) {
         })
         .catch((err) => {
           // Prekinuta pločica više nije na karti, pa se ne prijavljuje Leaflet-u.
-          if (!ctrl.signal.aborted) done(err, img);
+          if (ctrl.signal.aborted) return;
+          done(err, img);
+          // Mnogo pločica koje se ne učitaju ni poslije ponavljanja: jednom u minuti javi lovcu zašto je karta prazna.
+          failedTiles += 1;
+          if (failedTiles >= 4 && Date.now() - lastFailureNotice > 60000) {
+            lastFailureNotice = Date.now();
+            failedTiles = 0;
+            globalThis.document?.dispatchEvent(new CustomEvent('plocice:greska'));
+          }
         });
       return img;
     },

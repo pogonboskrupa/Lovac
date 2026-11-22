@@ -22,3 +22,24 @@ test('logo u webu: favicon i ekran prijave koriste istu sliku, a service worker 
   assert.ok(existsSync('static/img/logo-192.png') && existsSync('static/img/logo-512.png'));
   assert.match(readFileSync('sw.js', 'utf8'), /static\/img\/logo-192\.png/);
 });
+
+import { loadTileWithRetry, tileTimeoutMs, TILE_RETRY_DELAYS } from '../../static/js/tiles.js';
+
+test('pločice: neuspjela se ponavlja (leaflet sam ne ponavlja pa karta ostane crna), rok raste sa pokušajem', async () => {
+  const slept = [];
+  let calls = 0;
+  const load = async (_u, _s, attempt) => { calls++; if (attempt < 2) throw new Error('timeout'); return 'blob'; };
+  const r = await loadTileWithRetry('u', undefined, { load, sleep: async (ms) => slept.push(ms) });
+  assert.equal(r, 'blob');
+  assert.equal(calls, 3);
+  assert.deepEqual(slept, TILE_RETRY_DELAYS.slice(0, 2));
+  // poslije zadnjeg pokušaja baca zadnju grešku
+  await assert.rejects(loadTileWithRetry('u', undefined, { load: async () => { throw new Error('mrtva veza'); }, sleep: async () => {} }), /mrtva veza/);
+  // prekinuta pločica (napustila ekran) staje odmah, bez ponavljanja
+  const ctrl = new AbortController();
+  let n = 0;
+  await assert.rejects(loadTileWithRetry('u', ctrl.signal, { load: async () => { n++; ctrl.abort(); throw new Error('abort'); }, sleep: async () => {} }));
+  assert.equal(n, 1);
+  assert.ok(tileTimeoutMs('slaba', 0) > tileTimeoutMs('dobro', 0) && tileTimeoutMs('dobro', 2) > tileTimeoutMs('dobro', 0));
+  assert.equal(tileTimeoutMs('nema', 0), 3000);
+});

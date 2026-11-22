@@ -3,7 +3,7 @@
 import { BASE_LAYERS, createCachedTileLayer } from './tiles.js';
 import { COORD_MODES, nextCoordMode, formatCoordMode } from './geo.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { wireMenu } from './ui.js';
+import { wireMenu, toast } from './ui.js';
 
 const VIEW_KEY = 'lovac.pogled';
 const LAYER_KEY = 'lovac.podloga';
@@ -23,6 +23,8 @@ export function resolveBase(id, { terenReady }) {
 }
 
 export function initMap(L, elementId) {
+  // pločice koje se ne učitaju ni poslije ponavljanja (spora veza ili server karte): lovac treba znati zašto je karta crna
+  document.addEventListener('plocice:greska', () => toast('Dio karte se nije učitao: veza je slaba ili server karte ne odgovara. Preuzmi područje za rad bez interneta (Meni → Karte i offline).', 6000));
   const savedMode = loadJSON(COORD_KEY, 'wgs');
   coordMode = COORD_MODES.includes(savedMode) ? savedMode : 'wgs';
   const view = loadJSON(VIEW_KEY, DEFAULT_VIEW);
