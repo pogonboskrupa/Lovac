@@ -3,6 +3,19 @@
     <h2 id="tragovi-naslov">Moji tragovi</h2>
     <button id="btn-tragovi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero">
+    <div class="sk-statovi sk-statovi-hero">
+      <div data-stat="tragova"><b id="tr-stat-broj">0</b><span>tragova</span></div>
+      <div data-stat="km"><b id="tr-stat-km">0</b><span>km ukupno</span></div>
+      <div data-stat="sati"><b id="tr-stat-sati">0</b><span>sati</span></div>
+    </div>
+  </div>
+  <div id="tr-filter" class="segment p-tabovi" role="group" aria-label="Vrsta traga">
+    <button type="button" data-tip="svi" aria-pressed="true">Svi</button>
+    <button type="button" data-tip="obilazak" aria-pressed="false">Obilasci</button>
+    <button type="button" data-tip="potraga" aria-pressed="false">Potrage</button>
+  </div>
+  <input id="tr-trazi" type="search" placeholder="Traži trag (naziv, datum)…" aria-label="Traži trag" autocomplete="off">
   <p id="tragovi-prazno" class="sitno">Još nema snimljenih tragova. Snimanje se pokreće dugmetom sa krugom na karti.</p>
   <ul id="tragovi-spisak" class="spisak"></ul>
 </section>

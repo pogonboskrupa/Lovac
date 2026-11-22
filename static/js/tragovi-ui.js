@@ -7,6 +7,8 @@ import { addWaypoint,
 import {
   movingTime, trackDistance, formatDistance, formatDuration, smoothPoints, toGpx, toKml, trackFileName, MIN_TRACK_M,
 } from './trag.js';
+import { matchesQuery } from './pretraga.js';
+import { formatDecimalBs } from './odstrel.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { shareFile } from './dijeljenje.js';
 import { shareDialog, memberName } from './dijeljenje-ui.js';
@@ -206,22 +208,29 @@ export function initTragovi(L, map) {
     if (pts.length) map.fitBounds(shown.getBounds(), { padding: [40, 40], maxZoom: 17 });
   };
 
+  let trFilter = { tip: 'svi', q: '' };
   const renderList = async () => {
     const ul = $('tragovi-spisak');
-    const tracks = (await allTracks()).filter((t) => t.status === 'gotovo');
-    $('tragovi-prazno').hidden = tracks.length > 0;
+    const all = (await allTracks()).filter((t) => t.status === 'gotovo');
+    const tracks = all.filter((t) => (trFilter.tip === 'svi' || (trFilter.tip === 'potraga') === (t.vrsta === 'potraga'))
+      && matchesQuery([t.naziv, new Date(t.start).toLocaleDateString('bs-BA')], trFilter.q));
+    $('tragovi-prazno').hidden = all.length > 0;
+    $('tr-stat-broj').textContent = String(all.length);
+    $('tr-stat-km').textContent = formatDecimalBs(Math.round(all.reduce((s, t) => s + trackDistance(t.tacke), 0) / 100) / 10);
+    $('tr-stat-sati').textContent = formatDecimalBs(Math.round(all.reduce((s, t) => s + movingTime(t), 0) / 360000) / 10);
     ul.innerHTML = tracks.map((t) => `
-      <li class="trag-red" data-id="${escapeHtml(t.id)}">
-        <div class="trag-naslov"><b>${escapeHtml(t.naziv)}</b><span class="sitno">${escapeHtml(trackSummary(t))}</span>
-        <span class="sitno">${t.tudji ? `Podijelio: ${escapeHtml(memberName(t.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[t.vidljivost || 'privatno'])}`}</span></div>
-        <div class="red-dugmadi">
-          <button type="button" class="dugme" data-akcija="prikazi">Prikaži</button>
+      <li class="trag-red tr-kartica" data-id="${escapeHtml(t.id)}" data-vrsta="${t.vrsta === 'potraga' ? 'potraga' : 'obilazak'}">
+        <div class="trag-naslov"><span class="tr-chip" data-vrsta="${t.vrsta === 'potraga' ? 'potraga' : 'obilazak'}">${t.vrsta === 'potraga' ? 'Potraga' : 'Obilazak'}${t.tudji ? ' · podijeljen' : ''}</span>
+        <b>${escapeHtml(t.naziv)}</b><span class="sitno">${escapeHtml(trackSummary(t))}</span>
+        <span class="sitno">${t.tudji ? `Podijelio: ${escapeHtml(memberName(t.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[t.vidljivost || 'privatno'])}`}${(t.tackeInteresa || []).length ? ` · tačaka: ${t.tackeInteresa.length}` : ''}</span></div>
+        <button type="button" class="dugme glavno tr-glavno" data-akcija="prikazi">Prikaži na karti</button>
+        <div class="tr-dugmad">
           <button type="button" class="dugme" data-akcija="uglacaj" aria-pressed="${t.uglacan}">${t.uglacan ? 'Original' : 'Uglačaj'}</button>
           <button type="button" class="dugme" data-akcija="gpx">GPX</button>
           <button type="button" class="dugme" data-akcija="kml">KML</button>
           ${t.tudji ? '' : '<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button>'}
         </div>
-      </li>`).join('');
+      </li>`).join('') || '<li class="sitno">Nema tragova za ovaj filter.</li>';
     ul.querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
       wireTwoTap(b, 'Dodirni ponovo', async () => {
         const id = b.closest('[data-id]').dataset.id;
@@ -232,6 +241,14 @@ export function initTragovi(L, map) {
     });
   };
 
+  $('tr-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tip]');
+    if (!b) return;
+    trFilter = { ...trFilter, tip: b.dataset.tip };
+    $('tr-filter').querySelectorAll('[data-tip]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    renderList();
+  });
+  $('tr-trazi').addEventListener('input', (e) => { trFilter = { ...trFilter, q: e.target.value }; renderList(); });
   $('tragovi-spisak').addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-akcija]');
     if (!btn || btn.dataset.akcija === 'obrisi') return;

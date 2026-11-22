@@ -273,3 +273,8 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Logo sekcije i kartice sekcija (migracija 020, v0.4.5)**
 - Logo (`sekcija-logo.js`): automatski crtan SVG štit sa inicijalima, boja iz haša naziva (isti naziv = isti logo, bez pohrane), ili učitana slika 128 px (`sekcije.logo`, grupovođa/admin kroz "Upravljanje sekcijom" → Logo sekcije; "Automatski logo" vraća). Prikazuje se u navigaciji (umjesto ikone grupe), u heroju taba sekcije i na karticama u "Sekcije i pristup". SVG elementi nemaju svojstvo `hidden` — koristi se atribut.
 - Kartice "Sekcije i pristup": logo, naziv, revir, status pristupa, brojevi (članova, zahtjevi za upravljače), tekst Grupovođa/Lovočuvar, članovi u `<details>`, dugmad jedno ispod drugog.
+
+**Redizajn Moji tragovi, Zajednički lov, Moj pas (v0.4.6)**
+- Moji tragovi: hero (broj, km, sati), filter Svi/Obilasci/Potrage, pretraga (`matchesQuery`), kartice sa vrstom traga, jednim glavnim dugmetom "Prikaži na karti" i mrežom od 3 sporedna dugmeta; prvi `.sitno` u kartici je i dalje sažetak (datum · dužina · trajanje).
+- Zajednički lov: kartice grupisane (Danas i u toku / Planirani / Završeni) sa logom sekcije, značkom stanja i brojevima (učesnika, stanova, moja uloga); `data-id` i `data-akcija` ostaju.
+- Moj pas: ime i slika iz profila lovca (`lovac.profil.lovac`), strelica ka psu (smjer minus kompas), prečica u Profil lovca. Koordinate sa manje od 3 decimale se ne prepoznaju (da se ne miješaju sa drugim brojevima).

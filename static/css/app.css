@@ -655,3 +655,28 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .sk2-dugmad .dugme { width: 100%; margin: 0; }
 .donja-nav .sek-logo.mali { margin: 0; }
 svg[hidden] { display: none; }
+
+/* Moji tragovi, Zajednički lov i Moj pas: kartice */
+.tr-hero { margin-top: 4px; }
+.tr-kartica, .lov-kartica { padding: 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); list-style: none; margin: 10px 0; }
+.tr-chip, .lk-chip { display: inline-block; align-self: flex-start; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--dugme); color: var(--dugme-tekst); text-transform: uppercase; letter-spacing: .04em; }
+.tr-chip[data-vrsta="potraga"] { background: #b91c1c; color: #ffffff; }
+.tr-glavno { width: 100%; margin: 8px 0 6px; }
+.tr-dugmad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tr-dugmad .dugme { min-width: 0; margin: 0; padding: 0 4px; font-size: 14px; }
+.lk-grupa { margin: 16px 4px 2px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--tekst-2); list-style: none; font-weight: 700; }
+.lk-glava { display: flex; align-items: flex-start; gap: 10px; }
+.lk-glava .trag-naslov { flex: 1; min-width: 0; }
+.lk-chip[data-chip="u_toku"] { background: var(--gps-dobro); color: var(--gps-tekst); }
+.lk-chip[data-chip="danas"] { background: var(--naglasak); color: var(--naglasak-tekst); }
+.lk-statovi { margin: 10px 0 4px; }
+.lk-statovi b { font-size: 18px; text-align: center; overflow-wrap: anywhere; }
+.lk-dugmad { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.lk-dugmad .dugme { width: 100%; margin: 0; }
+.pas-profil { display: flex; align-items: center; gap: 14px; margin: 8px 0; padding: 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); }
+.pas-profil-tekst { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 18px; }
+.pas-profil-tekst .dugme { width: 100%; margin: 0; min-height: 44px; }
+.pas-vrh { display: flex; align-items: center; gap: 10px; }
+.pas-vrh .pas-stanje { flex: 1; margin: 12px 0; }
+.pas-strelica { flex: none; width: 56px; height: 56px; padding: 8px; border-radius: 50%; background: var(--naglasak); color: var(--naglasak-tekst); box-sizing: border-box; transition: transform .3s ease; }
+.pas-hist li { padding: 8px 0; border-bottom: 1px solid var(--dugme); list-style: none; }

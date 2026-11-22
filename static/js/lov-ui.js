@@ -9,6 +9,7 @@ import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingChe
 import { standWarnings, sectorWedge } from './sektori.js';
 import { onGpsUpdate, currentHeading, currentFix } from './gps.js';
 import { rangeLabel } from './istrazivac.js';
+import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { printHuntReport } from './uzivo-ui.js';
 import { MOJE_SEKCIJE_KEY, cachedSekcije, downloadSekcije } from './sekcije-ui.js';
@@ -145,17 +146,31 @@ export function initLov(L, map) {
     $('lovovi-prazno').hidden = all.length > 0;
     $('btn-lov-novi').hidden = !canOrganizeAny();
     $('btn-lov-reviri').hidden = !me()?.is_admin;
-    $('lovovi-spisak').innerHTML = all.map((x) => {
+    const card = (x) => {
       const mine = myAssignment(x, me()?.id);
-      return `<li class="trag-red" data-id="${escapeHtml(x.id)}" data-status="${x.lov.status}">
-        <div class="trag-naslov"><b>${escapeHtml(x.lov.naziv)}${today.has(x.id) ? ' · DANAS' : ''}</b>
-        <span class="sitno">${escapeHtml(x.lov.datum)} · ${escapeHtml(x.revir?.naziv || '')}${x.sekcija ? ` · ${escapeHtml(x.sekcija.naziv)}` : ''} · ${STATUS[x.lov.status]}
-        ${mine ? ` · ${ULOGE[mine.uloga]}${mine.stan ? `, stan ${mine.stan.broj}` : ''}` : ''}</span></div>
-        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="prikazi">Raspored na karti</button>
+      const isToday = today.has(x.id);
+      const chip = x.lov.status === 'u_toku' ? ['U TOKU', 'u_toku'] : isToday ? ['DANAS', 'danas'] : x.lov.status === 'zavrsen' ? ['Završen', 'zavrsen'] : ['Planiran', 'planiran'];
+      return `<li class="trag-red lov-kartica" data-id="${escapeHtml(x.id)}" data-status="${x.lov.status}">
+        <div class="lk-glava">
+          ${x.sekcija ? `<span class="sek-logo" style="${logoStyle(x.sekcija)}" role="img" aria-label="Logo sekcije ${escapeHtml(x.sekcija.naziv)}"></span>` : ''}
+          <div class="trag-naslov"><b>${escapeHtml(x.lov.naziv)}${isToday ? ' · DANAS' : ''}</b>
+            <span class="sitno">${escapeHtml(x.lov.datum)} · ${escapeHtml(x.revir?.naziv || '')}${x.sekcija ? ` · ${escapeHtml(x.sekcija.naziv)}` : ''} · ${STATUS[x.lov.status]}
+            ${mine ? ` · ${ULOGE[mine.uloga]}${mine.stan ? `, stan ${mine.stan.broj}` : ''}` : ''}</span></div>
+          <span class="lk-chip" data-chip="${chip[1]}">${chip[0]}</span>
+        </div>
+        <div class="sk-statovi lk-statovi"><div><b>${x.ucesnici.length}</b><span>učesnika</span></div><div><b>${x.stanovi.length}</b><span>stanova</span></div>
+          ${mine ? `<div><b>${escapeHtml(ULOGE[mine.uloga])}</b><span>moja uloga</span></div>` : ''}</div>
+        <div class="lk-dugmad"><button type="button" class="dugme glavno" data-akcija="prikazi">Raspored na karti</button>
         ${x.lov.status !== 'planiran' ? '<button type="button" class="dugme" data-akcija="izvjestaj">Izvještaj (PDF)</button>' : ''}
         ${canOrganizeAny() ? '<button type="button" class="dugme" data-akcija="uredi">Organizuj</button>' : ''}</div>
       </li>`;
-    }).join('');
+    };
+    const groups = [
+      ['Danas i u toku', all.filter((x) => x.lov.status === 'u_toku' || today.has(x.id))],
+      ['Planirani', all.filter((x) => x.lov.status === 'planiran' && !today.has(x.id))],
+      ['Završeni', all.filter((x) => x.lov.status === 'zavrsen' && !today.has(x.id))],
+    ];
+    $('lovovi-spisak').innerHTML = groups.filter(([, l]) => l.length).map(([naslov, l]) => `<li class="lk-grupa" aria-hidden="true">${naslov} (${l.length})</li>${l.map(card).join('')}`).join('');
   };
 
   const refresh = async () => {

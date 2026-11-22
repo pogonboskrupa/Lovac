@@ -4,7 +4,8 @@ import { loadJSON, saveSoft } from './storage.js';
 import { currentFix, onGpsUpdate } from './gps.js';
 import { startNavigation } from './navigacija.js';
 import { parseLocation, addDogPoint, dogAge, dogSummary } from './pas.js';
-import { rangeLabel } from './istrazivac.js';
+import { rangeLabel, bearingDeg } from './istrazivac.js';
+import { currentHeading } from './gps.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 
 export const PAS_KEY = 'lovac.pas';
@@ -31,9 +32,25 @@ export function initPas(L, map) {
       .bindTooltip(() => `${dog.ime} · ${dogSummary(currentFix(), p)}`, { permanent: false }).addTo(layer);
   };
 
+  // Ime i slika psa iz profila lovca (Postavke → Profil lovca)
+  const profilePas = () => loadJSON('lovac.profil.lovac', {}) || {};
+
   const render = () => {
     const p = last();
     const box = $('pas-stanje');
+    const prof = profilePas();
+    if (dog.ime === 'Pas' && prof.pas_ime) dog = { ...dog, ime: prof.pas_ime };
+    $('pas-profil-ime').textContent = prof.pas_ime || dog.ime || 'Moj pas';
+    $('pas-foto').style.backgroundImage = prof.pas_slika ? `url("${prof.pas_slika}")` : '';
+    $('pas-foto').textContent = prof.pas_slika ? '' : 'P';
+    $('pas-foto').classList.toggle('ima-sliku', Boolean(prof.pas_slika));
+    const arrow = $('pas-strelica');
+    if (p && currentFix()) {
+      arrow.removeAttribute('hidden');
+      arrow.style.transform = `rotate(${Math.round(bearingDeg(currentFix(), p) - (currentHeading() ?? 0))}deg)`;
+    } else {
+      arrow.setAttribute('hidden', '');
+    }
     $('pas-ime').value = $('pas-ime').value || (dog.ime === 'Pas' ? '' : dog.ime);
     $('pas-akcije').hidden = !p;
     if (!p) {
@@ -58,6 +75,12 @@ export function initPas(L, map) {
   $('btn-pas').addEventListener('click', open);
   $('btn-pas-zatvori').addEventListener('click', close);
   registerBackHandler(() => { if (screen.hidden) return false; close(); return true; });
+
+  $('btn-pas-profil').addEventListener('click', () => {
+    close();
+    $('btn-postavke').click();
+    document.querySelector('#p-tabovi [data-ptab="profil"]')?.click();
+  });
 
   $('btn-pas-zalijepi').addEventListener('click', async () => {
     try {

@@ -3,7 +3,14 @@
     <h2 id="pas-naslov">Moj pas</h2>
     <button id="btn-pas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
-  <div id="pas-stanje" class="pas-stanje" data-stanje="nema" role="status">Pozicija psa još nije unesena.</div>
+  <div class="pas-profil">
+    <span id="pas-foto" class="p-avatar pf-velika pf-pas" aria-hidden="true">P</span>
+    <div class="pas-profil-tekst"><b id="pas-profil-ime">Moj pas</b><button id="btn-pas-profil" class="dugme" type="button">Uredi psa u profilu</button></div>
+  </div>
+  <div class="pas-vrh">
+    <svg id="pas-strelica" class="ic pas-strelica" viewBox="0 0 24 24" aria-hidden="true" hidden><use href="#ic-follow"/></svg>
+    <div id="pas-stanje" class="pas-stanje" data-stanje="nema" role="status">Pozicija psa još nije unesena.</div>
+  </div>
   <div id="pas-akcije" class="pas-akcije" hidden>
     <button id="btn-pas-karta" class="dugme glavno" type="button">Pokaži psa na karti</button>
     <button id="btn-pas-vodi" class="dugme" type="button">Vodi me do psa</button>
@@ -19,7 +26,7 @@
   </div>
   <div class="p-kartica">
     <h3>Zadnje pozicije</h3>
-    <ul id="pas-historija" class="spisak"></ul>
+    <ul id="pas-historija" class="spisak pas-hist"></ul>
     <button id="btn-pas-obrisi" class="dugme" type="button">Obriši praćenje psa</button>
   </div>
 </section>
