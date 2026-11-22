@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.5.8';
+  const APP_VER = 'v0.5.9';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -390,6 +390,8 @@
 
   <div id="p-tabovi" class="segment p-tabovi" role="tablist" aria-label="Postavke">
     <button type="button" role="tab" data-ptab="opste" aria-pressed="true">Opšte</button>
+    <button type="button" role="tab" data-ptab="podaci" aria-pressed="false">Podaci</button>
+    <button type="button" role="tab" data-ptab="nalog" aria-pressed="false">Nalog</button>
     <button type="button" role="tab" data-ptab="profil" aria-pressed="false">Profil lovca</button>
   </div>
 
@@ -427,12 +429,32 @@
     <div id="p-interval" class="segment" role="group" aria-label="Učestalost slanja"></div>
   </div>
 
+  </div>
+
+  <div id="p-podaci" hidden>
+  <div class="p-kartica" id="p-spremnost">
+    <h3>Spremnost za rad bez interneta</h3>
+    <dl class="tabela-info p-spremnost">
+      <dt>Veza</dt><dd id="sp-veza">—</dd>
+      <dt>Slanje</dt><dd id="sp-slanje">—</dd>
+      <dt>Pohrana telefona</dt><dd id="sp-pohrana">—</dd>
+      <dt>Karta</dt><dd id="sp-karta">—</dd>
+      <dt>Rezervna kopija</dt><dd id="sp-kopija" data-stanje="ok">—</dd>
+    </dl>
+    <span class="p-traka" id="sp-traka" hidden><i id="sp-traka-puna"></i></span>
+    <p id="sp-pohrana-zastita" class="sitno" hidden></p>
+    <button id="btn-zastiti-pohranu" class="dugme" type="button" hidden>Zaštiti pohranu od brisanja</button>
+    <p class="sitno">Podaci koje unosiš ostaju na telefonu i šalju se na server kad ima veze. Za kartu bez interneta preuzmi područje u Meni → Karte i offline.</p>
+  </div>
+
   <div class="p-kartica">
     <h3>Podaci i slanje</h3>
     <p id="postavke-red" class="red-info"></p>
     <p id="postavke-red-greska" class="sitno"></p>
     <button id="btn-posalji-sad" class="dugme" type="button">Pošalji sad</button>
     <button id="btn-moji-tragovi" class="dugme" type="button">Moji tragovi</button>
+  </div>
+  <div class="p-kartica">
     <h3>Rezervna kopija</h3>
     <p class="sitno">Svi tvoji objekti, opažanja, odstrel i tragovi u jednom fajlu (bez fotografija). Uvoz samo dodaje ono čega nema na telefonu.</p>
     <button id="btn-rezerva-izvoz" class="dugme" type="button">Napravi rezervnu kopiju</button>
@@ -440,6 +462,9 @@
     <p id="rezerva-status" class="sitno" role="status"></p>
   </div>
 
+  </div>
+
+  <div id="p-nalog" hidden>
   <div id="postavke-admin" class="p-kartica" hidden>
     <h3>Administracija</h3>
     <button id="btn-korisnici" class="dugme" type="button">Korisnici i odobrenja</button>

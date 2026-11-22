@@ -889,3 +889,11 @@ svg[hidden] { display: none; }
 #sekcije-filter .znacka-broj { margin-left: 6px; }
 #uloge-detalji { margin: 8px 0; }
 #sekcije-filter .znacka-broj { position: static; display: inline-grid; vertical-align: middle; }
+
+/* Postavke: spremnost za rad bez interneta */
+.p-spremnost { display: grid; grid-template-columns: 1fr; gap: 2px 0; margin: 8px 0; }
+.p-spremnost dt { font-size: 14px; opacity: .75; margin-top: 8px; }
+.p-spremnost dd { margin: 0; font-weight: 600; }
+.p-spremnost dd[data-stanje="stara"], .p-spremnost dd[data-stanje="nema"], .p-spremnost dd[data-stanje="upozorenje"] { color: var(--opasnost, #b3261e); }
+.p-traka { display: block; height: 8px; border-radius: 4px; background: rgba(128,128,128,.25); overflow: hidden; margin: 6px 0; }
+.p-traka > i { display: block; height: 100%; width: 0; background: var(--akcent, #2e7d32); }

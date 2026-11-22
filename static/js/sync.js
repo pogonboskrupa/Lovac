@@ -174,6 +174,7 @@ export async function flushQueue({ force = false } = {}) {
         if (isAuthRejection(err)) break;
       }
     }
+    if (result.poslano > 0) saveSoft('lovac.sync.zadnje', Date.now());
     result.preostalo = await queueCount();
     return result;
   })();

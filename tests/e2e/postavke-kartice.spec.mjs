@@ -69,6 +69,7 @@ test('rezervna kopija: izvoz bez tuđih zapisa, uvoz samo dodaje nove', async ({
   ]);
   await seed(page, 'odstrel', [{ ...base, id: 'ods-00000001', vrsta: 'zec', vrijeme: Date.now(), kategorija: 'nepoznato' }]);
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="podaci"]').click();
   const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#btn-rezerva-izvoz').click()]);
   expect(download.suggestedFilename()).toMatch(/^lovac-rezerva-\d{4}-\d\d-\d\d\.json$/);
   const text = readFileSync(await download.path(), 'utf8');
@@ -101,6 +102,7 @@ test('odjava sa neposlanim zapisima traži drugi dodir i upozorava', async ({ pa
   }));
   await page.locator('#btn-postavke-zatvori').click();
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await expect(page.locator('#postavke-odjava-upozorenje')).toBeVisible();
   await page.locator('#btn-postavke-odjava').click();
   await expect(page.locator('#btn-postavke-odjava')).toContainText('dodirni ponovo');

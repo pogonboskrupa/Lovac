@@ -43,3 +43,8 @@ export async function lok(page, selector) {
   if (!(await page.locator('#lok-ploca').isVisible())) await page.locator('#btn-moja-lokacija').click();
   await page.locator(selector).click();
 }
+
+// Postavke imaju tabove (opste | podaci | nalog | profil).
+export async function postTab(page, tab) {
+  await page.locator(`#p-tabovi [data-ptab="${tab}"]`).click();
+}

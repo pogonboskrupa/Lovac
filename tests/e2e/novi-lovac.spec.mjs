@@ -214,6 +214,7 @@ test('promjena vlastitog PIN-a iz Postavki', async ({ page }) => {
   });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.fill('#novi-pin', '12');
   await page.locator('#btn-pin-promijeni').click();
   await expect(page.locator('#pin-status')).toHaveText('PIN mora imati 6 do 8 cifara');

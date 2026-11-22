@@ -176,8 +176,9 @@ export function initProfilLovca() {
 
   // ---------- tabovi ----------
   const setTab = (tab) => {
-    $('p-opste').hidden = tab !== 'opste';
-    $('p-profil').hidden = tab !== 'profil';
+    if (!['opste', 'podaci', 'nalog', 'profil'].includes(tab)) tab = 'opste';
+    for (const t of ['opste', 'podaci', 'nalog', 'profil']) $(`p-${t}`).hidden = tab !== t;
+    if (tab === 'podaci') document.dispatchEvent(new CustomEvent('postavke:podaci'));
     $('p-tabovi').querySelectorAll('[data-ptab]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ptab === tab)));
     saveSoft(TAB_KEY, tab);
     if (tab === 'profil') { render(); hydrate().catch(() => {}); if (!$('pf-statistika').hidden) renderStats(); }

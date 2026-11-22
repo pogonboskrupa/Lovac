@@ -37,6 +37,7 @@ test('lovac koji nije admin ne vidi administraciju', async ({ page }) => {
   await setup(page, { admin: false });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await expect(page.locator('#postavke-admin')).toBeHidden();
 });
 
@@ -44,6 +45,7 @@ test('admin vidi korisnike (neodobreni prvi) i odobrava jednim dodirom', async (
   const rpc = await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-korisnici').click();
   await expect(page.locator('#korisnici')).toBeVisible();
   const rows = page.locator('#korisnici-spisak [data-id]');
@@ -62,6 +64,7 @@ test('admin: uloga, reset PIN-a (6-8 cifara) i brisanje drugim dodirom', async (
   const rpc = await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-korisnici').click();
   const lovac = page.locator('#korisnici-spisak [data-id="c3"]');
   await lovac.locator('[data-akcija="admin"]').click();
@@ -88,6 +91,7 @@ test('admin ne može opozvati ni obrisati sam sebe iz UI-ja', async ({ page }) =
   await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-korisnici').click();
   const ja = page.locator('#korisnici-spisak [data-id="a1"]');
   await expect(ja.locator('[data-akcija="odobri"]')).toHaveCount(0);

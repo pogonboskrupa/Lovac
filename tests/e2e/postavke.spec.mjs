@@ -73,6 +73,7 @@ test('odjava iz postavki vodi na prijavu odmah, i kad server ne odgovara, i bri�
   await page.route(/lazni\.supabase\.test/, () => new Promise(() => {}));
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-postavke-odjava').click();
   await expect(page.locator('#ekran-prijava')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('lovac.profil'))).toBeNull();
@@ -83,6 +84,7 @@ test('odjava iz postavki vodi na prijavu odmah, i kad server ne odgovara, i bri�
 test('dodirne mete u postavkama su ≥ 44 px', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   for (const sel of ['#btn-postavke-zatvori', '[data-tema-izbor="noc"]', '[data-tema-izbor="dan"]',
     '#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju', '#btn-postavke-odjava']) {
     const b = await page.locator(sel).boundingBox();
@@ -98,6 +100,7 @@ test('provjera ažuriranja koristi version.json i nudi instalaciju', async ({ pa
   await expect(page.locator('#nova-verzija')).toBeVisible();
   await expect(page.locator('#nova-verzija .nv-tekst')).toHaveText('Nova verzija v9.9.9');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-provjeri-azuriranje').click();
   await expect(page.locator('#postavke-azur-status')).toHaveText('Nova verzija v9.9.9');
   await expect(page.locator('#btn-instaliraj-azuriranje')).toBeVisible();
@@ -106,6 +109,7 @@ test('provjera ažuriranja koristi version.json i nudi instalaciju', async ({ pa
 test('kad server za verzije ne odgovara, postavke to kažu (ne lažno "najnovija")', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-provjeri-azuriranje').click();
   await expect(page.locator('#postavke-azur-status')).toHaveText(/Provjera nije uspjela/);
 });

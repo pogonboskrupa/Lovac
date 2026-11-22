@@ -15,6 +15,8 @@ import { getShareSettings, setShareSettings } from './lokacija-ui.js';
 import { SHARE_INTERVALS } from './lokacija.js';
 import { listRecords, saveRecord } from './zapisi.js';
 import { shareFile } from './dijeljenje.js';
+import { storageSummary, syncText, backupAdvice } from './postavke-pregled.js';
+import { loadJSON, saveSoft } from './storage.js';
 import { buildBackup, parseBackup, recordsToImport, backupFileName, BACKUP_STORES } from './rezerva.js';
 
 const VEZA_TEKST = {
@@ -30,6 +32,8 @@ export function describeProfile(p) {
   const status = !p.odobren ? 'čeka odobrenje' : p.is_admin ? 'administrator' : 'lovac';
   return `${ime} · ${status}`;
 }
+
+const BACKUP_KEY = 'lovac.rezerva.zadnja';
 
 const el = (id) => document.getElementById(id);
 
@@ -103,6 +107,51 @@ function wireShare() {
   document.addEventListener('lokacija:postavke', renderShare);
 }
 
+async function renderReadiness() {
+  if (!el('sp-veza')) return;
+  el('sp-veza').textContent = isServerConfigured() ? VEZA_TEKST[connectionQuality()] || VEZA_TEKST.nepoznato : 'Server nije podešen';
+  const n = await queueCount().catch(() => 0);
+  el('sp-slanje').textContent = syncText(n, loadJSON('lovac.sync.zadnje', null));
+  try {
+    const est = await navigator.storage?.estimate?.();
+    const persisted = await navigator.storage?.persisted?.() ?? null;
+    const s = storageSummary(est, persisted);
+    el('sp-pohrana').textContent = s.tekst;
+    el('sp-pohrana').dataset.stanje = s.upozorenje ? 'upozorenje' : 'ok';
+    el('sp-traka').hidden = s.postotak === null;
+    if (s.postotak !== null) el('sp-traka-puna').style.width = `${s.postotak}%`;
+    const zast = el('sp-pohrana-zastita');
+    zast.hidden = s.zasticena === null;
+    zast.textContent = s.zasticena ? 'Pohrana je zaštićena od automatskog brisanja.' : 'Sistem može obrisati podatke aplikacije kad ponestane prostora.';
+    el('btn-zastiti-pohranu').hidden = s.zasticena !== false;
+  } catch (err) {
+    console.warn('pohrana', err);
+    el('sp-pohrana').textContent = 'Pohrana: nije dostupno na ovom uređaju';
+  }
+  try {
+    el('sp-karta').textContent = `Sačuvano pločica: ${await tileCacheCount()}`;
+  } catch { el('sp-karta').textContent = 'Sačuvano pločica: —'; }
+  let ukupno = 0;
+  for (const s of BACKUP_STORES) ukupno += (await listRecords(s).catch(() => [])).filter((r) => !r.obrisan && !r.tudji).length;
+  const b = backupAdvice(loadJSON(BACKUP_KEY, null), ukupno > 0);
+  el('sp-kopija').textContent = b.tekst;
+  el('sp-kopija').dataset.stanje = b.stanje;
+}
+
+function wireReadiness() {
+  document.addEventListener('postavke:podaci', renderReadiness);
+  el('btn-zastiti-pohranu').addEventListener('click', async () => {
+    try {
+      const ok = await navigator.storage.persist();
+      toast(ok ? 'Pohrana je zaštićena' : 'Sistem nije odobrio zaštitu pohrane');
+    } catch (err) {
+      console.warn('persist', err);
+      toast('Zaštita pohrane nije dostupna');
+    }
+    renderReadiness();
+  });
+}
+
 function wirePin() {
   el('btn-pin-promijeni').addEventListener('click', async () => {
     const status = el('pin-status');
@@ -124,6 +173,8 @@ function wireBackup(appVer) {
     for (const s of BACKUP_STORES) data[s] = await listRecords(s);
     const text = buildBackup(data, cachedProfile(), appVer);
     shareFile(backupFileName(), 'application/json', text);
+    saveSoft(BACKUP_KEY, Date.now());
+    renderReadiness();
     status.textContent = `Kopija napravljena: ${BACKUP_STORES.map((s) => `${data[s].filter((r) => !r.obrisan && !r.tudji).length} ${s}`).join(', ')}.`;
   });
   el('rezerva-ulaz').addEventListener('change', async (e) => {
@@ -213,6 +264,7 @@ export function initPostavke({ setBase, onLogout, appVer }) {
   });
   wireShare();
   wirePin();
+  wireReadiness();
   wireBackup(appVer);
   document.addEventListener('sekcije:promjena', () => { if (isSettingsOpen()) renderProfile(); });
   wireCacheButton();
