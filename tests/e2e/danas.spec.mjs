@@ -52,6 +52,16 @@ test('Danas: svjetlo, lovno vrijeme po admin pravilu, šta se smije loviti; radi
   await expect(page.locator('#danas-svjetlo')).toContainText('Izlazak sunca');
   await expect(page.locator('#danas-svjetlo')).toContainText(/06:5\d|07:0\d/);
   await expect(page.locator('#danas-lovno')).toContainText('60 min prije izlaska');
+  // luk svjetla: tri boje, četiri vremena i tačka "sada" (10:00 je usred dana)
+  await expect(page.locator('#danas-luk .luk-zora')).toHaveCount(1);
+  await expect(page.locator('#danas-luk .luk-dan')).toHaveCount(1);
+  await expect(page.locator('#danas-luk .luk-sumrak')).toHaveCount(1);
+  await expect(page.locator('#danas-luk .luk-vrijeme')).toHaveCount(4);
+  await expect(page.locator('#danas-luk .luk-sada')).toHaveCount(1);
+  await expect(page.locator('#danas-luk .luk-sada-tekst')).toHaveText('Sada 10:00');
+  await expect(page.locator('#danas-luk-kartica')).toHaveAttribute('data-stanje', 'dan');
+  await expect(page.locator('#danas-luk-stanje')).toContainText('Svjetlo do');
+  expect(await page.locator('#danas').innerText()).not.toMatch(/građansk/i);
   const row = (kod) => page.locator(`#danas-lovostaj [data-id="${kod}"]`);
   await expect(row('srna')).toHaveAttribute('data-stanje', 'otvoreno');
   await expect(row('srna')).toContainText('samo: Srna');

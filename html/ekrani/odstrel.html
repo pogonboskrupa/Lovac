@@ -3,6 +3,9 @@
     <h2 id="odstrel-naslov">Evidencija odstrela</h2>
     <button id="btn-odstrel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero ev-hero">
+    <div class="sk-statovi sk-statovi-hero"><div data-stat="komada"><b id="ods-hero-komada">0</b><span>komada</span></div><div data-stat="kg"><b id="ods-hero-kg">0</b><span>kg ukupno</span></div><div data-stat="vrsta"><b id="ods-hero-vrsta">0</b><span>vrsta</span></div></div>
+  </div>
   <p class="sitno">Ne zamjenjuje službeni lovački dnevnik.</p>
   <input id="ods-trazi" type="search" placeholder="Traži (vrsta, lovac, napomena…)" aria-label="Traži u odstrelu" autocomplete="off">
   <label>Vrsta<select id="ods-filter-vrsta"></select></label>
@@ -11,7 +14,7 @@
     <button type="button" data-period="godina">Ova godina</button>
     <button type="button" data-period="sve">Sve</button>
   </div>
-  <h3>Zbir</h3>
+  <h3>Po vrstama</h3>
   <ul id="ods-zbir" class="zbir"></ul>
   <div class="red-dugmadi">
     <button id="btn-ods-csv" class="dugme" type="button">Izvoz u Excel (CSV)</button>

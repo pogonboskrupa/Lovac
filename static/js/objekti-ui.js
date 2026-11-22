@@ -237,13 +237,17 @@ export function initObjekti(L, map) {
     const fix = currentFix();
     const from = fix || { lat: map.getCenter().lat, lon: map.getCenter().lng };
     let items = await listRecords(STORE);
+    $('obj-stat-ukupno').textContent = String(items.length);
+    $('obj-stat-popravka').textContent = String(items.filter((o) => o.stanje === 'popravka').length);
+    $('obj-stat-sruseno').textContent = String(items.filter((o) => o.stanje === 'sruseno').length);
     if (listFilter === 'popravka') items = items.filter(needsRepair);
     items = items.filter((o) => matchesQuery([o.naziv, o.napomena, STANJA[o.stanje], lookupNaziv(vrsteAll, o.vrsta)], searchText));
     items = sortByDistance(items, from);
     setPressed($('objekti-filter'), 'data-filter', listFilter);
     $('objekti-prazno').hidden = items.length > 0;
     $('objekti-spisak').innerHTML = items.map((o) => `
-      <li class="trag-red obj-red" data-id="${escapeHtml(o.id)}" data-stanje="${escapeHtml(o.stanje)}">
+      <li class="trag-red obj-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}" data-stanje="${escapeHtml(o.stanje)}">
+        <span class="tr-chip" data-stanje="${escapeHtml(o.stanje)}">${escapeHtml(STANJA[o.stanje] || o.stanje)}</span>
         <button type="button" class="obj-red-dugme">
           <svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrsteAll, o.vrsta))}"/></svg>
           <span class="trag-naslov"><b>${escapeHtml(o.naziv)}</b>

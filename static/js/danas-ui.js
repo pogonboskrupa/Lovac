@@ -1,7 +1,8 @@
 // Ekran "Danas": svjetlo, lovno vrijeme sa odbrojavanjem i šta se danas smije loviti.
 // Sve se računa offline; propise (lovostaj, lovno vrijeme) daje samo admin spisak.
 
-import { sunTimes, moonAge, moonPhaseName, moonIllumination } from './sunce.js';
+import { sunTimes, moonAge, moonPhaseName, moonIllumination, daylightStatus } from './sunce.js';
+import { LUK, arcPoint, arcPath, dayArc } from './svjetlo-luk.js';
 import { pickRule, huntingWindow, huntingStatus, formatCountdown, seasonStatus, formatDayMonth } from './propisi.js';
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { currentFix } from './gps.js';
@@ -42,6 +43,41 @@ function todaySun(p, now = Date.now()) {
   return sunTimes(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12).getTime(), p.lat, p.lon);
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// Luk dana: zora, dan i sumrak kao tri boje, tačka "sada" i vremena ispod.
+function drawArc(svg, sun, now) {
+  const a = dayArc(now, sun);
+  svg.replaceChildren();
+  if (!a) return;
+  const add = (tag, attrs, text) => {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    if (text != null) el.textContent = text;
+    svg.appendChild(el);
+    return el;
+  };
+  add('line', { x1: LUK.rub - 6, x2: LUK.sirina - LUK.rub + 6, y1: LUK.baza, y2: LUK.baza, class: 'luk-horizont' });
+  add('path', { d: arcPath(0, a.izlazak), class: 'luk-zora' });
+  add('path', { d: arcPath(a.izlazak, a.zalazak), class: 'luk-dan' });
+  add('path', { d: arcPath(a.zalazak, 1), class: 'luk-sumrak' });
+  [[0, sun.svitanje, 'Svitanje'], [a.izlazak, sun.izlazak, 'Izlazak'], [a.zalazak, sun.zalazak, 'Zalazak'], [1, sun.suton, 'Suton']]
+    .forEach(([f, t, naziv], i) => {
+      const p = arcPoint(f);
+      add('circle', { cx: p.x.toFixed(1), cy: LUK.baza, r: 3, class: 'luk-oznaka' });
+      // zora i sumrak traju ~30 min, pa bi oznake na tačkama luka ležale jedna na drugoj: stupci su jednaki
+      const x = (LUK.sirina / 4) * (i + 0.5);
+      add('text', { x: x.toFixed(1), y: LUK.baza + 18, class: 'luk-vrijeme', 'text-anchor': 'middle' }, hm(t));
+      add('text', { x: x.toFixed(1), y: LUK.baza + 33, class: 'luk-naziv', 'text-anchor': 'middle' }, naziv);
+    });
+  const p = arcPoint(a.sada);
+  const y = a.izvan ? LUK.baza : p.y;
+  add('line', { x1: p.x.toFixed(1), x2: p.x.toFixed(1), y1: y.toFixed(1), y2: LUK.baza, class: 'luk-sada-linija' });
+  add('circle', { cx: p.x.toFixed(1), cy: y.toFixed(1), r: 9, class: a.izvan ? 'luk-sada luk-sada-noc' : 'luk-sada' });
+  const label = add('text', { x: Math.min(LUK.sirina - 24, Math.max(24, p.x)).toFixed(1), y: Math.max(12, y - 15).toFixed(1), class: 'luk-sada-tekst', 'text-anchor': 'middle' }, `Sada ${hm(now)}`);
+  label.setAttribute('aria-hidden', 'true');
+}
+
 function statusSentence(st) {
   if (st.stanje === 'prije') return `Lovno vrijeme počinje za ${formatCountdown(st.zaMs)}`;
   if (st.stanje === 'traje') return `Lovno vrijeme završava za ${formatCountdown(st.zaMs)}`;
@@ -69,9 +105,14 @@ export function initDanas(map) {
     const age = moonAge(now);
     const d = new Date(now);
     $('danas-mjesto').textContent = `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}. · računato za ${p.opis}`;
+    const tomorrow = sunTimes(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12).getTime(), p.lat, p.lon);
+    const dl = daylightStatus(now, sun, tomorrow);
+    $('danas-luk-kartica').dataset.stanje = dl.stanje;
+    $('danas-luk-stanje').textContent = dl.tekst;
+    drawArc($('danas-luk'), sun, now);
     $('danas-svjetlo').innerHTML = [
-      ['Svitanje (građanski sumrak)', hm(sun.svitanje)], ['Izlazak sunca', hm(sun.izlazak)],
-      ['Zalazak sunca', hm(sun.zalazak)], ['Suton (građanski sumrak)', hm(sun.suton)],
+      ['Svitanje', hm(sun.svitanje)], ['Izlazak sunca', hm(sun.izlazak)],
+      ['Zalazak sunca', hm(sun.zalazak)], ['Suton', hm(sun.suton)],
       ['Mjesec', `${moonPhaseName(age)}, ${Math.round(moonIllumination(age) * 100)} % osvijetljen`],
     ].map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
 

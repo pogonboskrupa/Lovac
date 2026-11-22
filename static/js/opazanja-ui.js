@@ -195,11 +195,16 @@ export function initOpazanja(L, map) {
     $('op-na-karti').setAttribute('aria-pressed', String(filter.naKarti));
     $('op-na-karti').textContent = filter.naKarti ? 'Na karti: prikazano' : 'Na karti: sakriveno';
     const list = (await filtered()).sort((a, b) => b.vrijeme - a.vrijeme);
-    $('op-zbir').innerHTML = summarizeBySpecies(list)
+    const zbir = summarizeBySpecies(list);
+    $('op-stat-opazanja').textContent = String(list.length);
+    $('op-stat-grla').textContent = String(zbir.reduce((t, s) => t + s.grla, 0));
+    $('op-stat-vrsta').textContent = String(zbir.length);
+    $('op-zbir').innerHTML = zbir
       .map((s) => `<li>${escapeHtml(lookupNaziv(vrste, s.vrsta))}: <b>${s.grla}</b> grla u ${s.opazanja} opažanja</li>`).join('')
       || '<li>Nema opažanja u ovom periodu.</li>';
     $('opazanja-spisak').innerHTML = list.map((o) => `
-      <li class="trag-red" data-id="${escapeHtml(o.id)}">
+      <li class="trag-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}">
+        <span class="tr-chip">${o.broj} ${o.broj === 1 ? 'grlo' : 'grla'}</span>
         <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} × ${o.broj}</b>
         <span class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</span>
         ${o.napomena ? `<span class="sitno">${escapeHtml(o.napomena)}</span>` : ''}

@@ -680,3 +680,30 @@ svg[hidden] { display: none; }
 .pas-vrh .pas-stanje { flex: 1; margin: 12px 0; }
 .pas-strelica { flex: none; width: 56px; height: 56px; padding: 8px; border-radius: 50%; background: var(--naglasak); color: var(--naglasak-tekst); box-sizing: border-box; transition: transform .3s ease; }
 .pas-hist li { padding: 8px 0; border-bottom: 1px solid var(--dugme); list-style: none; }
+
+/* Danas: luk dnevnog svjetla (boje prolaze kontrast 4.5:1 i u dnevnoj temi — tekst je uvijek var(--tekst)) */
+.luk-kartica { margin: 8px 0 12px; padding: 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); }
+.luk-stanje { margin: 0 0 4px; font-weight: 800; font-size: 17px; }
+.luk { display: block; width: 100%; height: auto; }
+.luk path { fill: none; stroke-width: 7; stroke-linecap: round; }
+.luk-zora { stroke: #c2410c; }
+.luk-dan { stroke: #b7791f; }
+.luk-sumrak { stroke: #7c3aed; }
+.luk-horizont { stroke: var(--tekst-2); stroke-width: 1.5; }
+.luk-oznaka { fill: var(--tekst-2); }
+.luk-vrijeme { fill: var(--tekst); font-size: 13px; font-weight: 800; }
+.luk-naziv { fill: var(--tekst-2); font-size: 11px; }
+.luk-sada-linija { stroke: var(--tekst-2); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.luk-sada { fill: #fbbf24; stroke: var(--tekst); stroke-width: 2.5; }
+.luk-sada-noc { fill: #94a3b8; }
+.luk-sada-tekst { fill: var(--tekst); font-size: 13px; font-weight: 800; }
+
+/* Evidencija (Odstrel, Opažanja, Objekti): pregled + kartice kao u Moji tragovi */
+.ev-hero .sk-statovi b { font-size: 26px; }
+.trag-red.ev-kartica { border-bottom: 0; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.ev-kartica .red-dugmadi { margin-top: 4px; }
+.ev-kartica .obj-red-dugme { min-height: 48px; }
+.tr-chip[data-stanje="popravka"] { background: #b45309; color: #ffffff; }
+.tr-chip[data-stanje="sruseno"] { background: #b91c1c; color: #ffffff; }
+#ods-zbir, #op-zbir { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+#ods-zbir li, #op-zbir li { padding: 6px 12px; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); }

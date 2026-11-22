@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.4.6';
+  const APP_VER = 'v0.4.7';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -608,6 +608,9 @@
     <h2 id="objekti-naslov">Lovački objekti</h2>
     <button id="btn-objekti-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero ev-hero">
+    <div class="sk-statovi sk-statovi-hero"><div data-stat="ukupno"><b id="obj-stat-ukupno">0</b><span>objekata</span></div><div data-stat="popravka"><b id="obj-stat-popravka">0</b><span>treba popravka</span></div><div data-stat="sruseno"><b id="obj-stat-sruseno">0</b><span>srušeno</span></div></div>
+  </div>
   <div id="objekti-filter" class="segment" role="group" aria-label="Filter">
     <button type="button" data-filter="svi">Svi</button>
     <button type="button" data-filter="popravka">Treba popravka (za obilazak)</button>
@@ -647,6 +650,9 @@
     <h2 id="opazanja-naslov">Opažanja divljači</h2>
     <button id="btn-opazanja-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero ev-hero">
+    <div class="sk-statovi sk-statovi-hero"><div data-stat="opazanja"><b id="op-stat-opazanja">0</b><span>opažanja</span></div><div data-stat="grla"><b id="op-stat-grla">0</b><span>grla</span></div><div data-stat="vrsta"><b id="op-stat-vrsta">0</b><span>vrsta</span></div></div>
+  </div>
   <input id="op-trazi" type="search" placeholder="Traži (vrsta, napomena…)" aria-label="Traži u opažanjima" autocomplete="off">
   <label>Vrsta<select id="op-filter-vrsta"></select></label>
   <h3>Period</h3>
@@ -662,7 +668,7 @@
     <button type="button" data-prikaz="gustina">Gustina</button>
   </div>
   <button id="op-na-karti" class="dugme" type="button" aria-pressed="true">Na karti: prikazano</button>
-  <h3>Zbir</h3>
+  <h3>Po vrstama</h3>
   <ul id="op-zbir" class="zbir"></ul>
   <ul id="opazanja-spisak" class="spisak"></ul>
 </section>
@@ -673,6 +679,10 @@
     <button id="btn-danas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <p id="danas-mjesto" class="sitno"></p>
+  <div id="danas-luk-kartica" class="luk-kartica">
+    <p id="danas-luk-stanje" class="luk-stanje" role="status"></p>
+    <svg id="danas-luk" class="luk" viewBox="0 0 320 150" role="img" aria-label="Dnevno svjetlo od svitanja do sumraka"></svg>
+  </div>
   <h3>Svjetlo</h3>
   <dl id="danas-svjetlo" class="tabela-info"></dl>
   <h3>Lovno vrijeme</h3>
@@ -748,6 +758,9 @@
     <h2 id="odstrel-naslov">Evidencija odstrela</h2>
     <button id="btn-odstrel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero ev-hero">
+    <div class="sk-statovi sk-statovi-hero"><div data-stat="komada"><b id="ods-hero-komada">0</b><span>komada</span></div><div data-stat="kg"><b id="ods-hero-kg">0</b><span>kg ukupno</span></div><div data-stat="vrsta"><b id="ods-hero-vrsta">0</b><span>vrsta</span></div></div>
+  </div>
   <p class="sitno">Ne zamjenjuje službeni lovački dnevnik.</p>
   <input id="ods-trazi" type="search" placeholder="Traži (vrsta, lovac, napomena…)" aria-label="Traži u odstrelu" autocomplete="off">
   <label>Vrsta<select id="ods-filter-vrsta"></select></label>
@@ -756,7 +769,7 @@
     <button type="button" data-period="godina">Ova godina</button>
     <button type="button" data-period="sve">Sve</button>
   </div>
-  <h3>Zbir</h3>
+  <h3>Po vrstama</h3>
   <ul id="ods-zbir" class="zbir"></ul>
   <div class="red-dugmadi">
     <button id="btn-ods-csv" class="dugme" type="button">Izvoz u Excel (CSV)</button>

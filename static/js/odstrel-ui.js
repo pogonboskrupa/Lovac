@@ -252,11 +252,16 @@ export function initOdstrel(L, map) {
     sel.value = filter.vrsta;
     setPressed($('ods-period'), 'data-period', filter.period);
     const items = await filtered();
-    $('ods-zbir').innerHTML = summarizeHarvest(items)
+    const zbir = summarizeHarvest(items);
+    $('ods-hero-komada').textContent = String(items.length);
+    $('ods-hero-kg').textContent = formatDecimalBs(Math.round(zbir.reduce((t, s) => t + s.tezina, 0) * 10) / 10);
+    $('ods-hero-vrsta').textContent = String(zbir.length);
+    $('ods-zbir').innerHTML = zbir
       .map((s) => `<li>${escapeHtml(lookupNaziv(vrste, s.vrsta))}: <b>${s.komada}</b> kom., ${escapeHtml(formatDecimalBs(Math.round(s.tezina * 10) / 10))} kg</li>`).join('')
       || '<li>Nema upisanog odstrela u ovom periodu.</li>';
     $('odstrel-spisak').innerHTML = items.map((o) => `
-      <li class="trag-red" data-id="${escapeHtml(o.id)}">
+      <li class="trag-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}">
+        <span class="tr-chip">${escapeHtml(formatWhen(o.vrijeme).split(' ')[0])}</span>
         <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} ${escapeHtml(harvestCategoryName(vrste, o.vrsta, o.kategorija))}</b>
         <span class="sitno">${escapeHtml(formatWhen(o.vrijeme))}${o.tezina != null ? ` · ${escapeHtml(formatDecimalBs(o.tezina))} kg` : ''} · ${escapeHtml(o.tudji ? memberName(o.vlasnik_id) : o.lovac || '')}</span>
         ${o.upozorenja?.length ? `<span class="sitno upozorenje-tekst">${escapeHtml(o.upozorenja.join(' '))}</span>` : ''}

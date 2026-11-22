@@ -186,7 +186,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Zamka: IndexedDB `getAll` vraća po id-u (UUID) — poruke se uvijek sortiraju po `created_at`; sporije čitanje ne smije prepisati svježe (`reloadPoruke` sa brojačem).
 
 **Dnevno svjetlo i Istraživač (v0.2.8)**
-- Čip `#svjetlo-chip` na mapi: zora/dan/sumrak/noć iz `sunce.js daylightStatus` (pozicija = GPS, inače centar karte; svjetlo = izlazak–zalazak, sumrak do građanskog sutona). Dodir otvara "Danas".
+- Čip `#svjetlo-chip` na mapi: zora/dan/sumrak/noć iz `sunce.js daylightStatus` (pozicija = GPS, inače centar karte; svjetlo = izlazak–zalazak, sumrak do kraja sutona). Dodir otvara "Danas".
 - Istraživač (`istrazivac-ui.js`, dugme 3D): CSS nagib `#karta` (perspective + rotateX) je SAMO POGLED, pa su dragging/zoom dodirom isključeni (Leaflet ne preračunava perspektivu) i karta prati GPS; trake članova (smjer, strana svijeta, udaljenost) dolaze iz događaja `uzivo:pozicije` i vide se samo u tom modu. Strelice su sjever-gore, kao karta.
 
 **Dijeljenje lokacije u lovu (migracija 010, v0.2.9)**
@@ -278,3 +278,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Moji tragovi: hero (broj, km, sati), filter Svi/Obilasci/Potrage, pretraga (`matchesQuery`), kartice sa vrstom traga, jednim glavnim dugmetom "Prikaži na karti" i mrežom od 3 sporedna dugmeta; prvi `.sitno` u kartici je i dalje sažetak (datum · dužina · trajanje).
 - Zajednički lov: kartice grupisane (Danas i u toku / Planirani / Završeni) sa logom sekcije, značkom stanja i brojevima (učesnika, stanova, moja uloga); `data-id` i `data-akcija` ostaju.
 - Moj pas: ime i slika iz profila lovca (`lovac.profil.lovac`), strelica ka psu (smjer minus kompas), prečica u Profil lovca. Koordinate sa manje od 3 decimale se ne prepoznaju (da se ne miješaju sa drugim brojevima).
+
+**Evidencija i luk svjetla (v0.4.7)**
+- Odstrel, Opažanja i Objekti imaju isti izgled kao Moji tragovi: hero sa tri broja (`ods-hero-*`, `op-stat-*`, `obj-stat-*`; `ods-stat-*` je već ekran statistike odstrela) i kartice (`.tr-kartica.ev-kartica` uz staru klasu `trag-red`, `data-id` i `data-akcija` ostaju). Brojevi se računaju iz lokalnih zapisa.
+- Ekran Danas ima luk svjetla (`svjetlo-luk.js` čista geometrija, crtanje u `danas-ui.js drawArc`): zora / dan / sumrak od svitanja do sutona, tačka "Sada" (izvan tog raspona stoji na rubu, sivo). Vremena su u četiri JEDNAKA stupca ispod luka — zora i sumrak traju ~30 min, pa bi oznake na samim tačkama ležale jedna na drugoj. U UI-ju se ne koristi izraz "građanski sumrak".
