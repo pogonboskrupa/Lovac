@@ -83,3 +83,26 @@ test('Istraživač pregled: sažetak, lica sa svježinom, najbliži istaknut, na
   await page.locator('#btn-ist-ja').click();
   for (const b of await page.locator('#istrazivac-kontrole button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
 });
+
+test('Istraživač: kontejner karte je veći (pločice i za okrenuti dio), jedan prst pomjera kartu od pozicije, ◎ vraća na mene', async ({ page }) => {
+  await serveTiles(page);
+  await page.goto('/');
+  await lok(page, '#btn-istrazivac');
+  const vp = page.viewportSize();
+  const box = await page.locator('#karta').boundingBox();
+  expect(box.width).toBeGreaterThan(vp.width * 1.8);
+  await expect(page.locator('#ist-hud')).not.toContainText('istražuješ');
+  const center = () => page.evaluate(() => { const v = JSON.parse(localStorage.getItem('lovac.pogled') || 'null'); return v ? [v.lat, v.lon] : null; });
+  const before = await center();
+  await page.mouse.move(180, 400);
+  await page.mouse.down();
+  await page.mouse.move(180, 300, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator('#ist-hud')).toContainText('istražuješ');
+  await expect.poll(async () => { const a = await center(); return a && before ? Math.abs(a[0] - before[0]) + Math.abs(a[1] - before[1]) : -1; }).toBeGreaterThan(0);
+  await expect(page.locator('#btn-ist-ja')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#btn-ist-ja').click();
+  await expect(page.locator('#ist-hud')).not.toContainText('istražuješ');
+  // zoom ostaje na ekranu (donji lijevi), a Leaflet kontrole unutar okrenute karte su sakrivene
+  await expect(page.locator('#ekran-mapa .leaflet-control-zoom')).toBeHidden();
+});

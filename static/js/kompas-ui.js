@@ -1,35 +1,35 @@
-// Kompas u ploči "Moja lokacija": pravac gledanja telefona.
+// Pravac gledanja u ploči "Moja lokacija": prekidač plavog snopa na karti i stanje senzora.
 
 import { onGpsUpdate } from './gps.js';
-import { smoothHeading, roseRotation, headingText, headingSource, KOMPAS_NAPOMENA } from './kompas.js';
+import { loadJSON, saveSoft } from './storage.js';
+import { headingSource, coneEnabled, STOZAC_KEY, KOMPAS_NAPOMENA } from './kompas.js';
 
 const $ = (id) => document.getElementById(id);
 
 export function initKompas() {
-  const rose = $('kompas-ruza');
-  if (!rose) return;
-  let shown = null;
-  let frame = 0;
-  let compassSeen = false;
+  const sw = $('btn-kompas-stozac');
+  if (!sw) return;
+  let on = coneEnabled(loadJSON(STOZAC_KEY, null));
+  let seen = false;
 
   const draw = () => {
-    frame = 0;
-    rose.style.transform = `rotate(${roseRotation(shown)}deg)`;
-    $('kompas-tekst').textContent = headingText(shown);
+    sw.setAttribute('aria-checked', String(on));
+    sw.dataset.on = String(on);
   };
-
+  sw.addEventListener('click', () => {
+    on = !on;
+    saveSoft(STOZAC_KEY, on);
+    draw();
+    document.dispatchEvent(new CustomEvent('kompas:promjena'));
+  });
   onGpsUpdate((fix, heading) => {
     const src = headingSource(heading, fix?.heading);
-    if (src.izvor === 'kompas') compassSeen = true;
-    if (src.stepeni == null) {
-      $('kompas-izvor').textContent = 'Kompas nije dostupan na ovom telefonu';
-      return;
-    }
-    shown = smoothHeading(shown, src.stepeni);
-    $('kompas-izvor').textContent = src.izvor === 'kompas' ? 'Pravac gledanja (kompas)' : 'Smjer kretanja (GPS)';
-    if (!frame) frame = requestAnimationFrame(draw);
+    if (src.izvor) seen = true;
+    $('kompas-izvor').textContent = src.izvor === 'kompas' ? 'Kompas radi'
+      : src.izvor === 'kretanje' ? 'Smjer kretanja (GPS)'
+        : 'Čekam kompas…';
   });
   $('kompas-napomena').textContent = KOMPAS_NAPOMENA;
-  $('kompas-izvor').textContent = 'Čekam kompas…';
-  setTimeout(() => { if (!compassSeen && shown == null) $('kompas-izvor').textContent = 'Kompas nije dostupan na ovom telefonu'; }, 4000);
+  setTimeout(() => { if (!seen) $('kompas-izvor').textContent = 'Kompas nije dostupan na ovom telefonu'; }, 4000);
+  draw();
 }

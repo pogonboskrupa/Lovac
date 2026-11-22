@@ -2,6 +2,8 @@
 
 import { accuracyLevel, formatFixAge } from './geo.js';
 import { toast } from './ui.js';
+import { loadJSON } from './storage.js';
+import { coneEnabled, STOZAC_KEY } from './kompas.js';
 
 const ACC_COLORS = { dobro: 'var(--gps-dobro)', srednje: 'var(--gps-srednje)', lose: 'var(--gps-lose)' };
 
@@ -43,7 +45,7 @@ export function initGps(L, map) {
 
   const arrowIcon = L.divIcon({
     className: 'gps-ikona',
-    html: '<div class="gps-tacka"><svg class="gps-strelica" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 19 20 12 16 5 20Z"/></svg></div>',
+    html: '<div class="gps-tacka"><svg class="gps-stozac" viewBox="-60 -60 120 120" aria-hidden="true"><defs><radialGradient id="gps-stozac-grad" cx="0" cy="0" r="58" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff" stop-opacity=".75"/><stop offset="1" stop-color="#2f7dff" stop-opacity="0"/></radialGradient></defs><path d="M0 0 -32 -50 A60 60 0 0 1 32 -50Z" fill="url(#gps-stozac-grad)"/></svg><svg class="gps-strelica" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 19 20 12 16 5 20Z"/></svg></div>',
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -73,6 +75,11 @@ export function initGps(L, map) {
       const h = state.heading ?? state.fix.heading;
       arrow.style.visibility = h == null ? 'hidden' : 'visible';
       if (h != null) arrow.style.transform = `rotate(${h}deg)`;
+      const cone = el.querySelector('.gps-stozac');
+      if (cone) {
+        cone.style.visibility = h != null && coneEnabled(loadJSON(STOZAC_KEY, null)) ? 'visible' : 'hidden';
+        if (h != null) cone.style.transform = `rotate(${h}deg)`;
+      }
     }
     if (elAcc) {
       elAcc.textContent = `±${Math.round(acc)} m`;
@@ -93,6 +100,8 @@ export function initGps(L, map) {
     render();
     notifyGps();
   };
+
+  document.addEventListener('kompas:promjena', () => render());
 
   const onErr = (err) => {
     const msg = err.code === 1 ? 'Lokacija nije dozvoljena' : err.code === 3 ? 'GPS još traži signal…' : 'GPS nije dostupan';

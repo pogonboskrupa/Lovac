@@ -3,46 +3,42 @@ import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
 
 test.use({ viewport: { width: 360, height: 740 }, geolocation: { latitude: 44.88, longitude: 16.15 }, permissions: ['geolocation'] });
 
-test('Moja lokacija ima kompas: pravac gledanja prati senzor, ruža se okreće, napomena je tu', async ({ page }) => {
+test.beforeEach(async ({ page }) => {
   await fakeServerConfigUnset(page);
   await serveTiles(page);
-  await page.goto('/');
-  await page.locator('#btn-moja-lokacija').click();
-  await expect(page.locator('#kompas')).toBeVisible();
-  await expect(page.locator('#kompas-napomena')).toContainText('Ne zamjenjuje pravila lova');
-  // alpha 270 = telefon gleda na istok (90°)
-  await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: 270, absolute: true })));
-  await expect(page.locator('#kompas-tekst')).toHaveText('I 90°');
-  await expect(page.locator('#kompas-izvor')).toContainText('kompas');
-  await expect.poll(() => page.locator('#kompas-ruza').evaluate((g) => g.style.transform)).toBe('rotate(270deg)');
-  await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: 180, absolute: true })));
-  await expect.poll(async () => (await page.locator('#kompas-tekst').innerText())).toMatch(/^(I|JI|J) /);
 });
 
-test('kompas ne pravi ploču previsokom i ne smeta dugmadi (≥ 44 px, ploča ≤ 55 % ekrana)', async ({ page }) => {
-  await fakeServerConfigUnset(page);
-  await serveTiles(page);
+const heading = (page, alpha) => page.evaluate((a) => window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: a, absolute: true })), alpha);
+const cone = (page) => page.locator('.gps-stozac');
+
+test('plavi snop pravca gledanja na karti prati kompas i gasi se prekidačem u ploči Moja lokacija', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-moja-lokacija').click();
-  await expect(page.locator('#lok-ploca')).toBeVisible();
-  expect((await page.locator('#lok-ploca').boundingBox()).height).toBeLessThan(740 * 0.55);
+  await expect(page.locator('#btn-kompas-stozac')).toHaveAttribute('aria-checked', 'true');
+  expect(await page.locator('#kompas-ruza').count(), 'ruža je uklonjena iz ploče').toBe(0);
+  await heading(page, 270); // gleda na istok (90°)
+  await expect.poll(() => cone(page).evaluate((e) => e.style.visibility)).toBe('visible');
+  await expect.poll(() => cone(page).evaluate((e) => e.style.transform)).toBe('rotate(90deg)');
+  await page.locator('#btn-kompas-stozac').click();
+  await expect(page.locator('#btn-kompas-stozac')).toHaveAttribute('aria-checked', 'false');
+  await expect.poll(() => cone(page).evaluate((e) => e.style.visibility)).toBe('hidden');
+  await page.reload();
+  await page.locator('#btn-moja-lokacija').click();
+  await expect(page.locator('#btn-kompas-stozac')).toHaveAttribute('aria-checked', 'false');
+  await heading(page, 180);
+  await page.waitForTimeout(300);
+  await expect.poll(() => cone(page).evaluate((e) => e.style.visibility)).toBe('hidden');
 });
 
-test('kompas se raširi preko ploče (nema naslijeđene veličine 128 px kompasa iz panela lova) i tekst ostaje unutar okvira', async ({ page }) => {
-  await fakeServerConfigUnset(page);
-  await serveTiles(page);
+test('ploča: prekidač zauzima širinu, nema naslijeđene veličine, napomena o pravilima lova je tu', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-moja-lokacija').click();
   await expect(page.locator('#kompas')).toBeVisible();
   const ploca = await page.locator('#lok-ploca').boundingBox();
-  const kutija = await page.locator('#kompas').boundingBox();
-  expect(kutija.width).toBeGreaterThan(ploca.width - 40);
-  expect(kutija.height).toBeLessThan(130);
-  expect((await page.locator('#kompas-napomena').boundingBox()).y).toBeGreaterThanOrEqual(kutija.y + kutija.height - 1);
-  for (const id of ['#kompas-tekst', '#kompas-izvor']) {
-    const b = await page.locator(id).boundingBox();
-    expect(b.y, id).toBeGreaterThanOrEqual(kutija.y - 1);
-    expect(b.y + b.height, id).toBeLessThanOrEqual(kutija.y + kutija.height + 1);
-    expect(b.x + b.width, id).toBeLessThanOrEqual(kutija.x + kutija.width + 1);
-  }
+  const red = await page.locator('#kompas').boundingBox();
+  expect(red.width).toBeGreaterThan(ploca.width - 40);
+  expect(red.height).toBeLessThan(90);
+  expect((await page.locator('#btn-kompas-stozac').boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await expect(page.locator('#kompas-napomena')).toContainText('Ne zamjenjuje pravila lova');
+  expect(ploca.height).toBeLessThan(740 * 0.55);
 });

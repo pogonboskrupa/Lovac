@@ -388,7 +388,7 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 /* Istraživač: nagib karte (samo pogled, dodiri su isključeni) + trake članova */
 #ekran-mapa { overflow: hidden; }
 #ekran-mapa.istrazivac #karta {
-  transform: perspective(900px) rotateX(40deg) scale(1.6); transform-origin: 50% 75%; will-change: transform;
+  transform: perspective(900px) rotateX(40deg) scale(1.6); transform-origin: 50% 50%; will-change: transform;
 }
 .istrazivac-traka {
   position: absolute; left: 8px; right: 8px; top: var(--gore-2); z-index: 1050; display: flex; gap: 6px;
@@ -953,7 +953,8 @@ svg[hidden] { display: none; }
 .lok-kompas-stepeni { font-size: 22px; font-variant-numeric: tabular-nums; }
 
 /* Istraživač: okretanje karte, kompaktna traka */
-.istrazivac-kontrole { position: absolute; right: 8px; top: calc(var(--gore-2) + 36px); z-index: 1050; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.istrazivac-kontrole { position: absolute; right: 8px; top: calc(var(--gore-2) + 36px); z-index: 1050; display: grid; grid-template-columns: repeat(2, 46px); gap: 6px; justify-content: end; }
+.istrazivac-kontrole .ist-hud { grid-column: 1 / -1; justify-self: end; }
 .istrazivac-kontrole[hidden] { display: none; }
 .istrazivac-kontrole .ikona-dugme { width: 46px; height: 46px; }
 .istrazivac-kontrole .ikona-dugme[aria-pressed="true"] { background: #2563eb; color: #ffffff; }
@@ -977,3 +978,21 @@ svg[hidden] { display: none; }
 .upute-sekcija > summary { min-height: 48px; display: flex; align-items: center; font-weight: 800; font-size: 17px; cursor: pointer; }
 .upute-stavke dt { margin-top: 10px; font-weight: 700; }
 .upute-stavke dd { margin: 2px 0 0; line-height: 1.4; }
+
+/* Istraživač: dvostruko veći kontejner karte (pločice i za rotirani/nagnuti dio) i dodir bez browserovog listanja */
+#ekran-mapa.istrazivac #karta { inset: auto; left: -70%; top: -70%; width: 240%; height: 240%; touch-action: none; }
+#ekran-mapa.istrazivac { touch-action: none; }
+#btn-ist-ja[aria-pressed="false"] { background: #c2410c; color: #ffffff; }
+#ekran-mapa.istrazivac .leaflet-control-container { display: none; }
+
+/* Plavi snop pravca gledanja na markeru (kao u navigacijskim aplikacijama) */
+.gps-stozac { position: absolute; width: 120px; height: 120px; left: 50%; top: 50%; margin: -60px 0 0 -60px; transform-origin: 50% 50%; visibility: hidden; pointer-events: none; }
+
+/* Prekidač pravca gledanja u ploči Moja lokacija */
+.lok-pravac { display: flex; align-items: center; gap: 12px; margin: 6px 0; padding: 8px 10px; border-radius: 14px; background: var(--dugme); }
+.lok-pravac-tekst { display: flex; flex-direction: column; min-width: 0; }
+.lok-prekidac { flex: none; position: relative; width: 56px; min-height: 44px; height: 44px; padding: 0; border-radius: 999px; background: var(--tekst-2); border: 0; }
+.lok-prekidac[aria-checked="true"] { background: #2f7dff; }
+.lok-prekidac-ruka { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; border-radius: 50%; background: #ffffff; transition: left .15s; }
+.lok-prekidac[aria-checked="true"] .lok-prekidac-ruka { left: 20px; }
+.ist-t { font-weight: 800; font-size: 18px; }

@@ -33,4 +33,11 @@ export function headingSource(compass, gps) {
   return { stepeni: null, izvor: null };
 }
 
+export const STOZAC_KEY = 'lovac.kompas.stozac';
+
+// Snop pravca na karti: zadano uključen; samo izričito `false` ga gasi.
+export function coneEnabled(stored) {
+  return stored !== false;
+}
+
 export const KOMPAS_NAPOMENA = 'Kompas može griješiti (metal, magneti). Ne zamjenjuje pravila lova ni vođu lova.';

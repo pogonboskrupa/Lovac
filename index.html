@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.6.8';
+  const APP_VER = 'v0.6.9';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -114,7 +114,7 @@
     <button id="btn-ist-lijevo" type="button" class="ikona-dugme" aria-label="Okreni kartu ulijevo"><svg class="ic"><use href="#ic-rot-lijevo"/></svg></button>
     <button id="btn-ist-desno" type="button" class="ikona-dugme" aria-label="Okreni kartu udesno"><svg class="ic"><use href="#ic-rot-desno"/></svg></button>
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
-    <button id="btn-ist-nagib" type="button" class="ikona-dugme" aria-label="Promijeni nagib pogleda"><span id="btn-ist-nagib-tekst" class="ist-s">40°</span></button>
+    <button id="btn-ist-nagib" type="button" class="ikona-dugme" aria-label="Promijeni nagib pogleda"><span id="btn-ist-nagib-tekst" class="ist-t">40°</span></button>
     <button id="btn-ist-ja" type="button" class="ikona-dugme" aria-label="Centriraj na mene"><svg class="ic"><use href="#ic-locate"/></svg></button>
     <button id="btn-ist-sjever" type="button" class="ikona-dugme" aria-label="Sjever gore"><span class="ist-s">S</span></button>
   </div>
@@ -154,21 +154,12 @@
       <span>fiks prije <span id="gps-starost">—</span></span>
     </div>
     <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
-    <div class="lok-kompas" id="kompas" role="group" aria-label="Pravac gledanja">
-      <svg class="lok-kompas-ciferblat" viewBox="-50 -50 100 100" aria-hidden="true">
-        <circle r="46" class="lok-kompas-krug"/>
-        <g id="kompas-ruza">
-          <path d="M0 -44 6 -30 0 -33 -6 -30Z" class="lok-kompas-sjever"/>
-          <path d="M0 44 4 32 0 35 -4 32Z" class="lok-kompas-jug"/>
-          <text y="-18" class="lok-kompas-slovo lok-kompas-slovo-s" text-anchor="middle">S</text>
-          <text x="30" y="5" class="lok-kompas-slovo" text-anchor="middle">I</text>
-          <text y="28" class="lok-kompas-slovo" text-anchor="middle">J</text>
-          <text x="-30" y="5" class="lok-kompas-slovo" text-anchor="middle">Z</text>
-        </g>
-        <path d="M0 -50 5 -42 -5 -42Z" class="lok-kompas-oznaka"/>
-      </svg>
-      <div class="lok-kompas-tekstovi">
-        <b id="kompas-tekst" class="lok-kompas-stepeni">—</b>
+    <div class="lok-pravac" id="kompas">
+      <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja na karti">
+        <span class="lok-prekidac-ruka"></span>
+      </button>
+      <div class="lok-pravac-tekst">
+        <b>Pravac gledanja na karti</b>
         <span id="kompas-izvor" class="sitno" role="status">Čekam kompas…</span>
       </div>
     </div>

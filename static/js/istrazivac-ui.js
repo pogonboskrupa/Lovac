@@ -11,7 +11,7 @@ import { currentHeading } from './gps.js';
 import { initialsOf } from './lokacija.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { tiltById, nextTilt, freshnessOf, barSummary, upLabel } from './istrazivac-pregled.js';
-import { ROT_KORAK, touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss } from './rotacija.js';
+import { ROT_KORAK, touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss, screenDragToPan } from './rotacija.js';
 
 const $ = (id) => document.getElementById(id);
 const DAY = 86400000;
@@ -41,7 +41,7 @@ export function initIstrazivac(L, map) {
   const bar = $('istrazivac-traka');
   let rows = [];
   let on = false;
-  let pausedUntil = 0;
+  let following = true;
   let rot = 0;
   let followCompass = false;
   const controls = $('istrazivac-kontrole');
@@ -53,7 +53,8 @@ export function initIstrazivac(L, map) {
     karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni }) : '';
     $('btn-ist-kompas').setAttribute('aria-pressed', String(followCompass));
     $('btn-ist-nagib-tekst').textContent = `${tilt.stepeni}°`;
-    $('ist-hud').textContent = upLabel(upBearing(rot), tilt.stepeni);
+    $('ist-hud').textContent = upLabel(upBearing(rot), tilt.stepeni) + (following ? '' : ' · istražuješ');
+    $('btn-ist-ja').setAttribute('aria-pressed', String(following));
     render();
   };
 
@@ -79,6 +80,9 @@ export function initIstrazivac(L, map) {
     bar.hidden = !on;
     controls.hidden = !on;
     if (!on) { rot = 0; followCompass = false; }
+    following = true;
+    screen.classList.toggle('istrazivac', on);
+    map.invalidateSize({ animate: false });
     for (const h of ['dragging', 'touchZoom', 'doubleClickZoom']) map[h][on ? 'disable' : 'enable']();
     if (on) {
       const me = currentFix();
@@ -92,9 +96,10 @@ export function initIstrazivac(L, map) {
   $('btn-ist-desno').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, ROT_KORAK); applyRot(); });
   $('btn-ist-nagib').addEventListener('click', () => { tiltId = nextTilt(tiltId); saveSoft('lovac.ist.nagib', tiltId); applyRot(); });
   $('btn-ist-ja').addEventListener('click', () => {
-    pausedUntil = 0;
+    following = true;
     const me = currentFix();
     if (me) map.setView([me.lat, me.lon], map.getZoom(), { animate: false });
+    applyRot();
   });
   $('btn-ist-sjever').addEventListener('click', () => { followCompass = false; rot = 0; applyRot(); });
   $('btn-ist-kompas').addEventListener('click', () => {
@@ -103,32 +108,55 @@ export function initIstrazivac(L, map) {
     if (followCompass && h != null) rot = rotationForHeading(h);
     applyRot();
   });
-  // Okretanje sa dva prsta (dragging/zoom su u ovom modu isključeni, pa gest ne smeta karti).
+  // Jedan prst pomjera kartu (istraživanje terena), dva prsta je okreću. Leaflet dragging je isključen jer ne zna za nagib i rotaciju.
+  const pointers = new Map();
   let lastAngle = null;
-  const two = (e) => (e.touches.length === 2
-    ? touchAngle({ x: e.touches[0].clientX, y: e.touches[0].clientY }, { x: e.touches[1].clientX, y: e.touches[1].clientY })
-    : null);
-  screen.addEventListener('touchstart', (e) => { if (on) lastAngle = two(e); }, { passive: true });
-  screen.addEventListener('touchmove', (e) => {
-    if (!on) return;
-    const a = two(e);
-    if (a == null) { lastAngle = null; return; }
-    if (lastAngle != null) { followCompass = false; rot = rotateBy(rot, gestureDelta(lastAngle, a)); applyRot(); }
-    lastAngle = a;
-  }, { passive: true });
-  screen.addEventListener('touchend', () => { lastAngle = null; }, { passive: true });
+  const ownsGesture = (e) => on && !e.target.closest('button, input, select, a, .leaflet-control, #istrazivac-kontrole, #istrazivac-traka, .meni, .list-preko');
+  const angleOfPair = () => {
+    const [a, b] = [...pointers.values()];
+    return touchAngle(a, b);
+  };
+  screen.addEventListener('pointerdown', (e) => {
+    if (!ownsGesture(e)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { screen.setPointerCapture(e.pointerId); } catch { /* nije kritično */ }
+    lastAngle = pointers.size === 2 ? angleOfPair() : null;
+  });
+  screen.addEventListener('pointermove', (e) => {
+    if (!on || !pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId);
+    const dx = e.clientX - prev.x;
+    const dy = e.clientY - prev.y;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      const a = angleOfPair();
+      if (lastAngle != null) { followCompass = false; rot = rotateBy(rot, gestureDelta(lastAngle, a)); applyRot(); }
+      lastAngle = a;
+      return;
+    }
+    if (pointers.size === 1 && (dx || dy)) {
+      following = false;
+      const [px, py] = screenDragToPan(dx, dy, rot, { tilt: tiltById(tiltId).stepeni });
+      map.panBy([px, py], { animate: false });
+      applyRot();
+    }
+  });
+  const endPointer = (e) => { pointers.delete(e.pointerId); lastAngle = null; };
+  screen.addEventListener('pointerup', endPointer);
+  screen.addEventListener('pointercancel', endPointer);
   bar.addEventListener('click', (e) => {
     if (e.target.closest('[data-izlaz]')) { setOn(false); return; }
     const c = e.target.closest('[data-uid]');
     const r = c && rows.find((x) => x.korisnik_id === c.dataset.uid);
     if (!r) return;
-    pausedUntil = Date.now() + 15000;
+    following = false;
     map.panTo([r.lat, r.lon]);
+    applyRot();
   });
   document.addEventListener('uzivo:pozicije', (e) => { rows = e.detail.rows || []; render(); });
   onGpsUpdate((fix, heading) => {
     if (on && followCompass && heading != null) { rot = rotationForHeading(heading); applyRot(); }
     render();
-    if (on && fix && Date.now() > pausedUntil) map.setView([fix.lat, fix.lon], map.getZoom(), { animate: false });
+    if (on && fix && following) map.setView([fix.lat, fix.lon], map.getZoom(), { animate: false });
   });
 }
