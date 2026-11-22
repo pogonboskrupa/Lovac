@@ -165,8 +165,12 @@ input {
 /* GPS marker */
 .gps-ikona { background: none; border: 0; }
 .gps-tacka { width: 28px; height: 28px; display: grid; place-items: center; }
-.gps-tacka::before { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #2f7dff; border: 3px solid #fff; box-shadow: 0 0 4px #000; }
-.gps-strelica { width: 28px; height: 28px; fill: #2f7dff; stroke: #fff; stroke-width: 1.5; transform-origin: 50% 50%; position: absolute; visibility: hidden; }
+.gps-tacka { position: relative; }
+/* Moja pozicija je nišan (krug sa križem): bijeli obrub za kontrast na svim podlogama, plava linija iznutra */
+.gps-nisan { width: 34px; height: 34px; position: absolute; left: 50%; top: 50%; margin: -17px 0 0 -17px; overflow: visible; }
+.gps-nisan-oblik { fill: none; stroke-linecap: round; }
+.gps-nisan-oblik circle, .gps-nisan-oblik path { stroke: #2f7dff; stroke-width: 2.6; paint-order: stroke; }
+.gps-nisan-tacka { fill: #2f7dff; stroke: #ffffff; stroke-width: 1.6; }
 
 /* Postavke */
 .list-preko {
@@ -1018,3 +1022,4 @@ svg[hidden] { display: none; }
 .ist-trag-red { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-weight: 600; }
 /* Veliki kontejner karte u 3D modu ne smije pomjeriti ekran (fokus/dodir na dugme bi ga programski skrolovao) */
 #ekran-mapa.istrazivac { overflow: clip; }
+.gps-nisan { filter: drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 2px rgba(0,0,0,.6)); }

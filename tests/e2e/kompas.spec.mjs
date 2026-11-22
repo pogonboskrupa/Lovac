@@ -67,3 +67,13 @@ test('Moja lokacija: ploča je uz donju navigaciju, kontrole mape se sklanjaju, 
   await expect(ploca).toBeHidden();
   await expect(page.locator('#btn-moja-lokacija')).toBeVisible();
 });
+
+test('moja pozicija na karti je nišan (krug sa križem), a plavi snop pravca ostaje', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.gps-ikona .gps-nisan')).toHaveCount(1);
+  expect(await page.locator('.gps-strelica').count(), 'strelica je zamijenjena nišanom').toBe(0);
+  await expect(page.locator('.gps-nisan circle')).toHaveCount(2);
+  await expect(page.locator('.gps-nisan-oblik path')).toHaveCount(1);
+  await heading(page, 270);
+  await expect.poll(() => page.locator('.gps-stozac').evaluate((e) => e.style.visibility)).toBe('visible');
+});
