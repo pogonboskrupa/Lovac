@@ -41,13 +41,13 @@ test.beforeEach(async ({ page }) => {
 test('odstrel: pretraga bez obzira na dijakritike i velika slova', async ({ page }) => {
   await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-odstrel-spisak').click();
-  await expect(page.locator('#odstrel-spisak li')).toHaveCount(3);
+  await expect(page.locator('#odstrel-spisak li[data-id]')).toHaveCount(3);
   await page.fill('#ods-trazi', 'SABAN covic');
-  await expect(page.locator('#odstrel-spisak li')).toHaveCount(1);
+  await expect(page.locator('#odstrel-spisak li[data-id]')).toHaveCount(1);
   await page.fill('#ods-trazi', 'nocni');
-  await expect(page.locator('#odstrel-spisak li')).toHaveCount(1);
+  await expect(page.locator('#odstrel-spisak li[data-id]')).toHaveCount(1);
   await page.fill('#ods-trazi', 'nema ovoga');
-  await expect(page.locator('#odstrel-spisak li')).toHaveCount(0);
+  await expect(page.locator('#odstrel-spisak li[data-id]')).toHaveCount(0);
 });
 
 test('statistika odstrela: godina, vrsta, revir, sekcija i mjeseci', async ({ page }) => {
@@ -104,7 +104,7 @@ test('pretraga u objektima i opažanjima', async ({ page }) => {
   await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-opazanja').click();
   await page.locator('#op-period [data-period="sve"]').click();
-  await expect(page.locator('#opazanja-spisak li')).toHaveCount(2);
+  await expect(page.locator('#opazanja-spisak li[data-id]')).toHaveCount(2);
   await page.fill('#op-trazi', 'PROPLANKU');
-  await expect(page.locator('#opazanja-spisak li')).toHaveCount(1);
+  await expect(page.locator('#opazanja-spisak li[data-id]')).toHaveCount(1);
 });

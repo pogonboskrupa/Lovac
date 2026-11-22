@@ -39,7 +39,7 @@ test('Evidencija: pregled sa brojevima i kartice u Odstrelu, Opažanjima i Objek
   await page.locator('#btn-opazanja').click();
   await expect(page.locator('#op-stat-opazanja')).toHaveText('1');
   await expect(page.locator('#op-stat-grla')).toHaveText('3');
-  await expect(page.locator('#opazanja-spisak .ev-kartica .tr-chip')).toHaveText('3 grla');
+  await expect(page.locator('#opazanja-spisak .ev-kartica .tr-chip').first()).toHaveText('3 grla');
   await page.evaluate(() => window.__nazad());
 
   await page.locator('#btn-spiskovi').click();

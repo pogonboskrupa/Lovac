@@ -872,3 +872,12 @@ svg[hidden] { display: none; }
 .div-detalj h4 { margin: 14px 0 4px; color: var(--naglasak); }
 .div-kal-glava .ovaj { color: var(--tekst); font-weight: 800; }
 .div-kal-celija.ovaj { outline: 2px solid var(--tekst); outline-offset: -1px; }
+
+/* Odstrel i Opažanja: emblem vrste na kartici, chipovi doba dana */
+.ev-glava { display: flex; gap: 12px; align-items: center; }
+.ev-glava .trag-naslov { flex: 1; min-width: 0; }
+.tr-chip[data-doba="zora"] { background: #c2410c; color: #ffffff; }
+.tr-chip[data-doba="dan"] { background: #a16207; color: #ffffff; }
+.tr-chip[data-doba="sumrak"] { background: #6d28d9; color: #ffffff; }
+.tr-chip[data-doba="noc"] { background: #1e3a8a; color: #ffffff; }
+.div-akt-stup b { min-height: 18px; font-size: 14px; }

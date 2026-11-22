@@ -1,5 +1,6 @@
 // UI opažanja: brzi unos na trenutnoj poziciji, pregled po periodu (tačke / gustina), spisak.
 
+import { speciesBadge, sortObservations, groupByMonthOf, observationLight, lightDistribution, lastSeenText, DOBA_DANA_OPAZANJA } from './evidencija.js';
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, listRecords, deleteRecord, getRecord } from './zapisi.js';
 import { matchesQuery } from './pretraga.js';
@@ -42,6 +43,7 @@ export function initOpazanja(L, map) {
   let draft = null;
   let searchText = '';
   let filter = { prikaz: 'tacke', vrsta: '', period: '30', naKarti: true, ...loadJSON(FILTER_KEY, {}) };
+  let sortMode = 'novije';
 
   const setPressed = (container, attr, value) => {
     container.querySelectorAll(`[${attr}]`).forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(value))));
@@ -194,26 +196,42 @@ export function initOpazanja(L, map) {
     setPressed($('op-period'), 'data-period', filter.period);
     $('op-na-karti').setAttribute('aria-pressed', String(filter.naKarti));
     $('op-na-karti').textContent = filter.naKarti ? 'Na karti: prikazano' : 'Na karti: sakriveno';
-    const list = (await filtered()).sort((a, b) => b.vrijeme - a.vrijeme);
+    const list = sortObservations(await filtered(), sortMode);
     const zbir = summarizeBySpecies(list);
     $('op-stat-opazanja').textContent = String(list.length);
     $('op-stat-grla').textContent = String(zbir.reduce((t, s) => t + s.grla, 0));
     $('op-stat-vrsta').textContent = String(zbir.length);
+    $('op-stat-zadnje').textContent = lastSeenText(list);
+    $('op-sort').value = sortMode;
+    const dist = lightDistribution(list);
+    const dmax = Math.max(1, ...Object.values(dist));
+    $('op-doba').innerHTML = DOBA_DANA_OPAZANJA.map(([k, n]) => `<div class="div-akt-stup" role="listitem" data-doba="${k}" data-grla="${dist[k]}"><span class="div-akt-bar"><i style="height:${Math.round((dist[k] / dmax) * 100)}%"></i></span><b>${dist[k] || ''}</b><span class="sitno">${n}</span></div>`).join('');
     $('op-zbir').innerHTML = zbir
       .map((s) => `<li>${escapeHtml(lookupNaziv(vrste, s.vrsta))}: <b>${s.grla}</b> grla u ${s.opazanja} opažanja</li>`).join('')
       || '<li>Nema opažanja u ovom periodu.</li>';
-    $('opazanja-spisak').innerHTML = list.map((o) => `
+    const DOBA_NAZIV = { zora: 'zora', dan: 'dan', sumrak: 'sumrak', noc: 'noć' };
+    const cardHtml = (o) => {
+      const badge = speciesBadge(o.vrsta, lookupNaziv(vrste, o.vrsta));
+      const doba = observationLight(o);
+      return `
       <li class="trag-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}">
-        <span class="tr-chip">${o.broj} ${o.broj === 1 ? 'grlo' : 'grla'}</span>
-        <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} × ${o.broj}</b>
-        <span class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</span>
-        ${o.napomena ? `<span class="sitno">${escapeHtml(o.napomena)}</span>` : ''}
-        <span class="sitno">${o.tudji ? `Podijelio: ${escapeHtml(memberName(o.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
+        <div class="obj-chipovi"><span class="tr-chip">${o.broj} ${o.broj === 1 ? 'grlo' : 'grla'}</span>${doba ? `<span class="tr-chip" data-doba="${doba}">${DOBA_NAZIV[doba]}</span>` : ''}</div>
+        <div class="ev-glava">
+          <span class="div-emblem" style="background:${escapeHtml(badge.boja)}" aria-hidden="true">${escapeHtml(badge.znak)}</span>
+          <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} × ${o.broj}</b>
+          <span class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</span>
+          ${o.napomena ? `<span class="sitno">${escapeHtml(o.napomena)}</span>` : ''}
+          <span class="sitno">${o.tudji ? `Podijelio: ${escapeHtml(memberName(o.vlasnik_id))}` : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
+        </div>
         <div class="red-dugmadi">
           <button type="button" class="dugme" data-akcija="prikazi">Na karti</button>
           ${o.tudji ? '' : '<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button>'}
         </div>
-      </li>`).join('');
+      </li>`;
+    };
+    $('opazanja-spisak').innerHTML = (sortMode === 'novije'
+      ? groupByMonthOf(list, (o) => o.vrijeme).map((g) => `<li class="tr-mjesec" role="presentation"><span>${escapeHtml(g.naziv)}</span><span class="sitno">${g.items.length} · ${g.items.reduce((t, o) => t + (o.broj || 1), 0)} grla</span></li>${g.items.map(cardHtml).join('')}`).join('')
+      : list.map(cardHtml).join('')) || '<li class="sitno">Nema opažanja za ovaj filter.</li>';
     $('opazanja-spisak').querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
       wireTwoTap(b, 'Dodirni ponovo', async () => {
         const id = b.closest('[data-id]').dataset.id;
@@ -236,6 +254,7 @@ export function initOpazanja(L, map) {
   $('op-prikaz').addEventListener('click', (e) => { const b = e.target.closest('[data-prikaz]'); if (b) changeFilter({ prikaz: b.dataset.prikaz }); });
   $('op-period').addEventListener('click', (e) => { const b = e.target.closest('[data-period]'); if (b) changeFilter({ period: b.dataset.period }); });
   $('op-filter-vrsta').addEventListener('change', (e) => changeFilter({ vrsta: e.target.value }));
+  $('op-sort').addEventListener('change', (e) => { sortMode = e.target.value; renderOverview(); });
   $('op-trazi').addEventListener('input', (e) => { searchText = e.target.value; renderOverview(); renderLayer(); });
   $('op-na-karti').addEventListener('click', () => changeFilter({ naKarti: !filter.naKarti }));
   $('opazanja-spisak').addEventListener('click', async (e) => {

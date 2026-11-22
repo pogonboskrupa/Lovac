@@ -16,6 +16,8 @@ import { shareFile } from './dijeljenje.js';
 import { shareDialog, memberName } from './dijeljenje-ui.js';
 import { formatWhen } from './opazanja-ui.js';
 import { reportStateOf } from './prijave-ui.js';
+import { speciesBadge, lastMonths, biggestHarvest, sortHarvest, groupByMonthOf, filterReported, PRIJAVA_FILTERI } from './evidencija.js';
+import { MJESECI } from './divljac.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 
 const STORE = 'odstrel';
@@ -59,7 +61,7 @@ export function initOdstrel(L, map) {
   const form = $('forma-odstrel');
   const list = $('odstrel');
   let draft = null;
-  let filter = { period: 'godina', vrsta: '', trazi: '' };
+  let filter = { period: 'godina', vrsta: '', trazi: '', prijava: 'svi', sort: 'novije' };
   let lastWarning = '';
 
   const setPressed = (container, attr, value) => {
@@ -225,6 +227,8 @@ export function initOdstrel(L, map) {
       .filter((o) => matchesQuery([lookupNaziv(vrste, o.vrsta), o.lovac, o.trofej, o.napomena, o.tudji ? memberName(o.vlasnik_id) : ''], filter.trazi))
       .sort((a, b) => b.vrijeme - a.vrijeme);
   };
+  // spisak na ekranu: još i filter prijave i izabrani redoslijed (izvoz CSV/PDF koristi `filtered`, bez njih)
+  const shown = async () => filterReported(sortHarvest(await filtered(), filter.sort), filter.prijava, reportStateOf);
 
   const exportRows = async () => {
     const vrste = await getSpisakAll('vrste');
@@ -261,24 +265,42 @@ export function initOdstrel(L, map) {
     sel.innerHTML = `<option value="">Sve vrste</option>${(await getSpisak('vrste')).map((v) => `<option value="${escapeHtml(v.kod)}">${escapeHtml(v.naziv)}</option>`).join('')}`;
     sel.value = filter.vrsta;
     setPressed($('ods-period'), 'data-period', filter.period);
-    const items = await filtered();
+    const items = await shown();
     const zbir = summarizeHarvest(items);
     $('ods-hero-komada').textContent = String(items.length);
     $('ods-hero-kg').textContent = formatDecimalBs(Math.round(zbir.reduce((t, s) => t + s.tezina, 0) * 10) / 10);
     $('ods-hero-vrsta').textContent = String(zbir.length);
+    const big = biggestHarvest(items);
+    $('ods-hero-najveci').textContent = big ? formatDecimalBs(Number(big.tezina)) : '—';
+    $('ods-prijava').innerHTML = PRIJAVA_FILTERI.map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+    $('ods-prijava').value = filter.prijava;
+    $('ods-sort').value = filter.sort;
     $('ods-zbir').innerHTML = zbir
       .map((s) => `<li>${escapeHtml(lookupNaziv(vrste, s.vrsta))}: <b>${s.komada}</b> kom., ${escapeHtml(formatDecimalBs(Math.round(s.tezina * 10) / 10))} kg</li>`).join('')
       || '<li>Nema upisanog odstrela u ovom periodu.</li>';
-    $('odstrel-spisak').innerHTML = items.map((o) => `
+    // stupci zadnjih 12 mjeseci (cijeli evidentirani odstrel, ne samo izabrani period)
+    const months = lastMonths(await listRecords(STORE), (o) => o.vrijeme);
+    const mmax = Math.max(1, ...months.map((m) => m.vrijednost));
+    $('ods-mjeseci').innerHTML = months.map((m) => `<div class="pr-mj" data-mjesec="${m.mjesec}" data-n="${m.vrijednost}"><span class="pr-mj-bar"><i style="height:${Math.round((m.vrijednost / mmax) * 100)}%"></i></span><b>${m.vrijednost || ''}</b><span class="sitno">${MJESECI[m.mjesec - 1]}</span></div>`).join('');
+    const cardHtml = (o) => {
+      const badge = speciesBadge(o.vrsta, lookupNaziv(vrste, o.vrsta));
+      return `
       <li class="trag-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}">
         <span class="tr-chip">${escapeHtml(formatWhen(o.vrijeme).split(' ')[0])}</span>
-        <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} ${escapeHtml(harvestCategoryName(vrste, o.vrsta, o.kategorija))}</b>
-        <span class="sitno">${escapeHtml(formatWhen(o.vrijeme))}${o.tezina != null ? ` · ${escapeHtml(formatDecimalBs(o.tezina))} kg` : ''} · ${escapeHtml(o.tudji ? memberName(o.vlasnik_id) : o.lovac || '')}</span>
-        ${o.upozorenja?.length ? `<span class="sitno upozorenje-tekst">${escapeHtml(o.upozorenja.join(' '))}</span>` : ''}
-        <span class="sitno">${o.tudji ? 'Podijeljeno sa tobom' : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
-        ${o.tudji ? '' : `<div class="red-dugmadi">${prijavaDugme(o.id)}<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button>
-          <button type="button" class="dugme" data-akcija="obrisi">Obriši</button></div>`}
-      </li>`).join('');
+        <div class="ev-glava">
+          <span class="div-emblem" style="background:${escapeHtml(badge.boja)}" aria-hidden="true">${escapeHtml(badge.znak)}</span>
+          <div class="trag-naslov"><b>${escapeHtml(lookupNaziv(vrste, o.vrsta))} ${escapeHtml(harvestCategoryName(vrste, o.vrsta, o.kategorija))}</b>
+          <span class="sitno">${escapeHtml(formatWhen(o.vrijeme))}${o.tezina != null ? ` · ${escapeHtml(formatDecimalBs(o.tezina))} kg` : ''} · ${escapeHtml(o.tudji ? memberName(o.vlasnik_id) : o.lovac || '')}</span>
+          ${o.upozorenja?.length ? `<span class="sitno upozorenje-tekst">${escapeHtml(o.upozorenja.join(' '))}</span>` : ''}
+          <span class="sitno">${o.tudji ? 'Podijeljeno sa tobom' : `Vidljivost: ${escapeHtml(VIDLJIVOST[o.vidljivost || 'privatno'])}`}</span></div>
+        </div>
+        <div class="red-dugmadi">${o.tudji ? '' : prijavaDugme(o.id)}<button type="button" class="dugme" data-akcija="prikazi">Na karti</button>${o.tudji ? '' : `<button type="button" class="dugme" data-akcija="dijeli">Dijeli</button>
+          <button type="button" class="dugme" data-akcija="obrisi">Obriši</button>`}</div>
+      </li>`;
+    };
+    $('odstrel-spisak').innerHTML = (filter.sort === 'novije'
+      ? groupByMonthOf(items, (o) => o.vrijeme).map((g) => `<li class="tr-mjesec" role="presentation"><span>${escapeHtml(g.naziv)}</span><span class="sitno">${g.items.length} kom.</span></li>${g.items.map(cardHtml).join('')}`).join('')
+      : items.map(cardHtml).join('')) || '<li class="sitno">Nema odstrela za ovaj filter.</li>';
     $('odstrel-spisak').querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
       wireTwoTap(b, 'Dodirni ponovo', async () => {
         const id = b.closest('[data-id]').dataset.id;
@@ -294,11 +316,19 @@ export function initOdstrel(L, map) {
   $('odstrel-spisak').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-akcija="dijeli"]');
     if (b) await shareDialog()?.open(STORE, b.closest('[data-id]').dataset.id);
+    const na = e.target.closest('[data-akcija="prikazi"]');
+    if (na) {
+      const o = await getRecord(STORE, na.closest('[data-id]').dataset.id);
+      if (o) { list.hidden = true; map.setView([o.lat, o.lon], Math.max(map.getZoom(), 16)); }
+      return;
+    }
     const p = e.target.closest('[data-akcija="prijavi"]');
     if (p) document.dispatchEvent(new CustomEvent('ulov:prijavi', { detail: { id: p.closest('[data-id]').dataset.id } }));
   });
   document.addEventListener('prijave:promjena', () => { if (!list.hidden) render(); });
   $('ods-period').addEventListener('click', (e) => { const b = e.target.closest('[data-period]'); if (b) { filter.period = b.dataset.period; render(); } });
+  $('ods-prijava').addEventListener('change', (e) => { filter.prijava = e.target.value; render(); });
+  $('ods-sort').addEventListener('change', (e) => { filter.sort = e.target.value; render(); });
   $('ods-trazi').addEventListener('input', (e) => { filter.trazi = e.target.value; render(); });
   $('ods-filter-vrsta').addEventListener('change', (e) => { filter.vrsta = e.target.value; render(); });
   $('btn-ods-csv').addEventListener('click', async () => {

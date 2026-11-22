@@ -4,7 +4,7 @@
     <button id="btn-odstrel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <div class="sk-hero tr-hero ev-hero">
-    <div class="sk-statovi sk-statovi-hero"><div data-stat="komada"><b id="ods-hero-komada">0</b><span>komada</span></div><div data-stat="kg"><b id="ods-hero-kg">0</b><span>kg ukupno</span></div><div data-stat="vrsta"><b id="ods-hero-vrsta">0</b><span>vrsta</span></div></div>
+    <div class="sk-statovi sk-statovi-hero"><div data-stat="komada"><b id="ods-hero-komada">0</b><span>komada</span></div><div data-stat="kg"><b id="ods-hero-kg">0</b><span>kg ukupno</span></div><div data-stat="vrsta"><b id="ods-hero-vrsta">0</b><span>vrsta</span></div><div data-stat="najveci"><b id="ods-hero-najveci">—</b><span>najveći (kg)</span></div></div>
   </div>
   <p class="sitno">Ne zamjenjuje službeni lovački dnevnik.</p>
   <input id="ods-trazi" type="search" placeholder="Traži (vrsta, lovac, napomena…)" aria-label="Traži u odstrelu" autocomplete="off">
@@ -14,8 +14,14 @@
     <button type="button" data-period="godina">Ova godina</button>
     <button type="button" data-period="sve">Sve</button>
   </div>
+  <div class="tr-kontrole">
+    <label class="tr-sort">Prijava društvu<select id="ods-prijava" aria-label="Prijava društvu"></select></label>
+    <label class="tr-sort">Redoslijed<select id="ods-sort" aria-label="Redoslijed"><option value="novije">Najnovije</option><option value="teze">Najteže</option></select></label>
+  </div>
   <h3>Po vrstama</h3>
   <ul id="ods-zbir" class="zbir"></ul>
+  <h3>Zadnjih 12 mjeseci</h3>
+  <div id="ods-mjeseci" class="pr-mjeseci" role="img" aria-label="Komada odstrela po mjesecima"></div>
   <div class="red-dugmadi">
     <button id="btn-ods-csv" class="dugme" type="button">Izvoz u Excel (CSV)</button>
     <button id="btn-ods-pdf" class="dugme" type="button">Štampa / PDF</button>
