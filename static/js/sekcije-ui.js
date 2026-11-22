@@ -8,6 +8,8 @@ import { refreshMembers, memberName } from './dijeljenje-ui.js';
 import { creationMode,
   myStatus, pristupText, canManage, creatableRevirIds, groupByRevir, pendingRequests, candidatesToAdd, validateSekcija, mySectionsAsLeader,
 } from './sekcije.js';
+import { makeThumbnail } from './foto.js';
+import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 
 const CACHE_ID = 'sekcije';
@@ -82,6 +84,10 @@ export function initSekcije() {
       <div class="clanovi" data-spisak>${candidates.map((u) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(u.id)}"> ${escapeHtml(memberName(u.id))}</label>`).join('')
     || '<p class="sitno">Nema lovaca za dodavanje (spisak se preuzima uz internet).</p>'}</div>
       <button type="button" class="dugme" data-akcija="dodaj">Dodaj izabrane</button>
+      <h4>Logo sekcije</h4>
+      <div class="pf-slika-red"><span class="sek-logo velik" style="${logoStyle(s)}"></span>
+        <div class="pf-slika-dugmad"><label class="dugme dugme-fajl">Učitaj logo<input type="file" accept="image/*" data-logo-ulaz hidden></label>
+        <button type="button" class="dugme" data-akcija="logo-reset">Automatski logo</button></div></div>
       <label>Naziv sekcije<input data-naziv value="${escapeHtml(s.naziv)}" maxlength="60"></label>
       <button type="button" class="dugme" data-akcija="naziv">Sačuvaj naziv</button>
       ${isAdmin ? `<label>Grupovođa<select data-gv><option value="">— niko —</option>${users().map((u) => opt(u.id, memberName(u.id), u.id === s.grupovodja_id)).join('')}</select></label>
@@ -101,11 +107,23 @@ export function initSekcije() {
         : st === 'clan' ? '<button type="button" class="dugme" data-akcija="napusti">Napusti sekciju</button>' : '';
     const mode = creationMode(st);
     const newBtn = mode ? `<button type="button" class="dugme" data-akcija="novi-lovac">${mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava grupovođa)'}</button>` : '';
-    return `<li class="trag-red sekcija-kartica" data-id="${escapeHtml(s.id)}" data-pristup="${st}">
-      <div class="trag-naslov"><b>${escapeHtml(s.naziv)}</b>
-        <span class="sitno">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar revira: ${lovocuvari}</span>
-        <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span>${memberList}</div>
-      <div class="red-dugmadi">${buttons}${newBtn}</div>
+    const pendingN = pendingRequests(s.id, data.clanovi).length;
+    const revirNaziv = data.reviri.find((r) => r.id === s.revir_id)?.naziv || '';
+    return `<li class="trag-red sekcija-kartica sk2" data-id="${escapeHtml(s.id)}" data-pristup="${st}">
+      <div class="sk2-glava">
+        <span class="sek-logo" style="${logoStyle(s)}" role="img" aria-label="Logo sekcije ${escapeHtml(s.naziv)}"></span>
+        <div class="sk2-naslov"><b>${escapeHtml(s.naziv)}</b>
+          <span class="sitno">Revir ${escapeHtml(revirNaziv)}</span>
+          <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span></div>
+        ${pendingN && canManage(s, me()) ? `<span class="znacka-broj" title="Zahtjevi na čekanju" aria-label="Zahtjeva na čekanju: ${pendingN}">${pendingN}</span>` : ''}
+      </div>
+      <div class="sk-statovi sk2-statovi">
+        <div><b>${members.length}</b><span>članova</span></div>
+        ${canManage(s, me()) ? `<div><b>${pendingN}</b><span>zahtjeva</span></div>` : ''}
+      </div>
+      <p class="sitno sk2-ljudi">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar revira: ${lovocuvari}</p>
+      ${memberList ? `<details class="sk2-clanovi"><summary>Članovi (${members.length})</summary>${memberList}</details>` : ''}
+      <div class="sk2-dugmad">${buttons}${newBtn}</div>
       ${canManage(s, me()) ? manageHtml(s) : ''}
     </li>`;
   };
@@ -200,10 +218,29 @@ export function initSekcije() {
       case 'uloge':
         run(() => qSek(sb().from('sekcije').update({ grupovodja_id: card.querySelector('[data-gv]').value || null }).eq('id', sid)), 'Grupovođa sačuvan');
         break;
+      case 'logo-reset':
+        run(() => qSek(sb().from('sekcije').update({ logo: null }).eq('id', sid)), 'Vraćen je automatski logo');
+        break;
       case 'sakrij':
         run(() => qSek(sb().from('sekcije').update({ aktivno: false }).eq('id', sid)), 'Sekcija sakrivena');
         break;
       default:
+    }
+  });
+
+  // Učitavanje loga sekcije (mala slika, 128 px): grupovođa ili admin.
+  $('sekcije-spisak').addEventListener('change', async (e) => {
+    const input = e.target.closest('input[data-logo-ulaz]');
+    if (!input) return;
+    const file = input.files[0];
+    const sid = input.closest('[data-id]').dataset.id;
+    input.value = '';
+    if (!file) return;
+    try {
+      const logo = await makeThumbnail(file, 128);
+      await run(() => qSek(getClient().from('sekcije').update({ logo }).eq('id', sid)), 'Logo sekcije je sačuvan');
+    } catch (err) {
+      $('sekcije-status').textContent = `Logo nije sačuvan: ${err.message}`;
     }
   });
 

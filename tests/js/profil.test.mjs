@@ -56,3 +56,19 @@ test('statistika lovca: lovovi, sati, ulov, najveći komad, tragovi, opažanja',
   assert.equal(hunterStats({ ...base, godina: 2024 }).lovova, 0);
   assert.deepEqual(statYears(base), [2026, 2025]);
 });
+
+import { hashString, logoInitials, autoLogoSvg, autoLogoDataUrl, logoOf } from '../../static/js/sekcija-logo.js';
+test('logo sekcije: inicijali, isti naziv daje isti logo, učitana slika ima prednost', () => {
+  assert.equal(logoInitials('Krupa 1'), 'K1');
+  assert.equal(logoInitials('Jezerski'), 'JE');
+  assert.equal(logoInitials('  '), '?');
+  assert.equal(logoInitials('đ'), 'Đ');
+  assert.equal(hashString('Krupa 1'), hashString('Krupa 1'));
+  assert.notEqual(hashString('Krupa 1'), hashString('Krupa 2'));
+  assert.equal(autoLogoSvg('Krupa 1'), autoLogoSvg('Krupa 1'));
+  assert.notEqual(autoLogoSvg('Krupa 1'), autoLogoSvg('Otoka 1'));
+  assert.match(autoLogoSvg('A<B'), /A&lt;B|A&lt;/);
+  assert.match(autoLogoDataUrl('Krupa 1'), /^data:image\/svg\+xml;utf8,%3Csvg/);
+  assert.equal(logoOf({ naziv: 'X', logo: 'data:image/jpeg;base64,AA' }), 'data:image/jpeg;base64,AA');
+  assert.equal(logoOf({ naziv: 'Krupa 1' }), autoLogoDataUrl('Krupa 1'));
+});

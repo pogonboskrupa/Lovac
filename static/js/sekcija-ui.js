@@ -14,6 +14,7 @@ import { mySections, currentHunt, memberActivity, activityText, sectionMembers, 
 import { uuid } from './zapisi.js';
 import { trailEnabled } from './lov-tragovi-ui.js';
 import { avatarOf } from './profil-ui.js';
+import { logoStyle } from './sekcija-logo.js';
 import { initialsOf } from './lokacija.js';
 import { myStatus, pendingRequests, pristupText, creationMode, isLeadership } from './sekcije.js';
 import {
@@ -89,6 +90,10 @@ export function initSekcijaEkran(L, map) {
   const updateNav = () => {
     const s = selected();
     $('nav-sekcija-ime').textContent = s ? s.naziv : 'Sekcija';
+    $('nav-sekcija-logo').hidden = !s;
+    // SVG element nema svojstvo hidden: atribut se postavlja ručno
+    if (s) $('nav-sekcija-ikona').setAttribute('hidden', ''); else $('nav-sekcija-ikona').removeAttribute('hidden');
+    if (s) $('nav-sekcija-logo').setAttribute('style', logoStyle(s));
     const n = unreadTotal();
     const badge = $('nav-sekcija-znacka');
     badge.hidden = n === 0;
@@ -270,6 +275,7 @@ export function initSekcijaEkran(L, map) {
     const uc = cur?.zapis.ucesnici || [];
     const poz = extra.lovId && lov && extra.lovId === lov.id ? extra.pozicije : [];
     $('sk-broj').textContent = `(${rows.length})`;
+    $('sk-logo').setAttribute('style', logoStyle(s));
     $('sk-uloga').textContent = ULOGE_SEKCIJE[st] || '';
     $('sk-uloga').dataset.uloga = st;
     $('sk-stat-clanova').textContent = String(rows.length);

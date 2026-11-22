@@ -637,3 +637,21 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .pf-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 12px 6px; border-radius: 14px; background: var(--povrsina); box-shadow: var(--sjena); min-height: 84px; }
 .pf-tile b { font-size: 24px; }
 .pf-tile span { font-size: 13px; color: var(--tekst-2); }
+
+/* Logo sekcije i kartice sekcija */
+.sek-logo { flex: none; display: inline-block; width: 56px; height: 56px; border-radius: 14px; background-size: cover; background-position: center; background-color: var(--dugme); box-shadow: var(--sjena); }
+.sek-logo.mali { width: 28px; height: 28px; border-radius: 8px; box-shadow: none; }
+.sek-logo.velik { width: 72px; height: 72px; border-radius: 18px; }
+.sek-logo[hidden] { display: none; }
+.sk-hero-glava { display: flex; align-items: center; gap: 12px; }
+.sk2 { padding: 12px; border-radius: 16px; background: var(--povrsina); box-shadow: var(--sjena); list-style: none; margin: 10px 0; }
+.sk2-glava { display: flex; align-items: center; gap: 12px; }
+.sk2-naslov { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 17px; }
+.sk2-statovi > div { min-width: 0; }
+.sk2-statovi b { font-size: 16px; overflow-wrap: anywhere; text-align: center; }
+.sk2-clanovi { margin: 8px 0; }
+.sk2-clanovi summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.sk2-dugmad { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.sk2-dugmad .dugme { width: 100%; margin: 0; }
+.donja-nav .sek-logo.mali { margin: 0; }
+svg[hidden] { display: none; }

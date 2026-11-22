@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.4.4';
+  const APP_VER = 'v0.4.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -245,7 +245,7 @@
 
   <nav class="donja-nav" aria-label="Glavna navigacija">
     <button id="nav-mapa" type="button" aria-current="page"><svg class="ic"><use href="#ic-compass"/></svg><span>Mapa</span></button>
-    <button id="btn-sekcija" type="button"><svg class="ic"><use href="#ic-group"/></svg><span id="nav-sekcija-ime">Sekcija</span><span id="nav-sekcija-znacka" class="znacka-broj" hidden></span></button>
+    <button id="btn-sekcija" type="button"><svg id="nav-sekcija-ikona" class="ic"><use href="#ic-group"/></svg><span id="nav-sekcija-logo" class="sek-logo mali" hidden></span><span id="nav-sekcija-ime">Sekcija</span><span id="nav-sekcija-znacka" class="znacka-broj" hidden></span></button>
     <button id="btn-spiskovi" type="button"><svg class="ic"><use href="#ic-menu"/></svg><span>Meni</span></button>
     <button id="btn-postavke" type="button"><svg class="ic"><use href="#ic-settings"/></svg><span>Postavke</span></button>
   </nav>
@@ -967,7 +967,7 @@
   </div>
   <div id="sk-sadrzaj" hidden>
     <div class="sk-hero">
-      <span id="sk-uloga" class="sk-uloga"></span>
+      <div class="sk-hero-glava"><span id="sk-logo" class="sek-logo velik" role="img" aria-label="Logo sekcije"></span><span id="sk-uloga" class="sk-uloga"></span></div>
       <p id="sk-podnaslov" class="sk-podnaslov"></p>
       <div class="sk-statovi sk-statovi-hero">
         <div data-stat="clanova"><b id="sk-stat-clanova">0</b><span>članova</span></div>
