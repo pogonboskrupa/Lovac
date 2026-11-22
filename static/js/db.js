@@ -2,8 +2,8 @@
 // Sve tabele se prave odjednom, da nova funkcija ne traži podizanje verzije baze.
 
 const DB_NAME = 'lovac';
-const DB_VERSION = 5;
-export const STORES = ['tragovi', 'objekti', 'opazanja', 'odstrel', 'red', 'spiskovi', 'fotografije', 'slojevi', 'lovovi', 'poruke'];
+const DB_VERSION = 6;
+export const STORES = ['tragovi', 'objekti', 'opazanja', 'odstrel', 'red', 'spiskovi', 'fotografije', 'slojevi', 'lovovi', 'poruke', 'slike'];
 
 let dbPromise = null;
 

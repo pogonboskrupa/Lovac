@@ -1,0 +1,22 @@
+<section id="slika-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slika-naslov" hidden>
+  <form id="forma-slika" novalidate>
+    <header class="postavke-glava"><h2 id="slika-naslov">Slika na poziciji</h2></header>
+    <p id="slika-pozicija" class="sitno"></p>
+    <h3>Šta je na slici</h3>
+    <div id="slika-kategorija" class="segment segment-gust" role="group" aria-label="Šta je na slici"></div>
+    <div id="slika-pregled-mala" class="foto-red"></div>
+    <label class="dugme dugme-fajl">Uslikaj ili izaberi fotografiju<input id="slika-ulaz" type="file" accept="image/*" hidden></label>
+    <label>Opis (neobavezno)<input name="opis" maxlength="300" placeholder="npr. čeka na Vrhu, nova ljestva"></label>
+    <p id="slika-status" class="status" role="status"></p>
+    <div class="red-dugmadi">
+      <button id="btn-slika-sacuvaj" type="submit" class="dugme glavno">Sačuvaj na karti</button>
+      <button id="btn-slika-odustani" type="button" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>
+
+<div id="slika-velika" class="slika-velika" role="dialog" aria-modal="true" aria-label="Slika" hidden>
+  <button id="btn-slika-velika-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  <img id="slika-velika-img" alt="Fotografija">
+  <p id="slika-velika-opis"></p>
+</div>

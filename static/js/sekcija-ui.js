@@ -13,9 +13,9 @@ import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers } from './sekcija-podaci.js';
 import { uuid } from './zapisi.js';
 import { initialsOf } from './lokacija.js';
-import { myStatus, pendingRequests, pristupText, creationMode } from './sekcije.js';
+import { myStatus, pendingRequests, pristupText, creationMode, isLeadership } from './sekcije.js';
 import {
-  validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES,
+  validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES, KANAL_RUKOVODSTVO,
 } from './poruke.js';
 import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
@@ -77,8 +77,12 @@ export function initSekcijaEkran(L, map) {
     vrste = await getSpisakAll('vrste');
   };
 
+  const leader = () => isLeadership(me(), ctx);
+  const rukPoruke = () => poruke.filter((m) => m.kanal === KANAL_RUKOVODSTVO);
+
   const unreadTotal = () => mine().reduce((n, s) => n + unreadCount(
-    poruke.filter((m) => m.sekcija_id === s.id), loadJSON(READ_KEY(s.id), null), me()?.id), 0);
+    poruke.filter((m) => m.sekcija_id === s.id), loadJSON(READ_KEY(s.id), null), me()?.id), 0)
+    + (leader() ? unreadCount(rukPoruke(), loadJSON(READ_KEY(KANAL_RUKOVODSTVO), null), me()?.id) : 0);
 
   const updateNav = () => {
     const s = selected();
@@ -94,6 +98,8 @@ export function initSekcijaEkran(L, map) {
     if (!s || !isOpen()) return;
     const last = poruke.filter((m) => m.sekcija_id === s.id).map((m) => m.created_at).sort().pop();
     if (last) saveSoft(READ_KEY(s.id), last);
+    const lastRuk = rukPoruke().map((m) => m.created_at).sort().pop();
+    if (lastRuk) saveSoft(READ_KEY(KANAL_RUKOVODSTVO), lastRuk);
     updateNav();
   };
 
@@ -105,7 +111,7 @@ export function initSekcijaEkran(L, map) {
     if (isOpen() && document.visibilityState === 'visible') return;
     const m = news[news.length - 1];
     const s = ctx.sekcije.find((x) => x.id === m.sekcija_id);
-    globalThis.AndroidNotif?.prikazi?.(`${s?.naziv || 'Sekcija'} — ${memberName(m.autor_id)}`, m.tekst);
+    globalThis.AndroidNotif?.prikazi?.(`${m.kanal === KANAL_RUKOVODSTVO ? 'Rukovodstvo' : (s?.naziv || 'Sekcija')} — ${memberName(m.autor_id)}`, m.tekst);
   };
 
   const pullMessages = async () => {
@@ -119,6 +125,14 @@ export function initSekcijaEkran(L, map) {
         if (!known.has(m.id)) fresh.push(m);
       }
     }
+    if (leader()) {
+      const remote = await qSk(getClient().from('poruke').select('*').eq('kanal', KANAL_RUKOVODSTVO).order('created_at', { ascending: true }).limit(300));
+      const known = new Set(poruke.map((m) => m.id));
+      for (const m of mergeMessages(rukPoruke(), remote)) {
+        await idbPut('poruke', m);
+        if (!known.has(m.id)) fresh.push(m);
+      }
+    }
     await reloadPoruke();
     notifyNew(fresh);
   };
@@ -127,7 +141,7 @@ export function initSekcijaEkran(L, map) {
     for (const m of poruke.filter((x) => x.sinhronizovano === false && x.autor_id === me()?.id)) {
       try {
         await qSk(getClient().from('poruke').upsert({
-          id: m.id, sekcija_id: m.sekcija_id, lov_id: m.lov_id, autor_id: m.autor_id, tekst: m.tekst, created_at: m.created_at,
+          id: m.id, kanal: m.kanal || 'sekcija', sekcija_id: m.sekcija_id ?? null, lov_id: m.lov_id ?? null, autor_id: m.autor_id, tekst: m.tekst, created_at: m.created_at,
         }, { onConflict: 'id', ignoreDuplicates: true }));
         await idbPut('poruke', { ...m, sinhronizovano: true });
       } catch (err) {
@@ -281,6 +295,18 @@ export function initSekcijaEkran(L, map) {
     box.scrollTop = box.scrollHeight;
     $('sk-brze').innerHTML = QUICK_MESSAGES.map((t) => `<button type="button" data-brza="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
 
+    // rukovodstvo (grupovođe, lovočuvari, admin)
+    const isLeader = leader();
+    $('sk-k-ruk').hidden = !isLeader;
+    $('sk-nav-ruk').hidden = !isLeader;
+    if (isLeader) {
+      const ruk = rukPoruke();
+      $('sk-ruk-poruke').innerHTML = ruk.map((m) => `<div class="poruka-red${m.autor_id === me()?.id ? ' moja' : ''}" data-id="${escapeHtml(m.id)}">
+        <small>${m.autor_id === me()?.id ? 'Ti' : escapeHtml(memberName(m.autor_id))} · ${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}</small>
+        ${escapeHtml(m.tekst)}</div>`).join('') || '<p class="sitno">Još nema poruka.</p>';
+      $('sk-ruk-poruke').scrollTop = $('sk-ruk-poruke').scrollHeight;
+    }
+
     // svi podaci
     const huntsOfSection = lovovi.filter((z) => z.lov.sekcija_id === s.id).sort((a, b) => String(b.lov.datum).localeCompare(String(a.lov.datum)));
     const pending = pendingRequests(s.id, ctx.clanovi).length;
@@ -427,6 +453,24 @@ export function initSekcijaEkran(L, map) {
         .bindTooltip(memberName(uid), { permanent: true }).addTo(map);
       setTimeout(() => { if (marker) { map.removeLayer(marker); marker = null; } }, 30000);
     }
+  });
+
+  $('forma-ruk').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = e.target.elements.tekst;
+    const err = validateMessage(input.value);
+    if (err) { toast(err); return; }
+    const m = newMessage({ kanal: KANAL_RUKOVODSTVO, autor_id: me().id, tekst: input.value });
+    try {
+      await idbPut('poruke', m);
+    } catch (er) {
+      toast(`Poruka nije sačuvana: ${er.message}`);
+      return;
+    }
+    input.value = '';
+    await reloadPoruke();
+    render();
+    if (online()) { await flushOutbox(); render(); }
   });
 
   $('forma-poruka').addEventListener('submit', async (e) => {

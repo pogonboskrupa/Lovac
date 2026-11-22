@@ -5,6 +5,7 @@ import { uuid } from './zapisi.js';
 
 const MAX_SIDE = 1600;
 const QUALITY = 0.8;
+const THUMB_SIDE = 112;
 
 export function fitSize(w, h, max = MAX_SIDE) {
   const k = Math.min(1, max / Math.max(w, h));
@@ -31,6 +32,17 @@ export async function resizeImage(file) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Slika nije pretvorena'))), 'image/jpeg', QUALITY);
   });
+}
+
+// Mala kvadratna sličica (izrezana po sredini) za marker na karti; čuva se kao dataURL uz zapis, pa marker ne traži blob.
+export async function makeThumbnail(file, size = THUMB_SIDE) {
+  const img = await loadImage(file);
+  const side = Math.min(img.naturalWidth, img.naturalHeight);
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  canvas.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+  return canvas.toDataURL('image/jpeg', 0.6);
 }
 
 export async function savePhoto(file) {

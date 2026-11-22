@@ -55,3 +55,19 @@ test('veličina prikaza: nepoznata vrijednost je normalno', () => {
   assert.equal(normalizeVelicina('ogromno'), 'normalno');
   assert.equal(normalizeVelicina(null), 'normalno');
 });
+
+import { validateSlika, newSlika, sortSlike, pictureCategoryName, SLIKA_KATEGORIJE } from '../../static/js/slike.js';
+test('slika na poziciji: provjera, zapis i redoslijed', () => {
+  assert.deepEqual(Object.keys(SLIKA_KATEGORIJE), ['cekalo', 'objekat', 'ulov', 'ostalo']);
+  assert.equal(pictureCategoryName('ulov'), 'Ulov');
+  assert.equal(pictureCategoryName('nepoznato'), 'Drugo');
+  const ok = { kategorija: 'cekalo', foto: 'f1', lat: 44.88, lon: 16.15, opis: '' };
+  assert.equal(validateSlika(ok), null);
+  assert.match(validateSlika({ ...ok, kategorija: 'x' }), /Izaberi/);
+  assert.match(validateSlika({ ...ok, foto: null }), /fotografiju/);
+  assert.match(validateSlika({ ...ok, lat: NaN }), /pozicije/);
+  assert.match(validateSlika({ ...ok, opis: 'a'.repeat(301) }), /predug/);
+  const s = newSlika({ id: 'i', kategorija: 'ulov', foto: 'f', mala: 'data:', lat: 1, lon: 2, opis: '  Divlja svinja ' }, 5000);
+  assert.deepEqual(s, { id: 'i', kategorija: 'ulov', foto: 'f', mala: 'data:', lat: 1, lon: 2, opis: 'Divlja svinja', vrijeme: 5000 });
+  assert.deepEqual(sortSlike([{ vrijeme: 1 }, { vrijeme: 3 }, { vrijeme: 2 }]).map((x) => x.vrijeme), [3, 2, 1]);
+});

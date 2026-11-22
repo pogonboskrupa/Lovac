@@ -21,6 +21,7 @@
 | `012_kreiranje_korisnika.sql` | `kreiraj_korisnika` (nalog + članstvo; član samo predlaže), `odobri_pozvanog`, `odbij_pozvanog`, kolona `sekcija_clanovi.pozvao_id` |
 | `013_prisustvo_u_lovu.sql` | samoprijava prisustva člana sekcije u lov sekcije (`lov_ucesnici.samoprijava`), odjava, uklonjeni se ne mogu ponovo sami prijaviti (`lov_uklonjeni`) |
 | `014_lokacija_sekcije.sql` | dijeljenje lokacije sa sekcijom van lova (`sekcija_lokacije`, najviše 24 h, vide članovi/grupovođa/lovočuvar, ne admin) |
+| `015_poruke_rukovodstvo.sql` | kanal Rukovodstvo u `poruke` (`kanal`, `sekcija_id` nullable, `je_rukovodstvo()`): grupovođe, lovočuvari i admin |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:

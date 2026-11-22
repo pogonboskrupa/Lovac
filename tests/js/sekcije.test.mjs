@@ -83,3 +83,21 @@ test('bez profila niko nije vođa ni lovočuvar (undefined === undefined zamka)'
   assert.equal(myStatus({ id: 'S', revir_id: 'R', grupovodja_id: undefined, lovocuvar_id: undefined }, [], undefined, false, []), 'nema');
   assert.equal(myStatus({ id: 'S', revir_id: 'R', grupovodja_id: null }, [], null, false, [{ revir_id: 'R', korisnik_id: undefined }]), 'nema');
 });
+
+import { isLeadership } from '../../static/js/sekcije.js';
+import { newMessage as newMsg2, KANAL_RUKOVODSTVO as KANAL2 } from '../../static/js/poruke.js';
+test('rukovodstvo: ko ulazi u kanal i poruka rukovodstva nema sekciju', () => {
+  const ctx = { grupovodje: [{ korisnik_id: 'g1', revir_id: 'R' }], sekcije: [{ id: 'S', grupovodja_id: 'g2', aktivno: true }], lovocuvari: [{ korisnik_id: 'l1', revir_id: 'R' }] };
+  assert.equal(isLeadership({ id: 'g1' }, ctx), true);
+  assert.equal(isLeadership({ id: 'g2' }, ctx), true);
+  assert.equal(isLeadership({ id: 'l1' }, ctx), true);
+  assert.equal(isLeadership({ id: 'a', is_admin: true }, {}), true);
+  assert.equal(isLeadership({ id: 'clan' }, ctx), false);
+  assert.equal(isLeadership(null, ctx), false);
+  assert.equal(isLeadership({ id: 'g2' }, { sekcije: [{ grupovodja_id: 'g2', aktivno: false }] }), false);
+  const m = newMsg2({ kanal: KANAL2, sekcija_id: 'S', autor_id: 'g1', tekst: ' Zdravo ' });
+  assert.equal(m.kanal, 'rukovodstvo');
+  assert.equal(m.sekcija_id, null);
+  assert.equal(m.tekst, 'Zdravo');
+  assert.equal(newMsg2({ sekcija_id: 'S', autor_id: 'x', tekst: 'a' }).kanal, 'sekcija');
+});

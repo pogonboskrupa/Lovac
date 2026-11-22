@@ -13,6 +13,15 @@ export function myStatus(sekcija, clanovi, myId, isAdmin = false, lovocuvari = [
 }
 
 // Ko smije praviti naloge u sekciji: admin/grupovođa/lovočuvar direktno, običan član samo predlaže.
+// Kanal Rukovodstvo: admin, grupovođe i lovočuvari (server to provjerava kroz je_rukovodstvo()).
+export function isLeadership(user, ctx = {}) {
+  if (!user?.id) return false;
+  if (user.is_admin) return true;
+  return (ctx.grupovodje || []).some((g) => g.korisnik_id === user.id)
+    || (ctx.sekcije || []).some((s) => s.aktivno !== false && (s.grupovodja_id === user.id || s.lovocuvar_id === user.id))
+    || (ctx.lovocuvari || []).some((l) => l.korisnik_id === user.id);
+}
+
 export function creationMode(status) {
   if (['admin', 'grupovodja', 'lovocuvar'].includes(status)) return 'direct';
   return status === 'clan' ? 'predlog' : null;

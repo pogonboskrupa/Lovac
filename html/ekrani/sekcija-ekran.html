@@ -22,6 +22,7 @@
       <button type="button" data-cilj="sk-k-lov">Lov</button>
       <button type="button" data-cilj="sk-k-clanovi">Članovi</button>
       <button type="button" data-cilj="sk-k-poruke">Poruke</button>
+      <button id="sk-nav-ruk" type="button" data-cilj="sk-k-ruk" hidden>Rukovodstvo</button>
       <button type="button" data-cilj="sk-k-podaci">Podaci</button>
     </nav>
 
@@ -43,6 +44,16 @@
       <div id="sk-brze" class="brze-poruke"></div>
       <form id="forma-poruka" class="forma-poruka" novalidate>
         <input name="tekst" maxlength="1000" placeholder="Poruka članovima sekcije" aria-label="Poruka" autocomplete="off">
+        <button type="submit" class="dugme glavno">Pošalji</button>
+      </form>
+    </section>
+
+    <section id="sk-k-ruk" class="sk-kartica" hidden>
+      <h3>Rukovodstvo</h3>
+      <p class="sitno">Razgovor grupovođa, lovočuvara i administratora, izvan sekcija. Članovi ga ne vide.</p>
+      <div id="sk-ruk-poruke" class="poruke" role="log" aria-live="polite"></div>
+      <form id="forma-ruk" class="forma-poruka" novalidate>
+        <input name="tekst" maxlength="1000" placeholder="Poruka rukovodstvu" aria-label="Poruka rukovodstvu" autocomplete="off">
         <button type="submit" class="dugme glavno">Pošalji</button>
       </form>
     </section>
