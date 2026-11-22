@@ -13,6 +13,7 @@ import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers } from './sekcija-podaci.js';
 import { uuid } from './zapisi.js';
 import { trailEnabled } from './lov-tragovi-ui.js';
+import { avatarOf } from './profil-ui.js';
 import { initialsOf } from './lokacija.js';
 import { myStatus, pendingRequests, pristupText, creationMode, isLeadership } from './sekcije.js';
 import {
@@ -278,7 +279,7 @@ export function initSekcijaEkran(L, map) {
       const a = memberActivity(r.id, lov, uc, poz);
       const ja = r.id === me()?.id;
       return `<li class="clan-red" data-uid="${escapeHtml(r.id)}" data-stanje="${a.stanje}">
-        <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(r.ime))}</span>
+        <span class="sk-avatar${avatarOf(r.id) ? ' ima-sliku' : ''}" aria-hidden="true"${avatarOf(r.id) ? ` style="background-image:url('${avatarOf(r.id)}')"` : ''}>${avatarOf(r.id) ? '' : escapeHtml(initialsOf(r.ime))}</span>
         <div class="clan-tekst"><b>${escapeHtml(r.ime)}${ja ? ' (ti)' : ''}</b>
           <span class="sitno">${escapeHtml(ULOGE[r.uloga])}${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''}</span>
           <span class="sitno aktivnost">${escapeHtml(activityText(a))}</span></div>

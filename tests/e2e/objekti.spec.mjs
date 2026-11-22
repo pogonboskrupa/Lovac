@@ -150,7 +150,7 @@ test('dodirne mete objekata ≥ 44 px, polja ≥ 48 px', async ({ page }) => {
   let b = await page.locator('#btn-dodaj-objekat').boundingBox();
   expect(b.height).toBeGreaterThanOrEqual(44);
   await page.locator('#btn-dodaj-objekat').click();
-  for (const sel of ['#objekt-vrste [data-kod]', '#objekt-stanje [data-stanje]', '.dugme-fajl', '#btn-objekt-nisan', '#btn-objekt-moja-lokacija']) {
+  for (const sel of ['#objekt-vrste [data-kod]', '#objekt-stanje [data-stanje]', '#objekt-forma .dugme-fajl', '#btn-objekt-nisan', '#btn-objekt-moja-lokacija']) {
     b = await page.locator(sel).first().boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }

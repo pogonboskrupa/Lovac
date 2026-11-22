@@ -24,6 +24,7 @@ import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
 import { initSekcijaEkran } from './sekcija-ui.js';
+import { initProfilLovca } from './profil-ui.js';
 import { initFotoSync } from './fotosync.js';
 import { initArhiva } from './arhiva-ui.js';
 import { initLovTragovi } from './lov-tragovi-ui.js';
@@ -106,6 +107,7 @@ function enter(screen) {
       ['lov-tragovi', () => initLovTragovi(globalThis.L, map)],
       ['arhiva', () => initArhiva()],
       ['fotosync', () => initFotoSync()],
+      ['profil-lovca', () => initProfilLovca()],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
       ['kontakt', () => initKontakt()],

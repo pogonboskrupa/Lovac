@@ -13,6 +13,12 @@
     </div>
   </div>
 
+  <div id="p-tabovi" class="segment p-tabovi" role="tablist" aria-label="Postavke">
+    <button type="button" role="tab" data-ptab="opste" aria-pressed="true">Opšte</button>
+    <button type="button" role="tab" data-ptab="profil" aria-pressed="false">Profil lovca</button>
+  </div>
+
+  <div id="p-opste">
   <div class="p-kartica">
     <h3>Veličina teksta</h3>
     <p class="sitno">Veći tekst i veća dugmad u ekranima i meniju.</p>
@@ -44,9 +50,6 @@
     <button id="p-dijeli" class="dugme glavno" type="button" aria-pressed="true">Dijelim lokaciju</button>
     <p class="sitno">Učesnici lova vide gdje si samo dok lov traje. Isključivanje briše tvoju zadnju poziciju sa servera.</p>
     <div id="p-interval" class="segment" role="group" aria-label="Učestalost slanja"></div>
-    <label>Broj telefona (za SOS i prekid lova)<input id="telefon" inputmode="tel" maxlength="20" placeholder="+387 61 123 456"></label>
-    <button id="btn-telefon-sacuvaj" class="dugme" type="button">Sačuvaj broj</button>
-    <p id="telefon-status" class="sitno">Broj vide samo učesnici lova dok lov traje.</p>
   </div>
 
   <div class="p-kartica">
@@ -88,5 +91,64 @@
     <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
     <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
     <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
+  </div>
+  </div>
+
+  <div id="p-profil" hidden>
+    <div id="pf-podtabovi" class="segment p-tabovi" role="tablist" aria-label="Profil lovca">
+      <button type="button" role="tab" data-pftab="profil" aria-pressed="true">Profil</button>
+      <button type="button" role="tab" data-pftab="statistika" aria-pressed="false">Statistika</button>
+    </div>
+
+    <div id="pf-profil">
+      <div class="p-kartica">
+        <h3>Moja slika (avatar)</h3>
+        <div class="pf-slika-red">
+          <span id="pf-avatar" class="p-avatar pf-velika" aria-hidden="true">?</span>
+          <div class="pf-slika-dugmad">
+            <label class="dugme dugme-fajl">Izaberi sliku<input id="pf-avatar-ulaz" type="file" accept="image/*" hidden></label>
+            <button id="btn-pf-avatar-ukloni" class="dugme" type="button">Ukloni sliku</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-kartica">
+        <h3>Moj pas</h3>
+        <div class="pf-slika-red">
+          <span id="pf-pas-slika" class="p-avatar pf-velika pf-pas" aria-hidden="true">P</span>
+          <div class="pf-slika-dugmad">
+            <label class="dugme dugme-fajl">Slika psa<input id="pf-pas-ulaz" type="file" accept="image/*" hidden></label>
+            <button id="btn-pf-pas-ukloni" class="dugme" type="button">Ukloni sliku</button>
+          </div>
+        </div>
+        <label>Ime psa<input id="pf-pas-ime" maxlength="40" autocomplete="off" placeholder="npr. Rex"></label>
+      </div>
+
+      <div class="p-kartica">
+        <h3>Prateća oprema</h3>
+        <p class="sitno">Puška i ostalo što koristiš. Vidiš samo ti.</p>
+        <ul id="pf-oprema" class="spisak"></ul>
+        <label>Vrsta<select id="pf-oprema-vrsta"></select></label>
+        <label>Opis<input id="pf-oprema-opis" maxlength="80" autocomplete="off" placeholder="npr. Sauer 202, .308 Win"></label>
+        <button id="btn-pf-oprema-dodaj" class="dugme" type="button">Dodaj opremu</button>
+      </div>
+
+      <div class="p-kartica">
+        <h3>Broj telefona</h3>
+        <label>Za SOS i prekid lova<input id="telefon" inputmode="tel" maxlength="20" placeholder="+387 61 123 456"></label>
+        <button id="btn-telefon-sacuvaj" class="dugme" type="button">Sačuvaj broj</button>
+        <p id="telefon-status" class="sitno">Broj vide samo učesnici lova dok lov traje.</p>
+      </div>
+
+      <button id="btn-pf-sacuvaj" class="dugme glavno pf-sacuvaj" type="button">Sačuvaj profil</button>
+      <p id="pf-status" class="sitno" role="status"></p>
+    </div>
+
+    <div id="pf-statistika" hidden>
+      <label>Godina<select id="pf-stat-godina"></select></label>
+      <div id="pf-stat-tiles" class="pf-tiles"></div>
+      <div class="p-kartica"><h3>Ulov po vrstama</h3><ul id="pf-stat-vrste" class="zbir"></ul></div>
+      <p class="sitno">Statistika se računa iz podataka na ovom telefonu (tvoji lovovi, odstrel, tragovi i opažanja). Ne zamjenjuje službeni lovački dnevnik.</p>
+    </div>
   </div>
 </section>

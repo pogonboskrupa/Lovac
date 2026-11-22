@@ -622,3 +622,18 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .snim-dugmad-3 { grid-template-columns: repeat(3, 1fr); }
 .snim-dugmad[hidden] { display: none; }
 .snim-dugmad .dugme { min-height: 44px; min-width: 0; margin: 0; padding: 0 4px; font-size: 14px; }
+
+/* Postavke: podtabovi, profil lovca, statistika */
+.p-tabovi { margin: 12px 0; }
+.p-tabovi button { flex: 1; min-height: 48px; }
+.p-avatar.ima-sliku, .sk-avatar.ima-sliku { background-size: cover; background-position: center; color: transparent; }
+.pf-slika-red { display: flex; align-items: center; gap: 14px; margin: 8px 0; }
+.pf-velika { width: 88px; height: 88px; font-size: 28px; }
+.pf-pas { background-color: var(--dugme); color: var(--dugme-tekst); }
+.pf-slika-dugmad { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.pf-slika-dugmad .dugme { width: 100%; margin: 0; }
+.pf-sacuvaj { width: 100%; margin: 8px 0; }
+.pf-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.pf-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 12px 6px; border-radius: 14px; background: var(--povrsina); box-shadow: var(--sjena); min-height: 84px; }
+.pf-tile b { font-size: 24px; }
+.pf-tile span { font-size: 13px; color: var(--tekst-2); }
