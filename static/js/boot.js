@@ -36,6 +36,7 @@ import { initVelicina } from './prikaz.js';
 import { initTraka } from './traka.js';
 import { initDivljac } from './divljac-ui.js';
 import { initPregled } from './pregled-ui.js';
+import { initStatistika } from './statistika-ui.js';
 import { initPrijave } from './prijave-ui.js';
 import { initPing } from './ping-ui.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
@@ -110,6 +111,7 @@ function enter(screen) {
       ['traka', () => initTraka()],
       ['divljac', () => initDivljac()],
       ['pregled', () => initPregled()],
+      ['statistika', () => initStatistika()],
       ['prijave', () => initPrijave()],
       ['ping', () => initPing()],
       ['slike', () => initSlike(globalThis.L, map)],

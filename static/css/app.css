@@ -787,3 +787,19 @@ svg[hidden] { display: none; }
 .pr-mj b { font-size: 12px; min-height: 14px; }
 .pr-hero .sk-statovi > div { min-width: 0; }
 .tr-kartica.ev-kartica { display: flex; flex-direction: column; gap: 4px; }
+
+/* Statistika i rejting */
+.st-rejting { padding: 0; list-style: none; }
+.st-glava { display: flex; align-items: center; gap: 10px; }
+.st-glava b { flex: 1; min-width: 0; }
+.st-mjesto { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--dugme); color: var(--dugme-tekst); font-weight: 800; }
+.st-red[data-mjesto="1"] .st-mjesto { background: #b7791f; color: #ffffff; }
+.st-red[data-mjesto="2"] .st-mjesto { background: #64748b; color: #ffffff; }
+.st-red[data-mjesto="3"] .st-mjesto { background: #9a3412; color: #ffffff; }
+.st-ocjena { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.st-bar { display: block; height: 8px; border-radius: 4px; background: var(--dugme); overflow: hidden; }
+.st-bar i { display: block; height: 100%; background: var(--naglasak); }
+.st-red.moj { outline: 3px solid var(--naglasak); }
+.st-dijelovi { margin: 6px 0 0; padding: 0; list-style: none; }
+.st-dijelovi li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--dugme); }
+#st-kriteriji-forma input { margin-top: 4px; }

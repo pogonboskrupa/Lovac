@@ -1,0 +1,50 @@
+<section id="statistika" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="statistika-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="statistika-naslov">Statistika i rejting</h2>
+    <button id="btn-statistika-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <label>Opseg<select id="st-opseg" aria-label="Opseg statistike"></select></label>
+  <div id="st-godine" class="segment p-tabovi" role="group" aria-label="Godina"></div>
+  <div id="st-tabovi" class="segment p-tabovi" role="tablist" aria-label="Prikaz">
+    <button type="button" role="tab" data-tab="statistika" aria-pressed="true">Statistika</button>
+    <button type="button" role="tab" data-tab="rejting" aria-pressed="false">Rejting</button>
+  </div>
+  <p id="st-stanje" class="sitno" role="status"></p>
+  <p id="st-prazno" class="sitno" hidden>Nema opsega koji možeš gledati. Pridruži se sekciji u Meni → Sekcije i pristup.</p>
+
+  <div id="st-tab-statistika">
+    <div class="sk-hero pr-hero">
+      <div class="sk-statovi sk-statovi-hero">
+        <div data-stat="lovova"><b id="st-lovova">0</b><span>lovova</span></div>
+        <div data-stat="ucesca"><b id="st-ucesca">0</b><span>učešća</span></div>
+        <div data-stat="odaziv"><b id="st-odaziv">—</b><span>odaziv</span></div>
+      </div>
+      <div class="sk-statovi sk-statovi-hero">
+        <div data-stat="komada"><b id="st-komada">0</b><span>komada</span></div>
+        <div data-stat="kg"><b id="st-kg">0</b><span>kg</span></div>
+        <div data-stat="vrsta"><b id="st-vrsta">0</b><span>vrsta</span></div>
+      </div>
+    </div>
+    <section id="st-reviri-blok"><h3>Po revirima</h3><ul id="st-reviri" class="spisak"></ul></section>
+    <section id="st-sekcije-blok"><h3>Po sekcijama</h3><ul id="st-sekcije" class="spisak"></ul></section>
+    <h3>Po vrstama</h3>
+    <ul id="st-vrste" class="zbir"></ul>
+    <h3>Po mjesecima</h3>
+    <div id="st-mjeseci" class="pr-mjeseci" role="img" aria-label="Prijavljeni ulovi po mjesecima"></div>
+    <p class="sitno">Ulov se računa iz zvanično prijavljenih ulova, a prisustvo iz spiska učesnika lova. Odaziv je približan: učešća podijeljena sa brojem održanih lovova i članova.</p>
+  </div>
+
+  <div id="st-tab-rejting" hidden>
+    <p class="sitno" id="st-rejting-opis"></p>
+    <ol id="st-rejting" class="spisak st-rejting"></ol>
+    <h3>Kriteriji i težine</h3>
+    <ul id="st-kriteriji" class="spisak"></ul>
+    <p id="st-kriteriji-izvor" class="sitno"></p>
+    <section id="st-kriteriji-admin" hidden>
+      <h4>Podesi težine (administrator)</h4>
+      <form id="st-kriteriji-forma" novalidate></form>
+      <p id="st-kriteriji-status" class="status" role="status"></p>
+    </section>
+    <p class="sitno">Rejting je pomoć grupovođi i društvu, ne kazna: računa se samo iz podataka koji su prijavljeni na serveru. Broj komada ima gornju granicu da se ne nagrađuje pretjeran odstrel. Ne zamjenjuje procjenu grupovođe ni propise društva.</p>
+  </div>
+</section>
