@@ -230,3 +230,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Tab sekcije — dizajn (v0.3.6)**
 - Ekran je jedna kolona kartica: hero (uloga, brojevi članova/aktivnih/lovova), lijepljiva navigacija po dijelovima (Lov, Članovi, Poruke, Podaci — skroluje, ne mijenja panel, pa su svi elementi uvijek u DOM-u i vidljivi), kartica lova sa status značkom i brojevima, članovi sa avatarom (inicijali; obojen obrub = aktivnost) i dugmadima ispod teksta. Id-evi (`sk-lov`, `sk-clanovi`, `sk-poruke`…) se ne mijenjaju.
+
+**Veličina teksta i Moj pas (v0.3.7)**
+- Za starije lovce: Postavke → Veličina teksta (Normalno / Veliko / Najveće, `prikaz.js`, `data-velicina` na `<html>`). CSS `zoom` se primjenjuje na SADRŽAJ `.list-preko > *` i `.meni-grupe > *`, ne na okvir (inače `inset-bottom: var(--nav-h)` izlazi iz mjere i donja navigacija se pomjera); meni prelazi u jednu kolonu. Leaflet/mapa se ne zumira (pokvarilo bi koordinate dodira).
+- Moj pas (`pas.js`, `pas-ui.js`): aplikacija NE čita ogrlice ni AirTag/Xiaomi tagove (nema javnog API-ja; to su tuđe mreže/aplikacije). Lovac zalijepi poziciju koju ogrlica pošalje (koordinate, MGI Y/X, link karte, geo:, stepeni/minute) i dobije marker, trag (do 50 tačaka), udaljenost i smjer od sebe, "Vodi me". Radi bez interneta, sprema se lokalno (`lovac.pas`); pozicija starija od 10 min se označava kao stara. Kratki linkovi (goo.gl…) se ne mogu razriješiti offline.

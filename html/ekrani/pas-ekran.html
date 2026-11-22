@@ -1,0 +1,25 @@
+<section id="pas-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="pas-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="pas-naslov">Moj pas</h2>
+    <button id="btn-pas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div id="pas-stanje" class="pas-stanje" data-stanje="nema" role="status">Pozicija psa još nije unesena.</div>
+  <div id="pas-akcije" class="pas-akcije" hidden>
+    <button id="btn-pas-karta" class="dugme glavno" type="button">Pokaži psa na karti</button>
+    <button id="btn-pas-vodi" class="dugme" type="button">Vodi me do psa</button>
+  </div>
+  <div class="p-kartica">
+    <h3>Nova pozicija psa</h3>
+    <label>Ime psa<input id="pas-ime" maxlength="30" autocomplete="off" placeholder="npr. Rex"></label>
+    <label>Lokacija sa ogrlice<textarea id="pas-unos" rows="3" autocomplete="off" placeholder="Zalijepi SMS, link sa karte ili koordinate"></textarea></label>
+    <button id="btn-pas-zalijepi" class="dugme" type="button">Zalijepi iz međuspremnika</button>
+    <button id="btn-pas-prikazi" class="dugme glavno" type="button">Prikaži psa</button>
+    <p id="pas-greska" class="status" role="alert"></p>
+    <p class="sitno">Aplikacija sama ne čita ogrlice ni AirTag. Ogrlica ili njena aplikacija ti pošalje poziciju (SMS, link ili koordinate) — kopiraj je i zalijepi ovdje. Radi i bez interneta.</p>
+  </div>
+  <div class="p-kartica">
+    <h3>Zadnje pozicije</h3>
+    <ul id="pas-historija" class="spisak"></ul>
+    <button id="btn-pas-obrisi" class="dugme" type="button">Obriši praćenje psa</button>
+  </div>
+</section>

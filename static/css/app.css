@@ -515,3 +515,22 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .clan-akcije .dugme { flex: 1; margin-top: 0; }
 #btn-sk-novi { width: 100%; margin-top: 10px; }
 #sk-status:empty { display: none; }
+
+/* Veličina prikaza (stariji lovci): povećava SADRŽAJ ekrana i menija, ne okvir (da donja navigacija ostane na mjestu) */
+:root[data-velicina="veliko"] .list-preko > *, :root[data-velicina="veliko"] .meni-grupe > * { zoom: 1.2; }
+:root[data-velicina="najvece"] .list-preko > *, :root[data-velicina="najvece"] .meni-grupe > * { zoom: 1.4; }
+:root[data-velicina="veliko"] .m-red, :root[data-velicina="najvece"] .m-red { grid-template-columns: 1fr; }
+:root[data-velicina="veliko"] .tok-baner, :root[data-velicina="najvece"] .tok-baner { font-size: 20px; }
+#p-velicina button { min-height: 56px; }
+#p-velicina button[data-velicina="veliko"] { font-size: 19px; }
+#p-velicina button[data-velicina="najvece"] { font-size: 22px; }
+
+/* Moj pas */
+.pas-stanje { margin: 12px 0; padding: 16px; border-radius: 14px; background: var(--povrsina); font-size: 20px; font-weight: 700; border-left: 8px solid var(--tekst-2); }
+.pas-stanje[data-stanje="svjeze"] { border-left-color: var(--gps-dobro); }
+.pas-stanje[data-stanje="staro"] { border-left-color: var(--gps-srednje); }
+.pas-akcije { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.pas-akcije .dugme { width: 100%; }
+#pas-unos { width: 100%; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--linija, rgba(128,128,128,.5)); background: var(--povrsina); color: var(--tekst); box-sizing: border-box; }
+.pas-marker { background: #a16207; }
+:root[data-velicina="veliko"] .status-blok, :root[data-velicina="najvece"] .status-blok { grid-template-columns: 1fr; }

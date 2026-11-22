@@ -8,6 +8,7 @@ import { connectionQuality } from './net.js';
 import { checkForUpdate, installUpdate } from './update.js';
 import { refreshAdminVisibility } from './admin.js';
 import { cachedSekcije } from './sekcije-ui.js';
+import { setVelicina } from './prikaz.js';
 import { queueCount } from './sync.js';
 import { initialsOfProfile, profileRoles } from './profil.js';
 import { getShareSettings, setShareSettings } from './lokacija-ui.js';
@@ -62,6 +63,9 @@ function refreshStatic(appVer) {
   el('postavke-server').textContent = isServerConfigured()
     ? VEZA_TEKST[connectionQuality()] || VEZA_TEKST.nepoznato
     : 'Server nije podešen';
+  document.querySelectorAll('[data-velicina]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.velicina === document.documentElement.dataset.velicina));
+  });
   const tema = document.documentElement.dataset.tema;
   document.querySelectorAll('[data-tema-izbor]').forEach((b) => {
     b.setAttribute('aria-pressed', String(b.dataset.temaIzbor === tema));
@@ -202,6 +206,10 @@ export function initPostavke({ setBase, onLogout, appVer }) {
     btn.textContent = 'Odjava';
     closeSettings();
     await onLogout();
+  });
+  el('p-velicina').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-velicina]');
+    if (b) { setVelicina(b.dataset.velicina); refreshStatic(appVer); }
   });
   wireShare();
   wirePin();

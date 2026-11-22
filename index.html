@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.6';
+  const APP_VER = 'v0.3.7';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -47,6 +47,7 @@
   <symbol id="ic-pin" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></symbol>
   <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="6" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Zm6-2v14m6-12v14" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-paw" viewBox="0 0 24 24"><ellipse cx="6" cy="10" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="10.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="15.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="19.5" cy="10" rx="2" ry="2.8" fill="currentColor"/><path d="M12.5 11c-3 0-6 3.3-6 6 0 2.2 1.8 2.8 3.4 2.8 1.2 0 1.8-.5 2.6-.5s1.4.5 2.6.5c1.6 0 3.4-.6 3.4-2.8 0-2.7-3-6-6-6Z" fill="currentColor"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
@@ -102,6 +103,7 @@
       <button type="button" id="btn-lovovi" class="meni-plocica"><svg class="ic"><use href="#ic-hunt"/></svg><span class="m-tekst"><span class="m-naslov">Zajednički lov</span><span class="m-opis" id="btn-lovovi-opis">Raspored, stanovi, sektori</span></span></button>
       <button type="button" id="btn-sekcije" class="meni-plocica"><svg class="ic"><use href="#ic-group"/></svg><span class="m-tekst"><span class="m-naslov">Sekcije i pristup</span><span class="m-opis" id="btn-sekcije-opis">Članstvo i odobrenja</span></span></button>
       <button type="button" id="btn-danas" class="meni-plocica"><svg class="ic"><use href="#ic-sun"/></svg><span class="m-tekst"><span class="m-naslov">Danas</span><span class="m-opis" id="btn-danas-opis">Lovno vrijeme i lovostaj</span></span></button>
+      <button type="button" id="btn-pas" class="meni-plocica"><svg class="ic"><use href="#ic-paw"/></svg><span class="m-tekst"><span class="m-naslov">Moj pas</span><span class="m-opis" id="btn-pas-opis">Pozicija sa ogrlice</span></span></button>
     </div>
     <h3 class="m-grupa">Evidencija</h3>
     <div class="m-red">
@@ -335,6 +337,16 @@
       <b id="p-ime"></b>
       <div id="p-uloge" class="p-uloge"></div>
       <span id="p-stanje" class="sitno"></span>
+    </div>
+  </div>
+
+  <div class="p-kartica">
+    <h3>Veličina teksta</h3>
+    <p class="sitno">Veći tekst i veća dugmad u ekranima i meniju.</p>
+    <div id="p-velicina" class="segment" role="group" aria-label="Veličina teksta">
+      <button type="button" data-velicina="normalno" aria-pressed="true">Normalno</button>
+      <button type="button" data-velicina="veliko" aria-pressed="false">Veliko</button>
+      <button type="button" data-velicina="najvece" aria-pressed="false">Najveće</button>
     </div>
   </div>
 
@@ -896,6 +908,32 @@
       <h3>Podaci o sekciji i lovu</h3>
       <div id="sk-podaci"></div>
     </section>
+  </div>
+</section>
+
+<section id="pas-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="pas-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="pas-naslov">Moj pas</h2>
+    <button id="btn-pas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div id="pas-stanje" class="pas-stanje" data-stanje="nema" role="status">Pozicija psa još nije unesena.</div>
+  <div id="pas-akcije" class="pas-akcije" hidden>
+    <button id="btn-pas-karta" class="dugme glavno" type="button">Pokaži psa na karti</button>
+    <button id="btn-pas-vodi" class="dugme" type="button">Vodi me do psa</button>
+  </div>
+  <div class="p-kartica">
+    <h3>Nova pozicija psa</h3>
+    <label>Ime psa<input id="pas-ime" maxlength="30" autocomplete="off" placeholder="npr. Rex"></label>
+    <label>Lokacija sa ogrlice<textarea id="pas-unos" rows="3" autocomplete="off" placeholder="Zalijepi SMS, link sa karte ili koordinate"></textarea></label>
+    <button id="btn-pas-zalijepi" class="dugme" type="button">Zalijepi iz međuspremnika</button>
+    <button id="btn-pas-prikazi" class="dugme glavno" type="button">Prikaži psa</button>
+    <p id="pas-greska" class="status" role="alert"></p>
+    <p class="sitno">Aplikacija sama ne čita ogrlice ni AirTag. Ogrlica ili njena aplikacija ti pošalje poziciju (SMS, link ili koordinate) — kopiraj je i zalijepi ovdje. Radi i bez interneta.</p>
+  </div>
+  <div class="p-kartica">
+    <h3>Zadnje pozicije</h3>
+    <ul id="pas-historija" class="spisak"></ul>
+    <button id="btn-pas-obrisi" class="dugme" type="button">Obriši praćenje psa</button>
   </div>
 </section>
 

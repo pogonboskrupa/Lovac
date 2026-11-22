@@ -24,6 +24,8 @@ import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
 import { initSekcijaEkran } from './sekcija-ui.js';
+import { initPas } from './pas-ui.js';
+import { initVelicina } from './prikaz.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
 import { initMeni } from './meni-ui.js';
 import { initStan } from './stan-ui.js';
@@ -91,6 +93,7 @@ function enter(screen) {
       ['stan', () => initStan()],
       ['meni', () => initMeni()],
       ['novi-lovac', () => initNoviLovac()],
+      ['pas', () => initPas(globalThis.L, map)],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
       ['kontakt', () => initKontakt()],
@@ -219,6 +222,7 @@ onDomReady(() => {
   runSteps([
     ['verzija', () => { document.querySelectorAll('.app-ver').forEach((el) => { el.textContent = APP_VER; }); }],
     ['tema', initTheme],
+    ['velicina', initVelicina],
     ['pohrana', () => setStorageReporter(alarm)],
     ['nazad', () => { globalThis.__nazad = handleBack; }],
     ['veza', wireConnectionBadge],

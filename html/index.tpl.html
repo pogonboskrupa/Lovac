@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.6';
+  const APP_VER = 'v0.3.7';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -47,6 +47,7 @@
   <symbol id="ic-pin" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></symbol>
   <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="6" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Zm6-2v14m6-12v14" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-paw" viewBox="0 0 24 24"><ellipse cx="6" cy="10" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="10.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="15.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="19.5" cy="10" rx="2" ry="2.8" fill="currentColor"/><path d="M12.5 11c-3 0-6 3.3-6 6 0 2.2 1.8 2.8 3.4 2.8 1.2 0 1.8-.5 2.6-.5s1.4.5 2.6.5c1.6 0 3.4-.6 3.4-2.8 0-2.7-3-6-6-6Z" fill="currentColor"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
@@ -102,6 +103,7 @@
       <button type="button" id="btn-lovovi" class="meni-plocica"><svg class="ic"><use href="#ic-hunt"/></svg><span class="m-tekst"><span class="m-naslov">Zajednički lov</span><span class="m-opis" id="btn-lovovi-opis">Raspored, stanovi, sektori</span></span></button>
       <button type="button" id="btn-sekcije" class="meni-plocica"><svg class="ic"><use href="#ic-group"/></svg><span class="m-tekst"><span class="m-naslov">Sekcije i pristup</span><span class="m-opis" id="btn-sekcije-opis">Članstvo i odobrenja</span></span></button>
       <button type="button" id="btn-danas" class="meni-plocica"><svg class="ic"><use href="#ic-sun"/></svg><span class="m-tekst"><span class="m-naslov">Danas</span><span class="m-opis" id="btn-danas-opis">Lovno vrijeme i lovostaj</span></span></button>
+      <button type="button" id="btn-pas" class="meni-plocica"><svg class="ic"><use href="#ic-paw"/></svg><span class="m-tekst"><span class="m-naslov">Moj pas</span><span class="m-opis" id="btn-pas-opis">Pozicija sa ogrlice</span></span></button>
     </div>
     <h3 class="m-grupa">Evidencija</h3>
     <div class="m-red">
@@ -279,6 +281,8 @@
 <!--@ekran:sekcija-forma-->
 
 <!--@ekran:sekcija-ekran-->
+
+<!--@ekran:pas-ekran-->
 
 <!--@ekran:lovac-novi-->
 
