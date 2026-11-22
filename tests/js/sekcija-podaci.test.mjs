@@ -110,3 +110,31 @@ test('vrijeme poruke: danas samo sat, ranije datum i sat', () => {
   assert.equal(formatMessageTime(new Date(2026, 11, 5, 9, 5).toISOString(), now), '09:05');
   assert.equal(formatMessageTime(new Date(2026, 11, 4, 18, 30).toISOString(), now), '4.12. 18:30');
 });
+
+import { newTodayHunt, huntPresence, addableMembers } from '../../static/js/sekcija-podaci.js';
+
+test('lov za danas: naziv sa datumom, status planiran, revir sekcije', () => {
+  const h = newTodayHunt({ id: 'S1', revir_id: 'R1', naziv: 'Krupa 1' }, 'L1', new Date(2026, 10, 9, 8, 0));
+  assert.deepEqual(h, { id: 'L1', revir_id: 'R1', sekcija_id: 'S1', status: 'planiran', datum: '2026-11-09', naziv: 'Krupa 1 — 09.11.2026.' });
+});
+
+test('prisustvo: član se može prijaviti i odjaviti samo svoju samoprijavu; grupovođa i vanjski ne', () => {
+  const z = { lov: { status: 'planiran' }, ucesnici: [{ korisnik_id: 'gv', uloga: 'vodja', samoprijava: false }, { korisnik_id: 'a', uloga: 'strijelac', samoprijava: true }, { korisnik_id: 'b', uloga: 'strijelac', samoprijava: false }] };
+  assert.deepEqual(huntPresence(z, 'c', 'clan'), { mine: null, canJoin: true, canLeave: false });
+  assert.equal(huntPresence(z, 'a', 'clan').canLeave, true);
+  assert.equal(huntPresence(z, 'a', 'clan').canJoin, false);
+  assert.equal(huntPresence(z, 'b', 'clan').canLeave, false); // dodao ga je grupovođa
+  assert.equal(huntPresence(z, 'gv', 'grupovodja').canJoin, false);
+  assert.equal(huntPresence(z, 'x', 'ceka').canJoin, false);
+  assert.equal(huntPresence(z, 'x', 'lovocuvar').canJoin, false);
+  assert.equal(huntPresence({ ...z, lov: { status: 'zavrsen' } }, 'c', 'clan').canJoin, false);
+  assert.equal(huntPresence(null, 'c', 'clan').canJoin, false);
+});
+
+test('članovi koje grupovođa još može dodati u lov', () => {
+  const clanovi = [
+    { sekcija_id: 'S1', korisnik_id: 'a', status: 'odobren' }, { sekcija_id: 'S1', korisnik_id: 'b', status: 'odobren' },
+    { sekcija_id: 'S1', korisnik_id: 'c', status: 'ceka' }, { sekcija_id: 'S2', korisnik_id: 'd', status: 'odobren' },
+  ];
+  assert.deepEqual(addableMembers({ id: 'S1' }, clanovi, [{ korisnik_id: 'a' }]), ['b']);
+});

@@ -67,3 +67,30 @@ export function sectionMembers(sekcija, clanovi, lovocuvari, users) {
   for (const m of members) add(m.id, 'clan');
   return rows;
 }
+
+const p2 = (n) => String(n).padStart(2, '0');
+
+// Lov sekcije za danas: naziv nosi datum, da se lovovi iste sekcije razlikuju u spisku.
+export function newTodayHunt(sekcija, id, now = new Date()) {
+  return {
+    id, revir_id: sekcija.revir_id, sekcija_id: sekcija.id, status: 'planiran', datum: todayIso(now),
+    naziv: `${sekcija.naziv} — ${p2(now.getDate())}.${p2(now.getMonth() + 1)}.${now.getFullYear()}.`,
+  };
+}
+
+// Šta lovac smije u lovu sekcije: prijaviti se kao prisutan (samo odobreni član) ili odjaviti SVOJU samoprijavu.
+export function huntPresence(zapis, myId, myStatusInSection) {
+  const mine = zapis?.ucesnici?.find((u) => u.korisnik_id === myId) || null;
+  const open = zapis && ['planiran', 'u_toku'].includes(zapis.lov.status);
+  return {
+    mine,
+    canJoin: Boolean(open && !mine && myStatusInSection === 'clan'),
+    canLeave: Boolean(open && mine?.samoprijava),
+  };
+}
+
+// Odobreni članovi sekcije kojih još nema među učesnicima lova (grupovođa ih može dodati).
+export function addableMembers(sekcija, clanovi, ucesnici) {
+  const inHunt = new Set(ucesnici.map((u) => u.korisnik_id));
+  return clanovi.filter((c) => c.sekcija_id === sekcija.id && c.status === 'odobren' && !inHunt.has(c.korisnik_id)).map((c) => c.korisnik_id);
+}

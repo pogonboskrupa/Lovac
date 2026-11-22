@@ -10,7 +10,8 @@ import { isServerConfigured } from './config.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { mySections, currentHunt, memberActivity, activityText, sectionMembers } from './sekcija-podaci.js';
+import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers } from './sekcija-podaci.js';
+import { uuid } from './zapisi.js';
 import { myStatus, pendingRequests, pristupText, creationMode } from './sekcije.js';
 import {
   validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES,
@@ -170,8 +171,35 @@ export function initSekcijaEkran(L, map) {
   };
 
   // ---------- prikaz ----------
-  const huntCard = (s, cur, users) => {
-    if (!cur) return '<p>Nema lova u toku ni planiranog lova za ovu sekciju.</p>';
+  // Grupovođa/admin: pokreće i završava lov, dodaje i uklanja prisutne. Član: javlja da je prisutan.
+  const huntControls = (s, cur, st) => {
+    const manager = st === 'grupovodja' || st === 'admin';
+    if (!cur) {
+      return manager ? '<button type="button" class="dugme glavno" data-akcija="lov-novi">Novi lov za danas</button>'
+        : '<p class="sitno">Grupovođa još nije napravio lov. Kad ga napravi, ovdje javljaš da si prisutan.</p>';
+    }
+    const { lov, ucesnici } = cur.zapis;
+    const pres = huntPresence(cur.zapis, me()?.id, st);
+    let html = '';
+    if (pres.canJoin) html += '<button type="button" class="dugme glavno" data-akcija="lov-prijavi">Prisutan sam — pridruži se lovu</button>';
+    if (pres.canLeave) html += '<button type="button" class="dugme" data-akcija="lov-odjavi">Nisam prisutan</button>';
+    if (!manager) return html;
+    if (lov.status === 'planiran') html += `<button type="button" class="dugme glavno" data-akcija="lov-pokreni" data-lov="${escapeHtml(lov.id)}">Pokreni lov</button>`;
+    if (lov.status === 'u_toku') html += `<button type="button" class="dugme" data-akcija="lov-zavrsi" data-lov="${escapeHtml(lov.id)}">Završi lov</button>`;
+    const addable = addableMembers(s, ctx.clanovi, ucesnici);
+    html += `<h4>Prisutni (${ucesnici.length})</h4><ul class="spisak" data-prisutni>${ucesnici.map((u) => `<li class="clan-red" data-uid="${escapeHtml(u.korisnik_id)}">
+        <span><b>${escapeHtml(memberName(u.korisnik_id))}</b>${u.samoprijava ? ' <span class="sitno">· prijavio se sam</span>' : ''}</span>
+        ${u.korisnik_id === me()?.id ? '' : '<button type="button" class="dugme" data-akcija="lov-ukloni">Ukloni</button>'}</li>`).join('')
+      || '<li class="sitno">Još niko nije prisutan.</li>'}</ul>
+      <h4>Dodaj iz sekcije</h4>
+      <div class="clanovi" data-spisak>${addable.map((id) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(memberName(id))}</label>`).join('')
+    || '<p class="sitno">Svi članovi sekcije su već u lovu.</p>'}</div>
+      ${addable.length ? '<button type="button" class="dugme" data-akcija="lov-dodaj">Dodaj izabrane</button>' : ''}`;
+    return html;
+  };
+
+  const huntCard = (s, cur, users, st) => {
+    if (!cur) return `<p>Nema lova u toku ni planiranog lova za ovu sekciju.</p>${huntControls(s, cur, st)}`;
     const { lov, ucesnici, stanovi } = cur.zapis;
     const live = lov.status === 'u_toku';
     const acts = ucesnici.map((u) => memberActivity(u.korisnik_id, lov, ucesnici, extra.lovId === lov.id ? extra.pozicije : []));
@@ -183,7 +211,8 @@ export function initSekcijaEkran(L, map) {
       <p class="sitno">Učesnika: ${ucesnici.length}${live ? ` · aktivnih sada: ${aktivnih}` : ''} · stanova: ${stanovi.length}</p>
       ${mineAssign ? `<p>Moja uloga: ${escapeHtml(U_LOVU[mineAssign.uloga] || mineAssign.uloga)}${stan ? `, stan ${stan.broj}` : ''}</p>` : ''}
       ${live ? `<p class="sitno">Odstrel u lovu: ${odstrel.length ? odstrel.map((o) => `${escapeHtml(lookupNaziv(vrste, o.vrsta))}: ${o.komada} kom., ${escapeHtml(formatDecimalBs(Math.round(o.tezina * 10) / 10))} kg`).join('; ') : 'još nema'} · SOS poruka: ${extra.sos.length}</p>` : ''}
-      <button type="button" class="dugme glavno" data-akcija="raspored" data-lov="${escapeHtml(lov.id)}">Raspored na karti</button>`;
+      <button type="button" class="dugme glavno" data-akcija="raspored" data-lov="${escapeHtml(lov.id)}">Raspored na karti</button>
+      ${huntControls(s, cur, st)}`;
   };
 
   const render = () => {
@@ -205,7 +234,9 @@ export function initSekcijaEkran(L, map) {
     const mode = creationMode(st);
     $('btn-sk-novi').hidden = !mode;
     $('btn-sk-novi').textContent = mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava grupovođa)';
-    $('sk-lov').innerHTML = huntCard(s, cur, users);
+    const checked = new Set([...$('sk-lov').querySelectorAll('[data-spisak] input:checked')].map((i) => i.value));
+    $('sk-lov').innerHTML = huntCard(s, cur, users, st);
+    $('sk-lov').querySelectorAll('[data-spisak] input').forEach((i) => { i.checked = checked.has(i.value); });
 
     // članovi i aktivnost
     const rows = sectionMembers(s, ctx.clanovi, ctx.lovocuvari, users);
@@ -279,6 +310,71 @@ export function initSekcijaEkran(L, map) {
   $('btn-sk-novi').addEventListener('click', () => document.dispatchEvent(new CustomEvent('lovac:novi', { detail: { sekcijaId: selected()?.id } })));
   $('btn-sk-pristup').addEventListener('click', () => { close(); $('btn-sekcije').click(); });
 
+  // Radnje nad lovom traže internet; poslije svake se raspored ponovo preuzima da svi vide isto.
+  const runHunt = async (fn, ok) => {
+    if (!online()) { toast('Potreban je internet'); return; }
+    try {
+      await fn();
+      await downloadHunts();
+      lastHuntRefresh = Date.now();
+      await loadLocal();
+      render();
+      updateNav();
+      if (ok) toast(ok);
+    } catch (err) {
+      toast(/row-level security|permission/i.test(err.message) ? 'Server nije dozvolio (grupovođa te je uklonio iz lova ili lov nije otvoren)' : `Nije uspjelo: ${err.message}`);
+    }
+  };
+  let armedRemove = null;
+
+  const huntAction = async (b) => {
+    const s = selected();
+    const cur = s && currentHunt(lovovi, s.id);
+    const sb = getClient();
+    const lovId = cur?.zapis.lov.id;
+    const uid = b.closest('[data-uid]')?.dataset.uid;
+    switch (b.dataset.akcija) {
+      case 'lov-novi': {
+        const h = newTodayHunt(s, uuid());
+        await runHunt(async () => {
+          await qSk(sb.from('lovovi').insert(h));
+          await qSk(sb.from('lov_ucesnici').insert({ lov_id: h.id, korisnik_id: me().id, uloga: 'vodja' }));
+        }, 'Lov za danas je napravljen — članovi se mogu prijaviti');
+        break;
+      }
+      case 'lov-pokreni':
+      case 'lov-zavrsi':
+        await runHunt(() => qSk(sb.from('lovovi').update({ status: b.dataset.akcija === 'lov-pokreni' ? 'u_toku' : 'zavrsen' }).eq('id', lovId)),
+          b.dataset.akcija === 'lov-pokreni' ? 'Lov je počeo' : 'Lov je završen');
+        break;
+      case 'lov-prijavi':
+        await runHunt(() => qSk(sb.from('lov_ucesnici').insert({ lov_id: lovId, korisnik_id: me().id, uloga: 'strijelac', samoprijava: true })), 'Javljeno: prisutan si');
+        break;
+      case 'lov-odjavi':
+        await runHunt(() => qSk(sb.from('lov_ucesnici').delete().eq('lov_id', lovId).eq('korisnik_id', me().id)), 'Odjavljen si iz lova');
+        break;
+      case 'lov-ukloni': {
+        // Uklanjanje traži drugi dodir (WebView nema confirm()).
+        if (armedRemove !== uid) {
+          armedRemove = uid;
+          b.textContent = 'Dodirni ponovo';
+          setTimeout(() => { if (armedRemove === uid) { armedRemove = null; b.textContent = 'Ukloni'; } }, 4000);
+          break;
+        }
+        armedRemove = null;
+        await runHunt(() => qSk(sb.from('lov_ucesnici').delete().eq('lov_id', lovId).eq('korisnik_id', uid)), 'Uklonjen iz lova');
+        break;
+      }
+      case 'lov-dodaj': {
+        const ids = [...$('sk-lov').querySelectorAll('[data-spisak] input:checked')].map((i) => i.value);
+        if (!ids.length) { toast('Izaberi bar jednog lovca'); break; }
+        await runHunt(() => qSk(sb.from('lov_ucesnici').upsert(ids.map((id) => ({ lov_id: lovId, korisnik_id: id, uloga: 'strijelac' })), { onConflict: 'lov_id,korisnik_id' })), 'Lovci dodani u lov');
+        break;
+      }
+      default:
+    }
+  };
+
   screen.addEventListener('click', async (e) => {
     const brza = e.target.closest('[data-brza]');
     if (brza) {
@@ -289,6 +385,7 @@ export function initSekcijaEkran(L, map) {
     }
     const b = e.target.closest('button[data-akcija]');
     if (!b) return;
+    if (b.dataset.akcija.startsWith('lov-')) { await huntAction(b); return; }
     if (b.dataset.akcija === 'raspored') {
       close();
       document.dispatchEvent(new CustomEvent('lov:otvori', { detail: { id: b.dataset.lov } }));

@@ -222,3 +222,8 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Admin, lovočuvar revira sekcije i grupovođa sekcije prave odobren nalog i odmah ga dodaju u sekciju; običan odobreni član samo PREDLAŽE (nalog neodobren, zahtjev `ceka` sa `pozvao_id`, max 5 odjednom) dok grupovođa/admin ne pozove `odobri_pozvanog` (nalog + članstvo) ili `odbij_pozvanog` (briše nikad odobren nalog). Klijent za zahtjeve sa `pozvao_id` koristi te funkcije, ne tabelu.
 - SQL stub `auth.users` ima dodatne kolone i `auth.identities`. PIN koji pravljač zna se mijenja u Postavke → Nalog (`changePin`).
 - Lovac ne može sam sebi napraviti nalog u tuđoj sekciji ni odobriti predlog.
+
+**Lov za danas i prisustvo (migracija 013, v0.3.5)**
+- Grupovođa (ili admin) u tabu sekcije pravi lov jednim dodirom ("Novi lov za danas": naziv sa datumom, status `planiran`, sebe upisuje kao `vodja`), pokreće i završava ga, dodaje članove sa spiska i uklanja neprisutne (drugi dodir).
+- Odobreni član sekcije sam javlja prisustvo ("Prisutan sam"): `lov_ucesnici.samoprijava = true`, uloga uvijek `strijelac`, samo dok je lov `planiran`/`u_toku` i samo u lovu SVOJE sekcije (`moze_prijaviti_prisustvo`). Odjaviti se može samo svoju samoprijavu; one koje je dodao grupovođa ne može. Lovočuvar prati, ne prijavljuje se.
+- Kad grupovođa ukloni nekoga, `lov_uklonjeni` pamti da se ne može ponovo sam prijaviti dok ga grupovođa ponovo ne doda (trigger čisti zabranu). Radnje nad lovom traže internet; poslije svake se raspored ponovo preuzima.
