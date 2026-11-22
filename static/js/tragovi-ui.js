@@ -1,6 +1,6 @@
 // UI snimanja: panel na karti, živa linija, spisak tragova, oporavak nakon pada i izvoz.
 
-import {
+import { addWaypoint,
   startRecording, pauseRecording, resumeRecording, stopRecording, onRecordingChange, activeRecordings,
   allTracks, unfinishedTracks, continueRecovered, finishRecovered, deleteTrack, setSmoothed,
 } from './snimanje.js';
@@ -55,14 +55,17 @@ export function initTragovi(L, map) {
     const icon = (cls, title) => L.divIcon({ className: `oznaka ${cls}`, html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
     if (tr?.nastrijel) L.marker([tr.nastrijel.lat, tr.nastrijel.lon], { icon: icon('oznaka-nastrijel'), interactive: false }).addTo(group);
     for (const k of tr?.krv || []) L.marker([k.lat, k.lon], { icon: icon('oznaka-krv'), interactive: false }).addTo(group);
+    for (const w of tr?.tackeInteresa || []) {
+      L.marker([w.lat, w.lon], { icon: icon('oznaka-tacka'), keyboard: false }).bindTooltip(w.naziv, { permanent: false }).addTo(group);
+    }
   };
 
   const renderPanel = (recs) => {
     const tr = current();
     $('potraga-dugmad').hidden = tr?.vrsta !== 'potraga';
     $('snim-vrsta').textContent = tr?.vrsta === 'potraga' ? 'Potraga · ' : '';
-    $('snim-krv').textContent = tr?.vrsta === 'potraga' ? ` · krv: ${(tr.krv || []).length}` : '';
-    drawMarks(tr?.vrsta === 'potraga' ? tr : null);
+    $('snim-krv').textContent = `${tr?.vrsta === 'potraga' ? ` · krv: ${(tr.krv || []).length}` : ''}${(tr?.tackeInteresa || []).length ? ` · tačke: ${tr.tackeInteresa.length}` : ''}`;
+    drawMarks(tr);
     btnRec.setAttribute('aria-pressed', String(Boolean(tr)));
     panel.hidden = !tr;
     for (const [id, line] of live) {
@@ -107,6 +110,29 @@ export function initTragovi(L, map) {
     if (!tr) return;
     const done = await stopRecording(tr.id);
     toast(`Trag sačuvan: ${formatDistance(trackDistance(done.tacke))}`);
+  });
+
+  // ---- tačke i slike tokom snimanja ----
+  const waypointDialog = $('tacka-dijalog');
+  $('btn-snim-tacka').addEventListener('click', () => {
+    if (!current()) return;
+    if (!currentFix()) { toast('Čekam GPS…'); return; }
+    $('tacka-naziv').value = '';
+    waypointDialog.hidden = false;
+    $('tacka-naziv').focus();
+  });
+  $('btn-tacka-odustani').addEventListener('click', () => { waypointDialog.hidden = true; });
+  $('btn-tacka-sacuvaj').addEventListener('click', async () => {
+    const tr = current();
+    const f = currentFix();
+    waypointDialog.hidden = true;
+    if (!tr || !f) return;
+    await addWaypoint(tr.id, { lat: f.lat, lon: f.lon, acc: f.acc, naziv: $('tacka-naziv').value });
+    toast('Tačka je dodana na trag');
+  });
+  $('btn-snim-slika').addEventListener('click', () => {
+    const tr = current();
+    if (tr) document.dispatchEvent(new CustomEvent('slika:nova', { detail: { tragId: tr.id } }));
   });
 
   // ---- potraga za ranjenom divljači ----

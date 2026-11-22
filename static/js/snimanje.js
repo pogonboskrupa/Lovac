@@ -168,6 +168,12 @@ async function updateActive(id, fn) {
 // Trag krvi dodirom na trenutnoj poziciji (potraga za ranjenom divljači).
 export const addBloodMark = (id, mark) => updateActive(id, (t, now) => ({ ...t, krv: [...(t.krv || []), { ...mark, t: mark.t ?? now }] }));
 
+// Tačka usput (npr. "stan", "trag divljači", "prelaz"): ostaje u zapisu traga i crta se na karti.
+export const addWaypoint = (id, wp) => updateActive(id, (t, now) => {
+  const list = t.tackeInteresa || [];
+  return { ...t, tackeInteresa: [...list, { id: uuid(), naziv: String(wp.naziv || '').trim().slice(0, 60) || `Tačka ${list.length + 1}`, lat: wp.lat, lon: wp.lon, acc: wp.acc ?? null, t: wp.t ?? now }] };
+});
+
 export const pauseRecording = (id) => updateActive(id, (t, now) => pauseTrack(t, now, false));
 export const resumeRecording = (id) => updateActive(id, (t, now) => resumeTrack(t, now));
 

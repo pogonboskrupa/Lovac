@@ -19,8 +19,9 @@ export function validateSlika({ kategorija, foto, lat, lon, opis }) {
   return null;
 }
 
-export function newSlika({ id, kategorija, foto, mala, lat, lon, opis = '' }, now = Date.now()) {
-  return { id, kategorija, foto, mala, lat, lon, opis: String(opis).trim(), vrijeme: now };
+// tragId: slika snimljena tokom snimanja traga (vezana za taj trag).
+export function newSlika({ id, kategorija, foto, mala, lat, lon, opis = '', tragId = null }, now = Date.now()) {
+  return { id, kategorija, foto, mala, lat, lon, opis: String(opis).trim(), vrijeme: now, ...(tragId ? { trag_id: tragId } : {}) };
 }
 
 // Najnovije prve; za spisak i za redoslijed crtanja (novije iznad starijih).

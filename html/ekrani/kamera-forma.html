@@ -1,0 +1,15 @@
+<section id="kamera-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="kamera-naslov" hidden>
+  <form id="forma-kamera" novalidate>
+    <header class="postavke-glava"><h2 id="kamera-naslov">Kamera</h2></header>
+    <p class="sitno">Lokaciju kamere vide samo lovočuvari revira.</p>
+    <p id="kamera-pozicija" class="sitno"></p>
+    <label>Revir<select id="kamera-revir" name="revir"></select></label>
+    <label>Naziv<input name="naziv" maxlength="80" autocomplete="off" placeholder="npr. Kamera Vrh"></label>
+    <label>Napomena<textarea name="napomena" rows="2" maxlength="500" placeholder="npr. prema hranilištu, baterija mijenjana 10.11."></textarea></label>
+    <p id="kamera-status" class="status" role="status"></p>
+    <div class="red-dugmadi">
+      <button id="btn-kamera-sacuvaj" type="submit" class="dugme glavno">Sačuvaj kameru</button>
+      <button id="btn-kamera-odustani" type="button" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>

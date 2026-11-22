@@ -82,12 +82,13 @@ export function initSlike(L, map) {
     box.innerHTML = draft.mala ? `<figure class="foto"><img src="${draft.mala}" alt="Pregled"></figure>` : '';
   };
 
-  const open = () => {
+  const open = (tragId = null) => {
     const fix = currentFix();
     const c = map.getCenter();
-    draft = { kategorija: 'cekalo', foto: null, mala: null, ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc ?? 0)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — pozicija je nišan na sredini karte' }) };
+    draft = { tragId, kategorija: tragId ? 'ostalo' : 'cekalo', foto: null, mala: null, ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc ?? 0)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — pozicija je nišan na sredini karte' }) };
     $('slika-kategorija').innerHTML = Object.entries(SLIKA_KATEGORIJE).map(([k, v]) => `<button type="button" data-kat="${k}">${v.naziv}</button>`).join('');
     setPressed();
+    $('slika-naslov').textContent = tragId ? 'Slika na tragu' : 'Slika na poziciji';
     const f = formatCoordMode(getCoordMode(), draft.lat, draft.lon);
     $('slika-pozicija').textContent = `Pozicija: ${f.oznaka} ${f.tekst} (${draft.izvor})`;
     form.reset();
@@ -103,7 +104,9 @@ export function initSlike(L, map) {
     sheet.hidden = true;
   };
 
-  $('btn-dodaj-sliku').addEventListener('click', open);
+  $('btn-dodaj-sliku').addEventListener('click', () => open(null));
+  // Tokom snimanja traga (dugme "Dodaj sliku" u panelu snimanja).
+  document.addEventListener('slika:nova', (e) => open(e.detail?.tragId || null));
   $('btn-slika-odustani').addEventListener('click', () => close(false));
   $('slika-kategorija').addEventListener('click', (e) => {
     const b = e.target.closest('[data-kat]');
@@ -128,7 +131,7 @@ export function initSlike(L, map) {
     const err = validateSlika({ ...draft, opis });
     if (err) { $('slika-status').textContent = err; return; }
     try {
-      await idbPut(STORE, newSlika({ id: uuid(), kategorija: draft.kategorija, foto: draft.foto, mala: draft.mala, lat: draft.lat, lon: draft.lon, opis }));
+      await idbPut(STORE, newSlika({ id: uuid(), kategorija: draft.kategorija, foto: draft.foto, mala: draft.mala, lat: draft.lat, lon: draft.lon, opis, tragId: draft.tragId }));
     } catch (er) {
       $('slika-status').textContent = `Slika nije sačuvana: ${er.message}`;
       return;

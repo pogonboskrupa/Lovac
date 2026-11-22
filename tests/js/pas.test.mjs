@@ -71,3 +71,22 @@ test('slika na poziciji: provjera, zapis i redoslijed', () => {
   assert.deepEqual(s, { id: 'i', kategorija: 'ulov', foto: 'f', mala: 'data:', lat: 1, lon: 2, opis: 'Divlja svinja', vrijeme: 5000 });
   assert.deepEqual(sortSlike([{ vrijeme: 1 }, { vrijeme: 3 }, { vrijeme: 2 }]).map((x) => x.vrijeme), [3, 2, 1]);
 });
+
+import { lovocuvarRevirIds, validateKamera, newKamera, mergeKamere, visibleKamere } from '../../static/js/kamere.js';
+test('kamere: ko je lovočuvar, provjera unosa, spajanje lokalnog i servera', () => {
+  const ctx = { lovocuvari: [{ korisnik_id: 'l1', revir_id: 'R1' }, { korisnik_id: 'l2', revir_id: 'R2' }], sekcije: [{ revir_id: 'R3', lovocuvar_id: 'l1' }] };
+  assert.deepEqual(lovocuvarRevirIds('l1', ctx).sort(), ['R1', 'R3']);
+  assert.deepEqual(lovocuvarRevirIds('g', ctx), []);
+  assert.deepEqual(lovocuvarRevirIds(null, ctx), []);
+  const ok = { revir_id: 'R1', naziv: 'Kamera Vrh', lat: 44.88, lon: 16.15 };
+  assert.equal(validateKamera(ok), null);
+  assert.match(validateKamera({ ...ok, revir_id: '' }), /revir/);
+  assert.match(validateKamera({ ...ok, naziv: '  ' }), /naziv/);
+  assert.match(validateKamera({ ...ok, lat: NaN }), /pozicije/);
+  const k = newKamera({ id: 'k1', ...ok, napomena: '  ', autorId: 'l1' }, 1000);
+  assert.deepEqual([k.sinhronizovano, k.aktivno, k.napomena], [false, true, null]);
+  const merged = mergeKamere([{ ...k, naziv: 'lokalna' }, { id: 'k2', sinhronizovano: true, naziv: 'stara' }], [{ id: 'k1', naziv: 'server' }, { id: 'k2', naziv: 'server2' }]);
+  assert.equal(merged.find((x) => x.id === 'k1').naziv, 'lokalna');
+  assert.equal(merged.find((x) => x.id === 'k2').naziv, 'server2');
+  assert.deepEqual(visibleKamere([{ id: 1 }, { id: 2, aktivno: false }]).map((x) => x.id), [1]);
+});

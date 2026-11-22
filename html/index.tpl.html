@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.9';
+  const APP_VER = 'v0.4.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -48,6 +48,7 @@
   <symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="6" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Zm6-2v14m6-12v14" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
   <symbol id="ic-paw" viewBox="0 0 24 24"><ellipse cx="6" cy="10" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="10.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="15.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="19.5" cy="10" rx="2" ry="2.8" fill="currentColor"/><path d="M12.5 11c-3 0-6 3.3-6 6 0 2.2 1.8 2.8 3.4 2.8 1.2 0 1.8-.5 2.6-.5s1.4.5 2.6.5c1.6 0 3.4-.6 3.4-2.8 0-2.7-3-6-6-6Z" fill="currentColor"/></symbol>
+  <symbol id="ic-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
@@ -153,6 +154,7 @@
     <button type="button" id="btn-dodaj-objekat">Lovački objekat</button>
     <button type="button" id="btn-dodaj-opazanje">Opažanje divljači</button>
     <button type="button" id="btn-dodaj-odstrel">Odstrel</button>
+    <button type="button" id="btn-dodaj-kameru" hidden>Kamera (samo lovočuvari)</button>
     <button type="button" id="btn-dodaj-sliku">Slika na poziciji (čeka, objekat, ulov)</button>
     <button type="button" id="btn-dodaj-potragu">Potraga (ranjena divljač)</button>
     <button type="button" id="btn-mjerenje">Mjerenje (udaljenost, površina, nagib)</button>
@@ -230,6 +232,10 @@
           <button id="btn-potraga-dijeli" class="dugme" type="button">Dijeli</button>
         </div>
         <div class="red-dugmadi">
+          <button id="btn-snim-tacka" class="dugme" type="button">Dodaj tačku</button>
+          <button id="btn-snim-slika" class="dugme" type="button">Dodaj sliku</button>
+        </div>
+        <div class="red-dugmadi">
           <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
           <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
         </div>
@@ -288,6 +294,8 @@
 
 <!--@ekran:potraga-start-->
 
+<!--@ekran:tacka-dijalog-->
+
 <!--@ekran:meni-nazad-->
 
 <!--@ekran:slojevi-->
@@ -313,6 +321,8 @@
 <!--@ekran:pas-ekran-->
 
 <!--@ekran:slika-forma-->
+
+<!--@ekran:kamera-forma-->
 
 <!--@ekran:lovac-novi-->
 
