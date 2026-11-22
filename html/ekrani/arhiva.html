@@ -1,0 +1,45 @@
+<section id="arhiva" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="arhiva-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="arhiva-naslov">Arhiva lova</h2>
+    <button id="btn-arhiva-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <p id="arhiva-status" class="status" role="status"></p>
+  <input id="arhiva-trazi" type="search" placeholder="Traži (datum, naziv, sekcija…)" aria-label="Traži u arhivi" autocomplete="off">
+  <ul id="arhiva-spisak" class="spisak"></ul>
+</section>
+
+<section id="arhiva-detalj" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="ad-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="ad-naslov">Lov</h2>
+    <button id="btn-ad-zatvori" class="ikona-dugme" type="button" aria-label="Nazad na arhivu"><svg class="ic"><use href="#ic-close"/></svg></button>
+  </header>
+  <div class="sk-hero">
+    <p id="ad-podnaslov" class="sk-podnaslov"></p>
+    <div class="sk-statovi sk-statovi-hero">
+      <div data-stat="ucesnika"><b id="ad-stat-ucesnika">0</b><span>učesnika</span></div>
+      <div data-stat="ulov"><b id="ad-stat-ulov">0</b><span>ulova</span></div>
+      <div data-stat="slika"><b id="ad-stat-slika">0</b><span>slika</span></div>
+    </div>
+  </div>
+  <button id="btn-ad-trag" class="dugme glavno" type="button">Prikaži trag kretanja lovaca na karti</button>
+  <p id="ad-status" class="status" role="status"></p>
+  <section class="sk-kartica"><h3>Šta se lovilo</h3><ul id="ad-ulov" class="spisak"></ul></section>
+  <section class="sk-kartica">
+    <h3>Rezultat lova</h3>
+    <p id="ad-rezultat-tekst"></p>
+    <div id="ad-rezultat-forma" hidden>
+      <label>Rezultat (unosi grupovođa)<textarea id="ad-rezultat" rows="3" maxlength="2000" placeholder="npr. 2 divlje svinje, 1 lisica; pogon prošao bez problema"></textarea></label>
+      <button id="btn-ad-rezultat" class="dugme" type="button">Sačuvaj rezultat</button>
+    </div>
+  </section>
+  <section class="sk-kartica"><h3>Učesnici</h3><ul id="ad-ucesnici" class="spisak"></ul></section>
+  <section class="sk-kartica">
+    <h3>Slike</h3>
+    <div id="ad-slike" class="ad-slike"></div>
+    <div id="ad-slika-dodaj" hidden>
+      <label>Opis slike (neobavezno)<input id="ad-slika-opis" maxlength="300" autocomplete="off"></label>
+      <label class="dugme dugme-fajl">Dodaj sliku lova<input id="ad-slika-ulaz" type="file" accept="image/*" hidden></label>
+    </div>
+    <p class="sitno">Slike lova vide učesnici, članovi sekcije i grupovođa. Šalju se na server (smanjene), pa se vide i drugima.</p>
+  </section>
+</section>

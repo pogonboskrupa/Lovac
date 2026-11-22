@@ -9,6 +9,7 @@ import { idbAll } from './db.js';
 import { pickActiveHunt, shareIntervalMs, sharingState, initialsOf } from './lokacija.js';
 import { getShareSettings, initLokacijaEkran } from './lokacija-ui.js';
 import { rangeLabel } from './istrazivac.js';
+import { shouldRecordPoint, pushPoint } from './lovtrag.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
 import { memberName } from './dijeljenje-ui.js';
@@ -87,7 +88,30 @@ export function initUzivo(L, map) {
   const iAmParticipant = () => Boolean(lov?.ucesnici?.some((u) => u.korisnik_id === me()?.id));
   const REMOVE_KEY = 'lovac.lokacija.uklanjanje';
 
+  // Trag kretanja tokom lova: tačke se čuvaju lokalno (i bez veze) i šalju u paketima; ostaju u arhivi lova.
+  const trailKey = () => `lovac.lovtrag.bafer.${lov.id}`;
+  const recordTrail = () => {
+    const fix = currentFix();
+    if (!lov || lov.lov.status !== 'u_toku' || !getShareSettings().on || !fix || !iAmParticipant()) return;
+    const buf = loadJSON(trailKey(), []);
+    const point = { lat: fix.lat, lon: fix.lon, t: Date.now() };
+    if (shouldRecordPoint(buf[buf.length - 1], point, point.t)) saveSoft(trailKey(), pushPoint(buf, point));
+  };
+  const flushTrail = async () => {
+    const buf = loadJSON(trailKey(), []);
+    if (!buf.length || !online()) return;
+    for (let i = 0; i < buf.length; i += 200) {
+      const chunk = buf.slice(i, i + 200);
+      await qUzivo(getClient().from('lov_tragovi').upsert(
+        chunk.map((p) => ({ lov_id: lov.id, korisnik_id: me().id, t: new Date(p.t).toISOString(), lat: p.lat, lon: p.lon })),
+        { onConflict: 'lov_id,korisnik_id,t', ignoreDuplicates: true }));
+      saveSoft(trailKey(), buf.slice(i + chunk.length));
+    }
+    document.dispatchEvent(new CustomEvent('lovtrag:poslano', { detail: { lovId: lov.id } }));
+  };
+
   const tick = async () => {
+    recordTrail();
     if (!lov || lov.lov.status !== 'u_toku' || !online()) return;
     const sb = getClient();
     const fix = currentFix();
@@ -102,6 +126,7 @@ export function initUzivo(L, map) {
       } else if (!share.on) {
         await removeMyPosition(lov.id);
       }
+      await flushTrail().catch((err) => console.warn('trag lova', err.message));
       drawOthers(await qUzivo(sb.from('lov_pozicije').select('*').eq('lov_id', lov.id)));
       for (const s of newSosSince(await qUzivo(sb.from('sos').select('*').eq('lov_id', lov.id)), me()?.id, seenSos)) showSos(s);
       $('uzivo-stanje').textContent = share.on ? `Uživo: osvježeno ${new Date().toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })}`

@@ -34,7 +34,7 @@ test('meni: grupe, pločice sa kratkom informacijom, dovoljno velike mete, bez v
   await expect(page.locator('#btn-danas-opis')).toContainText(/^Svjetlo do \d\d:\d\d/);
   await expect(page.locator('#btn-lovovi-opis')).toHaveText('Raspored, stanovi, sektori');
   const tiles = menu.locator('.meni-plocica');
-  await expect(tiles).toHaveCount(10);
+  await expect(tiles).toHaveCount(11);
   for (const box of await tiles.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height, right: r.right, left: r.left }; }))) {
     expect(box.h).toBeGreaterThanOrEqual(44);
     expect(box.left).toBeGreaterThanOrEqual(0);

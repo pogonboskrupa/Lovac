@@ -45,6 +45,17 @@ export async function makeThumbnail(file, size = THUMB_SIDE) {
   return canvas.toDataURL('image/jpeg', 0.6);
 }
 
+// Smanjena slika kao dataURL za slanje na server (slike lova): manja i lošija od lokalne, da paket ostane malen.
+export async function resizeToDataUrl(file, maxSide = 900, quality = 0.7) {
+  const img = await loadImage(file);
+  const { w, h } = fitSize(img.naturalWidth, img.naturalHeight, maxSide);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
 export async function savePhoto(file) {
   const blob = await resizeImage(file);
   const id = uuid();

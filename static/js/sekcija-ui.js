@@ -12,6 +12,7 @@ import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers } from './sekcija-podaci.js';
 import { uuid } from './zapisi.js';
+import { trailEnabled } from './lov-tragovi-ui.js';
 import { initialsOf } from './lokacija.js';
 import { myStatus, pendingRequests, pristupText, creationMode, isLeadership } from './sekcije.js';
 import {
@@ -224,6 +225,7 @@ export function initSekcijaEkran(L, map) {
     const mineAssign = ucesnici.find((u) => u.korisnik_id === me()?.id);
     const stan = stanovi.find((x) => x.korisnik_id === me()?.id);
     const odstrel = live && extra.lovId === lov.id ? summarizeHarvest(extra.odstrel.map((o) => ({ vrsta: o.vrsta, tezina: o.tezina }))) : [];
+    const traceOn = trailEnabled(lov.id);
     return `<div class="sk-lov-glava"><b>${escapeHtml(lov.naziv)}</b><span class="lov-status" data-status="${lov.status}">${live ? 'U TOKU' : lov.status === 'zavrsen' ? 'Završen' : 'Planiran'}</span></div>
       <p class="sitno">${escapeHtml(String(lov.datum))}</p>
       <div class="sk-statovi">
@@ -233,6 +235,7 @@ export function initSekcijaEkran(L, map) {
       </div>
       ${mineAssign ? `<p>Moja uloga: ${escapeHtml(U_LOVU[mineAssign.uloga] || mineAssign.uloga)}${stan ? `, stan ${stan.broj}` : ''}</p>` : ''}
       ${live ? `<p class="sitno">Odstrel u lovu: ${odstrel.length ? odstrel.map((o) => `${escapeHtml(lookupNaziv(vrste, o.vrsta))}: ${o.komada} kom., ${escapeHtml(formatDecimalBs(Math.round(o.tezina * 10) / 10))} kg`).join('; ') : 'još nema'} · SOS poruka: ${extra.sos.length}</p>` : ''}
+      <label class="red-check"><input type="checkbox" data-trag="${escapeHtml(lov.id)}" data-live="${live}"${traceOn ? ' checked' : ''}> Prikaži trag kretanja lovaca sekcije</label>
       <button type="button" class="dugme glavno" data-akcija="raspored" data-lov="${escapeHtml(lov.id)}">Raspored na karti</button>
       ${huntControls(s, cur, st)}`;
   };
@@ -419,6 +422,11 @@ export function initSekcijaEkran(L, map) {
       default:
     }
   };
+
+  screen.addEventListener('change', (e) => {
+    const c = e.target.closest('input[data-trag]');
+    if (c) document.dispatchEvent(new CustomEvent('lovtrag:trazi', { detail: { lovId: c.dataset.trag, on: c.checked, live: c.dataset.live === 'true' } }));
+  });
 
   screen.addEventListener('click', async (e) => {
     const brza = e.target.closest('[data-brza]');

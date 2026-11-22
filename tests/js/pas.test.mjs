@@ -90,3 +90,52 @@ test('kamere: ko je lovočuvar, provjera unosa, spajanje lokalnog i servera', ()
   assert.equal(merged.find((x) => x.id === 'k2').naziv, 'server2');
   assert.deepEqual(visibleKamere([{ id: 1 }, { id: 2, aktivno: false }]).map((x) => x.id), [1]);
 });
+
+import { shouldRecordPoint, pushPoint, groupTrails, trailColor, withLocalPoints } from '../../static/js/lovtrag.js';
+test('trag lovaca: kad snimiti tačku, grupisanje po lovcu, boje, lokalne tačke', () => {
+  const a = { lat: 44.88, lon: 16.15, t: 0 };
+  assert.equal(shouldRecordPoint(null, { lat: 44.88, lon: 16.15 }, 0), true);
+  assert.equal(shouldRecordPoint(a, { lat: 44.88001, lon: 16.15 }, 10000), false); // ~1 m i tek 10 s
+  assert.equal(shouldRecordPoint(a, { lat: 44.8805, lon: 16.15 }, 10000), true); // ~55 m
+  assert.equal(shouldRecordPoint(a, { lat: 44.88, lon: 16.15 }, 100000), true); // stoji, ali je prošlo 90 s
+  assert.equal(shouldRecordPoint(a, null, 0), false);
+  assert.equal(pushPoint([1, 2, 3], 4, 3).length, 3);
+  const rows = [
+    { korisnik_id: 'b', lat: 44.89, lon: 16.15, t: '2026-11-22T09:02:00Z' },
+    { korisnik_id: 'a', lat: 44.88, lon: 16.15, t: '2026-11-22T09:01:00Z' },
+    { korisnik_id: 'a', lat: 44.881, lon: 16.15, t: '2026-11-22T09:03:00Z' },
+    { korisnik_id: 'a', lat: 44.8805, lon: 16.15, t: '2026-11-22T09:02:00Z' },
+  ];
+  const g = groupTrails(rows);
+  assert.deepEqual(g.map((x) => x.id), ['a', 'b']);
+  assert.equal(g[0].tacke.length, 3);
+  assert.ok(g[0].tacke[0].t < g[0].tacke[2].t);
+  assert.ok(g[0].duzina > 100 && g[0].duzina < 130);
+  assert.notEqual(g[0].boja, g[1].boja);
+  assert.equal(trailColor(10), trailColor(0));
+  const merged = withLocalPoints([{ korisnik_id: 'a', lat: 1, lon: 1, t: '2026-11-22T09:01:00Z' }], [{ lat: 1, lon: 1, t: Date.parse('2026-11-22T09:01:00Z') }, { lat: 2, lon: 2, t: Date.parse('2026-11-22T09:05:00Z') }], 'a');
+  assert.equal(merged.length, 2);
+});
+
+import { archiveHunts, huntDate, huntTimeRange, huntedText, canAddMedia, matchesArchive, MAX_PHOTOS_PER_HUNT } from '../../static/js/arhiva.js';
+test('arhiva lova: spisak, vrijeme, šta se lovilo, ko dodaje slike, pretraga', () => {
+  const z = (id, status, datum, extra = {}) => ({ id, lov: { naziv: `Lov ${id}`, status, datum, ...extra }, ucesnici: [{ korisnik_id: 'u1' }], sekcija: { naziv: 'Krupa 1' } });
+  const list = archiveHunts([z('a', 'planiran', '2026-11-25'), z('b', 'zavrsen', '2026-11-10'), z('c', 'u_toku', '2026-11-22'), z('d', 'zavrsen', '2026-11-22', { pocetak: '2026-11-22T09:00:00Z' })]);
+  assert.deepEqual(list.map((x) => x.id), ['d', 'c', 'b']);
+  assert.equal(huntDate('2026-11-09'), '09.11.2026.');
+  const pocetak = new Date(2026, 10, 22, 8, 15).toISOString();
+  const kraj = new Date(2026, 10, 22, 12, 40).toISOString();
+  assert.equal(huntTimeRange({ pocetak, kraj, status: 'zavrsen' }), '08:15 – 12:40 (4 h 25 min)');
+  assert.equal(huntTimeRange({ pocetak, status: 'u_toku' }), 'od 08:15 · u toku');
+  assert.equal(huntTimeRange({ status: 'zavrsen' }), 'Vrijeme nije zabilježeno');
+  assert.equal(huntedText([{ vrsta: 'svinja', tezina: 80 }, { vrsta: 'svinja', tezina: 70 }, { vrsta: 'lisica' }], (k) => k.toUpperCase()), 'SVINJA 2, LISICA 1');
+  assert.equal(huntedText([], (k) => k), '');
+  const zap = z('x', 'zavrsen', '2026-11-22');
+  assert.equal(canAddMedia(zap, 'u1', false), true);
+  assert.equal(canAddMedia(zap, 'tudji', false), false);
+  assert.equal(canAddMedia(zap, 'tudji', true), true);
+  assert.equal(canAddMedia(zap, 'u1', true, MAX_PHOTOS_PER_HUNT), false);
+  assert.equal(matchesArchive({ ...zap, lov: { ...zap.lov, rezultat: 'Dvije divlje svinje' } }, 'svinje dvije'), true);
+  assert.equal(matchesArchive(zap, '22.11.2026'), true);
+  assert.equal(matchesArchive(zap, 'nesto drugo'), false);
+});
