@@ -169,7 +169,7 @@ export function initMojaLokacija(L, map) {
   const renderAuto = () => {
     const on = getShareSettings().on;
     $('btn-lok-auto').setAttribute('aria-checked', String(on));
-    $('lok-auto-stanje').textContent = on ? 'Uključeno: dok lov traje, učesnici vide tvoju poziciju.' : 'Isključeno: tvoju poziciju u lovu niko ne vidi.';
+    $('lok-auto-stanje').textContent = on ? 'Uključeno: učesnici lova vide tvoju poziciju' : 'Isključeno: niko ne vidi tvoju poziciju';
   };
   $('btn-lok-auto').addEventListener('click', () => { setShareSettings({ on: !getShareSettings().on }); renderAuto(); });
   document.addEventListener('lokacija:postavke', renderAuto);

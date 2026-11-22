@@ -27,6 +27,7 @@ import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.webkit.ServiceWorkerClientCompat;
 import androidx.webkit.ServiceWorkerControllerCompat;
@@ -57,6 +58,10 @@ public class MainActivity extends Activity {
         // Edge-to-edge: omotač dobija padding = sistemske trake, a dole i IME inset,
         // inače tastatura prekrije donje listove.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.parseColor("#11160F"));
         webView = new WebView(this);
@@ -249,9 +254,25 @@ public class MainActivity extends Activity {
         webView.saveState(outState);
     }
 
+    // Preko cijelog ekrana: sistemske trake (nazad / početna / zadnje aplikacije i statusna)
+    // su sakrivene; povlačenje od ruba ih samo privremeno pokaže. Sistem ih vrati pri
+    // povratku fokusa (dijalog, tastatura), pa se sakrivaju svaki put.
+    private void hideSystemBars() {
+        WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        c.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        c.hide(WindowInsetsCompat.Type.systemBars());
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) hideSystemBars();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        hideSystemBars();
         webView.onResume();
     }
 

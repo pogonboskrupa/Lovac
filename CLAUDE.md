@@ -416,3 +416,12 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Istraživač: dizajn (v0.7.5)**
 - Horizont je nebo (`#ekran-mapa.istrazivac` gradijent) umjesto crne površine; panel podloga (`#meni-podloga`, z-index 1500) se otvara iznad kontrola, ne ispod njih; kompas `#ist-n` (strelica sjevera, rotira se sa `rot`) je iznad kolone kontrola; prazna traka kaže samo "Nema kolega koji dijele lokaciju".
+
+**Istraživač: kontrole (v0.7.6)**
+- Tipke lijevo/desno i "S" su uklonjene. Kolona kontrola: kompas sa sjeverom (`#ist-n`, i dugme: dodir vraća kartu na sjever), "Prati kompas" + nagib, ◎ (vrati se na mene) + X (`#btn-ist-x`, izlaz iz 3D, 46 px). "Izađi iz 3D" gore lijevo je niže (36 px, na zahtjev vlasnika; X je zato 46 px, pravilo ≥ 44 px se ispunjava njime).
+- Dva prsta okreću I zumiraju (`istrazivac-ui.js` pointer događaji: promjena ugla među prstima = rotacija, promjena razmaka = zum; svaki ~41 % razmaka je jedan nivo, `pinchAcc`). E2e testovi koriste `twoFingers(page, { rotate, scale })` iz `helpers.mjs` (sintetički pointer događaji na `#karta`).
+
+**Cijeli ekran i uspravan položaj (v0.7.6)**
+- `MainActivity.hideSystemBars()`: sistemske trake (nazad / početna / zadnje aplikacije, statusna) su sakrivene, povlačenje od ruba ih samo privremeno pokaže (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`); poziva se u `onResume` i `onWindowFocusChanged`, jer ih sistem vrati poslije dijaloga/tastature. Izrez ekrana: `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES`. Dugme Nazad je i dalje hardversko/gestom, pa ga hvata `window.__nazad()`.
+- Manifest ima `screenOrientation="portrait"`: karta se ne okreće kad se telefon nagne u stranu. Test `ekran.test.mjs` čita manifest i Javu; stvarno ponašanje se potvrđuje tek na telefonu poslije CI buildа.
+- Ploča "Moja lokacija": red "Moja lokacija" (`#btn-lok-auto`, dijeljenje lokacije u lovu, ista postavka kao u Postavkama) je iznad reda "Pravac gledanja" (`#btn-kompas-stozac`); kraći nazivi da stanu u širinu ekrana.

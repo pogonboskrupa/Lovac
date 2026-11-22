@@ -48,3 +48,24 @@ export async function lok(page, selector) {
 export async function postTab(page, tab) {
   await page.locator(`#p-tabovi [data-ptab="${tab}"]`).click();
 }
+
+// Dva prsta na karti (Istraživač): rotacija u stepenima (u smjeru kazaljke) i omjer razmaka prstiju (zum).
+export async function twoFingers(page, { rotate = 0, scale = 1, cx = 180, cy = 450, r = 60 } = {}) {
+  await page.evaluate(({ rotate, scale, cx, cy, r }) => {
+    const el = document.getElementById('karta');
+    const fire = (type, id, x, y) => el.dispatchEvent(new PointerEvent(type, { pointerId: id, clientX: x, clientY: y, bubbles: true, pointerType: 'touch' }));
+    const pos = (ang, rad) => [cx + rad * Math.cos((ang * Math.PI) / 180), cy + rad * Math.sin((ang * Math.PI) / 180)];
+    fire('pointerdown', 1, ...pos(180, r));
+    fire('pointerdown', 2, ...pos(0, r));
+    const steps = 12;
+    for (let i = 1; i <= steps; i++) {
+      const f = i / steps;
+      const ang = rotate * f;
+      const rad = r * (1 + (scale - 1) * f);
+      fire('pointermove', 1, ...pos(180 + ang, rad));
+      fire('pointermove', 2, ...pos(ang, rad));
+    }
+    fire('pointerup', 1, 0, 0);
+    fire('pointerup', 2, 0, 0);
+  }, { rotate, scale, cx, cy, r });
+}

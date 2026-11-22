@@ -13,7 +13,7 @@ import { currentHeading } from './gps.js';
 import { initialsOf } from './lokacija.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { tiltById, nextTilt, freshnessOf, barSummary, detailLine, crumbsAdd, mergeMemberTrail, trailMeters } from './istrazivac-pregled.js';
-import { ROT_KORAK, touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss, screenDragToPan } from './rotacija.js';
+import { touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss, screenDragToPan } from './rotacija.js';
 
 const $ = (id) => document.getElementById(id);
 const DAY = 86400000;
@@ -161,8 +161,6 @@ export function initIstrazivac(L, map) {
   $('btn-ist-izlaz').addEventListener('click', () => setOn(false));
   $('btn-ist-detalj-zatvori').addEventListener('click', () => selectMember(null));
   $('btn-ist-trag').addEventListener('click', () => { showTrail = !showTrail; saveSoft('lovac.ist.trag', showTrail); updateSelection(); });
-  $('btn-ist-lijevo').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, -ROT_KORAK); applyRot(); });
-  $('btn-ist-desno').addEventListener('click', () => { followCompass = false; rot = rotateBy(rot, ROT_KORAK); applyRot(); });
   $('btn-ist-nagib').addEventListener('click', () => { tiltId = nextTilt(tiltId); saveSoft('lovac.ist.nagib', tiltId); applyRot(); });
   $('btn-ist-ja').addEventListener('click', () => {
     following = true;
@@ -170,7 +168,9 @@ export function initIstrazivac(L, map) {
     if (me) map.setView([me.lat, me.lon], map.getZoom(), { animate: false });
     applyRot();
   });
-  $('btn-ist-sjever').addEventListener('click', () => { followCompass = false; rot = 0; applyRot(); });
+  // Kompas sa sjeverom je i dugme: dodir vraća kartu na sjever gore.
+  $('ist-n').addEventListener('click', () => { followCompass = false; rot = 0; applyRot(); });
+  $('btn-ist-x').addEventListener('click', () => setOn(false));
   $('btn-ist-kompas').addEventListener('click', () => {
     followCompass = !followCompass;
     const h = currentHeading();
@@ -180,16 +180,24 @@ export function initIstrazivac(L, map) {
   // Jedan prst pomjera kartu (istraživanje terena), dva prsta je okreću. Leaflet dragging je isključen jer ne zna za nagib i rotaciju.
   const pointers = new Map();
   let lastAngle = null;
+  let lastDist = null;
+  let pinchAcc = 0;
   const ownsGesture = (e) => on && !e.target.closest('button, input, select, a, .leaflet-control, #istrazivac-kontrole, #istrazivac-traka, #istrazivac-detalj, .meni, .list-preko');
   const angleOfPair = () => {
     const [a, b] = [...pointers.values()];
     return touchAngle(a, b);
+  };
+  const distOfPair = () => {
+    const [a, b] = [...pointers.values()];
+    return Math.hypot(b.x - a.x, b.y - a.y);
   };
   screen.addEventListener('pointerdown', (e) => {
     if (!ownsGesture(e)) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { screen.setPointerCapture(e.pointerId); } catch { /* nije kritično */ }
     lastAngle = pointers.size === 2 ? angleOfPair() : null;
+    lastDist = pointers.size === 2 ? distOfPair() : null;
+    pinchAcc = 0;
   });
   screen.addEventListener('pointermove', (e) => {
     if (!on || !pointers.has(e.pointerId)) return;
@@ -201,6 +209,14 @@ export function initIstrazivac(L, map) {
       const a = angleOfPair();
       if (lastAngle != null) { followCompass = false; rot = rotateBy(rot, gestureDelta(lastAngle, a)); applyRot(); }
       lastAngle = a;
+      // Razmak prstiju: zumiranje (svaka promjena razmaka za ~41 % je jedan nivo).
+      const d = distOfPair();
+      if (lastDist && d > 0) {
+        pinchAcc += Math.log2(d / lastDist);
+        if (pinchAcc >= 0.5) { map.zoomIn(1, { animate: false }); pinchAcc = 0; }
+        else if (pinchAcc <= -0.5) { map.zoomOut(1, { animate: false }); pinchAcc = 0; }
+      }
+      lastDist = d;
       return;
     }
     if (pointers.size === 1 && (dx || dy)) {
@@ -210,7 +226,7 @@ export function initIstrazivac(L, map) {
       applyRot();
     }
   });
-  const endPointer = (e) => { pointers.delete(e.pointerId); lastAngle = null; };
+  const endPointer = (e) => { pointers.delete(e.pointerId); lastAngle = null; lastDist = null; pinchAcc = 0; };
   screen.addEventListener('pointerup', endPointer);
   screen.addEventListener('pointercancel', endPointer);
   bar.addEventListener('click', (e) => {

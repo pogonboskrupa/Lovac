@@ -65,7 +65,7 @@ test('Istraživač: vrh je čist, a dugme "Izađi iz 3D" gasi mod', async ({ pag
   await expect(page.locator('#ekran-mapa')).toHaveClass(/istrazivac/);
   const izlaz = page.locator('#btn-ist-izlaz');
   await expect(izlaz).toBeVisible();
-  expect((await izlaz.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  expect((await izlaz.boundingBox()).height).toBeGreaterThanOrEqual(34); // namjerno niže na zahtjev vlasnika; X uz tipku lokacije je 46 px
   await izlaz.click();
   await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
 });

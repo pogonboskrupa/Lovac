@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.7.5';
+  const APP_VER = 'v0.7.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -123,13 +123,11 @@
     </div>
   </div>
   <div id="istrazivac-kontrole" class="istrazivac-kontrole" role="group" aria-label="Okretanje karte" hidden>
-    <span id="ist-n" class="ist-n" role="img" aria-label="Sjever"><svg viewBox="-20 -20 40 40" aria-hidden="true"><circle r="18"/><g id="ist-n-strelica"><path d="M0 -15 5 -2 0 -5 -5 -2Z" class="ist-n-s"/><path d="M0 15 4 3 0 6 -4 3Z" class="ist-n-j"/></g></svg><b>S</b></span>
-    <button id="btn-ist-lijevo" type="button" class="ikona-dugme" aria-label="Okreni kartu ulijevo"><svg class="ic"><use href="#ic-rot-lijevo"/></svg></button>
-    <button id="btn-ist-desno" type="button" class="ikona-dugme" aria-label="Okreni kartu udesno"><svg class="ic"><use href="#ic-rot-desno"/></svg></button>
+    <button id="ist-n" type="button" class="ist-n" aria-label="Sjever gore (dodir vraća kartu na sjever)"><svg viewBox="-20 -20 40 40" aria-hidden="true"><circle r="18"/><g id="ist-n-strelica"><path d="M0 -15 5 -2 0 -5 -5 -2Z" class="ist-n-s"/><path d="M0 15 4 3 0 6 -4 3Z" class="ist-n-j"/></g></svg><b>S</b></button>
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
     <button id="btn-ist-nagib" type="button" class="ikona-dugme" aria-label="Promijeni nagib pogleda"><span id="btn-ist-nagib-tekst" class="ist-t">40°</span></button>
     <button id="btn-ist-ja" type="button" class="ikona-dugme" aria-label="Centriraj na mene"><svg class="ic"><use href="#ic-locate"/></svg></button>
-    <button id="btn-ist-sjever" type="button" class="ikona-dugme" aria-label="Sjever gore"><span class="ist-s">S</span></button>
+    <button id="btn-ist-x" type="button" class="ikona-dugme" aria-label="Izađi iz 3D"><svg class="ic"><use href="#ic-close"/></svg></button>
   </div>
   <div id="lov-trag-legenda" class="istrazivac-traka lov-trag-legenda" hidden></div>
   <div id="meni-spiskovi" class="meni meni-grupe" hidden>
@@ -175,23 +173,23 @@
       <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač (3D)</span></button>
       <button id="btn-lok-kopiraj" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Kopiraj koordinate</span></button>
     </div>
+    <div class="lok-pravac" id="lok-auto">
+      <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija: dijeljenje u lovu"><span class="lok-prekidac-ruka"></span></button>
+      <div class="lok-pravac-tekst">
+        <b>Moja lokacija</b>
+        <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: učesnici lova vide tvoju poziciju</span>
+      </div>
+    </div>
     <div class="lok-pravac" id="kompas">
-      <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja na karti">
+      <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja">
         <span class="lok-prekidac-ruka"></span>
       </button>
       <div class="lok-pravac-tekst">
-        <b>Pravac gledanja na karti</b>
+        <b>Pravac gledanja</b>
         <span id="kompas-izvor" class="sitno" role="status">Čekam kompas…</span>
       </div>
     </div>
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
-    <div class="lok-pravac" id="lok-auto">
-      <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Automatsko dijeljenje lokacije u lovu"><span class="lok-prekidac-ruka"></span></button>
-      <div class="lok-pravac-tekst">
-        <b>Automatski dijeli lokaciju u lovu</b>
-        <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: dok lov traje, učesnici vide tvoju poziciju.</span>
-      </div>
-    </div>
     <section id="lok-sekcija" class="lok-sekcija">
       <h3>Dijeli lokaciju sa sekcijom</h3>
       <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi i grupovođa sekcije.</p>

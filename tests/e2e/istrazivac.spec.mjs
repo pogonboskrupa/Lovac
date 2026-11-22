@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset, lok } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, lok, twoFingers } from './helpers.mjs';
 
 test.use({ timezoneId: 'Europe/Sarajevo', geolocation: { latitude: 44.88, longitude: 16.15 }, permissions: ['geolocation'] });
 
@@ -37,12 +37,11 @@ test('Istraživač: karta se okreće dugmadima i prati kompas; strelice članova
   await expect(page.locator('#istrazivac-kontrole')).toBeVisible();
   for (const b of await page.locator('#istrazivac-kontrole button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
   const tr = () => page.evaluate(() => document.getElementById('karta').style.transform);
-  await page.locator('#btn-ist-desno').click();
-  expect(await tr()).toContain('rotateZ(15deg)');
-  await page.locator('#btn-ist-lijevo').click();
-  await page.locator('#btn-ist-lijevo').click();
+  await twoFingers(page, { rotate: 30 });
+  expect(await tr()).toContain('rotateZ(30deg)');
+  await twoFingers(page, { rotate: -45 });
   expect(await tr()).toContain('rotateZ(345deg)');
-  await page.locator('#btn-ist-sjever').click();
+  await page.locator('#ist-n').click();
   expect(await tr()).toContain('rotateZ(0deg)');
 
   await page.locator('#btn-ist-kompas').click();
@@ -78,7 +77,7 @@ test('Istraživač pregled: sažetak, lica sa svježinom, najbliži istaknut, na
   await page.reload();
   await lok(page, '#btn-istrazivac');
   await expect(page.locator('#btn-ist-nagib-tekst')).toHaveText('55°');
-  await page.locator('#btn-ist-desno').click();
+  await twoFingers(page, { rotate: 15 });
   expect(await page.evaluate(() => document.getElementById('karta').style.transform)).toContain('rotateZ(15deg)');
   await expect(page.locator('#ist-hud')).toHaveCount(0);
   await page.locator('#btn-ist-ja').click();
@@ -158,7 +157,7 @@ test('Istraživač: kontrole su stvarno nacrtane iznad okrenute karte (preveliki
   await page.goto('/');
   await lok(page, '#btn-istrazivac');
   await page.waitForTimeout(400);
-  for (const sel of ['#btn-ist-izlaz', '#btn-ist-desno', '#btn-zoom-in']) {
+  for (const sel of ['#btn-ist-izlaz', '#btn-ist-kompas', '#btn-zoom-in']) {
     const box = await page.locator(sel).boundingBox();
     const clip = { x: Math.max(0, box.x - 4), y: Math.max(0, box.y - 4), width: box.width + 8, height: box.height + 8 };
     const sa = await page.screenshot({ clip });
@@ -177,8 +176,7 @@ test('Istraživač dizajn: kompas sa sjeverom prati rotaciju, horizont je nebo, 
   await expect(page.locator('#ist-n')).toBeVisible();
   const rot = () => page.locator('#ist-n-strelica').getAttribute('transform');
   expect(await rot()).toBe('rotate(0)');
-  await page.locator('#btn-ist-desno').click();
-  await page.locator('#btn-ist-desno').click();
+  await twoFingers(page, { rotate: 30 });
   expect(await rot()).toBe('rotate(30)');
   expect(await page.evaluate(() => getComputedStyle(document.getElementById('ekran-mapa')).backgroundImage)).toContain('linear-gradient');
   await expect(page.locator('#istrazivac-traka')).toContainText('Nema kolega koji dijele lokaciju');
@@ -187,9 +185,35 @@ test('Istraživač dizajn: kompas sa sjeverom prati rotaciju, horizont je nebo, 
   await page.locator('#btn-podloga').click();
   await expect(page.locator('#meni-podloga')).toBeVisible();
   const pb = await page.locator('#meni-podloga').boundingBox();
-  const kb = await page.locator('#btn-ist-desno').boundingBox();
+  const kb = await page.locator('#btn-ist-kompas').boundingBox();
   const cx = Math.min(kb.x + kb.width / 2, pb.x + pb.width - 5);
   const cy = Math.max(kb.y + kb.height / 2, pb.y + 5);
   const gore = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e && (e.closest('#meni-podloga') ? 'panel' : e.id || e.className); }, [cx, cy]);
   if (pb.y + pb.height > kb.y && pb.x + pb.width > kb.x) expect(gore).toBe('panel');
+});
+
+
+test('Istraživač: X uz tipku lokacije izlazi iz 3D, nema tipki lijevo/desno ni S; niže "Izađi iz 3D"; zum sa dva prsta', async ({ page }) => {
+  await serveTiles(page);
+  await page.goto('/');
+  await lok(page, '#btn-istrazivac');
+  for (const id of ['#btn-ist-lijevo', '#btn-ist-desno', '#btn-ist-sjever']) expect(await page.locator(id).count(), id).toBe(0);
+  expect((await page.locator('#btn-ist-izlaz').boundingBox()).height).toBeLessThanOrEqual(40);
+  const ja = await page.locator('#btn-ist-ja').boundingBox();
+  const x = await page.locator('#btn-ist-x').boundingBox();
+  expect(x.x).toBeGreaterThan(ja.x + ja.width - 2);
+  expect(Math.abs(x.y - ja.y)).toBeLessThan(4);
+  expect(x.height).toBeGreaterThanOrEqual(44);
+
+  // zum: razmak prstiju se udvostruči = bar jedan nivo bliže
+  const z = () => page.evaluate(() => JSON.parse(localStorage.getItem('lovac.pogled') || 'null')?.z ?? null);
+  const z0 = await z();
+  await twoFingers(page, { scale: 2.4 });
+  await expect.poll(z).toBeGreaterThan(z0 ?? 0);
+  const z1 = await z();
+  await twoFingers(page, { scale: 0.4 });
+  await expect.poll(z).toBeLessThan(z1);
+
+  await page.locator('#btn-ist-x').click();
+  await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
 });
