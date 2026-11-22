@@ -24,6 +24,7 @@
 | `015_poruke_rukovodstvo.sql` | kanal Rukovodstvo u `poruke` (`kanal`, `sekcija_id` nullable, `je_rukovodstvo()`): grupovođe, lovočuvari i admin |
 | `016_kamere.sql` | kamere (fotozamke): vide i unose samo lovočuvari revira (`je_lovocuvar_revira`), skidanje = `aktivno=false` |
 | `017_arhiva_lova.sql` | arhiva lova: `lovovi.pocetak/kraj/rezultat` (početak i kraj upisuje server), `lov_tragovi`, `lov_slike` + `lov_slike_podaci` |
+| `018_slike_na_serveru.sql` | `slike_zapisa` (slike objekata/opažanja/odstrela prate vidljivost zapisa), `slike_rok()` (14 dana), `ocisti_istekle_slike()` |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:

@@ -149,3 +149,18 @@ test('trag kraći od 50 m se ne čuva (potraga je izuzeta)', () => {
   assert.equal(isTrackTooShort(t('potraga', 44.88020)), false);
   assert.equal(isTrackTooShort({ vrsta: 'obilazak', tacke: [] }), true);
 });
+
+import { pendingPhotos, dataUrlToBlob } from '../../static/js/fotosync.js';
+test('fotosync: šalju se samo fotografije sinhronizovanih vlastitih zapisa koje još nisu poslane', () => {
+  const recs = [
+    { id: 'a', sinhronizovano: true, fotografije: ['f1', 'f2'] },
+    { id: 'b', sinhronizovano: false, fotografije: ['f3'] },
+    { id: 'c', sinhronizovano: true, tudji: true, fotografije: ['f4'] },
+    { id: 'd', sinhronizovano: true, obrisan: true, fotografije: ['f5'] },
+    { id: 'e', sinhronizovano: true },
+  ];
+  assert.deepEqual(pendingPhotos('objekti', recs, new Set(['f1'])), [{ store: 'objekti', zapisId: 'a', fotoId: 'f2' }]);
+  const blob = dataUrlToBlob('data:image/jpeg;base64,/9j/4AAQ');
+  assert.equal(blob.type, 'image/jpeg');
+  assert.ok(blob.size > 0);
+});

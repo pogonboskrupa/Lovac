@@ -259,3 +259,8 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Dugmad dijele isti izgled (`.dugme`, `.ikona-dugme`: radijus 12/16 px, blagi sjaj, pritisak `:active`) — bez `color-mix`/gradijenata (stariji WebView).
 - Panel snimanja je kompaktan: jedan red informacija + jedan red od 4 dugmeta (Tačka, Slika, Pauza, Završi); potraga ima drugi red od 3.
 - Trag kraći od `MIN_TRACK_M` = 50 m se NE čuva (ni lokalno ni na serveru) pri završetku i pri "završi" oporavljenog traga; potraga je izuzeta. Toast: "Trag je kraći od 50 m … i nije sačuvan".
+
+**Slike na serveru, štedljivo (migracija 018, v0.4.3)**
+- Besplatni Supabase ima malo prostora, pa se čuva SLIČICA trajno, a VELIKA slika (900 px) samo `slike_rok()` = 14 dana (promjena roka samo u toj SQL funkciji). Poslije roka velika slika se briše (`slike_zapisa.slika = null`, `lov_slike_podaci` red nestaje), a ostaje sličica; klijent jednom dnevno zove `ocisti_istekle_slike()` (`fotosync.js`).
+- `slike_zapisa` (objekti, opažanja, odstrel): vidljivost slike = vidljivost zapisa (`vidi_zapis` je SECURITY INVOKER pa važe RLS politike zapisa; privatno vidi samo vlasnik, admin ne). Šalju se samo fotografije vlastitih, SINHRONIZOVANIH zapisa (3 po krugu, 60 s); `lovac.foto.poslane` pamti poslano. `foto.js photoUrl` za fotografiju kojeg nema na telefonu poziva `fotosync` (preuzima sa servera i kešira; ako je velika istekla, `samoMala`).
+- Slike lova (`lov_slike_podaci`) imaju isti rok; pregledane velike slike se keširaju u store `arhiva` (`slika:<id>`) pa se vide i poslije isteka. "Slika na poziciji" (`slike` store) ostaje samo na telefonu.

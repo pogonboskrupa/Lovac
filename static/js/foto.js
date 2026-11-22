@@ -63,8 +63,13 @@ export async function savePhoto(file) {
   return id;
 }
 
+// Fotografija koje nema na telefonu (tuđi objekat, novi telefon) se pokuša preuzeti sa servera (fotosync.js).
+let remoteLoader = null;
+export const setRemotePhotoLoader = (fn) => { remoteLoader = fn; };
+
 export async function photoUrl(id) {
-  const rec = await idbGet('fotografije', id);
+  let rec = await idbGet('fotografije', id);
+  if (!rec && remoteLoader) rec = await remoteLoader(id).catch(() => null);
   return rec ? URL.createObjectURL(rec.blob) : null;
 }
 

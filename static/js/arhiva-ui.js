@@ -198,10 +198,18 @@ export function initArhiva() {
     $('slika-velika-img').src = s.mala;
     $('slika-velika-opis').textContent = `${s.opis || 'Slika lova'} · ${memberName(s.autor_id)}`;
     $('slika-velika').hidden = false;
+    // velika slika: prvo keš na telefonu, pa server; na serveru traje samo nekoliko dana (migracija 018), sličica ostaje
+    const cached = await idbGet('arhiva', `slika:${id}`).catch(() => null);
+    if (cached?.slika) { $('slika-velika-img').src = cached.slika; return; }
     if (online()) {
       try {
         const rows = await qArh(getClient().from('lov_slike_podaci').select('*').eq('id', id));
-        if (rows[0]?.slika && !$('slika-velika').hidden) $('slika-velika-img').src = rows[0].slika;
+        if (rows[0]?.slika) {
+          await idbPut('arhiva', { id: `slika:${id}`, slika: rows[0].slika });
+          if (!$('slika-velika').hidden) $('slika-velika-img').src = rows[0].slika;
+        } else {
+          toast('Original slike je uklonjen sa servera (stariji od 14 dana); vidi se sličica', 5000);
+        }
       } catch (err) { console.warn('velika slika', err.message); }
     }
   });
