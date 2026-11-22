@@ -135,7 +135,7 @@ test('"Na karti" pomjera mapu na poziciju člana, "Raspored na karti" otvara ras
   await openTab(page);
   await page.locator(`#sk-clanovi [data-uid="${GV.id}"] [data-akcija="na-karti"]`).click();
   await expect(page.locator('#sekcija-ekran')).toBeHidden();
-  await expect(page.locator('#koord-wgs')).toHaveText(/^44\.88\d*, 16\.15\d*$/);
+  await expect(page.locator('#koord-gk')).toHaveText(/^44\.88\d*, 16\.15\d*$/);
   await page.locator('#btn-sekcija').click();
   await page.locator('#sk-lov [data-akcija="raspored"]').click();
   await expect(page.locator('#lov-panel')).toBeVisible();
@@ -216,7 +216,10 @@ test('lovočuvar revira prati SVE sekcije svog revira (izbor), ne i druge revire
   // Lovac koji nije u sekciji: prazan ekran sa putem do zahtjeva.
   const ctx2 = await browser.newContext({ viewport: { width: 412, height: 915 } });
   const p2 = await ctx2.newPage();
-  await setup(p2, makeServer(), { ...VAN, id: ID(9), ime: 'Nov', prezime: 'Lovac' });
+  const noviLovac = { ...VAN, id: ID(9), ime: 'Nov', prezime: 'Lovac' };
+  const server2 = makeServer();
+  server2.db.korisnici.push(noviLovac);
+  await setup(p2, server2, noviLovac);
   await p2.goto('http://localhost:8123/');
   await p2.locator('#btn-sekcija').click();
   await expect(p2.locator('#sk-prazno')).toBeVisible();

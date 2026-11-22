@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles } from './helpers.mjs';
+import { serveTiles, lok } from './helpers.mjs';
 
 test.use({ timezoneId: 'Europe/Sarajevo' });
 
@@ -84,7 +84,7 @@ test('opažanje vrste u lovostaju pokazuje upozorenje', async ({ page }) => {
   await setup(page);
   await page.goto('/');
   await expect(page.locator('#lovno-chip')).toBeVisible();
-  await page.locator('#btn-opazanje').click();
+  await lok(page, '#btn-opazanje');
   await page.locator('#op-vrste [data-kod="fazan"]').click();
   await expect(page.locator('#op-upozorenje')).toBeVisible();
   await expect(page.locator('#op-upozorenje')).toContainText('lovostaju (otvara se 15.1.)');

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset, TILE_HOSTS } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, TILE_HOSTS, lok } from './helpers.mjs';
 
 test.beforeEach(async ({ page }) => { await fakeServerConfigUnset(page); });
 
@@ -11,8 +11,7 @@ test('bez podešenog servera app ulazi na kartu sa pločicama i koordinatama', a
   await expect(page.locator('#ekran-mapa')).toBeVisible();
   await expect(page.locator('#bez-servera')).toBeVisible();
   await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
-  await expect(page.locator('#koord-gk')).toHaveText(/^Y \d{7}, X \d{7}$/);
-  await expect(page.locator('#koord-razmjer')).toHaveText(/^1:\d/);
+  await expect(page.locator('#koord-gk')).toHaveText(/^\d{2}\.\d{6}, \d{2}\.\d{6}$/);
   expect(errors).toEqual([]);
 });
 
@@ -60,8 +59,8 @@ test('GPS: tačnost u boji i Centriraj', async ({ page, context }) => {
   await page.goto('/');
   await expect(page.locator('#gps-tacnost')).toHaveAttribute('data-tacnost', 'dobro');
   await expect(page.locator('#gps-tacnost')).toHaveText('±4 m');
-  await page.locator('#btn-centriraj').click();
-  await expect(page.locator('#koord-wgs')).toHaveText(/^44\.9000\d*, 16\.2000\d*$/);
+  await lok(page, '#btn-centriraj');
+  await expect(page.locator('#koord-gk')).toHaveText(/^44\.9000\d*, 16\.2000\d*$/);
 
   await context.setGeolocation({ latitude: 44.9, longitude: 16.2, accuracy: 30 });
   await expect(page.locator('#gps-tacnost')).toHaveAttribute('data-tacnost', 'lose');
@@ -71,7 +70,7 @@ test('dodirne mete su ≥ 44 px', async ({ page }) => {
   await serveTiles(page);
   await page.goto('/');
   await expect(page.locator('#ekran-mapa')).toBeVisible();
-  for (const sel of ['#btn-podloga', '#nav-mapa', '#btn-sekcija', '#btn-spiskovi', '#btn-postavke', '#btn-zoom-in', '#btn-zoom-out', '#btn-centriraj', '#btn-prati', '#koord-traka']) {
+  for (const sel of ['#btn-podloga', '#nav-mapa', '#btn-sekcija', '#btn-spiskovi', '#btn-postavke', '#btn-zoom-in', '#btn-zoom-out', '#btn-moja-lokacija', '#btn-dodaj', '#koord-traka']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }

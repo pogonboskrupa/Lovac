@@ -128,7 +128,7 @@ export function initGps(L, map) {
   btnFollow?.addEventListener('click', () => { start(); setFollow(!state.follow); });
   btnCenter?.addEventListener('click', () => {
     start();
-    if (state.fix) map.setView([state.fix.lat, state.fix.lon], Math.max(map.getZoom(), 15));
+    if (state.fix) map.setView([state.fix.lat, state.fix.lon], Math.max(map.getZoom(), 15), { animate: false });
     else toast('Čekam GPS…');
   });
   // Ručno pomjeranje karte gasi praćenje, inače se karta "otima" lovcu.

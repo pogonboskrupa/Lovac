@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, lok } from './helpers.mjs';
 
 test.use({ timezoneId: 'Europe/Sarajevo', geolocation: { latitude: 44.88, longitude: 16.15 }, permissions: ['geolocation'] });
 
@@ -12,7 +12,7 @@ test('čip dnevnog svjetla pokazuje stanje; Istraživač nagne kartu i pokaže s
   await expect(page.locator('#svjetlo-chip')).toHaveAttribute('data-stanje', 'dan');
   await expect(page.locator('#svjetlo-chip')).toContainText('Svjetlo do 16:2');
 
-  await page.locator('#btn-istrazivac').click();
+  await lok(page, '#btn-istrazivac');
   await expect(page.locator('#ekran-mapa')).toHaveClass(/istrazivac/);
   await expect(page.locator('#btn-istrazivac')).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => getComputedStyle(document.getElementById('karta')).transform)).not.toBe('none');
@@ -25,7 +25,7 @@ test('čip dnevnog svjetla pokazuje stanje; Istraživač nagne kartu i pokaže s
   const box = await chip.boundingBox();
   expect(box.height).toBeGreaterThanOrEqual(44);
 
-  await page.locator('#btn-istrazivac').click();
+  await lok(page, '#btn-istrazivac');
   await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
   await expect(page.locator('#istrazivac-traka')).toBeHidden();
 });

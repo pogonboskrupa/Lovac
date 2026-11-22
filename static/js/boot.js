@@ -24,6 +24,7 @@ import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
 import { initSekcijaEkran } from './sekcija-ui.js';
+import { initMojaLokacija } from './lokacija-sekcija-ui.js';
 import { initPas } from './pas-ui.js';
 import { initVelicina } from './prikaz.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
@@ -94,6 +95,7 @@ function enter(screen) {
       ['meni', () => initMeni()],
       ['novi-lovac', () => initNoviLovac()],
       ['pas', () => initPas(globalThis.L, map)],
+      ['moja-lokacija', () => initMojaLokacija(globalThis.L, map)],
       ['uzivo', () => initUzivo(globalThis.L, map)],
       ['istrazivac', () => initIstrazivac(globalThis.L, map)],
       ['kontakt', () => initKontakt()],

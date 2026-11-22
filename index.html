@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.3.7';
+  const APP_VER = 'v0.3.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -84,9 +84,8 @@
   <div class="nisan" aria-hidden="true"></div>
 
   <div class="gornja-traka">
-    <button id="koord-traka" class="pill-info" type="button" aria-label="Koordinate i razmjer centra karte, dodir kopira koordinate">
-      <span class="pill-red"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b><span class="pill-sep"></span><span id="koord-zona" class="pill-oznaka">MGI 5</span><b id="koord-gk">—</b></span>
-      <span class="pill-red"><b id="koord-razmjer" class="narandzasto">—</b><span id="koord-wgs" class="pill-oznaka">—</span></span>
+    <button id="koord-traka" class="pill-info" type="button" aria-label="Koordinate centra karte. Dodir mijenja sistem: WGS84, MGI 5, MGI 6">
+      <span class="pill-red"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b><span class="pill-sep"></span><span id="koord-zona" class="pill-oznaka">WGS84</span><b id="koord-gk">—</b></span>
     </button>
     <button id="btn-podloga" class="ikona-dugme krug" type="button" aria-label="Podloga karte"><svg class="ic"><use href="#ic-layers"/></svg></button>
   </div>
@@ -117,6 +116,38 @@
       <button type="button" id="btn-karte" class="meni-plocica"><svg class="ic"><use href="#ic-map"/></svg><span class="m-tekst"><span class="m-naslov">Karte i offline</span><span class="m-opis" id="btn-karte-opis">Teren, preuzimanje područja</span></span></button>
       <button type="button" id="btn-slojevi" class="meni-plocica"><svg class="ic"><use href="#ic-layers"/></svg><span class="m-tekst"><span class="m-naslov">Slojevi</span><span class="m-opis" id="btn-slojevi-opis">Granice lovišta</span></span></button>
     </div>
+  </div>
+  <div id="lok-ploca" class="meni lok-ploca" role="dialog" aria-label="Moja lokacija" hidden>
+    <header class="lok-glava">
+      <h2>Moja lokacija</h2>
+      <button id="btn-lok-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+    </header>
+    <div id="gps-status" class="gps-status" hidden>
+      <span id="gps-tacnost" class="tacnost">GPS…</span>
+      <span>fiks prije <span id="gps-starost">—</span></span>
+    </div>
+    <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+    <div class="lok-mreza" id="lok-akcije">
+      <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj na mene</span></button>
+      <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>
+      <button id="btn-snimaj" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-record"/></svg><span>Snimaj trag</span></button>
+      <button id="btn-opazanje" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-eye"/></svg><span>Opažanje divljači</span></button>
+      <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač (3D)</span></button>
+      <button id="btn-lok-kopiraj" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Kopiraj koordinate</span></button>
+    </div>
+    <section id="lok-sekcija" class="lok-sekcija">
+      <h3>Dijeli lokaciju sa sekcijom</h3>
+      <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi i grupovođa sekcije.</p>
+      <div id="lok-sek-forma">
+        <select id="lok-sek-izbor" aria-label="Sekcija" hidden></select>
+        <div id="lok-sek-trajanje" class="segment" role="group" aria-label="Koliko dugo dijeliti"></div>
+        <button id="lok-sek-prekidac" class="dugme glavno" type="button" aria-pressed="false">Počni dijeliti</button>
+        <p id="lok-sek-stanje" class="sitno" role="status"></p>
+      </div>
+      <h4>Članovi koji dijele lokaciju <span id="lok-sek-broj" class="sitno"></span></h4>
+      <ul id="lok-sek-lista" class="spisak"></ul>
+      <p class="sitno">Lokaciju vide samo članovi, grupovođa i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
+    </section>
   </div>
   <div id="meni-dodaj" class="meni meni-dodaj" hidden>
     <button type="button" id="btn-dodaj-objekat">Lovački objekat</button>
@@ -180,11 +211,7 @@
       </div>
       <div class="desna-kolona">
         <button id="btn-dodaj" class="ikona-dugme glavno" type="button" aria-label="Dodaj na kartu"><svg class="ic"><use href="#ic-plus"/></svg></button>
-        <button id="btn-opazanje" class="ikona-dugme" type="button" aria-label="Opažanje divljači na mojoj poziciji"><svg class="ic"><use href="#ic-eye"/></svg></button>
-        <button id="btn-snimaj" class="ikona-dugme snimaj" type="button" aria-pressed="false" aria-label="Snimaj trag"><svg class="ic"><use href="#ic-record"/></svg></button>
-        <button id="btn-istrazivac" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Istraživač: 3D prikaz i članovi"><b>3D</b></button>
-        <button id="btn-prati" class="ikona-dugme" type="button" aria-pressed="false" aria-label="Prati me"><svg class="ic"><use href="#ic-follow"/></svg></button>
-        <button id="btn-centriraj" class="ikona-dugme krug veliki" type="button" aria-label="Centriraj na moju lokaciju"><svg class="ic"><use href="#ic-locate"/></svg></button>
+        <button id="btn-moja-lokacija" class="ikona-dugme krug veliki" type="button" aria-label="Moja lokacija"><svg class="ic"><use href="#ic-locate"/></svg></button>
       </div>
     </div>
     <div class="donji-dio">
@@ -353,11 +380,6 @@
   <div class="p-kartica">
     <h3>Status</h3>
     <div class="status-blok">
-      <span class="sitno">GPS</span>
-      <div id="gps-status" class="gps-status" hidden>
-        <span id="gps-tacnost" class="tacnost">GPS…</span>
-        <span>fiks prije <span id="gps-starost">—</span></span>
-      </div>
       <span class="sitno">Dnevno svjetlo</span>
       <button id="svjetlo-chip" class="znacka znacka-dugme" type="button" hidden></button>
     </div>

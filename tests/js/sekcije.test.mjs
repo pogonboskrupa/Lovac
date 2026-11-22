@@ -78,3 +78,8 @@ test('ko smije praviti naloge: admin/grupovođa/lovočuvar direktno, član predl
   assert.equal(creationMode('ceka'), null);
   assert.equal(creationMode('nema'), null);
 });
+
+test('bez profila niko nije vođa ni lovočuvar (undefined === undefined zamka)', () => {
+  assert.equal(myStatus({ id: 'S', revir_id: 'R', grupovodja_id: undefined, lovocuvar_id: undefined }, [], undefined, false, []), 'nema');
+  assert.equal(myStatus({ id: 'S', revir_id: 'R', grupovodja_id: null }, [], null, false, [{ revir_id: 'R', korisnik_id: undefined }]), 'nema');
+});

@@ -3,6 +3,7 @@
 
 // Lovočuvar prati CIJELI revir (sve njegove sekcije); sekcija.lovocuvar_id je ranija, uža varijanta.
 export function myStatus(sekcija, clanovi, myId, isAdmin = false, lovocuvari = []) {
+  if (!myId) return 'nema'; // bez profila (npr. odjavljen) niko nije ni vođa ni lovočuvar: undefined === undefined je zamka
   if (isAdmin) return 'admin';
   if (sekcija.grupovodja_id === myId) return 'grupovodja';
   if (sekcija.lovocuvar_id === myId || lovocuvari.some((l) => l.revir_id === sekcija.revir_id && l.korisnik_id === myId)) return 'lovocuvar';

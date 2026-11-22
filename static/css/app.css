@@ -534,3 +534,23 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 #pas-unos { width: 100%; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--linija, rgba(128,128,128,.5)); background: var(--povrsina); color: var(--tekst); box-sizing: border-box; }
 .pas-marker { background: #a16207; }
 :root[data-velicina="veliko"] .status-blok, :root[data-velicina="najvece"] .status-blok { grid-template-columns: 1fr; }
+
+/* Mapa: samo + i Moja lokacija; sve ostalo je u ploči "Moja lokacija" */
+.lok-ploca { display: block; padding: 10px 12px 14px; max-height: 75vh; }
+.lok-ploca[hidden] { display: none; }
+.lok-glava { display: flex; align-items: center; justify-content: space-between; }
+.lok-glava h2 { margin: 0; font-size: 1.2rem; }
+.lok-koord { margin: 8px 0; font-size: 18px; font-variant-numeric: tabular-nums; }
+.lok-mreza { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+#lok-ploca .lok-dugme { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 10px; border: 0; border-radius: 12px; background: var(--dugme); color: var(--dugme-tekst); font-size: 16px; font-weight: 600; text-align: left; }
+#lok-ploca .lok-dugme .ic { flex: none; width: 28px; height: 28px; }
+#lok-ploca .lok-dugme[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); }
+#btn-snimaj .ic { color: #ef4444; }
+#btn-snimaj[aria-pressed="true"] .ic { color: inherit; }
+.lok-sekcija { margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--dugme); }
+.lok-sekcija select { width: 100%; min-height: 48px; font-size: 16px; margin: 6px 0; }
+#lok-sek-trajanje { margin: 8px 0; }
+#lok-sek-prekidac[aria-pressed="true"] { background: #b91c1c; color: #ffffff; }
+.sek-marker { background: #0f766e; }
+.sek-marker[data-stanje="staro"] { opacity: 0.8; }
+.pill-info { flex-direction: row; align-items: center; }

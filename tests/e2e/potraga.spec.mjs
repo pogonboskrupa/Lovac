@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, lok } from './helpers.mjs';
 
 const tracks = (page) => page.evaluate(() => new Promise((resolve) => {
   const r = indexedDB.open('lovac');
@@ -64,7 +64,7 @@ test('Vodi me nazad nudi tačku nastrijela i najbližu čeku, pa pokreće naviga
 
 test('potraga teče paralelno sa obilaskom; panel pokazuje potragu, a obilazak ostaje', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#btn-snimaj').click();
+  await lok(page, '#btn-snimaj');
   await expect(page.locator('#panel-snimanje')).toBeVisible();
   await page.locator('#btn-dodaj').click();
   await page.locator('#btn-dodaj-potragu').click();

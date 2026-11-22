@@ -37,3 +37,9 @@ export async function fakeServerConfigHanging(page) {
 export async function fakeServerConfigUnset(page) {
   await overrideConfig(page, '', '');
 }
+
+// Dugmad vezana za lokaciju (opažanje, snimanje traga, praćenje, istraživač, centriranje) su u ploči "Moja lokacija".
+export async function lok(page, selector) {
+  if (!(await page.locator('#lok-ploca').isVisible())) await page.locator('#btn-moja-lokacija').click();
+  await page.locator(selector).click();
+}

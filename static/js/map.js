@@ -1,12 +1,16 @@
 // Karta: podloge, mjerilo, sjever i traka koordinata centra karte.
 
 import { BASE_LAYERS, createCachedTileLayer } from './tiles.js';
-import { formatWgs84, formatGk, scaleRatio, formatScale } from './geo.js';
+import { COORD_MODES, nextCoordMode, formatCoordMode } from './geo.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { toast, copyText, wireMenu } from './ui.js';
+import { wireMenu } from './ui.js';
 
 const VIEW_KEY = 'lovac.pogled';
 const LAYER_KEY = 'lovac.podloga';
+const COORD_KEY = 'lovac.koord';
+let coordMode = 'wgs';
+
+export const getCoordMode = () => coordMode;
 const DEFAULT_VIEW = { lat: 44.88, lon: 16.15, z: 11 };
 
 // Podloge na mapi: Topo, Satelit i Teren (karta društva sa servera, MBTiles koji se preuzme u aplikaciji).
@@ -19,6 +23,8 @@ export function resolveBase(id, { terenReady }) {
 }
 
 export function initMap(L, elementId) {
+  const savedMode = loadJSON(COORD_KEY, 'wgs');
+  coordMode = COORD_MODES.includes(savedMode) ? savedMode : 'wgs';
   const view = loadJSON(VIEW_KEY, DEFAULT_VIEW);
   const map = L.map(elementId, {
     zoomControl: false,
@@ -71,11 +77,9 @@ export function initMap(L, elementId) {
 export function updateCoordBar(map) {
   const c = map.getCenter();
   const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-  const gk = formatGk(c.lat, c.lng);
-  set('koord-wgs', formatWgs84(c.lat, c.lng));
-  set('koord-zona', gk.oznaka);
-  set('koord-gk', gk.tekst);
-  set('koord-razmjer', formatScale(scaleRatio(c.lat, map.getZoom())));
+  const f = formatCoordMode(coordMode, c.lat, c.lng);
+  set('koord-zona', f.oznaka);
+  set('koord-gk', f.tekst);
   set('zoom-nivo', String(Math.round(map.getZoom())));
 }
 
@@ -90,10 +94,10 @@ function wireMapControls(map, setBase) {
   });
   document.getElementById('btn-zoom-in')?.addEventListener('click', () => map.zoomIn());
   document.getElementById('btn-zoom-out')?.addEventListener('click', () => map.zoomOut());
-  document.getElementById('koord-traka')?.addEventListener('click', async () => {
-    const c = map.getCenter();
-    const gk = formatGk(c.lat, c.lng);
-    const text = `${gk.oznaka} ${gk.tekst} | WGS84 ${formatWgs84(c.lat, c.lng)}`;
-    toast(await copyText(text) ? 'Koordinate kopirane' : text);
+  // Dodir na okvir mijenja sistem: WGS84 → MGI 5 → MGI 6 → WGS84. Kopiranje je u "Moja lokacija".
+  document.getElementById('koord-traka')?.addEventListener('click', () => {
+    coordMode = nextCoordMode(coordMode);
+    saveSoft(COORD_KEY, coordMode);
+    updateCoordBar(map);
   });
 }

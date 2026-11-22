@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, lok } from './helpers.mjs';
 
 const tracksInDb = (page) => page.evaluate(() => new Promise((resolve, reject) => {
   const r = indexedDB.open('lovac');
@@ -41,7 +41,7 @@ async function installNativeMock(page) {
 test('APK: tačke iz native bafera, pauza ne ulazi u trag, stop gasi servis', async ({ page }) => {
   await installNativeMock(page);
   await page.goto('/');
-  await page.locator('#btn-snimaj').click();
+  await lok(page, '#btn-snimaj');
   await expect(page.locator('#panel-snimanje')).toBeVisible();
   await expect(page.locator('#snim-status')).toHaveText('Snima');
   expect(await page.evaluate(() => window.__gps)).toMatchObject({ start: 1, battery: 1 });
@@ -82,7 +82,7 @@ test('browser: snimanje preko watchPosition i spisak tragova sa dužinom', async
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 44.88, longitude: 16.15, accuracy: 5 });
   await page.goto('/');
-  await page.locator('#btn-snimaj').click();
+  await lok(page, '#btn-snimaj');
   for (let i = 1; i <= 3; i++) {
     await page.waitForTimeout(300);
     await context.setGeolocation({ latitude: 44.88 + i * 0.0005, longitude: 16.15, accuracy: 5 });
@@ -105,7 +105,7 @@ test('pad app-a tokom snimanja: dijalog oporavka nudi nastavak ili završetak', 
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 44.88, longitude: 16.15, accuracy: 5 });
   await page.goto('/');
-  await page.locator('#btn-snimaj').click();
+  await lok(page, '#btn-snimaj');
   await expect(page.locator('#panel-snimanje')).toBeVisible();
   await expect.poll(async () => (await tracksInDb(page)).length).toBe(1);
 
@@ -129,7 +129,7 @@ test('izvoz GPX/KML ide kroz AndroidShare, uglačavanje se može vratiti, brisan
     window.AndroidShare = { shareFile: (name, mime, content) => window.__shared.push({ name, mime, content }) };
   });
   await page.goto('/');
-  await page.locator('#btn-snimaj').click();
+  await lok(page, '#btn-snimaj');
   await page.evaluate(() => window.__push(6, 44.88));
   await expect(page.locator('#snim-tacke')).toHaveText('6', { timeout: 8000 });
   await page.locator('#btn-snim-stop').click();
@@ -163,8 +163,8 @@ test('izvoz GPX/KML ide kroz AndroidShare, uglačavanje se može vratiti, brisan
 test('dodirne mete snimanja ≥ 44 px', async ({ page }) => {
   await installNativeMock(page);
   await page.goto('/');
-  await page.locator('#btn-snimaj').click();
-  for (const sel of ['#btn-snimaj', '#btn-spiskovi', '#btn-snim-pauza', '#btn-snim-stop']) {
+  await lok(page, '#btn-snimaj');
+  for (const sel of ['#btn-moja-lokacija', '#btn-spiskovi', '#btn-snim-pauza', '#btn-snim-stop']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }

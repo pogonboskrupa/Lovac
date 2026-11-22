@@ -202,3 +202,18 @@ export function scaleRatio(lat, zoom) {
 export function formatScale(n) {
   return `1:${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}`;
 }
+
+// Prikaz koordinata na karti: WGS84 (zadano) pa MGI zona 5 pa MGI zona 6 (dodir na okvir mijenja redom).
+export const COORD_MODES = ['wgs', 'mgi5', 'mgi6'];
+
+export function nextCoordMode(mode) {
+  return COORD_MODES[(Math.max(0, COORD_MODES.indexOf(mode)) + 1) % COORD_MODES.length];
+}
+
+export function formatCoordMode(mode, lat, lon) {
+  if (mode === 'mgi5' || mode === 'mgi6') {
+    const g = formatGk(lat, lon, mode === 'mgi5' ? 5 : 6);
+    return { oznaka: g.oznaka, tekst: g.tekst };
+  }
+  return { oznaka: 'WGS84', tekst: formatWgs84(lat, lon) };
+}

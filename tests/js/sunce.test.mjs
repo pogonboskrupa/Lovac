@@ -308,3 +308,37 @@ test('meni: tekstovi pločica iz brojeva', () => {
   assert.equal(empty['btn-lovovi'], 'Raspored, stanovi, sektori');
   assert.equal(empty['btn-objekti'], 'Čeke, hranilišta, solila');
 });
+
+import { shareUntil, activeShare, canShareToSection, sectionShareList, SHARE_DURATIONS } from '../../static/js/lokacija-sekcija.js';
+
+test('lokacija sekcije: trajanje, istek, ko dijeli, spisak', () => {
+  const now = new Date(2026, 10, 9, 18, 30).getTime();
+  assert.equal(shareUntil('1', now), now + 3600000);
+  assert.equal(shareUntil('4', now), now + 4 * 3600000);
+  const dan = shareUntil('dan', now);
+  assert.equal(new Date(dan).getHours(), 23);
+  assert.equal(new Date(dan).getMinutes(), 59);
+  assert.ok(dan - now <= 24 * 3600000);
+  assert.deepEqual(SHARE_DURATIONS.map((d) => d.id), ['1', '4', 'dan']);
+  assert.equal(activeShare({ sekcijaId: 'S1', do: now + 1000 }, now).sekcijaId, 'S1');
+  assert.equal(activeShare({ sekcijaId: 'S1', do: now - 1 }, now), null);
+  assert.equal(activeShare(null, now), null);
+  assert.equal(canShareToSection('clan'), true);
+  assert.equal(canShareToSection('grupovodja'), true);
+  assert.equal(canShareToSection('lovocuvar'), false);
+  assert.equal(canShareToSection('admin'), false);
+  assert.equal(canShareToSection('ceka'), false);
+  const me = { lat: 44.88, lon: 16.15 };
+  const ago = (m) => new Date(now - m * 60000).toISOString();
+  const rows = [
+    { korisnik_id: 'a', lat: 44.89, lon: 16.15, t: ago(1), do_: new Date(now + 60000).toISOString() },
+    { korisnik_id: 'ja', lat: 44.88, lon: 16.15, t: ago(1), do_: new Date(now + 60000).toISOString() },
+    { korisnik_id: 'b', lat: 44.881, lon: 16.15, t: ago(5), do_: new Date(now + 60000).toISOString() },
+    { korisnik_id: 'istekao', lat: 44.88, lon: 16.15, t: ago(1), do_: new Date(now - 1).toISOString() },
+    { korisnik_id: 'star', lat: 44.88, lon: 16.15, t: ago(60), do_: new Date(now + 60000).toISOString() },
+  ];
+  const list = sectionShareList(rows, 'ja', (id) => id.toUpperCase(), me, now);
+  assert.deepEqual(list.map((x) => x.id), ['b', 'a']);
+  assert.equal(list[0].stanje, 'staro');
+  assert.equal(list[1].stanje, 'zivo');
+});

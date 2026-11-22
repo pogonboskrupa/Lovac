@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, lok } from './helpers.mjs';
 
 const allObs = (page) => page.evaluate(() => new Promise((resolve, reject) => {
   const r = indexedDB.open('lovac');
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function quickObs(page, { vrsta, plus = 0, kat } = {}) {
-  await page.locator('#btn-opazanje').click();
+  await lok(page, '#btn-opazanje');
   await expect(page.locator('#opazanje-forma')).toBeVisible();
   if (vrsta) await page.locator(`#op-vrste [data-kod="${vrsta}"]`).click();
   for (let i = 0; i < plus; i++) await page.locator('#op-broj-plus').click();
@@ -31,7 +31,7 @@ test('opažanje na GPS poziciji: vrijeme samo, broj, spol/dob, privatno', async 
   await page.goto('/');
   await expect(page.locator('#gps-tacnost')).toHaveText('±6 m');
   const t0 = Date.now();
-  await page.locator('#btn-opazanje').click();
+  await lok(page, '#btn-opazanje');
   await expect(page.locator('#op-pozicija')).toHaveText('Pozicija: GPS ±6 m');
   await page.locator('#op-vrste [data-kod="srna"]').click();
   await page.locator('#op-broj-plus').click();
@@ -48,7 +48,7 @@ test('opažanje na GPS poziciji: vrijeme samo, broj, spol/dob, privatno', async 
 test('"jednim dodirom": zadnja vrsta je unaprijed izabrana', async ({ page }) => {
   await page.goto('/');
   await quickObs(page, { vrsta: 'divlja_svinja' });
-  await page.locator('#btn-opazanje').click();
+  await lok(page, '#btn-opazanje');
   await expect(page.locator('#op-vrste [data-kod="divlja_svinja"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#forma-opazanje button[type=submit]').click();
   const list = await allObs(page);
@@ -57,7 +57,7 @@ test('"jednim dodirom": zadnja vrsta je unaprijed izabrana', async ({ page }) =>
 
 test('bez GPS-a se koristi nišan karte i to se jasno kaže', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#btn-opazanje').click();
+  await lok(page, '#btn-opazanje');
   await expect(page.locator('#op-pozicija')).toContainText('nema GPS-a');
 });
 
@@ -110,7 +110,7 @@ test('brisanje opažanja drugim dodirom; Nazad zatvara pregled', async ({ page }
 
 test('dodirne mete opažanja ≥ 44 px', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#btn-opazanje').click();
+  await lok(page, '#btn-opazanje');
   for (const sel of ['#op-vrste [data-kod]', '#op-kategorija [data-kat]', '#op-broj-plus', '#op-broj-minus']) {
     const b = await page.locator(sel).first().boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);

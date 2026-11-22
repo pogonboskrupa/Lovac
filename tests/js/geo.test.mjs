@@ -82,3 +82,19 @@ test('razmjer karte 1:N (96 dpi), zaokružen', () => {
   assert.ok(scaleRatio(44.77, 17) < scaleRatio(44.77, 14));
   assert.equal(scaleRatio(0, 18) % 100, 0);
 });
+
+import { COORD_MODES, nextCoordMode, formatCoordMode } from '../../static/js/geo.js';
+test('prikaz koordinata: WGS84 pa MGI 5 pa MGI 6 u krug', () => {
+  assert.deepEqual(COORD_MODES, ['wgs', 'mgi5', 'mgi6']);
+  assert.equal(nextCoordMode('wgs'), 'mgi5');
+  assert.equal(nextCoordMode('mgi5'), 'mgi6');
+  assert.equal(nextCoordMode('mgi6'), 'wgs');
+  assert.equal(nextCoordMode('nesto'), 'mgi5');
+  assert.deepEqual(formatCoordMode('wgs', 44.88, 16.15), { oznaka: 'WGS84', tekst: '44.880000, 16.150000' });
+  const g5 = formatCoordMode('mgi5', 44.88, 16.15);
+  assert.equal(g5.oznaka, 'MGI 5');
+  assert.match(g5.tekst, /^Y 55\d{5}, X 49\d{5}$/);
+  const g6 = formatCoordMode('mgi6', 44.88, 16.15);
+  assert.equal(g6.oznaka, 'MGI 6');
+  assert.notEqual(g6.tekst, g5.tekst);
+});

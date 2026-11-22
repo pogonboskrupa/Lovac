@@ -145,17 +145,17 @@ test('lokacija: "Na karti" pomjera mapu na člana', async ({ page }) => {
   await page.locator('#btn-lokacija').click();
   await page.locator(`#lokacija-clanovi [data-uid="${GV.id}"] [data-akcija="na-karti"]`).click();
   await expect(page.locator('#lokacija-ekran')).toBeHidden();
-  await expect(page.locator('#koord-wgs')).toHaveText(/^44\.88\d*, 16\.15\d*$/);
+  await expect(page.locator('#koord-gk')).toHaveText(/^44\.88\d*, 16\.15\d*$/);
 });
 
-test('status (veza, GPS tačnost, svjetlo) više nije na mapi nego u Postavkama', async ({ page }) => {
+test('status: GPS tačnost je u ploči Moja lokacija, svjetlo u Postavkama; veza OK se ne prikazuje na mapi', async ({ page }) => {
   await fakeServerConfigUnset(page);
   await serveTiles(page);
   await page.goto('/');
   await expect(page.locator('#ekran-mapa')).toBeVisible();
   await expect(page.locator('#veza')).toBeHidden();
-  for (const id of ['gps-status', 'svjetlo-chip']) {
-    await expect(page.locator(`#${id}`)).toBeHidden();
-    expect(await page.locator(`#postavke #${id}`).count()).toBe(1);
-  }
+  await expect(page.locator('#svjetlo-chip')).toBeHidden();
+  expect(await page.locator('#postavke #svjetlo-chip').count()).toBe(1);
+  expect(await page.locator('#lok-ploca #gps-status').count()).toBe(1);
+  expect(await page.locator('#postavke #gps-status').count()).toBe(0);
 });

@@ -23,10 +23,18 @@ test('donja navigacija: Mapa, Sekcija, Meni, Postavke (redom), Mapa je aktivna',
   }
 });
 
-test('gornji lijevi okvir: MGI koordinate (zona 5 za Grmeč) i razmjer 1:N; slojevi gore desno', async ({ page }) => {
+test('gornji lijevi okvir: jedan red koordinata (WGS84 pa MGI 5 pa MGI 6 dodirom), bez razmjera; slojevi gore desno', async ({ page }) => {
+  await expect(page.locator('#koord-zona')).toHaveText('WGS84');
+  await expect(page.locator('#koord-gk')).toHaveText(/^\d{2}\.\d{6}, \d{2}\.\d{6}$/);
+  await expect(page.locator('#koord-razmjer')).toHaveCount(0);
+  await expect(page.locator('#koord-wgs')).toHaveCount(0);
+  await page.locator('#koord-traka').click();
   await expect(page.locator('#koord-zona')).toHaveText('MGI 5');
-  await expect(page.locator('#koord-gk')).toHaveText(/^Y \d{7}, X \d{7}$/);
-  await expect(page.locator('#koord-razmjer')).toHaveText(/^1:\d{1,3}( \d{3})*$/);
+  await expect(page.locator('#koord-gk')).toHaveText(/^Y 55\d{5}, X 49\d{5}$/);
+  await page.locator('#koord-traka').click();
+  await expect(page.locator('#koord-zona')).toHaveText('MGI 6');
+  await page.locator('#koord-traka').click();
+  await expect(page.locator('#koord-zona')).toHaveText('WGS84');
   const pill = await box(page, '#koord-traka');
   expect(pill.x).toBeLessThan(40);
   expect(pill.y).toBeLessThan(120);
@@ -41,7 +49,7 @@ test('zoom lijevo dole sa nivoom, lociranje desno dole, oba iznad navigacije', a
   const nav = await box(page, '.donja-nav');
   const zin = await box(page, '#btn-zoom-in');
   const zout = await box(page, '#btn-zoom-out');
-  const loc = await box(page, '#btn-centriraj');
+  const loc = await box(page, '#btn-moja-lokacija');
   expect(zin.x).toBeLessThan(vp.width / 2);
   expect(zout.y).toBeGreaterThan(zin.y);
   expect(zout.y + zout.height).toBeLessThanOrEqual(nav.y);
@@ -93,11 +101,23 @@ test('Meni se zatvara drugim dodirom na Meni; stavka iz menija otvara ekran i za
   await expect(page.locator('#objekti')).toBeHidden();
 });
 
-test('dodavanje i brzi unos ostaju na mapi (desno): snimaj, opažanje, dodaj, lociranje', async ({ page }) => {
+test('desno na mapi samo + i Moja lokacija; ostalo (snimaj, opažanje, prati, centriraj, 3D) je u ploči Moja lokacija', async ({ page }) => {
   const vp = page.viewportSize();
-  for (const sel of ['#btn-snimaj', '#btn-opazanje', '#btn-dodaj', '#btn-prati', '#btn-centriraj']) {
+  for (const sel of ['#btn-dodaj', '#btn-moja-lokacija']) {
     const b = await box(page, sel);
     expect(b.x, sel).toBeGreaterThan(vp.width / 2);
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }
+  for (const sel of ['#btn-snimaj', '#btn-opazanje', '#btn-prati', '#btn-centriraj', '#btn-istrazivac']) await expect(page.locator(sel)).toBeHidden();
+  await page.locator('#btn-moja-lokacija').click();
+  await expect(page.locator('#lok-ploca')).toBeVisible();
+  for (const sel of ['#btn-snimaj', '#btn-opazanje', '#btn-prati', '#btn-centriraj', '#btn-istrazivac', '#btn-lok-kopiraj']) {
+    const b = await box(page, sel);
+    expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
+  }
+  const panel = await box(page, '#lok-ploca');
+  const nav = await box(page, '.donja-nav');
+  expect(panel.y + panel.height).toBeLessThanOrEqual(nav.y);
+  await page.locator('#btn-lok-zatvori').click();
+  await expect(page.locator('#lok-ploca')).toBeHidden();
 });
