@@ -354,3 +354,9 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **"Čeka slanje" predugo (v0.6.2)**
 - Uzrok: svaki neuspjeh slanja (i na mrtvoj vezi) je povećavao broj pokušaja, pa je odgoda rasla do 30 min i zapisi nisu išli čak ni kad se signal vrati. Sada: greška VEZE (`isNetworkFailure`: istek roka, "Failed to fetch"…) ne povećava `pokusaja`, ponovo se pokušava za 15 s i prekida krug (ostali zapisi bi također visili); odbijanje servera (npr. 503/RLS) i dalje raste, ali do najviše 10 min; kad se veza vrati (`onQualityChange`), `syncNow({ force: true })` ignoriše odgode.
 - Svaki poziv slanja i `pullShared` imaju vlastiti rok (`withDeadline`, `abortSignal`) povrh roka u `fetchWithTimeout`, da jedno viseće slanje ne drži `flushing` zauvijek.
+
+**Zapisi drugog naloga i RLS odbijanje (v0.6.3)**
+- Uzrok "Čeka slanje: 12 … violates row-level security policy (USING expression) for table tragovi": lokalna baza nije vezana za nalog, pa je lovac koji se prijavi na telefonu drugog lovca naslijedio njegove neposlane zapise i red slanja; slali su se kao zapisi NOVOG korisnika, a server (ispravno) odbija izmjenu tuđeg reda. Poruka sa "USING" znači UPDATE nad redom koji pripada drugom vlasniku.
+- Sada: `enqueue` bilježi vlasnika (`red.vlasnik`, `zapis.vlasnik_lokalni`), slanje i `reconcileQueue` preskaču zapise drugog naloga (`belongsToOther`), a `queueCount` ih ne broji. Zapisi bez oznake (stariji) ostaju "moji".
+- RLS odbijanje (`isPolicyRejection`, ne mrtva veza i ne 503) se NE ponavlja zauvijek: unos u redu dobija `odbijen: true`, ne broji se u "Čeka slanje", a u Postavke → Podaci pojavi se "Server nije prihvatio N zapisa" sa dugmetom "Skini odbijene iz reda" (`dropRejected`: zapis ostaje na telefonu sa `odbijeno: true`, red ga više ne vraća). Ništa se ne briše.
+- NIJE riješeno: lokalni spiskovi (objekti, odstrel…) i dalje pokazuju zapise prethodnog naloga na istom telefonu; razdvajanje po nalogu zahtijeva poseban pregled.

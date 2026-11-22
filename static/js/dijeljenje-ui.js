@@ -6,7 +6,7 @@ import { updateRecord, getRecord, VIDLJIVOST } from './zapisi.js';
 import { saveTrack } from './snimanje.js';
 import { idbGet } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { syncNow, onQueueChange, queueEntries } from './sync.js';
+import { syncNow, onQueueChange, queueEntries, dropRejected } from './sync.js';
 import { registerBackHandler, escapeHtml, toast } from './ui.js';
 
 const MEMBERS_KEY = 'lovac.clanovi';
@@ -93,10 +93,23 @@ export function initDijeljenje() {
     badge.hidden = n === 0;
     badge.textContent = `Čeka slanje: ${n}`;
     $('postavke-red').textContent = n ? `Čeka slanje: ${n}` : 'Sve je poslano na server.';
-    const errs = (await queueEntries()).map((e) => e.greska).filter(Boolean);
+    const all = await queueEntries();
+    const errs = all.filter((e) => !e.odbijen).map((e) => e.greska).filter(Boolean);
     $('postavke-red-greska').textContent = errs.length ? `Zadnja greška: ${errs[errs.length - 1]}` : '';
+    const rej = all.filter((e) => e.odbijen).length;
+    const box = $('postavke-red-odbijeno');
+    if (box) {
+      box.hidden = rej === 0;
+      $('postavke-red-odbijeno-tekst').textContent = rej
+        ? `Server nije prihvatio ${rej} zapisa (npr. napravljeni su pod drugim nalogom na ovom telefonu). Ostaju na telefonu, ali se više ne šalju.`
+        : '';
+    }
   };
   onQueueChange(renderQueue);
+  $('btn-odbijeno-ukloni')?.addEventListener('click', async () => {
+    const n = await dropRejected();
+    toast(`Skinuto iz reda: ${n}`);
+  });
   const sendNow = async () => {
     toast('Šaljem…');
     const r = await syncNow({ force: true });

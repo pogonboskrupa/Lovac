@@ -8,7 +8,7 @@ import { connectionQuality, onQualityChange } from './net.js';
 import { loadJSON, saveSoft } from './storage.js';
 
 export const SYNC_STORES = ['objekti', 'opazanja', 'odstrel', 'tragovi'];
-const LOCAL_ONLY = new Set(['sinhronizovano', 'tudji', 'vlasnik_id', 'udaljenost', 'fotografije', 'izmijenjen']);
+const LOCAL_ONLY = new Set(['sinhronizovano', 'tudji', 'vlasnik_id', 'udaljenost', 'fotografije', 'izmijenjen', 'vlasnik_lokalni', 'odbijeno']);
 const BASE_DELAY = 5000;
 const MAX_DELAY = 10 * 60000;
 const NETWORK_RETRY_MS = 15000;
@@ -45,6 +45,17 @@ export function isNetworkFailure(err) {
   if (err.name === 'TimeoutError' || err.name === 'AbortError') return true;
   if (err.status || err.statusCode || err.code) return false;
   return /fetch|network|timeout|abort|failed to|load failed|offline|nije odgovorio/i.test(String(err.message || err));
+}
+
+// Server je odbio zapis zbog prava (RLS), ne zbog veze: ponavljanje ne pomaže, pa se ne vrti u krug.
+export function isPolicyRejection(err) {
+  if (!err) return false;
+  return err.code === '42501' || /row-level security|violates .*policy/i.test(String(err.message || ''));
+}
+
+// Zapis koji je napravio drugi nalog na ovom telefonu ne smije se poslati kao zapis trenutnog korisnika.
+export function belongsToOther(owner, myId) {
+  return Boolean(owner && myId && owner !== myId);
 }
 
 export function toServerRow(store, rec, myId) {
@@ -96,12 +107,34 @@ export function onQueueChange(fn) {
   return () => listeners.delete(fn);
 }
 
+// Čeka slanje = samo ono što se još može poslati: odbijeno od servera i tuđe (drugi nalog) se ne broji.
 export async function queueCount() {
   try {
-    return (await idbAll('red')).length;
+    const myId = cachedProfile()?.id;
+    return (await idbAll('red')).filter((e) => !e.odbijen && !belongsToOther(e.vlasnik, myId)).length;
   } catch {
     return 0;
   }
+}
+
+export async function rejectedEntries() {
+  try {
+    return (await idbAll('red')).filter((e) => e.odbijen);
+  } catch {
+    return [];
+  }
+}
+
+// Odbijeni zapisi ostaju na telefonu (ništa se ne briše), samo se skidaju iz reda.
+export async function dropRejected() {
+  const list = await rejectedEntries();
+  for (const e of list) {
+    await idbDelete('red', e.id);
+    const rec = await idbGet(e.store, e.recId);
+    if (rec) await idbPut(e.store, { ...rec, odbijeno: true });
+  }
+  emitQueueChange();
+  return list.length;
 }
 
 export async function queueEntries() {
@@ -114,13 +147,22 @@ export async function enqueue(store, recId, tombstone = null) {
   const id = `${store}:${recId}`;
   const prev = await idbGet('red', id);
   const seq = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  await idbPut('red', { id, store, recId, tombstone, seq, pokusaja: 0, sljedeci: 0, greska: prev?.greska ?? null, dodano: prev?.dodano ?? Date.now() });
+  const myId = cachedProfile()?.id || null;
+  let owner = prev?.vlasnik ?? myId;
+  if (!tombstone) {
+    const rec = await idbGet(store, recId);
+    if (rec && !rec.tudji) {
+      if (!rec.vlasnik_lokalni && myId) await idbPut(store, { ...rec, vlasnik_lokalni: myId });
+      owner = rec.vlasnik_lokalni || owner;
+    }
+  }
+  await idbPut('red', { id, store, recId, tombstone, seq, pokusaja: 0, sljedeci: 0, greska: prev?.greska ?? null, dodano: prev?.dodano ?? Date.now(), vlasnik: owner });
   emitQueueChange();
 }
 
 // Mreža sigurnosti: vlastiti neposlani zapis kojeg (iz bilo kog razloga) nema u redu ulazi u red.
 export function needsSending(store, rec) {
-  if (rec.tudji || rec.sinhronizovano !== false) return false;
+  if (rec.tudji || rec.odbijeno || rec.sinhronizovano !== false) return false;
   if (store === 'tragovi') return rec.status === 'gotovo' || rec.vrsta === 'potraga';
   return true;
 }
@@ -130,7 +172,7 @@ export async function reconcileQueue() {
   let added = 0;
   for (const store of SYNC_STORES) {
     for (const rec of await idbAll(store)) {
-      if (needsSending(store, rec) && !queued.has(`${store}:${rec.id}`)) {
+      if (needsSending(store, rec) && !belongsToOther(rec.vlasnik_lokalni, cachedProfile()?.id) && !queued.has(`${store}:${rec.id}`)) {
         await enqueue(store, rec.id);
         added++;
       }
@@ -176,6 +218,7 @@ export async function flushQueue({ force = false } = {}) {
     const now = Date.now();
     const entries = (await idbAll('red')).sort((a, b) => a.dodano - b.dodano);
     for (const e of entries) {
+      if (e.odbijen || belongsToOther(e.vlasnik, me.id)) continue;
       if (!force && e.sljedeci > now) continue;
       const rec = e.tombstone || await idbGet(e.store, e.recId);
       if (!rec) {
@@ -195,6 +238,11 @@ export async function flushQueue({ force = false } = {}) {
         result.poslano++;
       } catch (err) {
         result.greske++;
+        if (isPolicyRejection(err) && !isAuthRejection(err)) {
+          // Zapis pripada drugom nalogu ili ga server ne dozvoljava: ne vrti se u krug, ali se ne briše.
+          await idbPut('red', { ...e, odbijen: true, greska: err?.message || String(err) });
+          continue;
+        }
         if (isNetworkFailure(err)) {
           // Veza je kriva, ne zapis: kratko čekanje bez povećanja broja pokušaja; ostali bi također visili.
           await idbPut('red', { ...e, sljedeci: Date.now() + NETWORK_RETRY_MS, greska: err?.message || String(err) });

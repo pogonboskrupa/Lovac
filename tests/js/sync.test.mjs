@@ -96,3 +96,17 @@ test('greška iz klijenta (postgrest) o mrtvoj vezi je greška veze', () => {
   assert.equal(isNetworkFailure({ message: 'TimeoutError: Server nije odgovorio za 12 s', code: '', details: '' }), true);
   assert.equal(isNetworkFailure({ message: 'TypeError: Failed to fetch', code: '' }), true);
 });
+
+import { isPolicyRejection, belongsToOther } from '../../static/js/sync.js';
+
+test('RLS odbijanje se razlikuje od mrtve veze i od 503', () => {
+  assert.equal(isPolicyRejection({ code: '42501', message: 'x' }), true);
+  assert.equal(isPolicyRejection({ message: 'new row violates row-level security policy (USING expression) for table "tragovi"' }), true);
+  assert.equal(isPolicyRejection({ message: 'server privremeno nedostupan' }), false);
+  assert.equal(isPolicyRejection({ message: 'TypeError: Failed to fetch' }), false);
+});
+test('zapis drugog naloga na istom telefonu se ne šalje kao moj', () => {
+  assert.equal(belongsToOther('a', 'b'), true);
+  assert.equal(belongsToOther('a', 'a'), false);
+  assert.equal(belongsToOther(undefined, 'b'), false, 'stari zapis bez oznake ostaje moj');
+});

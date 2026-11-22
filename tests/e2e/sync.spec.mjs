@@ -24,6 +24,7 @@ async function setup(page, server) {
     const table = url.pathname.split('/').pop();
     if (req.method() === 'POST') {
       if (server.abort) return route.abort('failed');
+      if (server.rls) return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: `new row violates row-level security policy (USING expression) for table "${table}"` }) });
       if (server.fail) return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"server privremeno nedostupan"}' });
       server.sent.push({ table, body: req.postDataJSON(), url: req.url() });
       return route.fulfill({ status: 201, body: '' });
@@ -205,4 +206,45 @@ test('mrtva veza ne produžava čekanje: pokušaji se ne broje, ponovo za ~15 s;
   await expect.poll(async () => (await redEntries(page))[0]?.pokusaja, { timeout: 10000 }).toBeGreaterThan(0);
   e = (await redEntries(page))[0];
   expect(e.sljedeci - Date.now()).toBeGreaterThan(4000);
+});
+
+test('RLS odbijanje ne ostaje "Čeka slanje" zauvijek: zapis ostaje na telefonu, a iz reda se skida', async ({ page }) => {
+  const server = { rls: true, sent: [], shared: [] };
+  await setup(page, server);
+  await page.goto('/');
+  await addObject(page, 'Tuđi nalog');
+  await page.locator('#btn-posalji-sad').evaluate((b) => b.click());
+  await expect.poll(async () => (await redEntries(page))[0]?.odbijen ?? false, { timeout: 10000 }).toBe(true);
+  await expect(page.locator('#red-znacka')).toBeHidden();
+  await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="podaci"]').click();
+  await expect(page.locator('#postavke-red-odbijeno')).toBeVisible();
+  await expect(page.locator('#postavke-red-odbijeno-tekst')).toContainText('1 zapisa');
+  await page.locator('#btn-odbijeno-ukloni').click();
+  await expect.poll(async () => (await redEntries(page)).length).toBe(0);
+  // zapis je i dalje lokalno sačuvan i označen, pa ga mreža sigurnosti ne vraća u red
+  server.rls = false;
+  await page.locator('#btn-posalji-sad').evaluate((b) => b.click());
+  await page.waitForTimeout(500);
+  expect((await redEntries(page)).length).toBe(0);
+  expect(server.sent.filter((x) => x.table === 'objekti')).toHaveLength(0);
+});
+
+test('zapis iz reda koji je napravio drugi nalog na ovom telefonu se ne šalje i ne broji', async ({ page }) => {
+  const server = { sent: [], shared: [] };
+  await setup(page, server);
+  await page.goto('/');
+  await page.evaluate(() => new Promise((resolve) => {
+    const r = indexedDB.open('lovac');
+    r.onsuccess = () => {
+      const tx = r.result.transaction(['red', 'objekti'], 'readwrite');
+      tx.objectStore('objekti').put({ id: 'tudji-nalog-1', naziv: 'Tuđi', vrsta: 'ceka_visoka', lat: 44.88, lon: 16.15, vidljivost: 'privatno', rev: 1, sinhronizovano: false, vlasnik_lokalni: 'drugi-korisnik', created_at: Date.now(), updated_at: Date.now() });
+      tx.objectStore('red').put({ id: 'objekti:tudji-nalog-1', store: 'objekti', recId: 'tudji-nalog-1', tombstone: null, seq: '1', pokusaja: 0, sljedeci: 0, dodano: Date.now(), vlasnik: 'drugi-korisnik' });
+      tx.oncomplete = resolve;
+    };
+  }));
+  await page.locator('#btn-posalji-sad').evaluate((b) => b.click());
+  await page.waitForTimeout(600);
+  expect(server.sent.filter((x) => x.table === 'objekti')).toHaveLength(0);
+  await expect(page.locator('#red-znacka')).toBeHidden();
 });
