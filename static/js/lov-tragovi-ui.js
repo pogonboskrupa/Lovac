@@ -6,7 +6,8 @@ import { idbGet, idbPut } from './db.js';
 import { connectionQuality } from './net.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { memberName } from './dijeljenje-ui.js';
-import { groupTrails, withLocalPoints } from './lovtrag.js';
+import { groupTrails, withLocalPoints, mergeTrailRows, nextTrailCursor } from './lovtrag.js';
+import { collectPages } from './pregled.js';
 import { initialsOf } from './lokacija.js';
 import { formatMemberDistance } from './istrazivac.js';
 import { toast, escapeHtml } from './ui.js';
@@ -37,18 +38,52 @@ export function initLovTragovi(L, map) {
     trails = [];
   };
 
-  const rowsFor = async (lovId) => {
-    if (online()) {
-      try {
-        const { data, error } = await getClient().from('lov_tragovi').select('*').eq('lov_id', lovId).order('t', { ascending: true }).limit(20000);
-        if (error) throw new Error(error.message);
-        await idbPut('arhiva', { id: `trag:${lovId}`, rows: data, preuzeto: Date.now() });
-        return data;
-      } catch (err) {
-        console.warn('trag lova', err.message);
-      }
+  // Inkrementalno: keš u IndexedDB + samo redovi poslije kursora, po stranicama (server vraća najviše 1000 redova).
+  // Ranije se svakih 30 s preuzimao cijeli trag i vidio se samo njegov početak.
+  let noRecvColumn = false; // migracija 028 još nije pokrenuta → kursor po t
+  let noRpc = false; // ni funkcija lov_trag (028) → direktno iz tabele (RLS po redu, sporije)
+  const missingFn = (err) => ['PGRST202', '42883'].includes(err.code) || /could not find the function/i.test(err.message);
+  const fetchSince = (lovId, cursor) => collectPages(async (from, to) => {
+    const order = cursor?.kolona === 'primljeno' ? 'primljeno' : 't';
+    const sb = getClient();
+    if (!noRpc) {
+      const { data, error } = await sb.rpc('lov_trag', { p_lov: lovId, p_kolona: cursor?.kolona || null, p_od: cursor?.v || null })
+        .order(order, { ascending: true }).order('korisnik_id', { ascending: true }).range(from, to);
+      if (!error) return data || [];
+      if (!missingFn(error)) throw Object.assign(new Error(error.message), { code: error.code });
+      noRpc = true;
     }
-    return (await idbGet('arhiva', `trag:${lovId}`).catch(() => null))?.rows || [];
+    let q = sb.from('lov_tragovi').select('*').eq('lov_id', lovId);
+    if (cursor) q = q.gt(cursor.kolona, cursor.v);
+    const { data, error } = await q.order(order, { ascending: true }).order('korisnik_id', { ascending: true }).range(from, to);
+    if (error) throw Object.assign(new Error(error.message), { code: error.code });
+    return data || [];
+  }, 1000, 40);
+
+  const rowsFor = async (lovId) => {
+    const cache = await idbGet('arhiva', `trag:${lovId}`).catch(() => null);
+    let rows = cache?.rows || [];
+    if (!online()) return rows;
+    let cursor = cache?.kursor || null;
+    if (cursor?.kolona === 'primljeno' && noRecvColumn) cursor = null;
+    try {
+      let fresh;
+      try {
+        fresh = await fetchSince(lovId, cursor);
+      } catch (err) {
+        if (cursor?.kolona !== 'primljeno' || err.code !== '42703') throw err;
+        noRecvColumn = true;
+        cursor = null;
+        fresh = await fetchSince(lovId, null);
+      }
+      if (!cache?.kursor) rows = [];
+      rows = mergeTrailRows(rows, fresh);
+      cursor = nextTrailCursor(fresh, cursor);
+      await idbPut('arhiva', { id: `trag:${lovId}`, rows, kursor: cursor, preuzeto: Date.now() });
+    } catch (err) {
+      console.warn('trag lova', err.message);
+    }
+    return rows;
   };
 
   const draw = () => {

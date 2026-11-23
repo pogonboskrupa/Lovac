@@ -43,7 +43,7 @@ function makeServer({ pozicije = true } = {}) {
   };
   let n = 1000;
   const match = (row, params) => [...params].every(([k, v]) => {
-    if (['select', 'order', 'limit', 'on_conflict'].includes(k)) return true;
+    if (['select', 'order', 'limit', 'offset', 'on_conflict'].includes(k)) return true;
     if (v.startsWith('eq.')) return String(row[k]) === v.slice(3);
     if (v.startsWith('in.(')) return v.slice(4, -1).split(',').includes(String(row[k]));
     return true;
@@ -55,6 +55,8 @@ function makeServer({ pozicije = true } = {}) {
       const url = new URL(req.url());
       const table = url.pathname.split('/').pop();
       const json = (status, body) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+      // server bez migracije 028: funkcije lov_trag nema, klijent čita tabelu
+      if (url.pathname.endsWith('/rpc/lov_trag')) return json(404, { code: 'PGRST202', message: 'Could not find the function public.lov_trag' });
       const rows = db[table] || (db[table] = []);
       if (req.method() === 'GET') return json(200, rows.filter((r) => match(r, url.searchParams)));
       if (req.method() === 'POST') {

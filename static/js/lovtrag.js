@@ -49,3 +49,28 @@ export function removeSentPoints(buffer, sent) {
   const done = new Set(sent.map((p) => p.t));
   return buffer.filter((p) => !done.has(p.t));
 }
+
+// Inkrementalno preuzimanje traga lova: keš + novi redovi, bez duplikata (isti lovac i isto vrijeme = ista tačka).
+const tMs = (t) => (typeof t === 'number' ? t : Date.parse(t));
+export function mergeTrailRows(cached = [], fresh = []) {
+  const by = new Map();
+  for (const r of [...cached, ...fresh]) {
+    const t = tMs(r.t);
+    if (!r?.korisnik_id || !Number.isFinite(t)) continue;
+    by.set(`${r.korisnik_id}|${t}`, { korisnik_id: r.korisnik_id, lat: r.lat, lon: r.lon, t });
+  }
+  return [...by.values()].sort((a, b) => a.t - b.t || a.korisnik_id.localeCompare(b.korisnik_id));
+}
+
+// Kursor za sljedeći upit: po `primljeno` (server, migracija 028) uz preklop od 1 min (transakcije koje kasne sa commitom),
+// a bez te kolone po `t` uz preklop od 15 min (tačke iz offline bafera kasne). Bez novih redova kursor ostaje isti.
+export const TRAG_PREKLOP_MS = { primljeno: 60000, t: 15 * 60000 };
+export function nextTrailCursor(fresh = [], prev = null) {
+  const hasRecv = fresh.some((r) => r.primljeno);
+  const kolona = hasRecv ? 'primljeno' : 't';
+  const max = Math.max(...fresh.map((r) => tMs(hasRecv ? r.primljeno : r.t)).filter(Number.isFinite));
+  if (!Number.isFinite(max)) return prev;
+  const v = max - TRAG_PREKLOP_MS[kolona];
+  if (prev && prev.kolona === kolona && Date.parse(prev.v) >= v) return prev;
+  return { kolona, v: new Date(v).toISOString() };
+}

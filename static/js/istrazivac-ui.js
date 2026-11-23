@@ -64,9 +64,10 @@ export function initIstrazivac(L, map) {
     if (serverTrail.uid === uid && Date.now() - serverTrail.at < 30000) return;
     serverTrail = { uid, pts: serverTrail.uid === uid ? serverTrail.pts : [], at: Date.now() };
     try {
-      const { data, error } = await sb.from('lov_tragovi').select('lat,lon,t').eq('lov_id', lovId).eq('korisnik_id', uid).order('t', { ascending: true }).limit(3000);
+      const { data, error } = await sb.from('lov_tragovi').select('lat,lon,t').eq('lov_id', lovId).eq('korisnik_id', uid).order('t', { ascending: false }).limit(1000);
       if (error) throw new Error(error.message);
-      serverTrail = { uid, pts: data || [], at: Date.now() };
+      // server vraća najviše 1000 redova: uzimaju se NAJNOVIJE tačke (inače bi se vidio samo početak lova)
+      serverTrail = { uid, pts: (data || []).reverse(), at: Date.now() };
       updateSelection();
     } catch (err) {
       console.warn('trag člana', err.message);
