@@ -16,7 +16,8 @@ export function planDownload(bounds, zoomNow, zoomMax) {
 export function initPreuzimanje(map, activeBase, L = globalThis.L) {
   let ctrl = null;
   let areas = loadJSON(PODRUCJA_KEY, []);
-  let showCoverage = loadJSON('lovac.pred.prikaz', false) === true;
+  // Pri svakom pokretanju isključeno: isprekidani pravougaonici bez objašnjenja zbunjuju ("šta je plavi poligon").
+  let showCoverage = false;
   const coverage = L ? L.layerGroup() : null;
 
   const drawCoverage = () => {
@@ -55,7 +56,6 @@ export function initPreuzimanje(map, activeBase, L = globalThis.L) {
   });
   $('btn-podrucja-pokrivenost').addEventListener('click', () => {
     showCoverage = !showCoverage;
-    saveSoft('lovac.pred.prikaz', showCoverage);
     renderAreas();
     drawCoverage();
   });

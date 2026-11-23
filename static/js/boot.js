@@ -53,6 +53,7 @@ import { initDijeljenje, setShareDialog } from './dijeljenje-ui.js';
 import { initSync } from './sync.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
+import { initDodaj } from './dodaj-ui.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
@@ -89,7 +90,7 @@ function enter(screen) {
       console.error('postavke', err);
     }
     for (const [name, fn] of [
-      ['meniji', () => { wireMenu('btn-dodaj', 'meni-dodaj'); initNav(); }],
+      ['meniji', () => { wireMenu('btn-dodaj', 'meni-dodaj'); initDodaj(); initNav(); }],
       ['dijeljenje', () => setShareDialog(initDijeljenje())],
       ['navigacija', () => initNavigation(globalThis.L, map)],
       ['objekti', () => initObjekti(globalThis.L, map)],

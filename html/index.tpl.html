@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.9.2';
+  const APP_VER = 'v0.9.3';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -212,14 +212,24 @@
       <p class="sitno">Lokaciju vide samo članovi, grupovođa i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
     </section>
   </div>
-  <div id="meni-dodaj" class="meni meni-dodaj" hidden>
-    <button type="button" id="btn-dodaj-objekat">Lovački objekat</button>
-    <button type="button" id="btn-dodaj-opazanje">Opažanje divljači</button>
-    <button type="button" id="btn-dodaj-odstrel">Odstrel</button>
-    <button type="button" id="btn-dodaj-kameru" hidden>Kamera (samo lovočuvari)</button>
-    <button type="button" id="btn-dodaj-sliku">Slika na poziciji (čeka, objekat, ulov)</button>
-    <button type="button" id="btn-dodaj-potragu">Potraga (ranjena divljač)</button>
-    <button type="button" id="btn-mjerenje">Mjerenje (udaljenost, površina, nagib)</button>
+  <div id="meni-dodaj" class="meni meni-dodaj" hidden role="dialog" aria-labelledby="dodaj-naslov">
+    <div class="dodaj-glava">
+      <div><h3 id="dodaj-naslov">Dodaj na kartu</h3><p id="dodaj-pozicija" class="sitno">Na tvojoj GPS poziciji, a bez GPS-a na nišanu karte.</p></div>
+      <button type="button" id="btn-dodaj-zatvori" class="ikona-dugme" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
+    </div>
+    <h4 class="dodaj-grupa">Evidencija</h4>
+    <div class="dodaj-mreza">
+      <button type="button" id="btn-dodaj-opazanje" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-eye"/></svg><span><b>Opažanje</b><small>Viđena divljač</small></span></button>
+      <button type="button" id="btn-dodaj-odstrel" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg><span><b>Odstrel</b><small>Ulov i težina</small></span></button>
+      <button type="button" id="btn-dodaj-objekat" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-obj-ceka-visoka"/></svg><span><b>Lovački objekat</b><small>Čeka, hranilište…</small></span></button>
+      <button type="button" id="btn-dodaj-sliku" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-camera"/></svg><span><b>Slika na poziciji</b><small>Čeka, objekat, ulov</small></span></button>
+    </div>
+    <h4 class="dodaj-grupa">Lov i alati</h4>
+    <div class="dodaj-mreza">
+      <button type="button" id="btn-dodaj-potragu" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-paw"/></svg><span><b>Potraga</b><small>Ranjena divljač</small></span></button>
+      <button type="button" id="btn-mjerenje" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-route"/></svg><span><b>Mjerenje</b><small>Udaljenost, površina</small></span></button>
+      <button type="button" id="btn-dodaj-kameru" class="dodaj-plocica" hidden><svg class="ic" aria-hidden="true"><use href="#ic-obj-kamera"/></svg><span><b>Kamera</b><small>Samo lovočuvari</small></span></button>
+    </div>
   </div>
   <div id="meni-podloga" class="meni" hidden>
     <button type="button" data-podloga="topo">Topo</button>

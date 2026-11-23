@@ -217,3 +217,36 @@ test('Istraživač: X uz tipku lokacije izlazi iz 3D, nema tipki lijevo/desno ni
   await page.locator('#btn-ist-x').click();
   await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
 });
+
+test('Istraživač: okrenuta i strmo nagnuta karta pokriva cijeli ekran (bez crnih ivica sa strane)', async ({ page }) => {
+  await serveTiles(page);
+  await page.addInitScript(() => localStorage.setItem('lovac.ist.nagib', JSON.stringify('strm')));
+  await page.goto('/');
+  await lok(page, '#btn-istrazivac');
+  await expect(page.locator('#btn-ist-nagib-tekst')).toHaveText('55°');
+  const vp = page.viewportSize();
+  for (const angle of [35, 55]) {
+    await twoFingers(page, { rotate: angle, cx: vp.width / 2, cy: vp.height / 2 });
+    // tačke na rubu ekrana (ispod magle horizonta) moraju pogoditi ravan karte, ne pozadinu ekrana
+    const misses = await page.evaluate(() => {
+      const r = document.getElementById('ekran-mapa').getBoundingClientRect();
+      const w = r.width; const h = r.bottom; const karta = document.getElementById('karta');
+      const fog = document.getElementById('ist-magla');
+      const top = fog && !fog.hidden ? fog.getBoundingClientRect().height + 2 : 2;
+      const pts = [];
+      for (let i = 0; i <= 6; i++) {
+        const y = top + ((h - 2 - top) * i) / 6;
+        pts.push([1, y], [w - 2, y]);
+        const x = 1 + ((w - 3) * i) / 6;
+        pts.push([x, top], [x, h - 2]);
+      }
+      const sakrij = [...document.querySelectorAll('#ekran-mapa > *:not(#karta), .navigacija-donja, nav')];
+      const prije = sakrij.map((el) => el.style.visibility);
+      sakrij.forEach((el) => { el.style.visibility = 'hidden'; });
+      const out = pts.map(([x, y]) => [x, y, document.elementFromPoint(x, y)]).filter(([, , el]) => !karta.contains(el));
+      sakrij.forEach((el, i) => { el.style.visibility = prije[i]; });
+      return out.map(([x, y, el]) => `${Math.round(x)},${Math.round(y)} ${el?.id || el?.tagName}`);
+    });
+    expect(misses, `okret +${angle}°`).toEqual([]);
+  }
+});

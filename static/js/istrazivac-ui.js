@@ -13,7 +13,7 @@ import { currentHeading } from './gps.js';
 import { initialsOf } from './lokacija.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { tiltById, nextTilt, freshnessOf, barSummary, detailLine, crumbsAdd, mergeMemberTrail, trailMeters } from './istrazivac-pregled.js';
-import { touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss, screenDragToPan } from './rotacija.js';
+import { touchAngle, rotateBy, rotationForHeading, upBearing, gestureDelta, mapTransformCss, screenDragToPan, explorerView } from './rotacija.js';
 
 const $ = (id) => document.getElementById(id);
 const DAY = 86400000;
@@ -106,9 +106,37 @@ export function initIstrazivac(L, map) {
     applyRot();
   };
 
+  // Kvadratni kontejner + uvećanje po nagibu (rotacija.js): okrenuta karta više nema crnih ivica sa strane.
+  const VIEW0 = { side: 0, scale: 1.6, p: 900, fog: 0, key: '' };
+  let view = VIEW0;
+  const magla = document.createElement('div');
+  magla.id = 'ist-magla';
+  magla.hidden = true;
+  screen.appendChild(magla);
+
+  const layoutView = () => {
+    const w = screen.clientWidth || window.innerWidth;
+    const h = screen.clientHeight || window.innerHeight;
+    const deg = tiltById(tiltId).stepeni;
+    const key = `${w}x${h}@${deg}`;
+    if (key === view.key) return false;
+    view = { ...explorerView(w, h, deg), key };
+    const { side } = view;
+    Object.assign(karta.style, { left: `${Math.round((w - side) / 2)}px`, top: `${Math.round((h - side) / 2)}px`, width: `${side}px`, height: `${side}px` });
+    magla.style.height = `${view.fog ? view.fog + 48 : 0}px`;
+    return true;
+  };
+
+  const resetView = () => {
+    view = VIEW0;
+    for (const k of ['left', 'top', 'width', 'height']) karta.style[k] = '';
+  };
+
   const applyRot = () => {
     const tilt = tiltById(tiltId);
-    karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni }) : '';
+    if (on && layoutView()) map.invalidateSize({ animate: false });
+    magla.hidden = !on || !view.fog;
+    karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni, scale: view.scale, p: view.p }) : '';
     $('btn-ist-kompas').setAttribute('aria-pressed', String(followCompass));
     $('btn-ist-nagib-tekst').textContent = `${tilt.stepeni}°`;
     $('ist-n-strelica').setAttribute('transform', `rotate(${rot})`);
@@ -143,7 +171,7 @@ export function initIstrazivac(L, map) {
     $('btn-ist-izlaz').hidden = !on;
     if (!on) selectMember(null);
     controls.hidden = !on;
-    if (!on) { rot = 0; followCompass = false; }
+    if (!on) { rot = 0; followCompass = false; resetView(); }
     following = true;
     screen.classList.toggle('istrazivac', on);
     map.invalidateSize({ animate: false });
@@ -158,6 +186,7 @@ export function initIstrazivac(L, map) {
   // Rezerva za WebView bez `overflow: clip`: ako se ekran ipak programski skrolovao, vrati ga.
   screen.addEventListener('scroll', () => { if (on && (screen.scrollTop || screen.scrollLeft)) { screen.scrollTop = 0; screen.scrollLeft = 0; } });
   btn.addEventListener('click', () => setOn(!on));
+  window.addEventListener('resize', () => { if (on) applyRot(); });
   $('btn-ist-izlaz').addEventListener('click', () => setOn(false));
   $('btn-ist-detalj-zatvori').addEventListener('click', () => selectMember(null));
   $('btn-ist-trag').addEventListener('click', () => { showTrail = !showTrail; saveSoft('lovac.ist.trag', showTrail); updateSelection(); });
@@ -221,7 +250,7 @@ export function initIstrazivac(L, map) {
     }
     if (pointers.size === 1 && (dx || dy)) {
       following = false;
-      const [px, py] = screenDragToPan(dx, dy, rot, { tilt: tiltById(tiltId).stepeni });
+      const [px, py] = screenDragToPan(dx, dy, rot, { tilt: tiltById(tiltId).stepeni, scale: view.scale });
       map.panBy([px, py], { animate: false });
       applyRot();
     }

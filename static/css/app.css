@@ -127,7 +127,22 @@ input {
 }
 #meni-spiskovi[hidden], #meni-dodaj[hidden] { display: none; }
 #meni-spiskovi button, #meni-dodaj button { background: var(--dugme); color: var(--dugme-tekst); border-radius: 10px; min-height: 56px; padding: 6px 12px; }
-#meni-dodaj { grid-template-columns: 1fr; }
+#meni-dodaj { display: block; padding: 12px; border: 1.5px solid var(--okvir); max-height: calc(100dvh - var(--gore-1) - var(--nav-h) - 16px); }
+#meni-dodaj[hidden] { display: none; }
+.dodaj-glava { display: flex; align-items: flex-start; gap: 8px; }
+.dodaj-glava > div { flex: 1; min-width: 0; }
+.dodaj-glava h3 { margin: 2px 0 2px; font-size: 18px; }
+.dodaj-glava p { margin: 0; }
+#meni-dodaj .dodaj-glava .ikona-dugme { min-height: 44px; min-width: 44px; padding: 0; display: grid; place-items: center; }
+.dodaj-grupa { margin: 12px 2px 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--tekst-2); }
+.dodaj-mreza { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#meni-dodaj .dodaj-plocica { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 10px; border: 1.5px solid var(--okvir); text-align: left; }
+#meni-dodaj .dodaj-plocica[hidden] { display: none; }
+.dodaj-plocica .ic { flex: none; width: 26px; height: 26px; color: var(--naglasak); }
+.dodaj-plocica span { display: flex; flex-direction: column; min-width: 0; }
+.dodaj-plocica b { font-size: 15px; line-height: 1.2; }
+.dodaj-plocica small { font-size: 13px; line-height: 1.25; color: var(--tekst-2); }
+html[data-velicina="najvece"] .dodaj-mreza { grid-template-columns: 1fr; }
 
 .mapa-dno {
   position: absolute; left: 0; right: 0; bottom: calc(var(--nav-h) + 20px); z-index: 1000; display: flex; flex-direction: column; gap: 8px;
@@ -1197,3 +1212,7 @@ svg[hidden] { display: none; }
 #sekcija-ekran .brze-poruke button { flex: none; border: 1.5px solid var(--okvir); }
 #sekcija-ekran .poruke { border: 1.5px solid var(--okvir); }
 #sekcija-ekran .forma-poruka { margin-top: 10px; }
+
+/* Istraživač: magla horizonta pri strmom nagibu (prekriva najdalji, najrazvučeniji dio karte) */
+#ist-magla { position: absolute; left: 0; right: 0; top: 0; z-index: 500; pointer-events: none;
+  background: linear-gradient(#4a7aa3 0%, rgba(74, 122, 163, 0.85) 55%, rgba(74, 122, 163, 0) 100%); }

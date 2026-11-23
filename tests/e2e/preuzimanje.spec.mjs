@@ -58,11 +58,14 @@ test('preuzeto područje ulazi u spisak, označava se kao već preuzeto, prikazu
   await expect(page.locator('#btn-podrucja-pokrivenost')).toHaveAttribute('aria-checked', 'true');
   await expect.poll(() => page.locator('#karta .leaflet-overlay-pane path').count()).toBeGreaterThan(0);
 
-  // ostaje i poslije ponovnog učitavanja
+  // spisak ostaje poslije ponovnog učitavanja, a prikaz na karti je opet isključen
   await page.reload();
+  await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
+  expect(await page.locator('#karta .leaflet-overlay-pane path').count()).toBe(0);
   await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   await expect(page.locator('#podrucja-spisak [data-id]')).toHaveCount(1);
+  await expect(page.locator('#btn-podrucja-pokrivenost')).toHaveAttribute('aria-checked', 'false');
 
   // uklanjanje traži drugi dodir
   await page.locator('#podrucja-spisak [data-akcija="ukloni"]').click();
