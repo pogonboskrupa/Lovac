@@ -2,6 +2,12 @@
 // navigator.onLine laže `true` na mrtvoj vezi, pa se na njega ne oslanjamo.
 
 export const DEFAULT_TIMEOUT_MS = 12000;
+// Prijava i registracija su radnje koje lovac sam pokrene i čeka ih: server (besplatni Supabase) se nakon mirovanja
+// "budi" duže od 12 s, a provjera PIN-a (bcrypt) također nije trenutna — kraći rok je dojavljivao grešku uz dobar internet.
+export const AUTH_TIMEOUT_MS = 30000;
+export function timeoutFor(url) {
+  return /\/auth\/v1\/(token|signup|user|recover)/.test(String(url)) ? AUTH_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+}
 const SLOW_MS = 4000;
 // Signal koji tehnički postoji, ali zahtjevi ne prolaze (većina pada ili traje preko 8 s): za aplikaciju je isto što i bez veze.
 const UNUSABLE_MS = 8000;

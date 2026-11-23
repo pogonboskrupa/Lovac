@@ -71,3 +71,12 @@ test('provjera veze radi samo dok je veza prekinuta ili preslaba i vraća ocjenu
   await tick();
   assert.equal(calls, 1, 'kad veza nije više preslaba, provjera miruje');
 });
+
+test('prijava i registracija imaju duži rok (server se budi, bcrypt), ostali pozivi 12 s', async () => {
+  const { timeoutFor, AUTH_TIMEOUT_MS, DEFAULT_TIMEOUT_MS } = await import('../../static/js/net.js');
+  const base = 'https://x.supabase.co';
+  assert.equal(timeoutFor(`${base}/auth/v1/token?grant_type=password`), AUTH_TIMEOUT_MS);
+  assert.equal(timeoutFor(`${base}/auth/v1/signup`), AUTH_TIMEOUT_MS);
+  assert.equal(timeoutFor(`${base}/rest/v1/korisnici?select=*`), DEFAULT_TIMEOUT_MS);
+  assert.ok(AUTH_TIMEOUT_MS > DEFAULT_TIMEOUT_MS);
+});

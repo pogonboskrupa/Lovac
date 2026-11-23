@@ -2,7 +2,7 @@
 // Odluka o ekranu nikad ne čeka mrežu: keširan profil ulazi odmah.
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, EMAIL_DOMAIN, isServerConfigured } from './config.js';
-import { fetchWithTimeout } from './net.js';
+import { fetchWithTimeout, timeoutFor } from './net.js';
 import { saveCritical, loadJSON, removeKey } from './storage.js';
 
 export const PROFILE_KEY = 'lovac.profil';
@@ -75,10 +75,21 @@ export function getClient() {
   const lib = globalThis.supabase;
   if (!lib?.createClient) throw new Error('Biblioteka za server nije učitana');
   client = lib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { fetch: (url, opts) => fetchWithTimeout(url, opts) },
+    global: { fetch: (url, opts) => fetchWithTimeout(url, opts, timeoutFor(url)) },
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
   });
   return client;
+}
+
+// Budi server dok lovac upisuje podatke za prijavu: prvi zahtjev poslije mirovanja je spor, pa ga ne čeka PIN provjera.
+// Običan fetch (ne bilježi se u ocjenu veze): neuspjeh ovdje ne znači da je veza loša.
+export function warmServer() {
+  if (!SUPABASE_URL) return;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  fetch(`${SUPABASE_URL}/auth/v1/health`, { mode: 'no-cors', cache: 'no-store', signal: ctrl.signal })
+    .catch(() => {})
+    .finally(() => clearTimeout(timer));
 }
 
 export function cachedProfile() {
@@ -90,6 +101,7 @@ function friendlyAuthError(err) {
   if (/already registered|already exists/i.test(msg)) return 'Korisnik s tim imenom i prezimenom već postoji. Upišite nadimak ili broj člana.';
   if (/invalid login credentials/i.test(msg)) return 'Pogrešno ime, prezime ili PIN.';
   if (/rate limit|too many/i.test(msg)) return 'Previše pokušaja. Pokušajte ponovo za nekoliko minuta.';
+  if (/nije odgovorio/i.test(msg)) return 'Server sporo odgovara (možda se budi nakon mirovanja). Pokušaj ponovo za nekoliko sekundi.';
   if (err?.name === 'TimeoutError' || /fetch|network/i.test(msg)) return 'Nema veze sa serverom. Pokušajte kad bude signala.';
   return msg;
 }

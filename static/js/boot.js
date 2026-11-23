@@ -2,8 +2,7 @@
 
 import { isServerConfigured, GITHUB_REPO } from './config.js';
 import {
-  cachedProfile, decideStartScreen, refreshProfileInBackground, register, login, logout,
-} from './auth.js';
+  cachedProfile, decideStartScreen, refreshProfileInBackground, register, login, logout, warmServer } from './auth.js';
 import { setStorageReporter } from './storage.js';
 import { onQualityChange, connectionDetail } from './net.js';
 import { showScreen, toast, alarm, initTheme, handleBack, wireMenu } from './ui.js';
@@ -182,9 +181,12 @@ function readForm(form) {
 function wireAuthForms() {
   const form = document.getElementById('forma-prijava');
   const status = document.getElementById('prijava-status');
+  // Server se budi dok lovac upisuje ime i PIN (prvi zahtjev poslije mirovanja je spor).
+  if (!cachedProfile()) warmServer();
   const submit = async (action) => {
     status.textContent = 'Šaljem…';
     form.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    const slow = setTimeout(() => { status.textContent = 'Server sporo odgovara, čekam… (do 30 s)'; }, 6000);
     try {
       const profile = action === 'registracija' ? await register(readForm(form)) : await login(readForm(form));
       status.textContent = '';
@@ -192,6 +194,7 @@ function wireAuthForms() {
     } catch (err) {
       status.textContent = err.message;
     } finally {
+      clearTimeout(slow);
       form.querySelectorAll('button').forEach((b) => { b.disabled = false; });
     }
   };

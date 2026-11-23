@@ -54,3 +54,23 @@ test('polja forme su ≥ 48 px i font ≥ 16 px (WebView inače zumira)', async 
     expect(await el.evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(16);
   }
 });
+
+test('prijava čeka spor server do 30 s (ne javlja grešku poslije 12 s) i pokazuje da čeka', async ({ page }) => {
+  test.setTimeout(60000);
+  await fakeServerConfigHanging(page);
+  await page.unroute(/lazni\.supabase\.test/);
+  let warmed = 0;
+  await page.route(/lazni\.supabase\.test\/auth\/v1\/health/, (r) => { warmed++; return r.fulfill({ status: 200, body: '{}' }); });
+  await page.route(/lazni\.supabase\.test\/auth\/v1\/token/, async (r) => {
+    await new Promise((resolve) => setTimeout(resolve, 14000)); // duže od starog roka od 12 s
+    return r.fulfill({ status: 400, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid login credentials' }) });
+  });
+  await page.goto('/');
+  await expect.poll(() => warmed).toBeGreaterThan(0); // server se budi čim se pokaže prijava
+  await page.fill('input[name=ime]', 'Mujo');
+  await page.fill('input[name=prezime]', 'Mujić');
+  await page.fill('input[name=pin]', '123456');
+  await page.locator('button[value=prijava]').click();
+  await expect(page.locator('#prijava-status')).toContainText('Server sporo odgovara, čekam', { timeout: 10000 });
+  await expect(page.locator('#prijava-status')).toHaveText('Pogrešno ime, prezime ili PIN.', { timeout: 30000 });
+});
