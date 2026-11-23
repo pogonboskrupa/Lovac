@@ -36,3 +36,23 @@ export function headingCheck(heading, arcs) {
   }
   return 'dozvoljeno';
 }
+
+// Grupe na ekranu "Zajednički lov": danas/u toku, planirani od najbližeg, završeni od najnovijeg.
+const byDate = (dir) => (a, b) => dir * String(a.lov.datum).localeCompare(String(b.lov.datum));
+export function huntGroups(all, todayIds) {
+  const today = new Set(todayIds);
+  return [
+    ['Danas i u toku', all.filter((x) => x.lov.status === 'u_toku' || today.has(x.id)).sort(byDate(-1))],
+    ['Planirani', all.filter((x) => x.lov.status === 'planiran' && !today.has(x.id)).sort(byDate(1))],
+    ['Završeni', all.filter((x) => x.lov.status === 'zavrsen' && !today.has(x.id)).sort(byDate(-1))],
+  ];
+}
+
+// Datum lova kao "subota, 5.12.2026." (bez vremenske zone: datum lova je kalendarski dan).
+const DANI = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
+export function huntDateText(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  if (!m) return String(iso || '—');
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return `${DANI[d.getUTCDay()]}, ${+m[3]}.${+m[2]}.${m[1]}.`;
+}

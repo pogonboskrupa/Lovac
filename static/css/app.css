@@ -1099,3 +1099,19 @@ svg[hidden] { display: none; }
 #teren-preuzimanje { color: var(--tekst); font-weight: 600; }
 #teren-preuzimanje[data-greska] { color: var(--greska); }
 #teren-preuzimanje:empty { display: none; }
+
+/* Meni ekrani (Zajednički lov, Sekcije i pristup, Odstrel, Objekti): isti jasni okviri kao Postavke */
+:is(#lovovi, #sekcije, #odstrel, #objekti) :is(.lov-kartica, .sekcija-kartica, .tr-kartica, .p-kartica) { border: 1.5px solid var(--okvir); box-shadow: none; }
+:is(#lovovi, #sekcije, #odstrel, #objekti) .sitno { color: var(--tekst-2); }
+:is(#lovovi, #sekcije, #odstrel, #objekti) :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
+:is(#lovovi, #sekcije, #odstrel, #objekti) :is(.segment button[aria-pressed="true"], .dugme.glavno) { border: 1.5px solid var(--naglasak); }
+:is(#lovovi, #sekcije, #odstrel, #objekti) :is(select, input[type="search"], input:not([type])) { border: 2px solid var(--okvir); }
+#lovovi .lov-kartica[data-status="u_toku"] { border: 2px solid var(--gps-dobro); }
+.lk-datum { font-weight: 700; font-size: 15px; }
+.lk-sporedna { display: flex; gap: 6px; }
+.lk-sporedna:empty { display: none; }
+.lk-sporedna .dugme { flex: 1; }
+#sekcije-status:empty, #lovovi-status:empty, #lovovi-prazno[hidden] { display: none; }
+.obj-vrste { flex-wrap: wrap; overflow-x: visible; }
+.obj-vrste { margin-top: 8px; }
+#objekti .segment button[aria-pressed="true"] .sitno { color: inherit; }

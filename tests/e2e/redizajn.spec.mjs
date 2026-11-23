@@ -169,3 +169,24 @@ test('Moj pas: ime i slika iz profila, strelica pokazuje smjer ka psu, dugme vod
   await expect(page.locator('#postavke')).toBeVisible();
   await expect(page.locator('#p-profil')).toBeVisible();
 });
+
+test('Zajednički lov: pregled sa brojevima, datum sa danom u sedmici, planirani od najbližeg, bez dupliranog statusa', async ({ page }) => {
+  const server = makeServer();
+  server.db.lovovi.push(
+    { ...server.db.lovovi[0], id: ID(312), naziv: 'Daleki lov', status: 'planiran', datum: '2099-01-01' },
+    { ...server.db.lovovi[0], id: ID(313), naziv: 'Bliski lov', status: 'planiran', datum: '2098-12-05' },
+    { ...server.db.lovovi[0], id: ID(314), naziv: 'Stari lov', status: 'zavrsen', datum: '2026-10-01' });
+  await setup(page, server, LOVAC);
+  await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-lovovi').click();
+  await page.locator('#btn-lovovi-osvjezi').click();
+  await expect(page.locator('#lovovi-spisak .lov-kartica')).toHaveCount(4);
+  await expect(page.locator('#lovh-danas')).toHaveText('1');
+  await expect(page.locator('#lovh-plan')).toHaveText('2');
+  await expect(page.locator('#lovh-zavrsen')).toHaveText('1');
+  const plan = page.locator('#lovovi-spisak .lov-kartica[data-status="planiran"] .trag-naslov b');
+  await expect(plan).toHaveText(['Bliski lov', 'Daleki lov']);
+  await expect(page.locator(`#lovovi-spisak [data-id="${ID(313)}"] .lk-datum`)).toHaveText('petak, 5.12.2098.');
+  await expect(page.locator(`#lovovi-spisak [data-id="${LOV}"] .trag-naslov`)).not.toContainText('U toku');
+});

@@ -128,7 +128,8 @@ test('učesnik: raspored radi offline, moj stan, crveni sektori i kompas uz napo
   await page.goto('/');
   await openHunts(page);
   await expect(page.locator('#btn-lov-novi')).toBeHidden();
-  await expect(page.locator('#lovovi-spisak')).toContainText('Strijelac, stan 1');
+  await expect(page.locator('#lovovi-spisak')).toContainText('Strijelac');
+  await expect(page.locator('#lovovi-spisak')).toContainText('stan 1');
 
   // Bez interneta poslije preuzimanja.
   await page.route(/lazni\.supabase\.test\/rest\/v1\//, (r) => r.abort('internetdisconnected'));

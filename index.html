@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.8.5';
+  const APP_VER = 'v0.8.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -1040,6 +1040,13 @@
     <h2 id="lovovi-naslov">Zajednički lov</h2>
     <button id="btn-lovovi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero ev-hero" id="lovovi-hero">
+    <div class="sk-statovi sk-statovi-hero">
+      <div><b id="lovh-danas">0</b><span>danas i u toku</span></div>
+      <div><b id="lovh-plan">0</b><span>planiranih</span></div>
+      <div><b id="lovh-zavrsen">0</b><span>završenih</span></div>
+    </div>
+  </div>
   <p class="sitno">Raspored preuzmi dok ima interneta — poslije radi i bez signala. Ne zamjenjuje pravila lova ni vođu lova.</p>
   <div class="red-dugmadi">
     <button id="btn-lovovi-osvjezi" class="dugme" type="button">Preuzmi sa servera</button>
