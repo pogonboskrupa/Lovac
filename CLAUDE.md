@@ -444,3 +444,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Opseg sekcija po ulozi (v0.8.1)**
 - Pravilo vlasnika: admin vidi sve revire i sekcije, lovočuvar svoj revir (sve njegove sekcije), grupovođa i lovci svoju sekciju. Provodi server (RLS), a klijent samo prikazuje (`sekcija-podaci.js mySections`). Tab "Sekcije" sa spiskom (`#sk-lista`) dobijaju i admin i lovočuvar (`sekcije.js seesSectionList`); spisak je grupisan po reviru (`groupSectionsByRevir`, zaglavlje `.sk-lista-revir`). Grupovođa i lovac vide naziv svoje sekcije (padajući izbor samo ako imaju više od jedne).
+
+**Obavijesti i baterija vode u sistem (v0.8.2)**
+- Postavke → Podaci → "Obavijesti i baterija": dugmad "Postavke obavijesti" (`AndroidNotif.postavke`, `ACTION_APP_NOTIFICATION_SETTINGS`) i "Postavke baterije (optimizacija)" (`AndroidGps.openBatterySettings`: `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`, rezerva `ACTION_APPLICATION_DETAILS_SETTINGS`) su UVIJEK vidljiva u aplikaciji, pa lovac može promijeniti i kad je stanje već dobro. Dijalog `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (`requestBatteryExemption`) zna ne otvoriti ništa na nekim proizvođačima, pa pada na isti spisak. "Dozvoli obavijesti" (dijalog dozvole na Androidu 13+) se vidi samo dok su obavijesti isključene. Java izmjena: provjerava je tek CI.

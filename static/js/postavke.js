@@ -155,14 +155,21 @@ function renderReliability() {
   list.innerHTML = items.map((i) => `<li class="p-pouzdanost" data-stanje="${i.stanje}" data-id="${i.id}"><b>${escapeHtml(i.naslov)}</b><span class="sitno">${escapeHtml(i.tekst)}</span></li>`).join('');
   el('p-pouzdanost').dataset.stanje = needsAttention(items) ? 'upozorenje' : 'ok';
   el('btn-dozvoli-obavijesti').hidden = !(hasBridge && n?.trazi && notif === false);
-  el('btn-postavke-obavijesti').hidden = !(hasBridge && n?.postavke && notif === false);
-  el('btn-iskljuci-bateriju').hidden = !(hasBridge && g?.requestBatteryExemption && battery === false);
+  // Postavke obavijesti i baterije su uvijek na dohvat: dugme vodi direktno u sistem, bez obzira na trenutno stanje.
+  el('btn-postavke-obavijesti').hidden = !(hasBridge && n?.postavke);
+  el('btn-iskljuci-bateriju').hidden = !(hasBridge && (g?.openBatterySettings || g?.requestBatteryExemption));
 }
 
 function wireReliability() {
   el('btn-dozvoli-obavijesti').addEventListener('click', () => { try { globalThis.AndroidNotif.trazi(); } catch (err) { console.warn(err); } setTimeout(renderReliability, 1500); });
   el('btn-postavke-obavijesti').addEventListener('click', () => { try { globalThis.AndroidNotif.postavke(); } catch (err) { console.warn(err); } });
-  el('btn-iskljuci-bateriju').addEventListener('click', () => { try { globalThis.AndroidGps.requestBatteryExemption(); } catch (err) { console.warn(err); } });
+  el('btn-iskljuci-bateriju').addEventListener('click', () => {
+    try {
+      const g = globalThis.AndroidGps;
+      // Starija aplikacija nema openBatterySettings: koristi dijalog izuzeća.
+      if (g.openBatterySettings) g.openBatterySettings(); else g.requestBatteryExemption();
+    } catch (err) { console.warn(err); }
+  });
   // Povratak iz sistemskih postavki: ponovo pročitaj stanje.
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderReliability(); });
   document.addEventListener('postavke:podaci', renderReliability);

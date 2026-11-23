@@ -82,8 +82,28 @@ public class GpsBridge {
                 activity.startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                         Uri.parse("package:" + activity.getPackageName())));
             } catch (Exception e) {
-                Log.w("Lovac", "Izuzeće od optimizacije baterije nije dostupno", e);
+                Log.w("Lovac", "Dijalog izuzeća od baterije nije dostupan, otvaram postavke", e);
+                openBatterySettingsNow();
             }
         });
+    }
+
+    /** Vodi direktno u sistemski spisak "Optimizacija baterije"; ako ga uređaj nema, u postavke aplikacije. */
+    @JavascriptInterface
+    public void openBatterySettings() {
+        activity.runOnUiThread(this::openBatterySettingsNow);
+    }
+
+    private void openBatterySettingsNow() {
+        try {
+            activity.startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (Exception e) {
+            try {
+                activity.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + activity.getPackageName())));
+            } catch (Exception e2) {
+                Log.w("Lovac", "Postavke baterije nisu dostupne", e2);
+            }
+        }
     }
 }

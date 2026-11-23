@@ -52,7 +52,7 @@ export const UPUTE = [
       ['Preuzeta područja', 'Spisak preuzetih područja u Karte i offline pokazuje podlogu, zoom, broj pločica i datum. Prekidač ih crta isprekidanim okvirom na karti, a pri novom preuzimanju piše da je prikazani dio već preuzet.'],
       ['Teren i offline karte', 'Teren je karta društva koju preuzimaš jednom (veliki fajl, koristi wifi). Možeš uvesti i vlastitu MBTiles ili RMaps kartu sa telefona.'],
       ['Spremnost', 'Postavke → Podaci pokazuje vezu, zadnje slanje, zauzetu pohranu telefona, broj pločica i kad je zadnja rezervna kopija.'],
-      ['Obavijesti i baterija', 'Postavke → Podaci → Obavijesti i baterija pokazuje da li su obavijesti dozvoljene i da li je optimizacija baterije isključena. Oboje treba da stigne poruka, SOS i komande lova i da se trag snima bez prekida. Crvena značka na tabu sekcije pokazuje broj nepročitanih poruka. Bez servisa za push obavijest stiže dok je aplikacija otvorena ili živa u pozadini.'],
+      ['Obavijesti i baterija', 'Postavke → Podaci → Obavijesti i baterija pokazuje da li su obavijesti dozvoljene i da li je optimizacija baterije isključena. Dugmad "Postavke obavijesti" i "Postavke baterije" vode direktno u sistemske postavke telefona, gdje to promijeniš. Oboje treba da stigne poruka, SOS i komande lova i da se trag snima bez prekida. Crvena značka na tabu sekcije pokazuje broj nepročitanih poruka. Bez servisa za push obavijest stiže dok je aplikacija otvorena ili živa u pozadini.'],
       ['Zapisi drugog naloga', 'Ako se na istom telefonu prijavi drugi lovac, njegovi neposlani zapisi se ne šalju pod tvojim imenom. Što server odbije, pojavi se u Postavke → Podaci i može se skinuti iz reda.'],
     ],
   },

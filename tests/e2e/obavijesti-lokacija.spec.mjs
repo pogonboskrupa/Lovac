@@ -49,6 +49,7 @@ test('Postavke: bez aplikacije kartica samo kaže da se podešava na telefonu', 
   await openPodaci(page);
   await expect(page.locator('#pouzdanost-lista [data-id="aplikacija"]')).toContainText('u aplikaciji na telefonu');
   await expect(page.locator('#btn-dozvoli-obavijesti')).toBeHidden();
+  await expect(page.locator('#btn-postavke-obavijesti')).toBeHidden();
   await expect(page.locator('#btn-iskljuci-bateriju')).toBeHidden();
 });
 
@@ -58,7 +59,7 @@ test('Postavke u aplikaciji: upozorenje za isključene obavijesti i uključenu o
     window.__notif = false;
     window.__bat = false;
     window.AndroidNotif = { imaDozvolu: () => window.__notif, trazi: () => window.__poziv.push('trazi'), postavke: () => window.__poziv.push('postavke'), prikazi: () => {}, vibriraj: () => {} };
-    window.AndroidGps = { isIgnoringBattery: () => window.__bat, requestBatteryExemption: () => window.__poziv.push('baterija'), start: () => 'ok', stop: () => {}, isRunning: () => false, read: () => '', clear: () => {} };
+    window.AndroidGps = { isIgnoringBattery: () => window.__bat, requestBatteryExemption: () => window.__poziv.push('baterija'), openBatterySettings: () => window.__poziv.push('baterija-postavke'), start: () => 'ok', stop: () => {}, isRunning: () => false, read: () => '', clear: () => {} };
   });
   await openPodaci(page);
   await expect(page.locator('#p-pouzdanost')).toHaveAttribute('data-stanje', 'upozorenje');
@@ -71,13 +72,17 @@ test('Postavke u aplikaciji: upozorenje za isključene obavijesti i uključenu o
   await page.locator('#btn-dozvoli-obavijesti').click();
   await page.locator('#btn-postavke-obavijesti').click();
   await page.locator('#btn-iskljuci-bateriju').click();
-  expect(await page.evaluate(() => window.__poziv)).toEqual(['trazi', 'postavke', 'baterija']);
+  expect(await page.evaluate(() => window.__poziv)).toEqual(['trazi', 'postavke', 'baterija-postavke']);
 
   // korisnik je dozvolio i vratio se u aplikaciju: stanje se osvježi, upozorenja nestaju
   await page.evaluate(() => { window.__notif = true; window.__bat = true; document.dispatchEvent(new Event('visibilitychange')); });
   await expect(page.locator('#p-pouzdanost')).toHaveAttribute('data-stanje', 'ok');
   await expect(page.locator('#btn-dozvoli-obavijesti')).toBeHidden();
-  await expect(page.locator('#btn-iskljuci-bateriju')).toBeHidden();
+  // dugmad za sistemske postavke ostaju: lovac može promijeniti i kad je sve uključeno
+  await expect(page.locator('#btn-postavke-obavijesti')).toBeVisible();
+  await expect(page.locator('#btn-iskljuci-bateriju')).toBeVisible();
+  await page.locator('#btn-iskljuci-bateriju').click();
+  expect((await page.evaluate(() => window.__poziv)).pop()).toBe('baterija-postavke');
 });
 
 test('značka nepročitanih poruka je crvena puna kružnica sa brojem', async ({ page }) => {
