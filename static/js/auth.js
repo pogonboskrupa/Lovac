@@ -3,6 +3,7 @@
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, EMAIL_DOMAIN, isServerConfigured } from './config.js';
 import { fetchWithTimeout, timeoutFor } from './net.js';
+import { hasAppAccess } from './probni.js';
 import { saveCritical, loadJSON, removeKey } from './storage.js';
 
 export const PROFILE_KEY = 'lovac.profil';
@@ -51,7 +52,7 @@ export function validateName(s) {
 export function decideStartScreen(profile, serverConfigured) {
   if (!serverConfigured) return 'mapa';
   if (!profile) return 'prijava';
-  return profile.odobren ? 'mapa' : 'cekanje';
+  return hasAppAccess(profile) ? 'mapa' : 'cekanje';
 }
 
 // Auth greška (odbijena sesija) vodi na prijavu; mrežna greška nikad.
@@ -130,12 +131,13 @@ export async function register({ ime, prezime, nadimak, pin }) {
   const { data, error } = await sb.auth.signUp({
     email: syntheticEmail(ime, prezime, nad),
     password: String(pin),
-    options: { data: { ime: ime.trim(), prezime: prezime.trim(), nadimak: nad } },
+    // probni: server daje 7 dana rada dok grupovođa ili administrator ne odobri nalog (rok bira server).
+    options: { data: { ime: ime.trim(), prezime: prezime.trim(), nadimak: nad, probni: true } },
   });
   if (error) throw new Error(friendlyAuthError(error));
   const user = data.user;
   const profile = (data.session && await fetchProfile(sb, user.id).catch(() => null))
-    || { id: user.id, ime: ime.trim(), prezime: prezime.trim(), nadimak: nad || null, odobren: false, is_admin: false };
+    || { id: user.id, ime: ime.trim(), prezime: prezime.trim(), nadimak: nad || null, odobren: false, is_admin: false, probni_do: null };
   return storeProfile(profile);
 }
 

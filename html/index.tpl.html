@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.0.2';
+  const APP_VER = 'v1.0.3';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -92,7 +92,7 @@
       <label class="pr-polje"><span>PIN <span class="sitno">(6–8 cifara)</span></span>
         <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-brava"/></svg><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required placeholder="••••••">
         <button type="button" id="btn-pin-prikazi" class="pr-oko" aria-label="Prikaži PIN" aria-pressed="false"><svg class="ic"><use href="#ic-eye"/></svg></button></span></label>
-      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog čeka odobrenje administratora društva. Ako ti nalog pravi grupovođa, ne treba se registrovati.</p>
+      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog odmah radi 7 dana (probni period). Za stalni pristup zatraži sekciju — odobrava grupovođa ili administrator. Ako ti nalog pravi grupovođa, ne treba se registrovati.</p>
       <button type="submit" id="btn-prijava" value="prijava" class="dugme glavno pr-dugme"><span class="pr-vrtilica" aria-hidden="true"></span><span id="btn-prijava-tekst">Prijavi se</span></button>
       <p id="prijava-status" class="status pr-status" role="status"></p>
     </form>
@@ -102,7 +102,7 @@
 
 <main id="ekran-cekanje" class="ekran ekran-forma" hidden>
   <h1>Čeka odobrenje</h1>
-  <p>Vaš nalog je primljen. Administrator društva ga treba odobriti prije korištenja.</p>
+  <p id="cekanje-tekst">Vaš nalog je primljen. Administrator društva ili grupovođa ga treba odobriti prije korištenja.</p>
   <div class="red-dugmadi">
     <button id="btn-provjeri-odobrenje" class="dugme glavno" type="button">Provjeri ponovo</button>
     <button id="btn-odjava" class="dugme" type="button">Odjava</button>
@@ -124,6 +124,7 @@
   <div class="status-red">
     <span id="veza" class="znacka veza-upozorenje" data-veza="nepoznato"></span>
     <span id="bez-servera" class="znacka upozorenje" hidden>Server nije podešen</span>
+    <button id="probni-traka" class="znacka znacka-dugme probni-traka" type="button" hidden></button>
     <button id="prijava-istekla" class="znacka znacka-dugme upozorenje" type="button" hidden>Prijava istekla — zapisi čekaju na telefonu. Dodirni za prijavu</button>
     <button id="red-znacka" class="znacka znacka-dugme" type="button" hidden></button>
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>

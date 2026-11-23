@@ -106,3 +106,28 @@ test('prijava: tabovi Prijava / Novi nalog, prikaz PIN-a i zapamćeno ime poslij
   await expect(page.locator('#pr-nadimak')).toHaveAttribute('open', '');
   await expect(page.locator('#forma-prijava input[name=pin]')).toHaveValue('');
 });
+
+test('probni period: neodobren lovac radi 7 dana uz traku, a poslije isteka vidi ekran čekanja', async ({ page }) => {
+  await fakeServerConfigHanging(page);
+  await serveTiles(page);
+  await page.addInitScript(() => {
+    const dana = Number(sessionStorage.getItem('dana') ?? '3');
+    localStorage.setItem('lovac.profil', JSON.stringify({ id: 'p1', ime: 'Novi', prezime: 'Lovac', odobren: false, probni_do: new Date(Date.now() + dana * 86400000).toISOString() }));
+    // važeća sesija (server visi, pa se profil ne osvježava i ostaje zadnji poznati)
+    localStorage.setItem('sb-lazni-auth-token', JSON.stringify({
+      access_token: 'x.y.z', refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user: { id: 'p1', aud: 'authenticated', role: 'authenticated' },
+    }));
+  });
+  await page.goto('/');
+  await expect(page.locator('#ekran-mapa')).toBeVisible();
+  await expect(page.locator('#probni-traka')).toBeVisible();
+  await expect(page.locator('#probni-traka')).toContainText('još 3 dana');
+  await page.locator('#probni-traka').click();
+  await expect(page.locator('#sekcije')).toBeVisible();
+
+  await page.evaluate(() => sessionStorage.setItem('dana', '-1'));
+  await page.reload();
+  await expect(page.locator('#ekran-cekanje')).toBeVisible();
+  await expect(page.locator('#cekanje-tekst')).toContainText('Probni period od 7 dana je istekao');
+});

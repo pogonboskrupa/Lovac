@@ -55,6 +55,7 @@ import { initSync } from './sync.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
 import { initDodaj } from './dodaj-ui.js';
+import { hasAppAccess, inTrial, trialBannerText, waitingText } from './probni.js';
 import { initLovDanas } from './lov-danas-ui.js';
 import { initMapDisplaySettings } from './razmjer-prikaz.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
@@ -82,6 +83,7 @@ function runSteps(steps) {
 
 function enter(screen) {
   shownScreen = screen;
+  try { renderTrial(cachedProfile()); } catch (err) { console.warn('probni', err); }
   showScreen(screen);
   if (screen === 'mapa' && !mapReady) {
     mapReady = true;
@@ -173,6 +175,17 @@ async function doLogout() {
   await done;
 }
 
+// Traka probnog perioda na karti i tekst ekrana čekanja (iz zadnjeg poznatog profila).
+function renderTrial(profile) {
+  const bar = document.getElementById('probni-traka');
+  if (bar) {
+    bar.hidden = !inTrial(profile);
+    if (!bar.hidden) bar.textContent = trialBannerText(profile);
+  }
+  const txt = document.getElementById('cekanje-tekst');
+  if (txt && profile) txt.textContent = waitingText(profile);
+}
+
 function readForm(form) {
   const fd = new FormData(form);
   return { ime: fd.get('ime'), prezime: fd.get('prezime'), nadimak: fd.get('nadimak'), pin: fd.get('pin') };
@@ -232,7 +245,7 @@ function wireAuthForms() {
       status.textContent = '';
       try { localStorage.setItem(ZADNJA_PRIJAVA, JSON.stringify({ ime: data.ime, prezime: data.prezime, nadimak: data.nadimak || '' })); } catch { /* nije bitno */ }
       form.pin.value = '';
-      enter(profile.odobren ? 'mapa' : 'cekanje');
+      enter(hasAppAccess(profile) ? 'mapa' : 'cekanje');
     } catch (err) {
       status.classList.remove('info');
       status.textContent = err.message;
@@ -246,6 +259,8 @@ function wireAuthForms() {
   document.getElementById('btn-provjeri-odobrenje')?.addEventListener('click', () => backgroundSession(true));
   document.getElementById('btn-odjava')?.addEventListener('click', doLogout);
   // Ponovna prijava na zahtjev lovca (traka "Prijava istekla"); neposlani zapisi ostaju u redu.
+  // Traka probnog perioda vodi na "Sekcije i pristup" (tamo se traži članstvo, a grupovođa ga odobrava).
+  document.getElementById('probni-traka')?.addEventListener('click', () => document.getElementById('btn-sekcije')?.click());
   document.getElementById('prijava-istekla')?.addEventListener('click', () => {
     document.getElementById('prijava-istekla').hidden = true;
     doLogout();
@@ -269,9 +284,10 @@ async function backgroundSession(userAsked = false) {
       return;
     }
     document.getElementById('prijava-istekla').hidden = true;
-    const next = profile.odobren ? 'mapa' : 'cekanje';
+    const next = hasAppAccess(profile) ? 'mapa' : 'cekanje';
+    renderTrial(profile);
     if (next !== shownScreen) enter(next);
-    else if (userAsked && !profile.odobren) toast('Još čeka odobrenje administratora');
+    else if (userAsked && !profile.odobren) toast('Još čeka odobrenje administratora ili grupovođe');
   } catch (err) {
     console.warn('pozadinska sesija', err);
     if (userAsked) toast('Nema veze sa serverom');

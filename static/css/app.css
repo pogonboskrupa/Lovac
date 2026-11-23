@@ -1312,3 +1312,4 @@ svg[hidden] { display: none; }
 .pr-status:empty { display: none; }
 .pr-status.info { color: var(--tekst-2); }
 .pr-podnozje { margin: 18px 0 0; max-width: 420px; text-align: center; font-size: 13px; color: #b9c2a8; }
+.probni-traka { background: #14532d; color: #ffffff; white-space: normal; text-align: left; }
