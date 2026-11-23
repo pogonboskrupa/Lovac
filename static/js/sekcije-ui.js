@@ -90,7 +90,7 @@ export function initSekcije() {
       <button type="button" class="dugme" data-akcija="dodaj">Dodaj izabrane</button>
       <h4>Logo sekcije</h4>
       <div class="pf-slika-red"><span class="sek-logo velik" style="${logoStyle(s)}"></span>
-        <div class="pf-slika-dugmad"><label class="dugme dugme-fajl">Učitaj logo<input type="file" accept="image/*" data-logo-ulaz hidden></label>
+        <div class="pf-slika-dugmad"><button type="button" class="dugme" data-akcija="logo-ucitaj">Učitaj logo</button>
         <button type="button" class="dugme" data-akcija="logo-reset">Automatski logo</button></div></div>
       <label>Naziv sekcije<input data-naziv value="${escapeHtml(s.naziv)}" maxlength="60"></label>
       <button type="button" class="dugme" data-akcija="naziv">Sačuvaj naziv</button>
@@ -240,6 +240,10 @@ export function initSekcije() {
         if (invitedBy(sid, uid)) { run(() => qSek(sb().rpc('odbij_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Predlog odbijen, nalog obrisan'); break; }
         run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
         break;
+      case 'logo-ucitaj':
+        logoSid = sid;
+        $('sekcija-logo-ulaz').click();
+        break;
       case 'ukloni': {
         // Izbacivanje člana je nepovratno (mora se ponovo tražiti pristup): potvrda drugim dodirom.
         const key = `${sid}:${uid}`;
@@ -279,14 +283,14 @@ export function initSekcije() {
     }
   });
 
-  // Učitavanje loga sekcije (mala slika, 128 px): grupovođa ili admin.
-  $('sekcije-spisak').addEventListener('change', async (e) => {
-    const input = e.target.closest('input[data-logo-ulaz]');
-    if (!input) return;
-    const file = input.files[0];
-    const sid = input.closest('[data-id]').dataset.id;
-    input.value = '';
-    if (!file) return;
+  // Učitavanje loga sekcije (mala slika, 128 px): grupovođa ili admin. Polje za fajl je JEDNO i van spiska:
+  // spisak se zna ponovo nacrtati dok lovac bira sliku (osvježavanje sa servera), pa bi izbor u zamijenjenom polju propao.
+  let logoSid = null;
+  $('sekcija-logo-ulaz').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const sid = logoSid;
+    e.target.value = '';
+    if (!file || !sid) return;
     try {
       const logo = await makeThumbnail(file, 128);
       await run(() => qSek(getClient().from('sekcije').update({ logo }).eq('id', sid)), 'Logo sekcije je sačuvan');

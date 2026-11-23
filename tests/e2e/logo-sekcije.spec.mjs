@@ -111,8 +111,12 @@ test('logo sekcije: automatski crtan iz naziva u navigaciji, tabu i kartici; gru
   const card = page.locator(`.sekcija-kartica[data-id="${ID(200)}"]`);
   await expect(card.locator('.sek-logo').first()).toHaveAttribute('style', /data:image\/svg\+xml/);
   await card.locator('details.uprava summary').click();
-  await card.locator('input[data-logo-ulaz]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG });
-  await expect.poll(() => server.db.sekcije.find((x) => x.id === ID(200)).logo).toMatch(/^data:image\/jpeg/);
+  const chooser = page.waitForEvent('filechooser');
+  await card.locator('[data-akcija="logo-ucitaj"]').click();
+  // spisak se ponovo nacrta dok lovac bira sliku (osvježavanje sa servera): izbor ne smije propasti
+  await page.locator('#btn-sekcije-osvjezi').click();
+  await (await chooser).setFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG });
+  await expect.poll(() => server.db.sekcije.find((x) => x.id === ID(200)).logo, { timeout: 15000 }).toMatch(/^data:image\/jpeg/);
   await expect(card.locator('.sek-logo').first()).toHaveAttribute('style', /data:image\/jpeg/);
   await card.locator('[data-akcija="logo-reset"]').click();
   await expect.poll(() => server.db.sekcije.find((x) => x.id === ID(200)).logo).toBe(null);

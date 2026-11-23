@@ -147,13 +147,16 @@ export function initMojaLokacija(L, map) {
   };
 
   // ---------- otvaranje i radnje ----------
+  // Ploča se otvara ODMAH iz keša: na mrtvoj ili preslaboj vezi preuzimanje sekcija visi do isteka roka,
+  // a GPS, koordinate, snimanje traga i opažanje ne trebaju server. Sekcije se osvježe u pozadini.
   const open = async () => {
     $('meni-spiskovi').hidden = true;
     $('btn-centriraj').click(); // dodir na lokaciju uvijek pokaže gdje sam
-    await loadSections({ download: true });
     renderCoords();
-    renderShare();
     setOpen(true);
+    await loadSections();
+    renderShare();
+    loadSections({ download: true }).then(() => { if (isOpen()) renderShare(); }).catch(() => {});
     pull();
   };
   const screenEl = $('ekran-mapa');

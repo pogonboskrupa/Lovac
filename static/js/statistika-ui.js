@@ -187,13 +187,18 @@ export function initStatistika() {
 
   const open = async () => {
     $('meni-spiskovi').hidden = true;
-    panel.hidden = true;
-    if (online()) await downloadSekcije().catch(() => {});
-    ctx = await cachedSekcije();
-    options = scopeOptions(cachedProfile(), ctx);
-    if (!options.some((o) => o.kljuc === scope?.kljuc)) scope = options[0] || null;
+    // Prvo keš (ekran se otvara odmah i bez veze), pa osvježavanje sekcija u pozadini: na mrtvoj vezi zahtjev visi do roka.
+    const applyCtx = async () => {
+      ctx = await cachedSekcije();
+      options = scopeOptions(cachedProfile(), ctx);
+      if (!options.some((o) => o.kljuc === scope?.kljuc)) scope = options[0] || null;
+      renderControls();
+    };
+    await applyCtx();
     panel.hidden = false;
-    renderControls();
+    // Bez ijedne sačuvane sekcije nema opsega za prikaz: tada se (samo prvi put) čeka server, ali ekran je već otvoren.
+    if (!scope && online()) { $('st-stanje').textContent = 'Preuzimam sekcije sa servera…'; await downloadSekcije().catch(() => {}); await applyCtx(); }
+    else if (online()) downloadSekcije().then(() => { if (!panel.hidden) applyCtx(); }).catch(() => {});
     await loadCriteria();
     if (!scope) { $('st-stanje').textContent = ''; await render(); return; }
     await refresh();

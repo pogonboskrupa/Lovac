@@ -131,8 +131,11 @@ export function initPregled() {
     const my = ++seq;
     panel.hidden = false;
     $('pr-stanje').textContent = 'Učitavam…';
-    // uloga se izvodi iz sekcija sa servera: osvježi ih pri otvaranju (radnja lovca), offline vrijedi keš
-    if (connectionQuality() !== 'nema' && getClient()) await downloadSekcije().catch(() => {});
+    // Prvo zadnje sačuvano (radi i bez veze), pa osvježavanje sekcija u pozadini (uloga zavisi od njih).
+    await render().catch(() => {});
+    if (connectionQuality() !== 'nema' && getClient()) {
+      downloadSekcije().then(() => { if (my === seq && !panel.hidden) render(); }).catch(() => {});
+    }
     const { fresh } = await load();
     if (my !== seq) return;
     $('pr-stanje').textContent = stateText(fresh);
