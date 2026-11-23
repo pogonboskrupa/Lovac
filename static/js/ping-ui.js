@@ -10,7 +10,7 @@ import { toast } from './ui.js';
 
 const SENT_KEY = 'lovac.ping.poslano';
 const SEEN_KEY = 'lovac.ping.objavljeno';
-const POLL_MS = 15000;
+const POLL_MS = 30000; // "Gdje si?" važi 15 min; 30 s je dovoljno, a pola manje zahtjeva
 const $ = (id) => document.getElementById(id);
 
 const online = () => connectionQuality() !== 'nema' && Boolean(getClient());

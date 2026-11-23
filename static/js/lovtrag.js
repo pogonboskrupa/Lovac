@@ -62,9 +62,9 @@ export function mergeTrailRows(cached = [], fresh = []) {
   return [...by.values()].sort((a, b) => a.t - b.t || a.korisnik_id.localeCompare(b.korisnik_id));
 }
 
-// Kursor za sljedeći upit: po `primljeno` (server, migracija 028) uz preklop od 1 min (transakcije koje kasne sa commitom),
+// Kursor za sljedeći upit: po `primljeno` (server, migracija 028) uz preklop od 15 s (transakcije koje kasne sa commitom),
 // a bez te kolone po `t` uz preklop od 15 min (tačke iz offline bafera kasne). Bez novih redova kursor ostaje isti.
-export const TRAG_PREKLOP_MS = { primljeno: 60000, t: 15 * 60000 };
+export const TRAG_PREKLOP_MS = { primljeno: 15000, t: 15 * 60000 };
 export function nextTrailCursor(fresh = [], prev = null) {
   const hasRecv = fresh.some((r) => r.primljeno);
   const kolona = hasRecv ? 'primljeno' : 't';

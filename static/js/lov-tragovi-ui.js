@@ -15,6 +15,9 @@ import { toast, escapeHtml } from './ui.js';
 const $ = (id) => document.getElementById(id);
 const KEY = (lovId) => `lovac.lovtrag.prikaz.${lovId}`;
 const POLL_MS = 30000;
+// samo kolone koje karta treba (bez lov_id i id-eva): ~40 % manje prometa
+const TRAG_KOLONE = 'korisnik_id,lat,lon,t,primljeno';
+const TRAG_KOLONE_STARE = 'korisnik_id,lat,lon,t';
 
 export const trailEnabled = (lovId) => loadJSON(KEY(lovId), false) === true;
 
@@ -48,22 +51,22 @@ export function initLovTragovi(L, map) {
     const sb = getClient();
     if (!noRpc) {
       const { data, error } = await sb.rpc('lov_trag', { p_lov: lovId, p_kolona: cursor?.kolona || null, p_od: cursor?.v || null })
-        .order(order, { ascending: true }).order('korisnik_id', { ascending: true }).range(from, to);
+        .select(TRAG_KOLONE).order(order, { ascending: true }).order('korisnik_id', { ascending: true }).range(from, to);
       if (!error) return data || [];
       if (!missingFn(error)) throw Object.assign(new Error(error.message), { code: error.code });
       noRpc = true;
     }
-    let q = sb.from('lov_tragovi').select('*').eq('lov_id', lovId);
+    let q = sb.from('lov_tragovi').select(noRecvColumn ? TRAG_KOLONE_STARE : TRAG_KOLONE).eq('lov_id', lovId);
     if (cursor) q = q.gt(cursor.kolona, cursor.v);
     const { data, error } = await q.order(order, { ascending: true }).order('korisnik_id', { ascending: true }).range(from, to);
     if (error) throw Object.assign(new Error(error.message), { code: error.code });
     return data || [];
   }, 1000, 40);
 
-  const rowsFor = async (lovId) => {
+  const rowsFor = async (lovId, net = true) => {
     const cache = await idbGet('arhiva', `trag:${lovId}`).catch(() => null);
     let rows = cache?.rows || [];
-    if (!online()) return rows;
+    if (!net || !online()) return rows;
     let cursor = cache?.kursor || null;
     if (cursor?.kolona === 'primljeno' && noRecvColumn) cursor = null;
     try {
@@ -71,10 +74,11 @@ export function initLovTragovi(L, map) {
       try {
         fresh = await fetchSince(lovId, cursor);
       } catch (err) {
-        if (cursor?.kolona !== 'primljeno' || err.code !== '42703') throw err;
+        // tabela bez kolone primljeno (migracija 028 nije pokrenuta): kursor po t
+        if (err.code !== '42703' || noRecvColumn) throw err;
         noRecvColumn = true;
-        cursor = null;
-        fresh = await fetchSince(lovId, null);
+        if (cursor?.kolona === 'primljeno') cursor = null;
+        fresh = await fetchSince(lovId, cursor);
       }
       if (!cache?.kursor) rows = [];
       rows = mergeTrailRows(rows, fresh);
@@ -99,10 +103,10 @@ export function initLovTragovi(L, map) {
       <span><b>${escapeHtml(memberName(tr.id).split(' ')[0])}</b> ${formatMemberDistance(tr.duzina)}</span></button>`).join('');
   };
 
-  const refresh = async () => {
+  const refresh = async ({ net = true } = {}) => {
     if (!activeId) return;
     const me = cachedProfile();
-    const rows = await rowsFor(activeId);
+    const rows = await rowsFor(activeId, net);
     const local = loadJSON(`lovac.lovtrag.bafer.${activeId}`, []);
     trails = groupTrails(withLocalPoints(rows, local, me?.id));
     draw();
@@ -146,5 +150,16 @@ export function initLovTragovi(L, map) {
   });
   // iz arhive: prikaži trag tog lova na karti i zumiraj
   document.addEventListener('lovtrag:arhiva', (e) => show(e.detail.lovId, { isLive: false, fit: true }));
-  document.addEventListener('lovtrag:poslano', () => { if (activeId && live) refresh(); });
+  // vlastite tačke su već u lokalnom baferu: crta se iz keša, bez novog upita na server
+  document.addEventListener('lovtrag:poslano', async (e) => {
+    if (!activeId || !live || e.detail?.lovId !== activeId) return;
+    const { korisnikId, tacke = [] } = e.detail;
+    const key = `trag:${activeId}`;
+    const cache = await idbGet('arhiva', key).catch(() => null);
+    if (cache?.kursor && tacke.length) {
+      const rows = mergeTrailRows(cache.rows, tacke.map((p) => ({ korisnik_id: korisnikId, lat: p.lat, lon: p.lon, t: p.t })));
+      await idbPut('arhiva', { ...cache, rows }).catch(() => {});
+    }
+    refresh({ net: false });
+  });
 }

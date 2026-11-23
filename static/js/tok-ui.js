@@ -7,6 +7,7 @@ import { currentFix } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
 import { idbGet } from './db.js';
+import { fetchNew, nextCursor } from './inkrement.js';
 import { smsNumbers } from './uzivo.js';
 import { memberName } from './dijeljenje-ui.js';
 import { toast, wireTwoTap, escapeHtml, registerBackHandler } from './ui.js';
@@ -109,8 +110,12 @@ export function initTok() {
     if (!lov || !online()) { render(); return; }
     try {
       await flush();
-      const { data, error } = await getClient().from('lov_dogadjaji').select('*').eq('lov_id', lov.id).order('created_at', { ascending: true }).limit(300);
-      if (error) throw new Error(error.message);
+      // samo novi događaji od zadnjeg kursora (ranije cijeli tok lova svakih 15 s)
+      const ck = `lovac.kursor.tok.${lov.id}`;
+      const cursor = loadJSON(ck, null);
+      const lovId = lov.id;
+      const data = await fetchNew(() => getClient().from('lov_dogadjaji').select('*').eq('lov_id', lovId), cursor);
+      saveSoft(ck, nextCursor(data, cursor));
       events = mergeDogadjaji(events, data);
       saveSoft(CACHE(lov.id), events.slice(-100));
       const fresh = alertsFor(events, me()?.id, seen);

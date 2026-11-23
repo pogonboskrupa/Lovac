@@ -56,3 +56,19 @@ export function huntDateText(iso) {
   const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
   return `${DANI[d.getUTCDay()]}, ${+m[3]}.${+m[2]}.${m[1]}.`;
 }
+
+// Koje lovove treba ponovo preuzeti sa rasporedom: završen lov koji je već u kešu kao završen (i nije mijenjan) se ne
+// mijenja, pa ga ne treba vući svaki put (ranije 2–3 zahtjeva po SVAKOM lovu ikad, pri svakom osvježavanju).
+export function huntsNeedingDetails(lovovi = [], cachedById = new Map()) {
+  return lovovi.filter((l) => {
+    const c = cachedById.get(l.id);
+    if (!c?.lov || l.status !== 'zavrsen' || c.lov.status !== 'zavrsen') return true;
+    return String(c.lov.promijenjeno || '') !== String(l.promijenjeno || '');
+  });
+}
+
+export function chunks(list, size) {
+  const out = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+}

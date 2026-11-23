@@ -80,7 +80,7 @@ export function initArhiva() {
     if (online()) {
       $('arhiva-status').textContent = 'Osvježavam…';
       try {
-        await downloadHunts();
+        await downloadHunts({ full: true });
         await loadLocal();
         renderList();
         $('arhiva-status').textContent = '';

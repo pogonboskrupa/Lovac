@@ -100,14 +100,16 @@ export function initUzivo(L, map) {
   const flushTrail = async () => {
     const buf = loadJSON(trailKey(), []);
     if (!buf.length || !online()) return;
+    const poslane = [];
     for (let i = 0; i < buf.length; i += 200) {
       const chunk = buf.slice(i, i + 200);
       await qUzivo(getClient().from('lov_tragovi').upsert(
         chunk.map((p) => ({ lov_id: lov.id, korisnik_id: me().id, t: new Date(p.t).toISOString(), lat: p.lat, lon: p.lon })),
         { onConflict: 'lov_id,korisnik_id,t', ignoreDuplicates: true }));
       saveSoft(trailKey(), removeSentPoints(loadJSON(trailKey(), []), chunk));
+      poslane.push(...chunk);
     }
-    document.dispatchEvent(new CustomEvent('lovtrag:poslano', { detail: { lovId: lov.id } }));
+    document.dispatchEvent(new CustomEvent('lovtrag:poslano', { detail: { lovId: lov.id, korisnikId: me().id, tacke: poslane } }));
   };
 
   const tickBody = async () => {

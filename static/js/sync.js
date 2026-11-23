@@ -268,7 +268,11 @@ export async function flushQueue({ force = false } = {}) {
 }
 
 // Preuzimanje: novi/izmijenjeni zapisi koje server dozvoli (svoji sa drugih uređaja + podijeljeni).
-export async function pullShared() {
+const VISIBLE_KEY = 'lovac.sync.vidljivo.';
+const VISIBLE_CHECK_MS = 10 * 60000;
+const visibleCheckDue = (store) => Date.now() - Number(loadJSON(VISIBLE_KEY + store, 0)) >= VISIBLE_CHECK_MS;
+
+export async function pullShared({ force = false } = {}) {
   const sb = getClient();
   const me = cachedProfile();
   if (!sb || !me?.odobren || !(await sessionReady(sb))) return 0;
@@ -291,8 +295,11 @@ export async function pullShared() {
     }
     if (data?.length) saveSoft(PULL_KEY + store, data[data.length - 1].server_at);
     // Zapis koji je vlasnik vratio na privatno server više ne daje: lokalna kopija se uklanja.
+    // Spisak svih vidljivih id-eva je skup na besplatnom serveru, pa ide najviše jednom u VISIBLE_CHECK_MS.
+    if (!force && !visibleCheckDue(store)) continue;
     const ids = await sb.from(store).select('id').neq('vlasnik_id', me.id);
     if (!ids.error) {
+      saveSoft(VISIBLE_KEY + store, Date.now());
       const visible = new Set((ids.data || []).map((r) => r.id));
       for (const rec of await idbAll(store)) {
         if (rec.tudji && !visible.has(rec.id)) { await idbDelete(store, rec.id); changed++; }
@@ -306,7 +313,7 @@ export async function pullShared() {
 export async function syncNow({ force = false } = {}) {
   const res = await flushQueue({ force });
   try {
-    res.preuzeto = await withDeadline(() => pullShared(), PULL_DEADLINE_MS);
+    res.preuzeto = await withDeadline(() => pullShared({ force }), PULL_DEADLINE_MS);
   } catch (err) {
     res.preuzeto = 0;
     res.greskaPreuzimanja = err.message;

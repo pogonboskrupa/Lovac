@@ -5,7 +5,8 @@ import { getClient, cachedProfile } from './auth.js';
 import { idbPut, idbAll, idbGet } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA, huntGroups, huntDateText } from './lov.js';
+import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA, huntGroups, huntDateText, huntsNeedingDetails, chunks } from './lov.js';
+import { collectPages } from './pregled.js';
 import { standWarnings, sectorWedge } from './sektori.js';
 import { onGpsUpdate, currentHeading, currentFix } from './gps.js';
 import { rangeLabel } from './istrazivac.js';
@@ -28,19 +29,61 @@ async function q(promise) {
 }
 
 // Preuzima sve lovove koje server dozvoli, sa rasporedom, u keš (radi offline poslije).
-export async function downloadHunts() {
+// Raspored se vuče skupno (`in`) i samo za lovove koji se mogu mijenjati ili ih nema u kešu — štedi besplatni server.
+// Keširani podaci koje ne daje ovaj upit (telefoni za SMS) se čuvaju.
+const LOVOVI_KURSOR = 'lovac.kursor.lovovi';
+const LOVOVI_PUNO_MS = 10 * 60000;
+
+export async function downloadHunts({ full: force = false } = {}) {
   const sb = getClient();
-  const lovovi = await q(sb.from('lovovi').select('*'));
-  const reviri = await q(sb.from('reviri').select('*'));
-  const sekcije = await q(sb.from('sekcije').select('*'));
-  for (const lov of lovovi) {
-    const ucesnici = await q(sb.from('lov_ucesnici').select('*').eq('lov_id', lov.id));
-    const stanovi = await q(sb.from('stanovi').select('*').eq('lov_id', lov.id));
-    const ids = stanovi.map((s) => s.id);
-    const sektori = ids.length ? await q(sb.from('sektori').select('*').in('stan_id', ids)) : [];
-    await idbPut(STORE, { id: lov.id, lov, ucesnici, stanovi, sektori, revir: reviri.find((r) => r.id === lov.revir_id) || null, sekcija: sekcije.find((s) => s.id === lov.sekcija_id) || null, preuzeto: Date.now() });
+  const cached = new Map((await idbAll(STORE).catch(() => [])).map((r) => [r.id, r]));
+  // Puni spisak lovova jednom u LOVOVI_PUNO_MS; između toga samo izmijenjeni (promijenjeno postavlja server)
+  // + keširani lovovi koji još nisu završeni (prijava prisustva mijenja učesnike, ne red lova).
+  const cur = loadJSON(LOVOVI_KURSOR, null);
+  const full = force || !cur || Date.now() - cur.puno > LOVOVI_PUNO_MS;
+  let lovovi; let reviri; let sekcije;
+  if (full) {
+    [lovovi, reviri, sekcije] = await Promise.all([
+      collectPages((a, z) => q(sb.from('lovovi').select('*').order('id').range(a, z))),
+      q(sb.from('reviri').select('*')),
+      q(sb.from('sekcije').select('*')),
+    ]);
+  } else {
+    const changed = await collectPages((a, z) => q(sb.from('lovovi').select('*').gt('promijenjeno', cur.v).order('id').range(a, z)));
+    const byId = new Map([...cached.values()].filter((r) => r.lov && r.lov.status !== 'zavrsen').map((r) => [r.id, r.lov]));
+    for (const l of changed) byId.set(l.id, l);
+    lovovi = [...byId.values()];
+    reviri = (await idbGet('spiskovi', 'reviri').catch(() => null))?.rows || [];
+    sekcije = (await cachedSekcije()).sekcije || [];
   }
-  await idbPut('spiskovi', { id: 'reviri', rows: reviri, preuzeto: Date.now() });
+  const maxP = Math.max(...lovovi.map((l) => Date.parse(l.promijenjeno)).filter(Number.isFinite), Date.parse(cur?.v || 0) + 15000);
+  saveSoft(LOVOVI_KURSOR, { v: new Date(maxP - 15000).toISOString(), puno: full ? Date.now() : cur.puno });
+  const need = huntsNeedingDetails(lovovi, cached);
+  const ucesnici = [];
+  const stanovi = [];
+  for (const part of chunks(need.map((l) => l.id), 60)) {
+    ucesnici.push(...await collectPages((a, z) => q(sb.from('lov_ucesnici').select('*').in('lov_id', part).order('lov_id').order('korisnik_id').range(a, z))));
+    stanovi.push(...await collectPages((a, z) => q(sb.from('stanovi').select('*').in('lov_id', part).order('id').range(a, z))));
+  }
+  const sektori = [];
+  for (const part of chunks(stanovi.map((s) => s.id), 60)) {
+    sektori.push(...await collectPages((a, z) => q(sb.from('sektori').select('*').in('stan_id', part).order('id').range(a, z))));
+  }
+  for (const lov of lovovi) {
+    const prev = cached.get(lov.id) || {};
+    const fresh = need.some((l) => l.id === lov.id);
+    const st = fresh ? stanovi.filter((s) => s.lov_id === lov.id) : prev.stanovi || [];
+    const ids = new Set(st.map((s) => s.id));
+    await idbPut(STORE, {
+      ...prev, id: lov.id, lov,
+      ucesnici: fresh ? ucesnici.filter((u) => u.lov_id === lov.id) : prev.ucesnici || [],
+      stanovi: st,
+      sektori: fresh ? sektori.filter((x) => ids.has(x.stan_id)) : prev.sektori || [],
+      revir: reviri.find((r) => r.id === lov.revir_id) || null, sekcija: sekcije.find((s) => s.id === lov.sekcija_id) || null,
+      preuzeto: fresh ? Date.now() : prev.preuzeto || Date.now(),
+    });
+  }
+  if (full) await idbPut('spiskovi', { id: 'reviri', rows: reviri, preuzeto: Date.now() });
   return lovovi.length;
 }
 
@@ -176,7 +219,7 @@ export function initLov(L, map) {
     $('lovovi-status').textContent = 'Preuzimam sa servera…';
     try {
       await refreshMembers().catch(() => {});
-      const n = await downloadHunts();
+      const n = await downloadHunts({ full: true });
       await downloadSekcije().catch((err) => console.warn('sekcije', err.message));
       const vodje = await q(getClient().from('revir_vodje').select('*'));
       saveSoft('lovac.vodja_revira', vodje.filter((v) => v.korisnik_id === me()?.id).map((v) => v.revir_id));

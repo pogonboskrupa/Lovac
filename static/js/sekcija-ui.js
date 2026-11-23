@@ -26,6 +26,7 @@ import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { canPing } from './ping.js';
+import { fetchNew, nextCursor } from './inkrement.js';
 import { sendPing } from './ping-ui.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
@@ -33,6 +34,8 @@ const NOTIF_KEY = 'lovac.sekcija.obavijest';
 const READ_KEY = (id) => `lovac.sekcija.procitano.${id}`;
 const POLL_OPEN_MS = 20000;
 const POLL_BG_MS = 60000;
+const LISTS_OPEN_MS = 60000;
+const LISTS_BG_MS = 5 * 60000;
 const HUNT_REFRESH_MS = 60000;
 const ULOGE_SEKCIJE = { admin: 'Administrator', grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
 const ULOGE = { grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
@@ -55,6 +58,7 @@ export function initSekcijaEkran(L, map) {
   let extra = { pozicije: [], odstrel: [], sos: [], lovId: null }; // uživo podaci tekućeg lova
   let selectedId = loadJSON(SEL_KEY, null);
   let lastHuntRefresh = 0;
+  let lastListsRefresh = 0;
   let timer = null;
   let marker = null;
   const me = () => cachedProfile();
@@ -132,24 +136,29 @@ export function initSekcijaEkran(L, map) {
     else globalThis.AndroidNotif?.prikazi?.(naslov, m.tekst);
   };
 
+  // Samo nove poruke od zadnjeg kursora (ranije: svaki put 300 NAJSTARIJIH — nove se poslije 300 nisu vidjele).
+  const pullChannel = async (key, base, local) => {
+    const ck = `lovac.kursor.poruke.${key}`;
+    const cursor = loadJSON(ck, null);
+    const remote = await fetchNew(base, cursor);
+    const known = new Set(poruke.map((m) => m.id));
+    const fresh = [];
+    for (const m of mergeMessages(local, remote)) {
+      if (known.has(m.id) && !remote.some((r) => r.id === m.id)) continue;
+      await idbPut('poruke', m);
+      if (!known.has(m.id)) fresh.push(m);
+    }
+    saveSoft(ck, nextCursor(remote, cursor));
+    return fresh;
+  };
   const pullMessages = async () => {
     const fresh = [];
     for (const s of mine()) {
-      const remote = await qSk(getClient().from('poruke').select('*').eq('sekcija_id', s.id).order('created_at', { ascending: true }).limit(300));
-      const known = new Set(poruke.map((m) => m.id));
-      const merged = mergeMessages(poruke.filter((m) => m.sekcija_id === s.id), remote);
-      for (const m of merged) {
-        await idbPut('poruke', m);
-        if (!known.has(m.id)) fresh.push(m);
-      }
+      fresh.push(...await pullChannel(s.id, () => getClient().from('poruke').select('*').eq('sekcija_id', s.id),
+        poruke.filter((m) => m.sekcija_id === s.id)));
     }
     if (leader()) {
-      const remote = await qSk(getClient().from('poruke').select('*').eq('kanal', KANAL_RUKOVODSTVO).order('created_at', { ascending: true }).limit(300));
-      const known = new Set(poruke.map((m) => m.id));
-      for (const m of mergeMessages(rukPoruke(), remote)) {
-        await idbPut('poruke', m);
-        if (!known.has(m.id)) fresh.push(m);
-      }
+      fresh.push(...await pullChannel('rukovodstvo', () => getClient().from('poruke').select('*').eq('kanal', KANAL_RUKOVODSTVO), rukPoruke()));
     }
     await reloadPoruke();
     notifyNew(fresh);
@@ -185,8 +194,12 @@ export function initSekcijaEkran(L, map) {
   const refresh = async ({ withHunts = false } = {}) => {
     if (!online()) return;
     try {
-      await downloadSekcije();
-      await refreshMembers().catch(() => {});
+      // spiskovi sekcija i članova se rijetko mijenjaju: ne pri svakom osvježavanju (štedi besplatni server)
+      if (withHunts || Date.now() - lastListsRefresh > (isOpen() ? LISTS_OPEN_MS : LISTS_BG_MS)) {
+        await downloadSekcije();
+        await refreshMembers().catch(() => {});
+        lastListsRefresh = Date.now();
+      }
       if (withHunts || Date.now() - lastHuntRefresh > HUNT_REFRESH_MS) {
         await downloadHunts();
         lastHuntRefresh = Date.now();
