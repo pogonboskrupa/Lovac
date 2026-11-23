@@ -35,20 +35,22 @@ test('snimanje traga preživi naizmjeničnu vezu (server vrti, odbija, pada) i t
       read: (off) => JSON.stringify({ next: window.__buf.length, pts: window.__buf.slice(off) }),
       isIgnoringBattery: () => true, requestBatteryExemption: () => {},
     };
-    window.__push = (n, lat) => { const t0 = Date.now(); for (let i = 0; i < n; i++) window.__buf.push({ t: t0 + i * 10, lat: lat + i * 0.0002, lon: 16.15, acc: 4 }); };
+    // Realne tačke: hod ~5 m/s, svake 2 s, vrijeme stalno raste (filter brzine i redoslijeda ih ne smije odbaciti).
+    window.__t = Date.now(); window.__lat = 44.88;
+    window.__push = (n) => { for (let i = 0; i < n; i++) { window.__t += 2000; window.__lat += 0.0001; window.__buf.push({ t: window.__t, lat: window.__lat, lon: 16.15, acc: 4 }); } };
   }, ME);
   await page.goto('/');
   await expect(page.locator('#ekran-mapa')).toBeVisible();
   await lok(page, '#btn-snimaj');
   await expect(page.locator('#snim-status')).toHaveText('Snima');
 
-  await page.evaluate(() => window.__push(3, 44.88));
+  await page.evaluate(() => window.__push(3));
   await expect(page.locator('#snim-tacke')).toHaveText('3', { timeout: 8000 });
   server.mode = 'rls';
-  await page.evaluate(() => window.__push(3, 44.8812));
+  await page.evaluate(() => window.__push(3));
   await expect(page.locator('#snim-tacke')).toHaveText('6', { timeout: 8000 });
   server.mode = 'ok';
-  await page.evaluate(() => window.__push(3, 44.8824));
+  await page.evaluate(() => window.__push(3));
   await expect(page.locator('#snim-tacke')).toHaveText('9', { timeout: 8000 });
 
   await page.locator('#btn-snim-stop').click();
