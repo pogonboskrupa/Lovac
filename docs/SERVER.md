@@ -31,6 +31,7 @@
 | `022_prijava_ulova.sql` | zvanična prijava ulova društvu (`ulov_prijave`): vide admin (sve revire), lovočuvar revira, grupovođa sekcije i vlasnik; ne mijenja se, vlasnik može povući |
 | `023_statistika_rejting.sql` | statistika po sekciji/reviru/društvu (`statistika_ulov`, `statistika_lovovi`) i podaci za rejting (`rejting_podaci`) kroz SECURITY DEFINER funkcije sa provjerom opsega; težine kriterija u `rejting_kriteriji` (piše samo admin) |
 | `024_ispravke_statistika.sql` | statistika po bosanskom vremenu (granica godine/mjeseca); odgovor na "Gdje si?" mora imati vrijednost |
+| `025_brisanje_korisnika_i_izbacivanje.sql` | admin može obrisati i korisnika koji je organizovao lov, dodao kameru ili mijenjao rejting (autor postaje prazan, zapisi ostaju); član izbačen iz sekcije automatski izlazi iz planiranih lovova i lova u toku te sekcije i prestaje dijeliti lokaciju sa njom |
 
    Nova verzija aplikacije može tražiti novu migraciju — u opisu Release-a piše koja.
 4. Prvi admin: registruj se u aplikaciji, pa u SQL Editoru:

@@ -128,6 +128,14 @@ test('grupovođa odobrava i odbija zahtjeve, dodaje lovce sa spiska i preimenuje
   await expect.poll(() => server.db.sekcije[0].naziv).toBe('Krupa 1 — Gornja');
   // Grupovođa ne vidi admin polja (grupovođa/lovočuvar).
   await expect(card.locator('[data-gv]')).toHaveCount(0);
+
+  // Izbacivanje člana traži drugi dodir: prvi samo traži potvrdu, drugi briše članstvo.
+  const clan = card.locator('[data-uid="' + LOVAC.id + '"] [data-akcija="ukloni"]');
+  await clan.click();
+  await expect(clan).toContainText('Dodirni ponovo');
+  expect(server.db.sekcija_clanovi.some((c) => c.korisnik_id === LOVAC.id)).toBe(true);
+  await clan.click();
+  await expect.poll(() => server.db.sekcija_clanovi.some((c) => c.korisnik_id === LOVAC.id)).toBe(false);
 });
 
 test('grupovođa pravi sekciju u SVOM reviru sa spiskom lovaca (odmah odobreni)', async ({ page }) => {

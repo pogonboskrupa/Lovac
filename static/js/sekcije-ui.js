@@ -212,6 +212,7 @@ export function initSekcije() {
   });
   $('sekcije-trazi').addEventListener('input', (e) => { searchText = e.target.value; render(); });
 
+  let armedRemove = null;
   // ---- akcije nad karticama ----
   $('sekcije-spisak').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-akcija]');
@@ -239,9 +240,19 @@ export function initSekcije() {
         if (invitedBy(sid, uid)) { run(() => qSek(sb().rpc('odbij_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Predlog odbijen, nalog obrisan'); break; }
         run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
         break;
-      case 'ukloni':
-        run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
+      case 'ukloni': {
+        // Izbacivanje člana je nepovratno (mora se ponovo tražiti pristup): potvrda drugim dodirom.
+        const key = `${sid}:${uid}`;
+        if (armedRemove !== key) {
+          armedRemove = key;
+          b.textContent = 'Dodirni ponovo za uklanjanje';
+          setTimeout(() => { if (armedRemove === key) { armedRemove = null; b.textContent = 'Ukloni'; } }, 4000);
+          break;
+        }
+        armedRemove = null;
+        run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Član uklonjen iz sekcije');
         break;
+      }
       case 'dodaj': {
         const ids = [...card.querySelectorAll('[data-spisak] input:checked')].map((i) => i.value);
         if (!ids.length) { toast('Izaberi bar jednog lovca'); break; }
