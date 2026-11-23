@@ -54,6 +54,7 @@ import { initSync } from './sync.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
 import { initDodaj } from './dodaj-ui.js';
+import { initMapDisplaySettings } from './razmjer-prikaz.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
@@ -278,6 +279,7 @@ onDomReady(() => {
     ['verzija', () => { document.querySelectorAll('.app-ver').forEach((el) => { el.textContent = APP_VER; }); }],
     ['tema', initTheme],
     ['velicina', initVelicina],
+    ['prikaz-karta', initMapDisplaySettings],
     ['pohrana', () => setStorageReporter(alarm)],
     ['nazad', () => { globalThis.__nazad = handleBack; }],
     ['veza', wireConnectionBadge],

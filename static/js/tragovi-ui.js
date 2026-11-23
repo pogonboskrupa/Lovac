@@ -1,5 +1,6 @@
 // UI snimanja: panel na karti, živa linija, spisak tragova, oporavak nakon pada i izvoz.
 
+import { gateLayer, getMapDisplay, scaleChoiceLabel } from './razmjer-prikaz.js';
 import { addWaypoint,
   startRecording, pauseRecording, resumeRecording, stopRecording, onRecordingChange, activeRecordings,
   allTracks, unfinishedTracks, continueRecovered, finishRecovered, deleteTrack, setSmoothed,
@@ -200,13 +201,18 @@ export function initTragovi(L, map) {
   });
 
   // ---- spisak tragova ----
-  const shownMarks = L.layerGroup().addTo(map);
+  // Prikazan trag i njegove tačke interesa se crtaju do izabrane razmjere (Postavke → Prikaz na karti).
+  const shownMarks = L.layerGroup();
+  const shownGroup = L.layerGroup();
+  gateLayer(map, shownMarks, 'tacke');
+  const gateTrack = gateLayer(map, shownGroup, 'tragovi');
   const showTrack = (tr) => {
-    if (shown) map.removeLayer(shown);
+    if (shown) shownGroup.removeLayer(shown);
     drawMarks(tr, shownMarks);
     const pts = pointsForDisplay(tr);
-    shown = L.polyline(pts.map((p) => [p.lat, p.lon]), SHOWN_STYLE).addTo(map);
+    shown = L.polyline(pts.map((p) => [p.lat, p.lon]), SHOWN_STYLE).addTo(shownGroup);
     if (pts.length) map.fitBounds(shown.getBounds(), { padding: [40, 40], maxZoom: 17 });
+    if (!gateTrack()) toast(`Trag se vidi od razmjere ${scaleChoiceLabel(getMapDisplay().razmjer)} — uvećaj kartu (Postavke → Prikaz na karti).`);
   };
 
   let trFilter = { tip: 'svi', q: '', period: 'sve', sort: 'novije' };

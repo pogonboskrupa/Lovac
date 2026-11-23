@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset, lok } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, lok, PNG } from './helpers.mjs';
 
 const allObs = (page) => page.evaluate(() => new Promise((resolve, reject) => {
   const r = indexedDB.open('lovac');
@@ -139,4 +139,42 @@ test('opažanje na karti: kartica pokazuje ko je vidio i može se obrisati (drug
   await expect.poll(async () => (await allObs(page)).length).toBe(0);
   await expect(page.locator('path.op-tacka')).toHaveCount(0);
   await expect(page.locator('.leaflet-popup')).toHaveCount(0);
+});
+
+test('opažanje sa slikom: na karti je sličica, kartica pokazuje sliku; vidi se samo do razmjere iz Postavki', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 44.88, longitude: 16.15, accuracy: 6 });
+  await page.addInitScript(() => { if (!localStorage.getItem('lovac.pogled')) localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 15 })); });
+  await page.goto('/');
+  await expect(page.locator('#gps-tacnost')).toHaveText('±6 m');
+  await lok(page, '#btn-opazanje');
+  await page.locator('#op-vrste [data-kod="srna"]').click();
+  await page.locator('#op-foto-input').setInputFiles({ name: 'srna.png', mimeType: 'image/png', buffer: PNG });
+  await expect.poll(async () => (await page.locator('#forma-opazanje img').count())).toBeGreaterThan(0);
+  await page.locator('#forma-opazanje button[type=submit]').click();
+  await expect(page.locator('#opazanje-forma')).toBeHidden();
+
+  // zoom 15 ≈ 1:12 500: sličica umjesto tačke
+  const slika = page.locator('.op-slika .slika-marker img');
+  await expect(slika).toHaveCount(1);
+  await expect(page.locator('path.op-tacka')).toHaveCount(0);
+  await page.locator('.op-slika').click();
+  await expect(page.locator('.leaflet-popup .op-popup-foto img')).toHaveCount(1);
+  expect(await page.locator('.leaflet-popup .op-popup-foto img').evaluate((i) => i.complete && i.naturalWidth > 0)).toBe(true);
+
+  // zoom 13 (~1:51 000): ne crta se
+  await page.evaluate(() => localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 13 })));
+  await page.reload();
+  await expect(page.locator('.op-slika')).toHaveCount(0);
+
+  // Postavke → Prikaz na karti: "Uvijek"
+  await page.locator('#btn-postavke').click();
+  await page.locator('#p-razmjer [data-razmjer="0"]').click();
+  await expect(page.locator('#p-razmjer [data-razmjer="0"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.op-slika')).toHaveCount(1);
+  // isključeno ograničenje za tačke uz razmjer 1:12 500 također prikazuje
+  await page.locator('#p-razmjer [data-razmjer="12500"]').click();
+  await expect(page.locator('.op-slika')).toHaveCount(0);
+  await page.locator('#p-razmjer-vrste [data-vrsta-prikaza="tacke"]').click();
+  await expect(page.locator('.op-slika')).toHaveCount(1);
 });

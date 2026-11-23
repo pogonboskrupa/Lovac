@@ -1,6 +1,7 @@
 // Slika na poziciji: dodaje se iz menija "+", čuva lokalno (IndexedDB) i prikazuje na karti kao sličica;
 // dodir otvara veću sliku, opis, udaljenost i brisanje. Slike ostaju na telefonu (ne šalju se na server).
 
+import { gateLayer } from './razmjer-prikaz.js';
 import { idbAll, idbPut, idbDelete } from './db.js';
 import { savePhoto, deletePhoto, photoUrl, makeThumbnail } from './foto.js';
 import { uuid } from './zapisi.js';
@@ -16,7 +17,8 @@ const STORE = 'slike';
 const whenText = (t) => new Date(t).toLocaleString('bs-BA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
 export function initSlike(L, map) {
-  const layer = L.layerGroup().addTo(map);
+  const layer = L.layerGroup();
+  gateLayer(map, layer, 'slike');
   const sheet = $('slika-forma');
   const form = $('forma-slika');
   const viewer = $('slika-velika');

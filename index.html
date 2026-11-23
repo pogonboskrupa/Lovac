@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.9.3';
+  const APP_VER = 'v0.9.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -495,6 +495,14 @@
       <button type="button" data-velicina="veliko" aria-pressed="false">Veliko</button>
       <button type="button" data-velicina="najvece" aria-pressed="false">Najveće</button>
     </div>
+  </div>
+
+  <div class="p-kartica" id="p-prikaz-karta">
+    <h3>Prikaz na karti — razmjera</h3>
+    <p class="sitno">Slike, tragovi i tačke (opažanja, tačke interesa) se crtaju tek kad je karta uvećana do izabrane razmjere (manji broj = bliže). Moja pozicija, kolege i trag koji se snima vide se uvijek.</p>
+    <div id="p-razmjer" class="segment p-razmjer" role="group" aria-label="Razmjera prikaza"></div>
+    <p class="sitno">Ograniči po razmjeri:</p>
+    <div id="p-razmjer-vrste" class="segment p-razmjer" role="group" aria-label="Šta se ograničava po razmjeri"></div>
   </div>
 
   <div class="p-kartica">

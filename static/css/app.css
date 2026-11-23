@@ -1216,3 +1216,9 @@ svg[hidden] { display: none; }
 /* Istraživač: magla horizonta pri strmom nagibu (prekriva najdalji, najrazvučeniji dio karte) */
 #ist-magla { position: absolute; left: 0; right: 0; top: 0; z-index: 500; pointer-events: none;
   background: linear-gradient(#4a7aa3 0%, rgba(74, 122, 163, 0.85) 55%, rgba(74, 122, 163, 0) 100%); }
+
+/* Slike opažanja u kartici na karti */
+.op-popup-foto { display: flex; gap: 6px; margin-top: 6px; overflow-x: auto; }
+.op-popup-foto img { width: 100%; max-width: 220px; max-height: 120px; object-fit: cover; border-radius: 8px; flex: none; }
+.op-popup-foto img + img { width: 72px; height: 72px; }
+.p-razmjer button { flex: 1 1 28%; }

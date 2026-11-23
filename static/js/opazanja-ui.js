@@ -6,7 +6,8 @@ import { newRecord, saveRecord, listRecords, deleteRecord, getRecord } from './z
 import { matchesQuery } from './pretraga.js';
 import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observerLabel, inObservationsText } from './opazanja.js';
 import { cachedProfile } from './auth.js';
-import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
+import { savePhoto, deletePhoto, createPhotoStrip, photoUrl } from './foto.js';
+import { gateLayer } from './razmjer-prikaz.js';
 import { currentFix } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
@@ -36,8 +37,9 @@ function categoryName(vrste, vrsta, kat) {
 }
 
 export function initOpazanja(L, map) {
-  const layer = L.layerGroup().addTo(map);
+  const layer = L.layerGroup();
   const photos = createPhotoStrip();
+  const markerUrls = []; // object URL-ovi sličica na karti, oslobađaju se pri ponovnom crtanju
   const sheet = $('opazanje-forma');
   const form = $('forma-opazanje');
   const overview = $('opazanja');
@@ -66,7 +68,24 @@ export function initOpazanja(L, map) {
       <div class="sitno">${escapeHtml(categoryName(vrste, o.vrsta, o.kategorija))} · ${escapeHtml(formatWhen(o.vrijeme))}</div>
       <div class="op-vidio">Vidio: <b>${escapeHtml(observerLabel(o, cachedProfile(), memberName))}</b></div>
       ${o.napomena ? `<div class="sitno">${escapeHtml(o.napomena)}</div>` : ''}
+      ${(o.fotografije || []).length ? '<div class="op-popup-foto"></div>' : ''}
       ${o.tudji ? '' : '<div class="red-dugmadi"><button type="button" class="dugme" data-akcija="dijeli">Dijeli</button><button type="button" class="dugme" data-akcija="obrisi">Obriši</button></div>'}`;
+    const fotoBox = el.querySelector('.op-popup-foto');
+    if (fotoBox) {
+      // Slike opažanja su na telefonu (IndexedDB); URL se oslobađa kad se kartica zatvori.
+      const urls = [];
+      Promise.all(o.fotografije.slice(0, 3).map((id) => photoUrl(id).catch(() => null))).then((list) => {
+        for (const u of list.filter(Boolean)) {
+          urls.push(u);
+          const img = document.createElement('img');
+          img.src = u;
+          img.alt = 'Slika opažanja';
+          fotoBox.append(img);
+        }
+        if (!urls.length) fotoBox.textContent = 'Slika nije na ovom telefonu.';
+        map.once('popupclose', () => urls.forEach((u) => URL.revokeObjectURL(u)));
+      });
+    }
     el.querySelector('[data-akcija="dijeli"]')?.addEventListener('click', () => { map.closePopup(); shareDialog()?.open(STORE, o.id); });
     const del = el.querySelector('[data-akcija="obrisi"]');
     if (del) {
@@ -83,12 +102,21 @@ export function initOpazanja(L, map) {
     return el;
   };
 
+  // Podaci i sličice se pripreme prije brisanja sloja; sporije crtanje ne smije prepisati novije (brojač).
+  // Gornja traka (koordinate, podloge) prekriva vrh karte: kartica se odmakne ispod nje.
+  const POPUP_OPC = { minWidth: 220, autoPanPaddingTopLeft: [12, 140], autoPanPaddingBottomRight: [12, 90] };
+  let layerSeq = 0;
   const renderLayer = async () => {
+    const seq = ++layerSeq;
     const vrste = await getSpisakAll('vrste');
+    const list = filter.naKarti ? await filtered() : [];
+    const dots = filter.prikaz === 'gustina';
+    const urls = dots ? [] : await Promise.all(list.map((o) => ((o.fotografije || [])[0] ? photoUrl(o.fotografije[0]).catch(() => null) : null)));
+    if (seq !== layerSeq) { urls.forEach((u) => u && URL.revokeObjectURL(u)); return; }
     layer.clearLayers();
-    if (!filter.naKarti) return;
-    const list = await filtered();
-    if (filter.prikaz === 'gustina') {
+    markerUrls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+    gate();
+    if (dots) {
       for (const c of densityGrid(list, 500)) {
         L.rectangle([[c.lat0, c.lon0], [c.lat1, c.lon1]], {
           interactive: false, weight: 0, fillColor: '#e4572e', fillOpacity: 0.15 + 0.55 * c.intensity, className: 'op-gustina',
@@ -96,13 +124,26 @@ export function initOpazanja(L, map) {
       }
       return;
     }
-    for (const o of list) {
+    list.forEach((o, i) => {
       const color = colorFor(vrste, o.vrsta);
+      const url = urls[i];
+      if (url) {
+        // Opažanje sa slikom: sličica u okviru boje vrste (kao "Slika na poziciji").
+        markerUrls.push(url);
+        L.marker([o.lat, o.lon], {
+          icon: L.divIcon({ className: 'slika-ikona op-slika', html: `<div class="slika-marker" style="--boja:${color}"><img src="${url}" alt=""></div>`, iconSize: [56, 64], iconAnchor: [28, 62], popupAnchor: [0, -58] }),
+        }).bindPopup(() => popupFor(o, vrste), POPUP_OPC).addTo(layer);
+        return;
+      }
       L.circleMarker([o.lat, o.lon], {
         radius: 6 + Math.min(o.broj || 1, 10) / 2, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.9, className: 'op-tacka',
-      }).bindPopup(() => popupFor(o, vrste), { minWidth: 220 }).addTo(layer);
-    }
+      }).bindPopup(() => popupFor(o, vrste), POPUP_OPC).addTo(layer);
+    });
   };
+
+
+  // Tačke opažanja se crtaju tek do izabrane razmjere (Postavke → Prikaz na karti); gustina je pregled lovišta pa uvijek.
+  const gate = gateLayer(map, layer, 'tacke', () => filter.prikaz !== 'gustina');
 
   // ---- brzi unos ----
   const renderCategories = async () => {

@@ -24,6 +24,7 @@ export const UPUTE = [
       ['Koordinate i visina', 'Gore lijevo su visina i koordinate centra karte. Dodir na koordinate mijenja sistem: WGS84, MGI 5, MGI 6. Dodir na visinu sakriva visinu i koordinate (isto se može u izboru podloge).'],
       ['Podloge', 'Dugme gore desno bira podlogu: Topo, Satelit ili Teren. Teren se preuzme jednom i radi bez interneta.'],
       ['Dugme +', 'Dodaje lovački objekat, opažanje divljači, odstrel, sliku na poziciji, potragu za ranjenom divljači i mjerenje (udaljenost, površina, nagib). Kamere dodaju samo lovočuvari.'],
+      ['Prikaz po razmjeri', 'Slike, tragovi i tačke (opažanja, tačke interesa) se crtaju tek kad je karta uvećana do razmjere 1 : 12 500, da ne prekriju kartu pri pregledu lovišta. U Postavke → Opšte → Prikaz na karti — razmjera biraš drugu razmjeru, "Uvijek" ili isključuješ ograničenje za pojedinu vrstu.'],
       ['Visina (N.V.)', 'Nadmorska visina dolazi iz modela terena, a GPS visina je samo rezerva jer je netačna.'],
     ],
   },
@@ -62,7 +63,7 @@ export const UPUTE = [
     stavke: [
       ['Vidljivost', 'Privatno (samo ti), društvo ili izabrani lovci. Administrator ne vidi tvoje privatne zapise.'],
       ['Objekti', 'Čeke, hranilišta, solila i slično, sa stanjem i datumom zadnjeg obilaska. Pokazuje se koji treba popravku i koji dugo nisu obiđeni; "Vodi me" vodi do objekta.'],
-      ['Opažanja', 'Vrsta, broj grla, doba dana i fotografija. Pregled pokazuje kad je divljač viđena. Dodir na tačku opažanja na karti otvara karticu sa podatkom ko je vidio, a svoje opažanje možeš podijeliti ili obrisati (drugi dodir).'],
+      ['Opažanja', 'Vrsta, broj grla, doba dana i fotografija. Pregled pokazuje kad je divljač viđena. Opažanje sa fotografijom se na karti vidi kao sličica. Dodir na opažanje otvara karticu sa slikom i podatkom ko je vidio, a svoje opažanje možeš podijeliti ili obrisati (drugi dodir).'],
       ['Odstrel', 'Evidencija ulova sa težinom. Možeš izvesti CSV (Excel) i PDF. Izvještaj ne zamjenjuje službeni lovački dnevnik.'],
       ['Prijavi društvu', 'Na kartici odstrela dugme šalje društvu samo vrstu, kategoriju, težinu i vrijeme, bez tačne lokacije. Prijavu možeš povući dok je tvoja.'],
       ['Moji tragovi', 'Snimljene ture sa kilometrima, trajanjem i oblikom rute. Potraga za ranjenom divljači šalje se i dok traje, da je vodič psa može pratiti.'],
