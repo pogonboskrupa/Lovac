@@ -1325,3 +1325,12 @@ svg[hidden] { display: none; }
 .pr-status.info { color: var(--tekst-2); }
 .pr-podnozje { margin: 18px 0 0; max-width: 420px; text-align: center; font-size: 13px; color: #b9c2a8; }
 .probni-traka { background: #14532d; color: #ffffff; white-space: normal; text-align: left; }
+
+/* Zvanični objekat društva (rukovodstvo, migracija 027): zlatni obrub i zvjezdica na markeru i u spisku. */
+.obj-ikona[data-zvanicni="true"] { position: relative; box-shadow: 0 0 0 3px #d9a441, 0 2px 6px rgba(0, 0, 0, .45); }
+.obj-zvjezdica {
+  position: absolute; right: -6px; top: -8px; width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13px; line-height: 1; background: #d9a441; color: #1b1405; border: 1.5px solid #ffffff;
+}
+.tr-chip[data-zvanicni="true"] { background: #d9a441; color: #1b1405; font-weight: 700; }
+.obj-zvanicni-izbor { padding: 10px 12px; border-radius: 12px; border: 1.5px solid #d9a441; }

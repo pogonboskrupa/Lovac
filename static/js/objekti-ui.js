@@ -13,6 +13,9 @@ import { isStandType, SEKTORI } from './vjetar.js';
 import { shareDialog, memberName } from './dijeljenje-ui.js';
 import { VIDLJIVOST } from './zapisi.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
+import { cachedProfile } from './auth.js';
+import { cachedSekcije } from './sekcije-ui.js';
+import { viewerRole } from './pregled.js';
 
 const STORE = 'objekti';
 const $ = (id) => document.getElementById(id);
@@ -21,9 +24,16 @@ function iconFor(vrste, kod) {
   return vrste.find((v) => v.kod === kod)?.ikona || 'pin';
 }
 
+// Zvanični objekat društva (postavilo rukovodstvo, migracija 027) ima zlatni obrub i zvjezdicu.
 function markerHtml(vrste, o) {
-  return `<div class="obj-ikona" data-vrsta="${escapeHtml(o.vrsta)}" data-stanje="${escapeHtml(o.stanje)}" data-id="${escapeHtml(o.id)}" data-tudji="${Boolean(o.tudji)}">`
-    + `<svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrste, o.vrsta))}"/></svg></div>`;
+  return `<div class="obj-ikona" data-vrsta="${escapeHtml(o.vrsta)}" data-stanje="${escapeHtml(o.stanje)}" data-id="${escapeHtml(o.id)}" data-tudji="${Boolean(o.tudji)}" data-zvanicni="${Boolean(o.zvanicni)}">`
+    + `<svg class="ic"><use href="#ic-obj-${escapeHtml(iconFor(vrste, o.vrsta))}"/></svg>${o.zvanicni ? '<span class="obj-zvjezdica" aria-label="Zvanični objekat društva">★</span>' : ''}</div>`;
+}
+
+// Kvačicu "Zvanični objekat" vidi samo rukovodstvo (provjeru ionako radi server).
+async function mozeZvanicni() {
+  const role = viewerRole(cachedProfile(), await cachedSekcije().catch(() => ({})));
+  return role !== 'lovac';
 }
 
 const photos = createPhotoStrip();
@@ -93,10 +103,19 @@ export function initObjekti(L, map) {
     form.naziv.value = rec?.naziv || '';
     form.zadnji_obilazak.value = rec?.zadnji_obilazak || todayIso();
     form.napomena.value = rec?.napomena || '';
+    $('objekt-zvanicni-blok').hidden = true;
+    form.zvanicni.checked = Boolean(rec?.zvanicni);
+    editing.leader = false;
     await renderPhotos($('objekt-foto'), editing.foto, true);
     updatePositionText();
     detail.hidden = true;
     sheet.hidden = false;
+    // Uloga se čita iz keša poslije prikaza: forma se otvara odmah, izbor "zvanični" stiže trenutak kasnije.
+    const mine = editing;
+    const leader = await mozeZvanicni();
+    if (editing !== mine) return;
+    editing.leader = leader;
+    $('objekt-zvanicni-blok').hidden = !leader;
   };
 
   const closeForm = async (saved) => {
@@ -176,9 +195,14 @@ export function initObjekti(L, map) {
       lat: editing.lat,
       lon: editing.lon,
     };
+    if (editing.leader) {
+      fields.zvanicni = form.zvanicni.checked;
+      if (fields.zvanicni) fields.vidljivost = 'drustvo';
+    }
     try {
       if (editing.rec) await updateRecord(STORE, editing.rec.id, fields);
-      else await saveRecord(STORE, newRecord(fields));
+      // newRecord uvijek počinje kao privatno; zvanični objekat je odmah zapis društva.
+      else await saveRecord(STORE, { ...newRecord(fields), ...(fields.vidljivost ? { vidljivost: fields.vidljivost } : {}) });
       for (const id of editing.removed) await deletePhoto(id);
     } catch {
       return; // saveRecord je već glasno javio grešku; forma ostaje otvorena
@@ -196,7 +220,9 @@ export function initObjekti(L, map) {
     $('od-naziv').textContent = o.naziv;
     $('od-info').textContent = `${lookupNaziv(vrsteAll, o.vrsta)} · ${STANJA[o.stanje] || o.stanje} · zadnji obilazak ${formatDateBs(o.zadnji_obilazak)}`;
     $('od-napomena').textContent = o.napomena || '';
-    $('od-vlasnik').textContent = o.tudji ? `Podijelio: ${memberName(o.vlasnik_id)}` : `Vidljivost: ${VIDLJIVOST[o.vidljivost || 'privatno']}`;
+    $('od-vlasnik').textContent = o.zvanicni
+      ? `Zvanični objekat društva · postavio ${o.tudji ? memberName(o.vlasnik_id) : 'ti'}`
+      : (o.tudji ? `Podijelio: ${memberName(o.vlasnik_id)}` : `Vidljivost: ${VIDLJIVOST[o.vidljivost || 'privatno']}`);
     detail.dataset.tudji = String(Boolean(o.tudji));
     ['btn-od-uredi', 'btn-od-obidjeno', 'btn-od-obrisi', 'btn-od-dijeli'].forEach((b) => { $(b).hidden = Boolean(o.tudji); });
     await renderPhotos($('od-foto'), o.fotografije || [], false);
@@ -261,6 +287,7 @@ export function initObjekti(L, map) {
       <li class="trag-red obj-red tr-kartica ev-kartica" data-id="${escapeHtml(o.id)}" data-stanje="${escapeHtml(o.stanje)}" data-kasni="${v.kasni}">
         <div class="obj-chipovi">
           <span class="tr-chip" data-stanje="${escapeHtml(o.stanje)}">${escapeHtml(STANJA[o.stanje] || o.stanje)}</span>
+          ${o.zvanicni ? '<span class="tr-chip" data-zvanicni="true">★ Zvanični</span>' : ''}
           ${v.kasni ? `<span class="tr-chip" data-kasni="true">${v.dana == null ? 'Nije obilažen' : 'Dugo bez obilaska'}</span>` : ''}
         </div>
         <button type="button" class="obj-red-dugme">

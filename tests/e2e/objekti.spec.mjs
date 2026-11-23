@@ -159,3 +159,53 @@ test('dodirne mete objekata ≥ 44 px, polja ≥ 48 px', async ({ page }) => {
     expect(b.height, sel).toBeGreaterThanOrEqual(48);
   }
 });
+
+async function seedRole(page, grupovodja) {
+  await page.addInitScript(() => {
+    localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u1', ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false }));
+  });
+  await page.goto('/');
+  await page.evaluate((gv) => new Promise((resolve) => {
+    const r = indexedDB.open('lovac');
+    r.onsuccess = () => {
+      const tx = r.result.transaction('spiskovi', 'readwrite');
+      tx.objectStore('spiskovi').put({ id: 'sekcije', rows: {
+        reviri: [{ id: 'R1', naziv: 'Krupa' }],
+        sekcije: [{ id: 'S1', naziv: 'Krupa 1', revir_id: 'R1', grupovodja_id: gv ? 'u1' : 'drugi' }],
+        clanovi: [], grupovodje: [], lovocuvari: [],
+      } });
+      tx.oncomplete = resolve;
+    };
+  }), grupovodja);
+  await page.reload();
+}
+
+test('zvanični objekat: grupovođa ga označi (društvo, zlatna oznaka), lovac nema izbor', async ({ page }) => {
+  await seedRole(page, true);
+  await page.locator('#btn-dodaj').click();
+  await page.locator('#btn-dodaj-objekat').click();
+  await expect(page.locator('#objekt-zvanicni-blok')).toBeVisible();
+  await page.locator('#objekt-vrste [data-kod="ceka_visoka"]').click();
+  await page.fill('#forma-objekt input[name=naziv]', 'Čeka društva');
+  await page.locator('#objekt-zvanicni-blok input').check();
+  await page.locator('#forma-objekt button[type=submit]').click();
+  await expect(page.locator('#objekt-forma')).toBeHidden();
+  const [o] = await allObjects(page);
+  expect(o).toMatchObject({ zvanicni: true, vidljivost: 'drustvo' });
+  await expect(page.locator('.obj-ikona[data-zvanicni="true"] .obj-zvjezdica')).toHaveCount(1);
+  await page.locator('.obj-ikona').click();
+  await expect(page.locator('#od-vlasnik')).toContainText('Zvanični objekat društva');
+});
+
+test('zvanični objekat: običan lovac ne vidi izbor i objekat ostaje privatan', async ({ page }) => {
+  await seedRole(page, false);
+  await page.locator('#btn-dodaj').click();
+  await page.locator('#btn-dodaj-objekat').click();
+  await expect(page.locator('#objekt-forma')).toBeVisible();
+  await expect(page.locator('#objekt-zvanicni-blok')).toBeHidden();
+  await page.locator('#forma-objekt button[type=submit]').click();
+  const [o] = await allObjects(page);
+  expect(o.zvanicni).toBeFalsy();
+  expect(o.vidljivost).toBe('privatno');
+  await expect(page.locator('.obj-ikona[data-zvanicni="true"]')).toHaveCount(0);
+});

@@ -63,6 +63,7 @@ export const UPUTE = [
     stavke: [
       ['Vidljivost', 'Privatno (samo ti), društvo ili izabrani lovci. Administrator ne vidi tvoje privatne zapise.'],
       ['Objekti', 'Čeke, hranilišta, solila i slično, sa stanjem i datumom zadnjeg obilaska. Pokazuje se koji treba popravku i koji dugo nisu obiđeni; "Vodi me" vodi do objekta.'],
+      ['Zvanični objekti društva', 'Administrator, lovočuvar i grupovođa pri unosu objekta mogu označiti "Zvanični objekat društva". Takav objekat vide svi članovi društva, a na karti ima zlatni prsten i zvjezdicu. Objekti koje unese lovac ostaju njegovi (privatni dok ih sam ne podijeli).'],
       ['Opažanja', 'Vrsta, broj grla, doba dana i fotografija. Pregled pokazuje kad je divljač viđena. Opažanje sa fotografijom se na karti vidi kao sličica. Dodir na opažanje otvara karticu sa slikom i podatkom ko je vidio, a svoje opažanje možeš podijeliti ili obrisati (drugi dodir).'],
       ['Odstrel', 'Evidencija ulova sa težinom. Možeš izvesti CSV (Excel) i PDF. Izvještaj ne zamjenjuje službeni lovački dnevnik.'],
       ['Prijavi društvu', 'Na kartici odstrela dugme šalje društvu samo vrstu, kategoriju, težinu i vrijeme, bez tačne lokacije. Prijavu možeš povući dok je tvoja.'],

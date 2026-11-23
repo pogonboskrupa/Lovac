@@ -540,3 +540,8 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Slika preko cijelog ekrana (v1.0.4)**
 - Zajednički pregled `slika-pregled.js` (`openImageViewer({ src, revoke, caption, actions })`, `#slika-velika`): velika slika, crveni X (`#btn-slika-velika-zatvori`, 52 px, `#dc2626`), "Cijeli ekran" (`#btn-slika-pun`, i dodir na sliku: klasa `pun`, slika 100vw × 100dvh, u pregledniku i `requestFullscreen`), dugmad ispod slike (`#slika-velika-akcije`). Nazad ga zatvara prvi (`initImageViewer` se registruje zadnji u `boot.js`). Koriste ga Slika na poziciji, opažanja i arhiva lova.
 - Dodir na sličicu na karti (Slika na poziciji, opažanje sa fotografijom) ODMAH otvara veliku sliku; kartica sa detaljima i brisanjem je dugme "Detalji" (popup se otvara ručno `L.popup().setLatLng`, marker nema `bindPopup`). Slika u kartici opažanja se također otvara velika.
+
+**Zvanični objekti društva (migracija 027, v1.0.5)**
+- Admin, lovočuvar i grupovođa (`pregled.js viewerRole` ≠ `lovac`, iz keša sekcija) imaju u formi objekta kvačicu `#objekt-zvanicni-blok`: zapis dobija `zvanicni: true` (u `podaci`) i `vidljivost: 'drustvo'`, pa ga vide svi stvarni članovi (`je_clan_drustva`). Ikone su iste; marker ima `data-zvanicni` (zlatni prsten `#d9a441` i `.obj-zvjezdica`), spisak čip "★ Zvanični", detalj "Zvanični objekat društva · postavio X".
+- Server (trigger `zvanicni_objekat`): oznaku prihvata samo od `je_rukovodstvo()` i tada sam postavi `drustvo`; ostalima je skida. Klijent provjerava ulogu samo za prikaz.
+- `newRecord` uvijek postavlja `privatno` — vidljivost iz polja se mora upisati POSLIJE njega. Uloga se čita iz IndexedDB-a poslije prikaza forme (forma se otvara odmah).
