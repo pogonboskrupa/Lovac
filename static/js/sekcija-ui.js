@@ -27,7 +27,7 @@ import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { canPing } from './ping.js';
 import { fetchNew, nextCursor } from './inkrement.js';
-import { organizableSections } from './lov-traje.js';
+import { organizableSections, lastHuntPreset } from './lov-traje.js';
 import { sendPing } from './ping-ui.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
@@ -599,7 +599,24 @@ export function initSekcijaEkran(L, map) {
   const lnSheet = $('sk-lov-forma');
   const lnForm = $('forma-sk-lov');
   let lnSection = null;
-  const lnCount = () => { $('slf-broj').textContent = `(${lnForm.querySelectorAll('#slf-clanovi input:checked').length + 1} sa tobom)`; };
+  let lnRoles = {};
+  let lnPreset = null;
+  const lnSync = () => {
+    for (const row of lnForm.querySelectorAll('#slf-clanovi .slf-red')) {
+      const on = row.querySelector('input').checked;
+      const b = row.querySelector('.slf-uloga');
+      const u = lnRoles[row.dataset.uid] || 'strijelac';
+      b.hidden = !on;
+      b.dataset.uloga = u;
+      b.textContent = u === 'pogonic' ? 'Pogonič' : 'Strijelac';
+    }
+  };
+  const lnCount = () => {
+    lnSync();
+    const n = lnForm.querySelectorAll('#slf-clanovi input:checked').length;
+    const pog = [...lnForm.querySelectorAll('#slf-clanovi input:checked')].filter((i) => lnRoles[i.value] === 'pogonic').length;
+    $('slf-broj').textContent = `(${n + 1} sa tobom${pog ? ` · ${pog} pogonič${pog === 1 ? '' : 'a'}` : ''})`;
+  };
   const fillSectionPicker = (choices, s) => {
     $('slf-sekcija-blok').hidden = choices.length < 2;
     $('slf-sekcija-izbor').innerHTML = choices.map((x) => `<option value="${escapeHtml(x.id)}" ${x.id === s.id ? 'selected' : ''}>${escapeHtml(x.naziv)}</option>`).join('');
@@ -614,9 +631,16 @@ export function initSekcijaEkran(L, map) {
     $('slf-status').textContent = online() ? '' : 'Za pravljenje lova potreban je internet.';
     const ids = addableMembers(s, ctx.clanovi, []).filter((id) => id !== me()?.id)
       .sort((a, b) => memberName(a).localeCompare(memberName(b), 'bs'));
-    $('slf-clanovi').innerHTML = ids.map((id) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(memberName(id))}</label>`).join('')
+    lnRoles = {};
+    $('slf-clanovi').innerHTML = ids.map((id) => `<div class="slf-red" data-uid="${escapeHtml(id)}" data-ime="${escapeHtml(memberName(id))}">
+        <label class="red-check"><input type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(memberName(id))}</label>
+        <button type="button" class="dugme slf-uloga" data-uloga="strijelac" hidden>Strijelac</button></div>`).join('')
       || '<p class="sitno">U sekciji još nema drugih odobrenih članova.</p>';
     $('btn-slf-svi').hidden = !ids.length;
+    $('slf-trazi').value = '';
+    $('slf-trazi').hidden = ids.length < 8;
+    lnPreset = lastHuntPreset(lovovi, s.id, me()?.id);
+    $('btn-slf-zadnji').hidden = !lnPreset?.ids.some((id) => ids.includes(id));
     fillSectionPicker(izbor.length ? izbor : [s], s);
     lnForm.pokreni.checked = odmah;
     lnCount();
@@ -634,6 +658,20 @@ export function initSekcijaEkran(L, map) {
     if (!izbor.length) { toast('Lov pravi grupovođa sekcije ili administrator'); return; }
     const cur = selected();
     openNewHunt(izbor.find((x) => x.id === cur?.id) || izbor[0], { izbor, odmah: true });
+  });
+  // Upravljanje iz ekrana "Lov traje" / "Lov danas": isto kao dugmad u tabu sekcije (server provjerava pravo).
+  document.addEventListener('lov:upravljanje', async (e) => {
+    const { akcija, lovId, ids = [], uloge = {} } = e.detail;
+    const sb = getClient();
+    if (akcija === 'pokreni' || akcija === 'zavrsi') {
+      await runHunt(() => qSk(sb.from('lovovi').update({ status: akcija === 'pokreni' ? 'u_toku' : 'zavrsen' }).eq('id', lovId)),
+        akcija === 'pokreni' ? 'Lov je počeo' : 'Lov je završen');
+    } else if (akcija === 'dodaj') {
+      if (!ids.length) { toast('Izaberi bar jednog lovca'); return; }
+      await runHunt(() => qSk(sb.from('lov_ucesnici').upsert(ids.map((id) => ({ lov_id: lovId, korisnik_id: id, uloga: uloge[id] === 'pogonic' ? 'pogonic' : 'strijelac' })),
+        { onConflict: 'lov_id,korisnik_id' })), ids.length === 1 ? 'Lovac je dodan u lov' : 'Lovci su dodani u lov');
+    }
+    document.dispatchEvent(new CustomEvent('lovovi:promjena'));
   });
   // Poruka iz ekrana "Lov traje": ista izlazna kutija kao poruke sekcije, označena lovom.
   document.addEventListener('lov:poruka', async (e) => {
@@ -657,6 +695,23 @@ export function initSekcijaEkran(L, map) {
   });
   const closeNewHunt = () => { lnSheet.hidden = true; lnSection = null; };
   $('slf-clanovi').addEventListener('change', lnCount);
+  $('slf-clanovi').addEventListener('click', (e) => {
+    const b = e.target.closest('.slf-uloga');
+    if (!b) return;
+    const uid = b.closest('[data-uid]').dataset.uid;
+    lnRoles[uid] = lnRoles[uid] === 'pogonic' ? 'strijelac' : 'pogonic';
+    lnCount();
+  });
+  $('slf-trazi').addEventListener('input', (e) => {
+    for (const row of lnForm.querySelectorAll('#slf-clanovi .slf-red')) row.hidden = !matchesQuery(row.dataset.ime, e.target.value);
+  });
+  $('btn-slf-zadnji').addEventListener('click', () => {
+    if (!lnPreset) return;
+    for (const i of lnForm.querySelectorAll('#slf-clanovi input')) i.checked = lnPreset.ids.includes(i.value);
+    lnRoles = { ...lnPreset.uloge };
+    lnCount();
+    toast('Izabrani su lovci iz zadnjeg lova');
+  });
   $('btn-slf-svi').addEventListener('click', () => {
     const boxes = [...lnForm.querySelectorAll('#slf-clanovi input')];
     const all = boxes.every((b) => b.checked);
@@ -671,8 +726,8 @@ export function initSekcijaEkran(L, map) {
     if (!s || !me()) return;
     if (!online()) { $('slf-status').textContent = 'Za pravljenje lova potreban je internet.'; return; }
     const plan = huntCreatePlan(s, uuid(), me().id, {
-      naziv: lnForm.naziv.value, datum: lnForm.datum.value, napomena: lnForm.napomena.value,
-      pokreni: lnForm.pokreni.checked, ucesnici: [...lnForm.querySelectorAll('#slf-clanovi input:checked')].map((b) => b.value),
+      naziv: lnForm.naziv.value, datum: lnForm.datum.value, napomena: lnForm.napomena.value, okupljanje: lnForm.okupljanje.value,
+      pokreni: lnForm.pokreni.checked, ucesnici: [...lnForm.querySelectorAll('#slf-clanovi input:checked')].map((b) => b.value), uloge: lnRoles,
     });
     const sb = getClient();
     const btn = lnForm.querySelector('button[type=submit]');

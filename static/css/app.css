@@ -1365,3 +1365,27 @@ svg[hidden] { display: none; }
 .ld-ceka { position: absolute; left: 0; right: 0; bottom: 0; font-size: 11px; background: rgba(0, 0, 0, 0.65); color: #ffffff; padding: 2px; }
 #ld-tabovi button { white-space: nowrap; font-size: 15px; }
 #ld-tabovi .sitno { color: inherit; font-size: 13px; }
+.slf-alati { display: flex; gap: 8px; flex-wrap: wrap; }
+#slf-trazi { width: 100%; min-height: 48px; font-size: 16px; margin: 8px 0; }
+#slf-trazi[hidden] { display: none; }
+.slf-red { display: flex; align-items: center; gap: 8px; }
+.slf-red[hidden] { display: none; }
+.slf-red .red-check { flex: 1; min-width: 0; }
+.slf-uloga { flex: none; min-height: 44px; min-width: 96px; }
+.slf-uloga[data-uloga="pogonic"] { border-color: #f59e0b; color: #fbbf24; }
+.slf-uloga[hidden] { display: none; }
+.dodaj-lov-danas { position: relative; }
+.ld-znacka { position: absolute; top: 6px; right: 8px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; background: #e41e3f; color: #ffffff;
+  font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+.ld-znacka[hidden] { display: none; }
+.ld-tok { margin-left: 6px; }
+.ld-tok[data-tok="pogon"] { background: #166534; color: #ffffff; }
+.ld-tok[data-tok="prekid"] { background: #b91c1c; color: #ffffff; }
+.ld-upravljanje { border-color: var(--naglasak); }
+.ld-zavrsi { border-color: #ef4444; color: #fca5a5; }
+.ld-daljina { color: var(--tekst); }
+.ld-brze { overflow-x: auto; }
+.ld-brze { flex-wrap: nowrap; }
+.ld-brze button { flex: none; border: 1.5px solid var(--okvir); }
+#ld-dodaj-lovce .slf-red { margin: 4px 0; }
+.lk-chip[data-chip="planiran"] { background: var(--naglasak); color: var(--naglasak-tekst); }

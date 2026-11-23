@@ -11,10 +11,39 @@ export function organizableSections(ctx = {}, me = null) {
     .sort((a, b) => String(a.naziv).localeCompare(String(b.naziv), 'bs'));
 }
 
-// "+" nudi "Lov traje" dok traje lov u kojem sam; inače "Dodaj lov" ako smijem organizovati.
-export function huntButtons({ aktivan = null, organizator = false } = {}) {
-  if (aktivan) return { traje: true, dodaj: false };
-  return { traje: false, dodaj: Boolean(organizator) };
+// "+": dok traje lov u kojem sam → "Lov traje"; lov planiran za danas → "Lov danas"; inače "Dodaj lov" ako smijem organizovati.
+export function huntButtons({ aktivan = null, planiran = null, organizator = false } = {}) {
+  if (aktivan) return { traje: true, planiran: false, dodaj: false };
+  if (planiran) return { traje: false, planiran: true, dodaj: false };
+  return { traje: false, planiran: false, dodaj: Boolean(organizator) };
+}
+
+const inHunt = (rec, myId) => rec?.lov?.organizator_id === myId || (rec?.ucesnici || []).some((u) => u.korisnik_id === myId);
+
+// Današnji planirani (još nepokrenut) lov u kojem sam učesnik ili organizator; najnoviji ako ih je više.
+export function todayPlannedHunt(lovovi = [], myId, today) {
+  return lovovi.filter((r) => r.lov?.status === 'planiran' && r.lov.datum === today && inHunt(r, myId))
+    .sort((a, b) => String(b.lov.created_at || b.lov.promijenjeno || '').localeCompare(String(a.lov.created_at || a.lov.promijenjeno || '')))[0] || null;
+}
+
+// Upravlja lovom: administrator, organizator lova i grupovođa sekcije lova (server to provjerava kroz RLS).
+export function canManageHunt(rec, ctx = {}, me = null) {
+  if (!rec?.lov || !me?.id) return false;
+  if (me.is_admin || rec.lov.organizator_id === me.id) return true;
+  return organizableSections(ctx, me).some((s) => s.id === rec.lov.sekcija_id);
+}
+
+// "Kao zadnji lov": lovci i uloge iz zadnjeg lova te sekcije (bez mene), za brže pravljenje novog.
+export function lastHuntPreset(lovovi = [], sekcijaId, myId) {
+  const zadnji = lovovi.filter((r) => r.lov?.sekcija_id === sekcijaId && (r.ucesnici || []).length > 1)
+    .sort((a, b) => String(b.lov.datum).localeCompare(String(a.lov.datum)) || String(b.lov.pocetak || '').localeCompare(String(a.lov.pocetak || '')))[0];
+  if (!zadnji) return null;
+  const ucesnici = zadnji.ucesnici.filter((u) => u.korisnik_id !== myId);
+  return {
+    naziv: zadnji.lov.naziv,
+    ids: ucesnici.map((u) => u.korisnik_id),
+    uloge: Object.fromEntries(ucesnici.map((u) => [u.korisnik_id, u.uloga === 'pogonic' ? 'pogonic' : 'strijelac'])),
+  };
 }
 
 export const SVJEZINA_TEKST = { uzivo: 'Uživo', zastarjelo: 'Zastarjelo', 'bez-signala': 'Bez signala', nema: 'Ne dijeli lokaciju' };
@@ -29,6 +58,7 @@ export function participantRows(ucesnici = [], { pozicije = [], poruke = [], sli
     return {
       ...u,
       svjezina,
+      pozicija: p && Number.isFinite(p.lat) && Number.isFinite(p.lon) ? { lat: p.lat, lon: p.lon } : null,
       poruka: moje.length,
       zadnjaPoruka: moje.length ? moje[moje.length - 1] : null,
       slika: slike.filter((s) => s.autor_id === u.id).length,

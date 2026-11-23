@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.0.9';
+  const APP_VER = 'v1.1.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -238,7 +238,7 @@
       <div><h3 id="dodaj-naslov">Dodaj na kartu</h3><p id="dodaj-pozicija" class="sitno">Na tvojoj GPS poziciji, a bez GPS-a na nišanu karte.</p></div>
       <button type="button" id="btn-dodaj-zatvori" class="ikona-dugme" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
     </div>
-    <button type="button" id="btn-lov-danas" class="dodaj-lov-danas" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b>Lov traje</b><small id="lov-danas-opis">Lov je u toku</small></span></button>
+    <button type="button" id="btn-lov-danas" class="dodaj-lov-danas" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b id="lov-danas-naslov">Lov traje</b><small id="lov-danas-opis">Lov je u toku</small></span><span id="lov-danas-znacka" class="ld-znacka" hidden></span></button>
     <button type="button" id="btn-lov-dodaj" class="dodaj-lov-danas dodaj-lov-novi" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b>Dodaj lov</b><small id="lov-dodaj-opis">Napravi lov sa spiskom lovaca i pokreni ga</small></span></button>
     <h4 class="dodaj-grupa">Evidencija</h4>
     <div class="dodaj-mreza">
@@ -842,10 +842,15 @@
     <label id="slf-sekcija-blok" hidden>Sekcija<select id="slf-sekcija-izbor" name="sekcija"></select></label>
     <label>Naziv lova<input name="naziv" type="text" maxlength="120" autocomplete="off"></label>
     <label>Datum<input name="datum" type="date"></label>
-    <label>Okupljanje i napomena<textarea name="napomena" rows="3" maxlength="1000" placeholder="Npr. okupljanje u 7:00 kod lovačke kuće, pogon na sjevernoj strani"></textarea></label>
+    <label>Okupljanje u (vrijeme)<input name="okupljanje" type="time"></label>
+    <label>Mjesto okupljanja i napomena<textarea name="napomena" rows="3" maxlength="1000" placeholder="Npr. kod lovačke kuće, pogon na sjevernoj strani"></textarea></label>
     <h3>Učesnici <span id="slf-broj" class="sitno"></span></h3>
-    <p class="sitno">Ti si vođa lova. Izabrani članovi su strijelci; ostali se mogu sami prijaviti kao prisutni.</p>
-    <button id="btn-slf-svi" class="dugme" type="button">Označi sve</button>
+    <p class="sitno">Ti si vođa lova. Za svakog izabranog lovca dodirom biraš Strijelac / Pogonič; ostali se mogu sami prijaviti kao prisutni.</p>
+    <div class="slf-alati">
+      <button id="btn-slf-svi" class="dugme" type="button">Označi sve</button>
+      <button id="btn-slf-zadnji" class="dugme" type="button" hidden>Kao zadnji lov</button>
+    </div>
+    <input id="slf-trazi" type="search" placeholder="Traži lovca" aria-label="Traži lovca" autocomplete="off">
     <div id="slf-clanovi" class="clanovi"></div>
     <label class="red-check"><input name="pokreni" type="checkbox"> Pokreni lov odmah (samo za današnji datum)</label>
     <p id="slf-status" class="sitno" role="status"></p>
@@ -865,9 +870,13 @@
     <button type="button" role="tab" data-ldtab="slike" aria-selected="false">Slike <span id="ld-broj-slika" class="sitno"></span></button>
   </div>
   <div id="ld-sadrzaj" data-ldpanel="pregled"></div>
-  <div id="ld-ucesnici-panel" data-ldpanel="ucesnici" hidden><ul id="ld-ucesnici" class="spisak ld-ucesnici"></ul></div>
+  <div id="ld-ucesnici-panel" data-ldpanel="ucesnici" hidden>
+    <div id="ld-dodaj-lovce" hidden></div>
+    <ul id="ld-ucesnici" class="spisak ld-ucesnici"></ul>
+  </div>
   <div id="ld-poruke-panel" data-ldpanel="poruke" hidden>
     <div id="ld-poruke" class="poruke ld-poruke" aria-live="polite"></div>
+    <div id="ld-brze" class="brze-poruke ld-brze"></div>
     <form id="forma-ld-poruka" class="poruka-forma" novalidate>
       <input name="tekst" type="text" maxlength="1000" autocomplete="off" placeholder="Poruka svim lovcima u lovu" aria-label="Poruka">
       <button type="submit" class="dugme glavno">Pošalji</button>

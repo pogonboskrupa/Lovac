@@ -73,7 +73,9 @@ const p2 = (n) => String(n).padStart(2, '0');
 // Lov sekcije za danas: naziv nosi datum, da se lovovi iste sekcije razlikuju u spisku.
 export function newTodayHunt(sekcija, id, now = new Date(), form = {}) {
   const naziv = String(form.naziv || '').trim().slice(0, 120);
-  const napomena = String(form.napomena || '').trim().slice(0, 1000);
+  // vrijeme okupljanja ide na početak napomene (lov nema posebnu kolonu za to)
+  const okupljanje = /^([01]\d|2[0-3]):[0-5]\d$/.test(form.okupljanje || '') ? `Okupljanje u ${form.okupljanje}.` : '';
+  const napomena = [okupljanje, String(form.napomena || '').trim()].filter(Boolean).join('\n').slice(0, 1000);
   const datum = /^\d{4}-\d{2}-\d{2}$/.test(form.datum || '') ? form.datum : todayIso(now);
   return {
     id, revir_id: sekcija.revir_id, sekcija_id: sekcija.id, status: 'planiran', datum,
@@ -83,13 +85,14 @@ export function newTodayHunt(sekcija, id, now = new Date(), form = {}) {
 }
 
 // Forma "Novi lov": šta se šalje serveru. Pokrenuti odmah se može samo lov sa današnjim datumom;
-// organizator je vođa, izabrani članovi su strijelci (bez duplikata i bez organizatora).
+// organizator je vođa, izabrani članovi su strijelci ili pogoniči (form.uloge), bez duplikata i bez organizatora.
 export function huntCreatePlan(sekcija, id, myId, form, now = new Date()) {
   const lov = newTodayHunt(sekcija, id, now, form);
   const ids = [...new Set(form.ucesnici || [])].filter((x) => x && x !== myId);
   return {
     lov,
-    ucesnici: [{ lov_id: id, korisnik_id: myId, uloga: 'vodja' }, ...ids.map((k) => ({ lov_id: id, korisnik_id: k, uloga: 'strijelac' }))],
+    ucesnici: [{ lov_id: id, korisnik_id: myId, uloga: 'vodja' },
+      ...ids.map((k) => ({ lov_id: id, korisnik_id: k, uloga: form.uloge?.[k] === 'pogonic' ? 'pogonic' : 'strijelac' }))],
     pokreni: Boolean(form.pokreni) && lov.datum === todayIso(now),
   };
 }

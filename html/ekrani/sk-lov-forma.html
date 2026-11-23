@@ -4,10 +4,15 @@
     <label id="slf-sekcija-blok" hidden>Sekcija<select id="slf-sekcija-izbor" name="sekcija"></select></label>
     <label>Naziv lova<input name="naziv" type="text" maxlength="120" autocomplete="off"></label>
     <label>Datum<input name="datum" type="date"></label>
-    <label>Okupljanje i napomena<textarea name="napomena" rows="3" maxlength="1000" placeholder="Npr. okupljanje u 7:00 kod lovačke kuće, pogon na sjevernoj strani"></textarea></label>
+    <label>Okupljanje u (vrijeme)<input name="okupljanje" type="time"></label>
+    <label>Mjesto okupljanja i napomena<textarea name="napomena" rows="3" maxlength="1000" placeholder="Npr. kod lovačke kuće, pogon na sjevernoj strani"></textarea></label>
     <h3>Učesnici <span id="slf-broj" class="sitno"></span></h3>
-    <p class="sitno">Ti si vođa lova. Izabrani članovi su strijelci; ostali se mogu sami prijaviti kao prisutni.</p>
-    <button id="btn-slf-svi" class="dugme" type="button">Označi sve</button>
+    <p class="sitno">Ti si vođa lova. Za svakog izabranog lovca dodirom biraš Strijelac / Pogonič; ostali se mogu sami prijaviti kao prisutni.</p>
+    <div class="slf-alati">
+      <button id="btn-slf-svi" class="dugme" type="button">Označi sve</button>
+      <button id="btn-slf-zadnji" class="dugme" type="button" hidden>Kao zadnji lov</button>
+    </div>
+    <input id="slf-trazi" type="search" placeholder="Traži lovca" aria-label="Traži lovca" autocomplete="off">
     <div id="slf-clanovi" class="clanovi"></div>
     <label class="red-check"><input name="pokreni" type="checkbox"> Pokreni lov odmah (samo za današnji datum)</label>
     <p id="slf-status" class="sitno" role="status"></p>

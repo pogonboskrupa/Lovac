@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.0.9';
+  const APP_VER = 'v1.1.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -238,7 +238,7 @@
       <div><h3 id="dodaj-naslov">Dodaj na kartu</h3><p id="dodaj-pozicija" class="sitno">Na tvojoj GPS poziciji, a bez GPS-a na nišanu karte.</p></div>
       <button type="button" id="btn-dodaj-zatvori" class="ikona-dugme" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
     </div>
-    <button type="button" id="btn-lov-danas" class="dodaj-lov-danas" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b>Lov traje</b><small id="lov-danas-opis">Lov je u toku</small></span></button>
+    <button type="button" id="btn-lov-danas" class="dodaj-lov-danas" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b id="lov-danas-naslov">Lov traje</b><small id="lov-danas-opis">Lov je u toku</small></span><span id="lov-danas-znacka" class="ld-znacka" hidden></span></button>
     <button type="button" id="btn-lov-dodaj" class="dodaj-lov-danas dodaj-lov-novi" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b>Dodaj lov</b><small id="lov-dodaj-opis">Napravi lov sa spiskom lovaca i pokreni ga</small></span></button>
     <h4 class="dodaj-grupa">Evidencija</h4>
     <div class="dodaj-mreza">

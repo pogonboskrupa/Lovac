@@ -34,7 +34,7 @@ test('grupovođa: "+" → Dodaj lov → lov počinje → "Lov traje" sa lovcima,
   // lov je na serveru, pokrenut, sa mnom kao vođom i 3 strijelca
   await expect.poll(() => sim.db.lovovi.find((l) => l.naziv === 'Pogon Grmeč')?.status, { timeout: 10000 }).toBe('u_toku');
   const lov = sim.db.lovovi.find((l) => l.naziv === 'Pogon Grmeč');
-  expect(sim.db.lov_ucesnici.filter((u) => u.lov_id === lov.id)).toHaveLength(4);
+  await expect.poll(() => sim.db.lov_ucesnici.filter((u) => u.lov_id === lov.id).length, { timeout: 10000 }).toBe(4);
 
   // "+" sada nudi "Lov traje", ne "Dodaj lov"
   await page.locator('#btn-dodaj').click();
@@ -93,5 +93,91 @@ test('običan član sekcije nema "Dodaj lov" u ploči "+"', async ({ page }) => 
   await page.locator('#btn-dodaj').click();
   await expect(page.locator('#meni-dodaj')).toBeVisible();
   await expect(page.locator('#btn-lov-dodaj')).toBeHidden();
+  await expect(page.locator('#btn-lov-danas')).toBeHidden();
+});
+
+test('planiran lov: uloge i okupljanje → "+" nudi "Lov danas" → Pokreni → dodaj lovca → značka poruka → Završi (drugi dodir)', async ({ page }) => {
+  test.setTimeout(150000);
+  const sim = await startSim(page, makeWorld({ uToku: false, historija: 2 }), { rpc: true, recv: true });
+  await sim.run(20000);
+  await seedSekcije(page, sim);
+  // lovovi iz historije u keš (za "Kao zadnji lov")
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('lovovi:promjena')));
+  await page.locator('#btn-dodaj').click();
+  await page.locator('#btn-lov-dodaj').click();
+  await expect(page.locator('#sk-lov-forma')).toBeVisible();
+
+  // "Kao zadnji lov" bira lovce zadnjeg lova sekcije
+  await expect(page.locator('#btn-slf-zadnji')).toBeVisible({ timeout: 10000 });
+  await page.locator('#btn-slf-zadnji').click();
+  await expect(page.locator('#slf-clanovi input:checked')).toHaveCount(9);
+  await page.locator('#btn-slf-svi').click(); // sve označeno → poništi sve
+  await expect(page.locator('#slf-clanovi input:checked')).toHaveCount(0);
+
+  // dva lovca, drugi je pogonič; okupljanje u 07:30; bez pokretanja
+  const redovi = page.locator('#slf-clanovi .slf-red');
+  await redovi.nth(0).locator('input').check();
+  await redovi.nth(1).locator('input').check();
+  await redovi.nth(1).locator('.slf-uloga').click();
+  await expect(redovi.nth(1).locator('.slf-uloga')).toHaveText('Pogonič');
+  await expect(page.locator('#slf-broj')).toContainText('3 sa tobom · 1 pogonič');
+  await page.fill('#forma-sk-lov input[name=okupljanje]', '07:30');
+  await page.fill('#forma-sk-lov input[name=naziv]', 'Planirani pogon');
+  await page.locator('#forma-sk-lov input[name=pokreni]').uncheck();
+  await page.locator('#forma-sk-lov button[type=submit]').click();
+  await expect.poll(() => sim.db.lovovi.find((l) => l.naziv === 'Planirani pogon')?.status, { timeout: 10000 }).toBe('planiran');
+  const lov = sim.db.lovovi.find((l) => l.naziv === 'Planirani pogon');
+  expect(lov.napomena).toBe('Okupljanje u 07:30.');
+  await expect.poll(() => sim.db.lov_ucesnici.filter((u) => u.lov_id === lov.id).map((u) => u.uloga).sort(), { timeout: 10000 }).toEqual(['pogonic', 'strijelac', 'vodja']);
+
+  // "+" → "Lov danas" (planiran) → Pokreni lov
+  await page.locator('#btn-dodaj').click();
+  await expect(page.locator('#lov-danas-naslov')).toHaveText('Lov danas', { timeout: 10000 });
+  await expect(page.locator('#lov-danas-opis')).toContainText('planiran');
+  await expect(page.locator('#btn-lov-dodaj')).toBeHidden();
+  await page.locator('#btn-lov-danas').click();
+  await expect(page.locator('#ld-sadrzaj')).toContainText('PLANIRAN ZA DANAS');
+  await page.locator('#ld-sadrzaj [data-akcija="pokreni"]').click();
+  await expect.poll(() => lov.status, { timeout: 10000 }).toBe('u_toku');
+  await expect(page.locator('#ld-naslov')).toHaveText('Lov traje', { timeout: 10000 });
+  await expect(page.locator('#ld-sadrzaj')).toContainText('Vođenje lova');
+
+  // Dodaj lovce: jedan novi lovac kao pogonič
+  await page.locator('#ld-sadrzaj [data-akcija="dodaj-lovce"]').click();
+  await expect(page.locator('#ld-dodaj-lovce')).toBeVisible();
+  const novi = page.locator('#ld-dodaj-lovce .slf-red').first();
+  const noviId = await novi.getAttribute('data-uid');
+  await novi.locator('input').check();
+  await novi.locator('[data-akcija="uloga"]').click();
+  // izbor ostaje i poslije ponovnog crtanja (uloga, nove pozicije kolega)
+  await sim.run(30000);
+  await expect(page.locator('#ld-dodaj-lovce input[value="' + noviId + '"]')).toBeChecked();
+  await page.locator('#ld-dodaj-lovce [data-akcija="dodaj-potvrdi"]').click();
+  await expect.poll(() => sim.db.lov_ucesnici.find((u) => u.lov_id === lov.id && u.korisnik_id === noviId)?.uloga, { timeout: 10000 }).toBe('pogonic');
+  await expect(page.locator('#ld-ucesnici [data-uid]')).toHaveCount(4, { timeout: 10000 });
+
+  // poruka kolege → značka nepročitanih na dugmetu u "+", čita se otvaranjem Poruka
+  await page.locator('#btn-ld-zatvori').click();
+  sim.db.poruke.push({ id: ID(799101), kanal: 'sekcija', sekcija_id: lov.sekcija_id, autor_id: noviId, lov_id: lov.id,
+    tekst: 'Pogon kreće sa juga', created_at: new Date(sim.now).toISOString(), primljeno: new Date(sim.now).toISOString() });
+  await sim.run(70000);
+  await page.locator('#btn-dodaj').click();
+  await expect(page.locator('#lov-danas-znacka')).toHaveText('1', { timeout: 10000 });
+  await page.locator('#btn-lov-danas').click();
+  await page.locator('#ld-tabovi [data-ldtab="poruke"]').click();
+  await expect(page.locator('#ld-poruke')).toContainText('Pogon kreće sa juga');
+  await page.locator('#ld-brze [data-brza]').first().click();
+  await expect(page.locator('#forma-ld-poruka input[name=tekst]')).not.toHaveValue('');
+  await expect(page.locator('#lov-danas-znacka')).toBeHidden();
+
+  // Završi lov: prvi dodir samo pita, drugi završava; "+" ponovo nudi "Dodaj lov"
+  await page.locator('#ld-tabovi [data-ldtab="pregled"]').click();
+  await page.locator('#ld-sadrzaj [data-akcija="zavrsi"]').click();
+  await expect(page.locator('#ld-sadrzaj [data-akcija="zavrsi"]')).toHaveText('Dodirni ponovo — završi');
+  expect(lov.status).toBe('u_toku');
+  await page.locator('#ld-sadrzaj [data-akcija="zavrsi"]').click();
+  await expect.poll(() => lov.status, { timeout: 10000 }).toBe('zavrsen');
+  await page.locator('#btn-dodaj').click();
+  await expect(page.locator('#btn-lov-dodaj')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('#btn-lov-danas')).toBeHidden();
 });

@@ -16,9 +16,9 @@ test('lov dodaje grupovođa svoje sekcije i admin; član i lovočuvar ne', () =>
 });
 
 test('"+": dok lov traje samo "Lov traje"; inače "Dodaj lov" za organizatora', () => {
-  assert.deepEqual(huntButtons({ aktivan: { id: 'L' }, organizator: true }), { traje: true, dodaj: false });
-  assert.deepEqual(huntButtons({ organizator: true }), { traje: false, dodaj: true });
-  assert.deepEqual(huntButtons({ organizator: false }), { traje: false, dodaj: false });
+  assert.deepEqual(huntButtons({ aktivan: { id: 'L' }, organizator: true }), { traje: true, planiran: false, dodaj: false });
+  assert.deepEqual(huntButtons({ organizator: true }), { traje: false, planiran: false, dodaj: true });
+  assert.deepEqual(huntButtons({ organizator: false }), { traje: false, planiran: false, dodaj: false });
 });
 
 test('učesnici: svježina pozicije, broj poruka i slika, zadnja poruka', () => {
@@ -35,4 +35,46 @@ test('poruke i slike lova', () => {
   assert.deepEqual(huntMessages([{ lov_id: 'L', created_at: '2' }, { lov_id: 'X', created_at: '1' }, { lov_id: 'L', created_at: '1' }], 'L').map((m) => m.created_at), ['1', '2']);
   const p = huntPhotos([{ id: '1', created_at: '1' }], [{ id: '1', created_at: '1' }, { id: '2', created_at: '3' }]);
   assert.deepEqual(p.map((x) => [x.id, x.ceka]), [['2', true], ['1', false]]);
+});
+
+import { todayPlannedHunt, canManageHunt, lastHuntPreset } from '../../static/js/lov-traje.js';
+import { huntCreatePlan } from '../../static/js/sekcija-podaci.js';
+
+test('"+" za lov planiran danas pokazuje "Lov danas", ne "Dodaj lov"', () => {
+  assert.deepEqual(huntButtons({ planiran: { id: 'L' }, organizator: true }), { traje: false, planiran: true, dodaj: false });
+  const lovovi = [
+    { lov: { id: '1', status: 'planiran', datum: '2026-11-23', organizator_id: 'o' }, ucesnici: [{ korisnik_id: 'ja' }] },
+    { lov: { id: '2', status: 'planiran', datum: '2026-11-24', organizator_id: 'o' }, ucesnici: [{ korisnik_id: 'ja' }] },
+    { lov: { id: '3', status: 'planiran', datum: '2026-11-23', organizator_id: 'o' }, ucesnici: [] },
+  ];
+  assert.equal(todayPlannedHunt(lovovi, 'ja', '2026-11-23').lov.id, '1');
+  assert.equal(todayPlannedHunt(lovovi, 'neko', '2026-11-23'), null);
+  assert.equal(todayPlannedHunt(lovovi, 'o', '2026-11-23') !== null, true);
+});
+
+test('upravlja lovom: admin, organizator i grupovođa sekcije lova; član ne', () => {
+  const rec = { lov: { sekcija_id: 'S1', organizator_id: 'o' } };
+  assert.equal(canManageHunt(rec, ctx, { id: 'g' }), true);
+  assert.equal(canManageHunt(rec, ctx, { id: 'o' }), true);
+  assert.equal(canManageHunt(rec, ctx, { id: 'a', is_admin: true }), true);
+  assert.equal(canManageHunt(rec, ctx, { id: 'clan' }), false);
+  assert.equal(canManageHunt({ lov: { sekcija_id: 'S2', organizator_id: 'o' } }, ctx, { id: 'g' }), false);
+});
+
+test('"Kao zadnji lov": lovci i uloge zadnjeg lova sekcije, bez mene', () => {
+  const lovovi = [
+    { lov: { sekcija_id: 'S1', datum: '2026-11-01', naziv: 'Stari' }, ucesnici: [{ korisnik_id: 'ja' }, { korisnik_id: 'x' }] },
+    { lov: { sekcija_id: 'S1', datum: '2026-11-15', naziv: 'Zadnji' }, ucesnici: [{ korisnik_id: 'ja', uloga: 'vodja' }, { korisnik_id: 'a', uloga: 'pogonic' }, { korisnik_id: 'b', uloga: 'strijelac' }] },
+    { lov: { sekcija_id: 'S2', datum: '2026-11-20' }, ucesnici: [{ korisnik_id: 'ja' }, { korisnik_id: 'z' }] },
+  ];
+  assert.deepEqual(lastHuntPreset(lovovi, 'S1', 'ja'), { naziv: 'Zadnji', ids: ['a', 'b'], uloge: { a: 'pogonic', b: 'strijelac' } });
+  assert.equal(lastHuntPreset([], 'S1', 'ja'), null);
+});
+
+test('plan lova: pogonič ostaje pogonič, okupljanje ide na početak napomene', () => {
+  const plan = huntCreatePlan({ id: 'S1', revir_id: 'R1', naziv: 'Krupa 1' }, 'L', 'ja',
+    { ucesnici: ['a', 'b', 'ja'], uloge: { a: 'pogonic', b: 'nesto' }, okupljanje: '07:30', napomena: 'Kod lovačke kuće' }, new Date('2026-11-23T08:00:00'));
+  assert.deepEqual(plan.ucesnici.map((u) => [u.korisnik_id, u.uloga]), [['ja', 'vodja'], ['a', 'pogonic'], ['b', 'strijelac']]);
+  assert.equal(plan.lov.napomena, 'Okupljanje u 07:30.\nKod lovačke kuće');
+  assert.equal(huntCreatePlan({ id: 'S1', revir_id: 'R1', naziv: 'K' }, 'L', 'ja', { okupljanje: '25:00' }).lov.napomena, undefined);
 });

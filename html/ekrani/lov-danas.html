@@ -8,9 +8,13 @@
     <button type="button" role="tab" data-ldtab="slike" aria-selected="false">Slike <span id="ld-broj-slika" class="sitno"></span></button>
   </div>
   <div id="ld-sadrzaj" data-ldpanel="pregled"></div>
-  <div id="ld-ucesnici-panel" data-ldpanel="ucesnici" hidden><ul id="ld-ucesnici" class="spisak ld-ucesnici"></ul></div>
+  <div id="ld-ucesnici-panel" data-ldpanel="ucesnici" hidden>
+    <div id="ld-dodaj-lovce" hidden></div>
+    <ul id="ld-ucesnici" class="spisak ld-ucesnici"></ul>
+  </div>
   <div id="ld-poruke-panel" data-ldpanel="poruke" hidden>
     <div id="ld-poruke" class="poruke ld-poruke" aria-live="polite"></div>
+    <div id="ld-brze" class="brze-poruke ld-brze"></div>
     <form id="forma-ld-poruka" class="poruka-forma" novalidate>
       <input name="tekst" type="text" maxlength="1000" autocomplete="off" placeholder="Poruka svim lovcima u lovu" aria-label="Poruka">
       <button type="submit" class="dugme glavno">Pošalji</button>
