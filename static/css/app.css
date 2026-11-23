@@ -1149,3 +1149,35 @@ svg[hidden] { display: none; }
 #sekcija-ekran .clan-akcije { display: flex; flex-wrap: wrap; gap: 6px; }
 #sekcija-ekran .clan-akcije .dugme { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: nowrap; }
 #sekcija-ekran .sk-lovci { border: 2px solid var(--naglasak); }
+
+/* Opažanja: filteri zbijeni (vrsta+redoslijed u redu, period u jednom redu, prikaz na karti zajedno) */
+.op-red2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.op-red2 label { margin: 0; }
+.op-kompakt { flex-wrap: nowrap; }
+.op-kompakt button { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; white-space: nowrap; }
+.op-karta { display: grid; grid-template-columns: 1fr; gap: 6px; margin: 10px 0; }
+#op-na-karti { width: 100%; margin: 0; }
+
+/* Arhiva: kartice sa logom sekcije, datumom i čipovima */
+.arh-dugme { display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%; }
+.arh-dugme .sek-logo { flex: none; width: 48px; height: 48px; }
+.arh-cipovi { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.arh-cipovi span { padding: 2px 10px; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); font-size: 13px; font-weight: 600; }
+#arhiva .arhiva-red[data-status="u_toku"] { border: 2px solid var(--gps-dobro); }
+
+/* Granice lovišta: izvori u kartici, dugmad pune širine */
+.sl-izvori .dugme { width: 100%; display: flex; justify-content: center; text-align: center; margin: 6px 0 0; }
+
+/* Divljač: filter grupa se lomi u redove umjesto da se odsijeca */
+#divljac .segment { flex-wrap: wrap; overflow-x: visible; }
+
+/* Arhiva, Danas, Divljač, Moj pas, Opažanja, Moji tragovi, Granice lovišta: isti jasni okviri kao Postavke */
+:is(#arhiva, #arhiva-detalj, #danas, #divljac, #pas-ekran, #opazanja, #tragovi, #slojevi) :is(.tr-kartica, .p-kartica, .sk-kartica, .div-plocica, .div-mjesec, .luk-kartica, .vr-kartica, .pas-vrh) { border: 1.5px solid var(--okvir); box-shadow: none; }
+:is(#arhiva, #arhiva-detalj, #danas, #divljac, #pas-ekran, #opazanja, #tragovi, #slojevi) .sitno { color: var(--tekst-2); }
+:is(#arhiva, #arhiva-detalj, #danas, #divljac, #pas-ekran, #opazanja, #tragovi, #slojevi) :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
+:is(#arhiva, #arhiva-detalj, #danas, #divljac, #pas-ekran, #opazanja, #tragovi, #slojevi) :is(.segment button[aria-pressed="true"], .dugme.glavno) { border: 1.5px solid var(--naglasak); }
+:is(#arhiva, #arhiva-detalj, #danas, #divljac, #pas-ekran, #opazanja, #tragovi, #slojevi) :is(select, textarea, input[type="search"], input[type="text"], input:not([type])) { border: 2px solid var(--okvir); }
+#danas .tabela-info, #danas #danas-lovno, #danas #danas-lovostaj { padding: 10px 14px; border-radius: 14px; background: var(--povrsina); border: 1.5px solid var(--okvir); }
+#danas .tabela-info:empty, #danas #danas-lovno:empty, #danas #danas-lovostaj:empty { display: none; }
+#arhiva-status:empty, #slojevi-status:empty, #slojevi-server:empty { display: none; }
+#op-period { margin-top: 10px; }

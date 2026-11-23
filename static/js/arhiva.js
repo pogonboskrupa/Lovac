@@ -43,3 +43,16 @@ export function matchesArchive(zapis, query, extraText = '') {
   const l = zapis.lov;
   return matchesQuery([l.naziv, huntDate(l.datum), l.datum, zapis.sekcija?.naziv, zapis.revir?.naziv, l.rezultat, extraText], query);
 }
+
+// Pregled arhive: broj lovova, ukupno komada ulova i slika (samo iz detalja koji su na telefonu).
+export function archiveOverview(hunts, detailsOf) {
+  let komada = 0;
+  let slika = 0;
+  for (const z of hunts) {
+    const d = detailsOf(z.id);
+    if (!d) continue;
+    komada += (d.odstrel || []).length;
+    slika += (d.slike || []).length;
+  }
+  return { lovova: hunts.length, komada, slika };
+}

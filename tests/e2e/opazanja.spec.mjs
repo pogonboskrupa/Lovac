@@ -80,7 +80,7 @@ test('pregled: filter po vrsti i periodu, zbir grla, gustina umjesto tačaka', a
   await expect(page.locator('#opazanja-spisak [data-id]')).toHaveCount(2);
   await page.locator('#op-filter-vrsta').selectOption('srna');
   await expect(page.locator('#opazanja-spisak [data-id]')).toHaveCount(1);
-  await expect(page.locator('#op-zbir')).toContainText('2 grla u 1 opažanja');
+  await expect(page.locator('#op-zbir')).toContainText('2 grla u 1 opažanju');
   await page.locator('#op-period [data-period="sve"]').click();
   await expect(page.locator('#opazanja-spisak [data-id]')).toHaveCount(2);
   await expect(page.locator('#op-zbir')).toContainText('6 grla u 2 opažanja');

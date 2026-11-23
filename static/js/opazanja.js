@@ -59,3 +59,9 @@ export function observerLabel(o, me, nameOf) {
   if (!o.tudji) return me ? `ti (${me.ime} ${me.prezime})` : 'ti';
   return nameOf(o.vlasnik_id);
 }
+
+// "u 1 opažanju", "u 2 opažanja", "u 5 opažanja" (lokativ jednine, genitiv za ostale brojeve).
+export function inObservationsText(n) {
+  const k = Math.abs(n) % 100;
+  return `u ${n} ${n % 10 === 1 && k !== 11 ? 'opažanju' : 'opažanja'}`;
+}

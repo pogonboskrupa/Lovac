@@ -11,7 +11,8 @@ import { downloadHunts } from './lov-ui.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { makeThumbnail, resizeToDataUrl } from './foto.js';
 import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
-import { archiveHunts, huntDate, huntTimeRange, huntedText, canAddMedia, matchesArchive, MAX_PHOTOS_PER_HUNT } from './arhiva.js';
+import { archiveHunts, huntDate, huntTimeRange, huntedText, canAddMedia, matchesArchive, MAX_PHOTOS_PER_HUNT, archiveOverview } from './arhiva.js';
+import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -51,14 +52,21 @@ export function initArhiva() {
   const renderList = () => {
     const q = $('arhiva-trazi').value;
     const shown = hunts.filter((z) => matchesArchive(z, q, (details.get(z.id)?.odstrel || []).map((o) => speciesName(o.vrsta)).join(' ')));
+    const ov = archiveOverview(hunts, (id) => details.get(id));
+    $('arh-lovova').textContent = String(ov.lovova);
+    $('arh-komada').textContent = String(ov.komada);
+    $('arh-slika').textContent = String(ov.slika);
     $('arhiva-spisak').innerHTML = shown.map((z) => {
       const d = details.get(z.id);
       const hunted = d ? huntedText(d.odstrel, speciesName) : '';
-      return `<li class="trag-red arhiva-red" data-id="${escapeHtml(z.id)}">
-        <button type="button" class="obj-red-dugme" data-akcija="otvori">
-          <span class="trag-naslov"><b>${escapeHtml(huntDate(z.lov.datum))} · ${escapeHtml(z.lov.naziv)}</b>
+      const live = z.lov.status === 'u_toku';
+      return `<li class="trag-red arhiva-red tr-kartica" data-id="${escapeHtml(z.id)}" data-status="${escapeHtml(z.lov.status)}">
+        <button type="button" class="obj-red-dugme arh-dugme" data-akcija="otvori">
+          ${z.sekcija ? `<span class="sek-logo" style="${logoStyle(z.sekcija)}" aria-hidden="true"></span>` : ''}
+          <span class="trag-naslov"><b>${escapeHtml(z.lov.naziv)}</b>
+          <span class="lk-datum">${escapeHtml(huntDate(z.lov.datum))}${live ? ' · <span class="lk-chip" data-chip="u_toku">U TOKU</span>' : ''}</span>
           <span class="sitno">${escapeHtml(z.sekcija?.naziv || z.revir?.naziv || '')} · ${escapeHtml(huntTimeRange(z.lov))}</span>
-          <span class="sitno">Učesnika: ${z.ucesnici.length}${hunted ? ` · ${escapeHtml(hunted)}` : ''}${d ? ` · slika: ${d.slike.length}` : ''}</span></span>
+          <span class="arh-cipovi"><span>${z.ucesnici.length} učesnika</span>${hunted ? `<span>${escapeHtml(hunted)}</span>` : ''}${d ? `<span>${d.slike.length} slika</span>` : ''}</span></span>
         </button></li>`;
     }).join('') || '<li class="sitno">Nema lovova u arhivi (preuzimaju se uz internet).</li>';
   };

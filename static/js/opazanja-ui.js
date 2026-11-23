@@ -4,7 +4,7 @@ import { speciesBadge, sortObservations, groupByMonthOf, observationLight, light
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, listRecords, deleteRecord, getRecord } from './zapisi.js';
 import { matchesQuery } from './pretraga.js';
-import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observerLabel } from './opazanja.js';
+import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observerLabel, inObservationsText } from './opazanja.js';
 import { cachedProfile } from './auth.js';
 import { savePhoto, deletePhoto, createPhotoStrip } from './foto.js';
 import { currentFix } from './gps.js';
@@ -232,7 +232,7 @@ export function initOpazanja(L, map) {
     const dmax = Math.max(1, ...Object.values(dist));
     $('op-doba').innerHTML = DOBA_DANA_OPAZANJA.map(([k, n]) => `<div class="div-akt-stup" role="listitem" data-doba="${k}" data-grla="${dist[k]}"><span class="div-akt-bar"><i style="height:${Math.round((dist[k] / dmax) * 100)}%"></i></span><b>${dist[k] || ''}</b><span class="sitno">${n}</span></div>`).join('');
     $('op-zbir').innerHTML = zbir
-      .map((s) => `<li>${escapeHtml(lookupNaziv(vrste, s.vrsta))}: <b>${s.grla}</b> grla u ${s.opazanja} opažanja</li>`).join('')
+      .map((s) => `<li>${escapeHtml(lookupNaziv(vrste, s.vrsta))}: <b>${s.grla}</b> grla ${inObservationsText(s.opazanja)}</li>`).join('')
       || '<li>Nema opažanja u ovom periodu.</li>';
     const DOBA_NAZIV = { zora: 'zora', dan: 'dan', sumrak: 'sumrak', noc: 'noć' };
     const cardHtml = (o) => {

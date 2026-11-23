@@ -1,27 +1,28 @@
 <section id="slojevi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slojevi-naslov" hidden>
   <header class="postavke-glava">
-    <h2 id="slojevi-naslov">Slojevi</h2>
+    <h2 id="slojevi-naslov">Granice lovišta</h2>
     <button id="btn-slojevi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <div class="sk-hero tr-hero" id="slojevi-hero">
     <div class="sk-statovi sk-statovi-hero">
-      <div><b id="sl-hero-broj">0</b><span>slojeva na telefonu</span></div>
+      <div><b id="sl-hero-broj">0</b><span>granica na telefonu</span></div>
       <div><b id="sl-hero-prikazanih">0</b><span>prikazano na karti</span></div>
       <div><b id="sl-hero-elemenata">0</b><span>elemenata</span></div>
     </div>
   </div>
-  <p class="sitno">Granice lovišta, revira i lovnih površina. Uvezeni i preuzeti slojevi ostaju na telefonu i rade bez interneta.</p>
-  <div class="red-dugmadi">
+  <p class="sitno">Granice lovišta, revira i lovnih površina na karti. Uvezene i preuzete granice ostaju na telefonu i rade bez interneta.</p>
+  <div class="p-kartica sl-izvori">
+    <h3>Dodaj granice</h3>
+    <button id="btn-slojevi-server" class="dugme glavno" type="button">Preuzmi granice društva</button>
     <label class="dugme dugme-fajl">Uvezi fajl (KML, KMZ, GPX, SHP)<input id="slojevi-uvoz" type="file" accept=".kml,.kmz,.gpx,.zip,.shp,.dbf,.prj,.cpg" multiple hidden></label>
-    <button id="btn-slojevi-server" class="dugme" type="button">Sa servera (objavio admin)</button>
+    <p class="sitno">SHP: izaberi zajedno .shp, .dbf i .prj (ili ZIP sa njima).</p>
   </div>
-  <p class="sitno">SHP: izaberi zajedno .shp, .dbf i .prj (ili ZIP sa njima).</p>
   <p id="slojevi-status" class="status" role="status"></p>
   <div id="slojevi-server"></div>
   <div id="slojevi-sve" class="red-dugmadi" hidden>
     <button id="btn-slojevi-prikazi-sve" class="dugme" type="button">Prikaži sve</button>
     <button id="btn-slojevi-sakrij-sve" class="dugme" type="button">Sakrij sve</button>
   </div>
-  <p id="slojevi-prazno" class="sitno">Nema slojeva na telefonu. Uvezi fajl ili preuzmi sloj koji je objavio administrator.</p>
+  <p id="slojevi-prazno" class="sitno">Nema granica na telefonu. Preuzmi granice društva ili uvezi fajl.</p>
   <ul id="slojevi-spisak" class="spisak"></ul>
 </section>

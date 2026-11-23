@@ -37,9 +37,9 @@ export async function lovostajWarning(vrsta, kategorija, date = new Date()) {
 
 function where(map) {
   const fix = currentFix();
-  if (fix) return { lat: fix.lat, lon: fix.lon, opis: 'tvoja GPS pozicija' };
+  if (fix) return { lat: fix.lat, lon: fix.lon, opis: 'tvoju GPS poziciju' };
   const c = map.getCenter();
-  return { lat: c.lat, lon: c.lng, opis: 'sredina karte' };
+  return { lat: c.lat, lon: c.lng, opis: 'sredinu karte' };
 }
 
 function todaySun(p, now = Date.now()) {

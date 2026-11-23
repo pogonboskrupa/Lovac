@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.8.7';
+  const APP_VER = 'v0.8.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -152,7 +152,7 @@
     <h3 class="m-grupa">Karta</h3>
     <div class="m-red">
       <button type="button" id="btn-karte" class="meni-plocica"><svg class="ic"><use href="#ic-map"/></svg><span class="m-tekst"><span class="m-naslov">Karte i offline</span><span class="m-opis" id="btn-karte-opis">Teren, preuzimanje područja</span></span></button>
-      <button type="button" id="btn-slojevi" class="meni-plocica"><svg class="ic"><use href="#ic-layers"/></svg><span class="m-tekst"><span class="m-naslov">Slojevi</span><span class="m-opis" id="btn-slojevi-opis">Granice lovišta</span></span></button>
+      <button type="button" id="btn-slojevi" class="meni-plocica"><svg class="ic"><use href="#ic-layers"/></svg><span class="m-tekst"><span class="m-naslov">Granice lovišta</span><span class="m-opis" id="btn-slojevi-opis">Lovišta, reviri, površine</span></span></button>
     </div>
   </div>
   <div id="lok-ploca" class="meni lok-ploca" role="dialog" aria-label="Moja lokacija" hidden>
@@ -343,7 +343,7 @@
       <button type="button" data-podloga="satelit">Satelit</button>
       <button type="button" data-podloga="teren">Teren</button>
     </div>
-    <button id="btn-slojevi-karte" class="dugme" type="button">Slojevi (granice lovišta, revira)</button>
+    <button id="btn-slojevi-karte" class="dugme" type="button">Granice lovišta i revira</button>
   </div>
 
   <div class="p-kartica">
@@ -800,21 +800,24 @@
     <div class="sk-statovi sk-statovi-hero"><div data-stat="opazanja"><b id="op-stat-opazanja">0</b><span>opažanja</span></div><div data-stat="grla"><b id="op-stat-grla">0</b><span>grla</span></div><div data-stat="vrsta"><b id="op-stat-vrsta">0</b><span>vrsta</span></div><div data-stat="zadnje"><b id="op-stat-zadnje">—</b><span>zadnje viđeno</span></div></div>
   </div>
   <input id="op-trazi" type="search" placeholder="Traži (vrsta, napomena…)" aria-label="Traži u opažanjima" autocomplete="off">
-  <label>Vrsta<select id="op-filter-vrsta"></select></label>
-  <h3>Period</h3>
-  <div id="op-period" class="segment" role="group" aria-label="Period">
+  <div class="op-red2">
+    <label>Vrsta<select id="op-filter-vrsta"></select></label>
+    <label class="tr-sort">Redoslijed<select id="op-sort" aria-label="Redoslijed"><option value="novije">Najnovije</option><option value="grla">Najviše grla</option></select></label>
+  </div>
+  <div id="op-period" class="segment op-kompakt" role="group" aria-label="Period">
     <button type="button" data-period="30">30 dana</button>
     <button type="button" data-period="90">90 dana</button>
-    <button type="button" data-period="godina">Ova godina</button>
+    <button type="button" data-period="godina">Godina</button>
     <button type="button" data-period="sve">Sve</button>
   </div>
-  <h3>Prikaz na karti</h3>
-  <div id="op-prikaz" class="segment" role="group" aria-label="Prikaz">
-    <button type="button" data-prikaz="tacke">Tačke</button>
-    <button type="button" data-prikaz="gustina">Gustina</button>
+  <div class="op-karta">
+    <span class="sitno">Na karti:</span>
+    <div id="op-prikaz" class="segment op-kompakt" role="group" aria-label="Prikaz">
+      <button type="button" data-prikaz="tacke">Tačke</button>
+      <button type="button" data-prikaz="gustina">Gustina</button>
+    </div>
+    <button id="op-na-karti" class="dugme" type="button" aria-pressed="true">Na karti: prikazano</button>
   </div>
-  <button id="op-na-karti" class="dugme" type="button" aria-pressed="true">Na karti: prikazano</button>
-  <label class="tr-sort">Redoslijed<select id="op-sort" aria-label="Redoslijed"><option value="novije">Najnovije</option><option value="grla">Najviše grla</option></select></label>
   <h3>Po vrstama</h3>
   <ul id="op-zbir" class="zbir"></ul>
   <h3>Kad je divljač viđena <span class="sitno">(doba dana, grla)</span></h3>
@@ -1009,29 +1012,30 @@
 
 <section id="slojevi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slojevi-naslov" hidden>
   <header class="postavke-glava">
-    <h2 id="slojevi-naslov">Slojevi</h2>
+    <h2 id="slojevi-naslov">Granice lovišta</h2>
     <button id="btn-slojevi-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <div class="sk-hero tr-hero" id="slojevi-hero">
     <div class="sk-statovi sk-statovi-hero">
-      <div><b id="sl-hero-broj">0</b><span>slojeva na telefonu</span></div>
+      <div><b id="sl-hero-broj">0</b><span>granica na telefonu</span></div>
       <div><b id="sl-hero-prikazanih">0</b><span>prikazano na karti</span></div>
       <div><b id="sl-hero-elemenata">0</b><span>elemenata</span></div>
     </div>
   </div>
-  <p class="sitno">Granice lovišta, revira i lovnih površina. Uvezeni i preuzeti slojevi ostaju na telefonu i rade bez interneta.</p>
-  <div class="red-dugmadi">
+  <p class="sitno">Granice lovišta, revira i lovnih površina na karti. Uvezene i preuzete granice ostaju na telefonu i rade bez interneta.</p>
+  <div class="p-kartica sl-izvori">
+    <h3>Dodaj granice</h3>
+    <button id="btn-slojevi-server" class="dugme glavno" type="button">Preuzmi granice društva</button>
     <label class="dugme dugme-fajl">Uvezi fajl (KML, KMZ, GPX, SHP)<input id="slojevi-uvoz" type="file" accept=".kml,.kmz,.gpx,.zip,.shp,.dbf,.prj,.cpg" multiple hidden></label>
-    <button id="btn-slojevi-server" class="dugme" type="button">Sa servera (objavio admin)</button>
+    <p class="sitno">SHP: izaberi zajedno .shp, .dbf i .prj (ili ZIP sa njima).</p>
   </div>
-  <p class="sitno">SHP: izaberi zajedno .shp, .dbf i .prj (ili ZIP sa njima).</p>
   <p id="slojevi-status" class="status" role="status"></p>
   <div id="slojevi-server"></div>
   <div id="slojevi-sve" class="red-dugmadi" hidden>
     <button id="btn-slojevi-prikazi-sve" class="dugme" type="button">Prikaži sve</button>
     <button id="btn-slojevi-sakrij-sve" class="dugme" type="button">Sakrij sve</button>
   </div>
-  <p id="slojevi-prazno" class="sitno">Nema slojeva na telefonu. Uvezi fajl ili preuzmi sloj koji je objavio administrator.</p>
+  <p id="slojevi-prazno" class="sitno">Nema granica na telefonu. Preuzmi granice društva ili uvezi fajl.</p>
   <ul id="slojevi-spisak" class="spisak"></ul>
 </section>
 
@@ -1480,6 +1484,13 @@
     <h2 id="arhiva-naslov">Arhiva lova</h2>
     <button id="btn-arhiva-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
+  <div class="sk-hero tr-hero ev-hero" id="arhiva-hero">
+    <div class="sk-statovi sk-statovi-hero">
+      <div><b id="arh-lovova">0</b><span>lovova</span></div>
+      <div><b id="arh-komada">0</b><span>komada ulova</span></div>
+      <div><b id="arh-slika">0</b><span>slika</span></div>
+    </div>
+  </div>
   <p id="arhiva-status" class="status" role="status"></p>
   <input id="arhiva-trazi" type="search" placeholder="Traži (datum, naziv, sekcija…)" aria-label="Traži u arhivi" autocomplete="off">
   <ul id="arhiva-spisak" class="spisak"></ul>

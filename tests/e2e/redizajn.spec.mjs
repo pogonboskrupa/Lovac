@@ -190,3 +190,24 @@ test('Zajednički lov: pregled sa brojevima, datum sa danom u sedmici, planirani
   await expect(page.locator(`#lovovi-spisak [data-id="${ID(313)}"] .lk-datum`)).toHaveText('petak, 5.12.2098.');
   await expect(page.locator(`#lovovi-spisak [data-id="${LOV}"] .trag-naslov`)).not.toContainText('U toku');
 });
+
+test('Arhiva: pregled sa brojevima i kartice; Danas: ispravan padež; meni: Granice lovišta', async ({ page }) => {
+  const server = makeServer();
+  server.db.lovovi.push({ ...server.db.lovovi[0], id: ID(320), naziv: 'Završen lov', status: 'zavrsen', datum: '2026-10-01' });
+  await setup(page, server, GV);
+  await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
+  await expect(page.locator('#btn-slojevi .m-naslov')).toHaveText('Granice lovišta');
+  await page.locator('#btn-arhiva').click();
+  await expect(page.locator('#arhiva-spisak .arhiva-red')).toHaveCount(2);
+  await expect(page.locator('#arh-lovova')).toHaveText('2');
+  await expect(page.locator('#arhiva-spisak .arhiva-red[data-status="u_toku"] .lk-chip')).toHaveText('U TOKU');
+  await page.locator('#btn-arhiva-zatvori').click();
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-danas').click();
+  await expect(page.locator('#danas-mjesto')).toContainText(/računato za (tvoju GPS poziciju|sredinu karte)/);
+  await page.locator('#btn-danas-zatvori').click();
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-slojevi').click();
+  await expect(page.locator('#slojevi-naslov')).toHaveText('Granice lovišta');
+});

@@ -122,10 +122,11 @@ test('arhiva lova: datum, vrijeme početka i kraja, učesnici, ulov, rezultat i 
   await setup(page, server, LOVAC);
   await openArhiva(page);
   const row = page.locator('#arhiva-spisak .arhiva-red');
-  await expect(row).toContainText('22.11.2026. · Pogon Grmeč');
+  await expect(row.locator('.trag-naslov b')).toHaveText('Pogon Grmeč');
+  await expect(row.locator('.lk-datum')).toContainText('22.11.2026.');
   await expect(row).toContainText('08:15 – 12:40 (4 h 25 min)');
   await expect(row).toContainText('Krupa 1');
-  await expect(row).toContainText('Učesnika: 3');
+  await expect(row.locator('.arh-cipovi')).toContainText('3 učesnika');
   await page.fill('#arhiva-trazi', 'nema ovakvog');
   await expect(page.locator('#arhiva-spisak .arhiva-red')).toHaveCount(0);
   await page.fill('#arhiva-trazi', 'lisica');

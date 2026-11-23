@@ -468,3 +468,10 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Tab sekcije i Statistika — pregled (v0.8.7)**
 - Tab sekcije: okviri kao u Postavkama (`#sekcija-ekran`, kartica lovaca zadržava okvir u boji naglaska), datum lova `huntDateText`, dugmad člana se lome u dva stupca umjesto da se stisnu, a traka dijelova (`#sk-nav`) označava trenutni dio (`aria-current`) po kartici sa najnižim vrhom iznad trake — redoslijed dugmadi u traci NIJE isti kao redoslijed kartica (Lovci su prvi na ekranu), pa se ne smije birati po redu dugmadi.
 - Statistika: kartice revira/sekcija imaju tri broja i traku odaziva (`.st-traka[data-pct]`), vrste emblem iz Divljači i traku udjela (`statistika-opsega.js shareOfMax`), mjeseci označavaju tekući mjesec (`data-sada`) i ispod piše mjesec sa najviše ulova (`bestMonth`).
+
+**Arhiva, Danas, Divljač, Moj pas, Opažanja, Moji tragovi, Granice lovišta (v0.8.8)**
+- "Slojevi" se u UI-ju zovu **Granice lovišta** (meni, naslov ekrana, dugme u Karte i offline); id-evi (`#slojevi`, `btn-slojevi`…) i kod (`slojevi.js`) se NE mijenjaju. Izvori su u kartici "Dodaj granice": glavno dugme "Preuzmi granice društva" (server), pa uvoz fajla.
+- Arhiva: hero (`#arh-lovova/komada/slika`, `arhiva.js archiveOverview` — broji samo detalje koji su na telefonu), kartice sa logom sekcije, datumom, značkom U TOKU i čipovima (`.arh-cipovi`).
+- Danas: "računato za tvoju GPS poziciju / sredinu karte" (akuzativ; ranije "tvoja GPS pozicija"); tabela svjetla i lovno vrijeme su u karticama.
+- Opažanja: vrsta i redoslijed u jednom redu, period u jednom redu, prikaz na karti zajedno — spisak se vidi bez dugog listanja; "u 1 opažanju / u 2 opažanja" (`opazanja.js inObservationsText`).
+- Isti okviri/kontrast kao Postavke za sve ove ekrane; filter grupa u Divljači se lomi u redove.
