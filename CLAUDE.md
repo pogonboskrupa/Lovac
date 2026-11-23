@@ -524,3 +524,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Prijava na sporom serveru (v1.0.0)**
 - Uzrok "Server nije odgovorio za 12 s" uz dobar internet: svaki poziv ima rok od 12 s, a prijava je prvi zahtjev poslije mirovanja (besplatni Supabase se "budi") i uključuje bcrypt provjeru PIN-a. Sada `net.js timeoutFor(url)`: pozivi `/auth/v1/token|signup|user|recover` imaju `AUTH_TIMEOUT_MS` = 30 s (ostali ostaju 12 s, a ne smiju biti duži: zbog njih app prelazi na offline), `auth.js warmServer()` budi server (običan `fetch` na `/auth/v1/health`, ne ulazi u ocjenu veze) čim se pokaže prijava, a forma poslije 6 s kaže "Server sporo odgovara, čekam… (do 30 s)". Poruka o isteku roka je "Server sporo odgovara (možda se budi…)", a "Nema veze sa serverom" je samo za pravu mrežnu grešku. Test `pokretanje.spec.mjs` kasni odgovor tokena 14 s.
+
+**Greška prijave nosi detalj (v1.0.1)**
+- `auth.js friendlyAuthError`: mrežna greška prijave piše "Nema veze sa serverom (<tehnički detalj>)…", jer bez detalja se "nema interneta" (`Failed to fetch` na svemu) ne razlikuje od servera koji ne prima zahtjeve. Zapis iz prakse: besplatni Supabase projekat se PAUZIRA poslije ~7 dana mirovanja; tada preglednik javi samo `Failed to fetch` (odgovor bez CORS zaglavlja) uz dobar internet — projekat se vraća dugmetom "Restore" u Supabase nadzornoj ploči.

@@ -102,7 +102,8 @@ function friendlyAuthError(err) {
   if (/invalid login credentials/i.test(msg)) return 'Pogrešno ime, prezime ili PIN.';
   if (/rate limit|too many/i.test(msg)) return 'Previše pokušaja. Pokušajte ponovo za nekoliko minuta.';
   if (/nije odgovorio/i.test(msg)) return 'Server sporo odgovara (možda se budi nakon mirovanja). Pokušaj ponovo za nekoliko sekundi.';
-  if (err?.name === 'TimeoutError' || /fetch|network/i.test(msg)) return 'Nema veze sa serverom. Pokušajte kad bude signala.';
+  // Detalj u zagradi razlikuje "nema interneta" od "server ne prima zahtjeve" (npr. pauziran projekat: preglednik javi samo "Failed to fetch").
+  if (err?.name === 'TimeoutError' || /fetch|network|load failed/i.test(msg)) return `Nema veze sa serverom (${msg.slice(0, 80)}). Pokušaj ponovo; ako se ponavlja uz dobar internet, javi administratoru.`;
   return msg;
 }
 

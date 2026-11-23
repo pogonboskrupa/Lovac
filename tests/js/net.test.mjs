@@ -80,3 +80,12 @@ test('prijava i registracija imaju duži rok (server se budi, bcrypt), ostali po
   assert.equal(timeoutFor(`${base}/rest/v1/korisnici?select=*`), DEFAULT_TIMEOUT_MS);
   assert.ok(AUTH_TIMEOUT_MS > DEFAULT_TIMEOUT_MS);
 });
+
+test('greška prijave: istek roka i mrežna greška se razlikuju i nose tehnički detalj', async () => {
+  const src = (await import('node:fs')).readFileSync('static/js/auth.js', 'utf8');
+  const body = src.match(/function friendlyAuthError[\s\S]*?\n}\n/)[0];
+  const fn = new Function(body + '\nreturn friendlyAuthError;')();
+  assert.match(fn({ message: 'Server nije odgovorio za 30 s' }), /Server sporo odgovara/);
+  assert.match(fn({ message: 'Failed to fetch' }), /Nema veze sa serverom \(Failed to fetch\)/);
+  assert.equal(fn({ message: 'Invalid login credentials' }), 'Pogrešno ime, prezime ili PIN.');
+});
