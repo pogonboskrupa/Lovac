@@ -206,12 +206,27 @@ export function initTragovi(L, map) {
   const shownGroup = L.layerGroup();
   gateLayer(map, shownMarks, 'tacke');
   const gateTrack = gateLayer(map, shownGroup, 'tragovi');
+  const shownPopup = (tr) => {
+    const el = document.createElement('div');
+    el.className = 'tr-popup';
+    el.dataset.id = tr.id;
+    el.innerHTML = `<b>${escapeHtml(tr.naziv || 'Trag')}</b><div class="sitno">${escapeHtml(trackSummary(tr))}</div>
+      <div class="red-dugmadi"><button type="button" class="dugme" data-akcija="sakrij">Sakrij</button>
+      <button type="button" class="dugme" data-akcija="vise">Stil i brisanje</button></div>`;
+    el.querySelector('[data-akcija="sakrij"]').addEventListener('click', () => { map.closePopup(); shownGroup.clearLayers(); shownMarks.clearLayers(); shown = null; });
+    el.querySelector('[data-akcija="vise"]').addEventListener('click', () => { map.closePopup(); $('btn-slojevi').click(); });
+    return el;
+  };
   const showTrack = (tr) => {
     if (shown) shownGroup.removeLayer(shown);
     drawMarks(tr, shownMarks);
     const pts = pointsForDisplay(tr);
-    shown = L.polyline(pts.map((p) => [p.lat, p.lon]), SHOWN_STYLE).addTo(shownGroup);
-    if (pts.length) map.fitBounds(shown.getBounds(), { padding: [40, 40], maxZoom: 17 });
+    shown = L.layerGroup().addTo(shownGroup);
+    const line = L.polyline(pts.map((p) => [p.lat, p.lon]), SHOWN_STYLE).addTo(shown);
+    // Dodir na trag (široka nevidljiva linija, tanku je teško pogoditi prstom) otvara karticu traga.
+    L.polyline(pts.map((p) => [p.lat, p.lon]), { color: '#000000', opacity: 0, weight: 22, className: 'tr-dodir' })
+      .bindPopup(() => shownPopup(tr), { minWidth: 220, autoPanPaddingTopLeft: [12, 140] }).addTo(shown);
+    if (pts.length) map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 17 });
     if (!gateTrack()) toast(`Trag se vidi od razmjere ${scaleChoiceLabel(getMapDisplay().razmjer)} — uvećaj kartu (Postavke → Prikaz na karti).`);
   };
 

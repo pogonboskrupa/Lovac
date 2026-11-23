@@ -46,7 +46,13 @@ export async function saveTrack(trag) {
   }
   // Na server ide završen trag; potraga i dok traje (vodič psa krvara je prati).
   if ((rec.status === 'gotovo' || rec.vrsta === 'potraga') && !rec.tudji) await enqueue('tragovi', rec.id).catch((err) => console.error('red slanja', err));
+  if (rec.status === 'gotovo') tracksChanged();
   return rec;
+}
+
+// Drugi ekrani (Granice lovišta → Moji tragovi na karti) osvježavaju spisak tragova.
+function tracksChanged() {
+  globalThis.document?.dispatchEvent(new CustomEvent('tragovi:promjena'));
 }
 
 function emit() {
@@ -260,6 +266,7 @@ export async function deleteTrack(id) {
     }
   }
   await idbDelete('tragovi', id);
+  tracksChanged();
 }
 
 export async function renameTrack(id, naziv) {

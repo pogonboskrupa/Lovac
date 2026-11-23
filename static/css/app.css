@@ -1239,3 +1239,14 @@ svg[hidden] { display: none; }
 #lov-danas, #sk-lov-forma { overflow-y: auto; }
 #sk-lov-forma, #lov-danas { z-index: 3100; }
 #karta.podloga-teren { background: #e7e2d3; }
+
+/* Moji tragovi u Granicama lovišta */
+.tr-uzorak { display: block; height: 0; margin: 6px 0; border-top: 4px solid var(--b); }
+.tr-uzorak[data-linija="isprekidana"] { border-top-style: dashed; }
+.tr-uzorak[data-linija="tackasta"] { border-top-style: dotted; }
+.tr-stil { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.tr-boje { display: flex; flex-wrap: wrap; gap: 8px; }
+.tr-boja { width: 44px; height: 44px; border-radius: 50%; background: var(--b); border: 2px solid var(--okvir); }
+.tr-boja[aria-pressed="true"] { outline: 3px solid var(--naglasak); outline-offset: 2px; }
+#sl-tragovi .tr-dugmad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.tr-popup .red-dugmadi { flex-wrap: wrap; }

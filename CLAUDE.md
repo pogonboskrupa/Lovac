@@ -512,3 +512,8 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Teren bez crnih rubova pri pomjeranju (v0.9.7)**
 - Uzrok: Teren/MBTiles je bio običan `L.tileLayer`; na telefonu Leaflet zadano učitava pločice tek kad prst stane (`updateWhenIdle`), i to samo za vidljivi dio, pa su rubovi pri pomjeranju bili tamna pozadina karte. Sada `karte-ui.js offlineTileLayer` (podklasa sa `_getTiledPixelBounds` + `PRELOAD_PX` = 256 px pojas oko ekrana) uz `updateWhenIdle: false`, `updateInterval: 100`, `keepBuffer: 6`; dok je Teren podloga, `#karta.podloga-teren` ima svijetlu pozadinu boje papira. Podloge sa mreže (Topo/Satelit) NEMAJU pojas — trošio bi mobilne podatke.
+
+**Tragovi u Granicama lovišta (v0.9.8)**
+- Kartica "Moji tragovi na karti" u `#slojevi` (`tragovi-karta.js` čista logika, `tragovi-karta-ui.js`): završeni tragovi i potrage, zadano poredani po udaljenosti od SREDINE KARTE (`distanceToTrack` mjeri do duži, ne samo do tačaka; tragovi bez tačaka na kraj), ili "Najnoviji"; po 15, "Prikaži još". Više tragova na karti odjednom (`lovac.tragovi.prikazani`), stil po tragu (`lovac.tragovi.stil`: boja iz palete, debljina 2/4/6, puna/isprekidana/tačkasta) — stil i izbor su SAMO prikaz, ne mijenjaju zapis (ne idu u red slanja). Sloj je ograničen razmjerom (vrsta `tragovi`).
+- Klik: tanka linija se teško pogodi prstom, pa ispod ide nevidljiva široka linija (`.tr-dodir`, weight 22) sa karticom (Stil linije, Sakrij, Obriši drugim dodirom). Isto i za trag prikazan iz "Moji tragovi". `snimanje.js` šalje `tragovi:promjena` pri čuvanju završenog traga i brisanju.
+- E2e: `dispatchEvent('click')` na putanji otvara popup na (0,0) ekrana — klikati mišem na sredinu linije.

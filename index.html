@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.9.7';
+  const APP_VER = 'v0.9.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -1083,6 +1083,17 @@
   </div>
   <p id="slojevi-prazno" class="sitno">Nema granica na telefonu. Preuzmi granice društva ili uvezi fajl.</p>
   <ul id="slojevi-spisak" class="spisak"></ul>
+  <div class="p-kartica" id="sl-tragovi-kartica">
+    <h3>Moji tragovi na karti <span id="sl-tragovi-broj" class="sitno"></span></h3>
+    <p class="sitno">Prvo su tragovi najbliži sredini karte. Dodir na trag na karti otvara njegovu karticu.</p>
+    <div id="sl-tragovi-red" class="segment" role="group" aria-label="Redoslijed tragova">
+      <button type="button" data-red="blizi" aria-pressed="true">Najbliži sredini karte</button>
+      <button type="button" data-red="novije" aria-pressed="false">Najnoviji</button>
+    </div>
+    <p id="sl-tragovi-prazno" class="sitno" hidden>Nema snimljenih tragova na telefonu.</p>
+    <ul id="sl-tragovi" class="spisak"></ul>
+    <button id="btn-sl-tragovi-jos" class="dugme" type="button" hidden>Prikaži još</button>
+  </div>
 </section>
 
 <section id="lovovi" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lovovi-naslov" hidden>
