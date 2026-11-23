@@ -80,7 +80,8 @@ function refreshStatic(appVer) {
 
 async function renderProfile() {
   const p = cachedProfile();
-  el('p-avatar').textContent = initialsOfProfile(p);
+  // Avatar (slika ili logo društva) crta profil-ui.js; inicijali samo dok on još nije nacrtao.
+  if (!el('p-avatar').classList.contains('ima-sliku')) el('p-avatar').textContent = initialsOfProfile(p);
   el('p-ime').textContent = p ? `${p.ime} ${p.prezime}${p.nadimak ? ` (${p.nadimak})` : ''}` : 'Niste prijavljeni';
   const ctx = await cachedSekcije().catch(() => ({}));
   el('p-uloge').innerHTML = profileRoles(p, ctx).map((r) => `<span class="p-uloga" data-uloga="${r.kod}">${escapeHtml(r.tekst)}</span>`).join('');

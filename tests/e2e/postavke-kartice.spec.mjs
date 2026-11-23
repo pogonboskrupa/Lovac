@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('profil kartica: inicijali, uloge iz keša sekcija i stanje slanja', async ({ page }) => {
+test('profil kartica: logo avatar (dok nema slike), uloge iz keša sekcija i stanje slanja', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => new Promise((resolve) => {
     const r = indexedDB.open('lovac');
@@ -41,7 +41,7 @@ test('profil kartica: inicijali, uloge iz keša sekcija i stanje slanja', async 
   }));
   await page.reload();
   await page.locator('#btn-postavke').click();
-  await expect(page.locator('#p-avatar')).toHaveText('GG');
+  await expect(page.locator('#p-avatar')).toHaveClass(/logo-avatar/);
   await expect(page.locator('#p-ime')).toHaveText('Goran Grupovođa');
   await expect(page.locator('#p-uloge .p-uloga')).toHaveText(['Grupovođa · Krupa', 'Vodi sekciju Krupa 1']);
   await expect(page.locator('#p-stanje')).toContainText('sve je poslano');

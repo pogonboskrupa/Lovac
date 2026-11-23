@@ -104,15 +104,22 @@ function planned(server) {
   server.db.lov_pozicije = [];
 }
 
-test('grupovođa pravi lov za danas jednim dodirom i upisuje sebe kao vođu', async ({ page }) => {
+test('grupovođa pravi lov kroz modal (naziv, napomena, učesnici) i upisuje sebe kao vođu', async ({ page }) => {
   const server = makeServer();
   server.db.lovovi = [];
   server.db.lov_ucesnici = [];
   await setup(page, server, GV);
   await openTab(page);
   await page.locator('#sk-lov [data-akcija="lov-novi"]').click();
+  const forma = page.locator('#sk-lov-forma');
+  await expect(forma).toBeVisible();
+  await expect(forma.locator('input[name=naziv]')).toHaveValue(/^Krupa 1 — \d\d\.\d\d\.\d{4}\.$/);
+  await forma.locator('textarea[name=napomena]').fill('Okupljanje kod lovačke kuće');
+  expect(server.db.lovovi.length).toBe(0);
+  await forma.locator('button[type=submit]').click();
+  await expect(forma).toBeHidden();
   await expect.poll(() => server.db.lovovi.length + server.db.lov_ucesnici.length).toBe(2);
-  expect(server.db.lovovi[0]).toMatchObject({ sekcija_id: ID(200), revir_id: R.krupa, status: 'planiran' });
+  expect(server.db.lovovi[0]).toMatchObject({ sekcija_id: ID(200), revir_id: R.krupa, status: 'planiran', napomena: 'Okupljanje kod lovačke kuće' });
   expect(server.db.lovovi[0].naziv).toMatch(/^Krupa 1 — \d\d\.\d\d\.\d{4}\.$/);
   expect(server.db.lov_ucesnici[0]).toMatchObject({ korisnik_id: GV.id, uloga: 'vodja' });
   await expect(page.locator('#sk-lov [data-prisutni] li')).toHaveCount(1);

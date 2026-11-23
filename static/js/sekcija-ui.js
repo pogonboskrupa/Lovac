@@ -10,7 +10,7 @@ import { isServerConfigured } from './config.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { mySections, currentHunt, memberActivity, activityText, sectionMembers, newTodayHunt, huntPresence, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip } from './sekcija-podaci.js';
+import { mySections, currentHunt, memberActivity, activityText, sectionMembers, huntCreatePlan, huntPresence, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip } from './sekcija-podaci.js';
 import { matchesQuery } from './pretraga.js';
 import { uuid } from './zapisi.js';
 import { trailEnabled } from './lov-tragovi-ui.js';
@@ -209,7 +209,7 @@ export function initSekcijaEkran(L, map) {
   const huntControls = (s, cur, st) => {
     const manager = st === 'grupovodja' || st === 'admin';
     if (!cur) {
-      return manager ? '<button type="button" class="dugme glavno" data-akcija="lov-novi">Novi lov za danas</button>'
+      return manager ? '<button type="button" class="dugme glavno" data-akcija="lov-novi">Novi lov</button>'
         : '<p class="sitno">Grupovođa još nije napravio lov. Kad ga napravi, ovdje javljaš da si prisutan.</p>';
     }
     const { lov, ucesnici } = cur.zapis;
@@ -459,14 +459,9 @@ export function initSekcijaEkran(L, map) {
     const lovId = cur?.zapis.lov.id;
     const uid = b.closest('[data-uid]')?.dataset.uid;
     switch (b.dataset.akcija) {
-      case 'lov-novi': {
-        const h = newTodayHunt(s, uuid());
-        await runHunt(async () => {
-          await qSk(sb.from('lovovi').insert(h));
-          await qSk(sb.from('lov_ucesnici').insert({ lov_id: h.id, korisnik_id: me().id, uloga: 'vodja' }));
-        }, 'Lov za danas je napravljen — članovi se mogu prijaviti');
+      case 'lov-novi':
+        openNewHunt(s);
         break;
-      }
       case 'lov-pokreni':
       case 'lov-zavrsi':
         await runHunt(() => qSk(sb.from('lovovi').update({ status: b.dataset.akcija === 'lov-pokreni' ? 'u_toku' : 'zavrsen' }).eq('id', lovId)),
@@ -581,6 +576,66 @@ export function initSekcijaEkran(L, map) {
     await reloadPoruke();
     render();
     if (online()) { await flushOutbox(); render(); }
+  });
+
+  // ---- Modal "Novi lov": naziv, datum, okupljanje/napomena, učesnici, pokreni odmah ----
+  const lnSheet = $('sk-lov-forma');
+  const lnForm = $('forma-sk-lov');
+  let lnSection = null;
+  const lnCount = () => { $('slf-broj').textContent = `(${lnForm.querySelectorAll('#slf-clanovi input:checked').length + 1} sa tobom)`; };
+  const openNewHunt = (s) => {
+    lnSection = s;
+    const plan = huntCreatePlan(s, 'x', me()?.id, {});
+    lnForm.reset();
+    lnForm.naziv.value = plan.lov.naziv;
+    lnForm.datum.value = plan.lov.datum;
+    $('slf-sekcija').textContent = s.naziv;
+    $('slf-status').textContent = online() ? '' : 'Za pravljenje lova potreban je internet.';
+    const ids = addableMembers(s, ctx.clanovi, []).filter((id) => id !== me()?.id)
+      .sort((a, b) => memberName(a).localeCompare(memberName(b), 'bs'));
+    $('slf-clanovi').innerHTML = ids.map((id) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(memberName(id))}</label>`).join('')
+      || '<p class="sitno">U sekciji još nema drugih odobrenih članova.</p>';
+    $('btn-slf-svi').hidden = !ids.length;
+    lnCount();
+    lnSheet.hidden = false;
+  };
+  const closeNewHunt = () => { lnSheet.hidden = true; lnSection = null; };
+  $('slf-clanovi').addEventListener('change', lnCount);
+  $('btn-slf-svi').addEventListener('click', () => {
+    const boxes = [...lnForm.querySelectorAll('#slf-clanovi input')];
+    const all = boxes.every((b) => b.checked);
+    boxes.forEach((b) => { b.checked = !all; });
+    $('btn-slf-svi').textContent = all ? 'Označi sve' : 'Poništi sve';
+    lnCount();
+  });
+  $('btn-slf-odustani').addEventListener('click', closeNewHunt);
+  lnForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const s = lnSection;
+    if (!s || !me()) return;
+    if (!online()) { $('slf-status').textContent = 'Za pravljenje lova potreban je internet.'; return; }
+    const plan = huntCreatePlan(s, uuid(), me().id, {
+      naziv: lnForm.naziv.value, datum: lnForm.datum.value, napomena: lnForm.napomena.value,
+      pokreni: lnForm.pokreni.checked, ucesnici: [...lnForm.querySelectorAll('#slf-clanovi input:checked')].map((b) => b.value),
+    });
+    const sb = getClient();
+    const btn = lnForm.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+      closeNewHunt();
+      await runHunt(async () => {
+        await qSk(sb.from('lovovi').insert(plan.lov));
+        await qSk(sb.from('lov_ucesnici').insert(plan.ucesnici));
+        if (plan.pokreni) await qSk(sb.from('lovovi').update({ status: 'u_toku' }).eq('id', plan.lov.id));
+      }, plan.pokreni ? 'Lov je napravljen i pokrenut' : 'Lov je napravljen — članovi se mogu prijaviti');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  registerBackHandler(() => {
+    if (lnSheet.hidden) return false;
+    closeNewHunt();
+    return true;
   });
 
   registerBackHandler(() => {

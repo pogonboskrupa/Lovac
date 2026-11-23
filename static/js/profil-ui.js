@@ -20,6 +20,7 @@ const AVATARI = 'avatari';
 
 // Avatari svih članova (mali, iz servera) za liste članova; učitava se iz keša, osvježava periodično.
 let avatars = {};
+export const LOGO_AVATAR = 'static/img/logo-192.png';
 export const avatarOf = (id) => avatars[id]?.avatar || null;
 export const dogNameOf = (id) => avatars[id]?.pas_ime || '';
 
@@ -53,8 +54,11 @@ export function initProfilLovca() {
 
   const render = () => {
     const initials = `${(me()?.ime || '?')[0]}${(me()?.prezime || '')[0] || ''}`.toUpperCase();
-    imgStyle($('pf-avatar'), profile.avatar, initials);
-    imgStyle($('p-avatar'), profile.avatar, initials);
+    // Dok lovac ne izabere svoju sliku, avatar je logo društva (ne inicijali).
+    for (const id of ['pf-avatar', 'p-avatar']) {
+      imgStyle($(id), profile.avatar || LOGO_AVATAR, initials);
+      $(id).classList.toggle('logo-avatar', !profile.avatar);
+    }
     imgStyle($('pf-pas-slika'), profile.pas_slika, 'P');
     if (document.activeElement !== $('pf-pas-ime')) $('pf-pas-ime').value = profile.pas_ime;
     $('pf-oprema').innerHTML = profile.oprema.map((x, i) => `<li class="clan-red" data-i="${i}"><span class="clan-tekst"><b>${escapeHtml(x.opis)}</b>

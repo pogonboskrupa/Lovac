@@ -1,0 +1,18 @@
+<section id="sk-lov-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slf-naslov" hidden>
+  <form id="forma-sk-lov" novalidate>
+    <header class="postavke-glava"><h2 id="slf-naslov">Novi lov</h2><span id="slf-sekcija" class="sitno"></span></header>
+    <label>Naziv lova<input name="naziv" type="text" maxlength="120" autocomplete="off"></label>
+    <label>Datum<input name="datum" type="date"></label>
+    <label>Okupljanje i napomena<textarea name="napomena" rows="3" maxlength="1000" placeholder="Npr. okupljanje u 7:00 kod lovačke kuće, pogon na sjevernoj strani"></textarea></label>
+    <h3>Učesnici <span id="slf-broj" class="sitno"></span></h3>
+    <p class="sitno">Ti si vođa lova. Izabrani članovi su strijelci; ostali se mogu sami prijaviti kao prisutni.</p>
+    <button id="btn-slf-svi" class="dugme" type="button">Označi sve</button>
+    <div id="slf-clanovi" class="clanovi"></div>
+    <label class="red-check"><input name="pokreni" type="checkbox"> Pokreni lov odmah (samo za današnji datum)</label>
+    <p id="slf-status" class="sitno" role="status"></p>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Napravi lov</button>
+      <button type="button" id="btn-slf-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>

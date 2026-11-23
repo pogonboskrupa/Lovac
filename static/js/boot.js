@@ -54,6 +54,7 @@ import { initSync } from './sync.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
 import { initDodaj } from './dodaj-ui.js';
+import { initLovDanas } from './lov-danas-ui.js';
 import { initMapDisplaySettings } from './razmjer-prikaz.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
 
@@ -91,7 +92,7 @@ function enter(screen) {
       console.error('postavke', err);
     }
     for (const [name, fn] of [
-      ['meniji', () => { wireMenu('btn-dodaj', 'meni-dodaj'); initDodaj(); initNav(); }],
+      ['meniji', () => { wireMenu('btn-dodaj', 'meni-dodaj'); initDodaj(); initLovDanas(); initNav(); }],
       ['dijeljenje', () => setShareDialog(initDijeljenje())],
       ['navigacija', () => initNavigation(globalThis.L, map)],
       ['objekti', () => initObjekti(globalThis.L, map)],

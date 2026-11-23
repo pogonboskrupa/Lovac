@@ -83,8 +83,9 @@ export const UPUTE = [
   },
   {
     id: 'lov', naslov: 'Zajednički lov i sigurnost',
-    uvod: 'Grupovođa pravi lov jednim dodirom, a članovi javljaju da su prisutni.',
+    uvod: 'Grupovođa u tabu sekcije dodirne "Novi lov" i u formi upiše naziv, datum, okupljanje i napomenu, izabere učesnike i po želji odmah pokrene lov. Članovi javljaju da su prisutni.',
     stavke: [
+      ['Lov danas', 'Dok je lov u toku, u ploči + na mapi je dugme "Lov danas": naziv, sekcija i revir, početak i trajanje, tvoja uloga i stan, vođa lova, napomena i svi učesnici, uz prečice na raspored, tok lova i lokaciju. Radi i bez interneta.'],
       ['Raspored', 'Meni → Zajednički lov: stanovi, učesnici i uloge. Raspored se preuzima na telefon i radi bez interneta.'],
       ['Sektori pucanja', 'Za svaki stan se računa smjer prema ostalim stanovima. Aplikacija upozorava kad je pravac zabranjen. To je pomoć, a ne zamjena za vođu lova.'],
       ['Tok lova', 'Komande vođe (početak pogona, kraj, okupljanje, prekid) stižu svima; svaki lovac javlja da je na stanu, da je napustio stan ili pauzu. PREKID se šalje i SMS-om.'],
