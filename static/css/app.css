@@ -1,6 +1,7 @@
 /* Tokeni boja. Parovi tekst/pozadina provjeravaju se testom (kontrast ≥ 4.5:1) u obje teme. */
 :root,
 :root[data-tema="noc"] {
+  --okvir: #6f8463;
   --nav-h: calc(68px + env(safe-area-inset-bottom));
   --gore-1: calc(84px + env(safe-area-inset-top));
   --gore-2: calc(124px + env(safe-area-inset-top));
@@ -22,6 +23,7 @@
   --sjena: 0 2px 6px rgb(0 0 0 / 0.5);
 }
 :root[data-tema="dan"] {
+  --okvir: #8b8670;
   --pozadina: #f6f3ea;
   --povrsina: #ffffff;
   --tekst: #14170f;
@@ -1066,3 +1068,16 @@ svg[hidden] { display: none; }
 .sk-lista-stavka > span:last-child { display: flex; flex-direction: column; }
 
 .sk-lista-revir { flex: none; align-self: center; font-size: 13px; font-weight: 700; color: var(--tekst-2); padding: 0 4px 0 8px; }
+
+/* Postavke: jasni okviri i kontrast (okvir ≥ 3:1 prema pozadini kartice u obje teme) */
+#postavke .p-profil, #postavke .p-kartica { border: 1.5px solid var(--okvir); box-shadow: none; }
+#postavke .p-kartica > h3 { margin: -4px -14px 12px; padding: 12px 14px 10px; font-size: 18px; border-bottom: 1.5px solid var(--okvir); border-radius: 12px 12px 0 0; background: var(--dugme); }
+#postavke .sitno { color: var(--tekst-2); }
+#postavke .segment button, #postavke .dugme:not(.glavno) { border: 1.5px solid var(--okvir); }
+#postavke .segment button[aria-pressed="true"], #postavke .dugme.glavno { border: 1.5px solid var(--naglasak); }
+#postavke .p-tabovi { padding-bottom: 12px; border-bottom: 1.5px solid var(--okvir); }
+#postavke .p-spremnost dt { opacity: 1; color: var(--tekst-2); }
+#postavke .p-spremnost dd { padding-bottom: 8px; border-bottom: 1px solid var(--okvir); }
+#postavke .p-spremnost dd:last-of-type { border-bottom: 0; }
+#postavke .p-pouzdanost { border: 1.5px solid var(--okvir); border-left-width: 6px; }
+#postavke input:not([type="checkbox"]):not([type="radio"]), #postavke select, #postavke textarea { border: 2px solid var(--okvir); }

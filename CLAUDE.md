@@ -447,3 +447,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Obavijesti i baterija vode u sistem (v0.8.2)**
 - Postavke → Podaci → "Obavijesti i baterija": dugmad "Postavke obavijesti" (`AndroidNotif.postavke`, `ACTION_APP_NOTIFICATION_SETTINGS`) i "Postavke baterije (optimizacija)" (`AndroidGps.openBatterySettings`: `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`, rezerva `ACTION_APPLICATION_DETAILS_SETTINGS`) su UVIJEK vidljiva u aplikaciji, pa lovac može promijeniti i kad je stanje već dobro. Dijalog `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (`requestBatteryExemption`) zna ne otvoriti ništa na nekim proizvođačima, pa pada na isti spisak. "Dozvoli obavijesti" (dijalog dozvole na Androidu 13+) se vidi samo dok su obavijesti isključene. Java izmjena: provjerava je tek CI.
+
+**Postavke: okviri i kontrast (v0.8.3)**
+- Nova boja `--okvir` (noć `#6f8463`, dan `#8b8670`; ≥ 3:1 prema kartici i pozadini u obje teme). U `#postavke` kartice i profil imaju okvir 1,5 px, naslov kartice je traka (`--dugme`) sa donjom linijom, neaktivna dugmad/segmenti imaju okvir, aktivna okvir u boji naglaska, redovi u "Spremnost" razdjelnike, polja okvir 2 px, tabovi liniju ispod. Ostali ekrani se NISU mijenjali (pravila su vezana za `#postavke`). Test `postavke-izgled.spec.mjs` računa WCAG omjer okvira u obje teme.
