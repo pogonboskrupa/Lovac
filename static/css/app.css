@@ -1081,3 +1081,21 @@ svg[hidden] { display: none; }
 #postavke .p-spremnost dd:last-of-type { border-bottom: 0; }
 #postavke .p-pouzdanost { border: 1.5px solid var(--okvir); border-left-width: 6px; }
 #postavke input:not([type="checkbox"]):not([type="radio"]), #postavke select, #postavke textarea { border: 2px solid var(--okvir); }
+
+/* Karte i offline: isti jasni okviri kao Postavke + istaknuta kartica offline karte društva */
+#karte .p-kartica { border: 1.5px solid var(--okvir); box-shadow: none; }
+#karte .p-kartica > h3 { margin: -4px -14px 12px; padding: 12px 14px 10px; font-size: 18px; border-bottom: 1.5px solid var(--okvir); border-radius: 12px 12px 0 0; background: var(--dugme); }
+#karte .sitno { color: var(--tekst-2); }
+#karte .segment button, #karte .dugme:not(.glavno) { border: 1.5px solid var(--okvir); }
+#karte .segment button[aria-pressed="true"], #karte .dugme.glavno { border: 1.5px solid var(--naglasak); }
+#karte select { border: 2px solid var(--okvir); }
+#karte .karte-glavna { border: 2px solid var(--naglasak); }
+#karte .karte-glavna > h3 { background: var(--naglasak); color: var(--naglasak-tekst); border-bottom-color: var(--naglasak); }
+#karte .karte-glavna[data-stanje="preuzet"] { border-color: var(--gps-dobro); }
+#karte .karte-glavna[data-stanje="preuzet"] > h3 { background: var(--gps-dobro); color: #0d0d0d; border-bottom-color: var(--gps-dobro); }
+#teren-status { font-weight: 700; }
+#teren-napredak { width: 100%; height: 14px; margin: 6px 0; accent-color: var(--naglasak); }
+#karte .dugme:disabled { opacity: .6; }
+#teren-preuzimanje { color: var(--tekst); font-weight: 600; }
+#teren-preuzimanje[data-greska] { color: var(--greska); }
+#teren-preuzimanje:empty { display: none; }

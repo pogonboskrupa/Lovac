@@ -47,6 +47,15 @@ export function splitMaps(list) {
   return { teren: list.find((m) => m.id === TEREN_FILE) || null, ostale: list.filter((m) => m.id !== TEREN_FILE) };
 }
 
+// Kad je Teren podloga, karta ne smije otići ispod najnižeg nivoa fajla ni van njegovih granica (tamo je prazna, crna).
+// Vraća šta treba uraditi: { minZoom, zoom (ili null), fit (granice ili null) }.
+export function terenView(info, zoom, center) {
+  const minZoom = Number(info?.minzoom) || 0;
+  const b = parseBounds(info?.bounds);
+  const inside = !b || !center || (center.lat >= b[0][0] && center.lat <= b[1][0] && center.lng >= b[0][1] && center.lng <= b[1][1]);
+  return { minZoom, zoom: zoom < minZoom ? minZoom : null, fit: inside ? null : b };
+}
+
 export function terenStatus(hasBridge, info) {
   if (!hasBridge) return { stanje: 'bez-aplikacije', tekst: 'Teren radi u aplikaciji na telefonu (preuzima se jednom, pa radi bez interneta).' };
   if (!info) return { stanje: 'nema', tekst: 'Teren nije preuzet. Preuzmi ga dok imaš dobar internet.' };
@@ -70,6 +79,7 @@ export function initKarte(L, map, registerTeren, repo) {
   const listEl = $('karte-spisak');
   let terenInfo = null;
   let terenLayer = null;
+  let armedDownload = null; // prvi dodir na preuzimanje traži potvrdu (veliki fajl)
   let transfer = null; // 'teren' | 'uvoz' — šta se trenutno kopira (za tekst napretka)
 
   const renderTeren = () => {
@@ -77,8 +87,9 @@ export function initKarte(L, map, registerTeren, repo) {
     $('teren-status').textContent = st.tekst;
     $('teren-status').dataset.stanje = st.stanje;
     $('btn-teren-preuzmi').hidden = st.stanje === 'bez-aplikacije';
-    $('btn-teren-preuzmi').textContent = st.stanje === 'preuzet' ? 'Preuzmi ponovo (ažuriraj)' : 'Preuzmi teren';
-    $('btn-teren-ukloni').hidden = st.stanje !== 'preuzet';
+    if (transfer !== 'teren' && !armedDownload) $('btn-teren-preuzmi').textContent = st.stanje === 'preuzet' ? 'Preuzmi ponovo (ažuriraj)' : 'Preuzmi offline kartu';
+    $('btn-teren-ukloni').hidden = st.stanje !== 'preuzet' || transfer === 'teren';
+    $('teren-kartica').dataset.stanje = st.stanje;
   };
 
   // Provajder za podlogu "Teren": isti sloj se koristi dok je fajl isti.
@@ -86,6 +97,13 @@ export function initKarte(L, map, registerTeren, repo) {
     if (!terenInfo) return null;
     if (!terenLayer) {
       terenLayer = L.tileLayer(mbtilesUrl(TEREN_FILE), { ...layerOptions(terenInfo), zIndex: 1 });
+      terenLayer.on('add', () => {
+        const v = terenView(terenInfo, map.getZoom(), map.getCenter());
+        map.setMinZoom(v.minZoom);
+        if (v.fit) map.fitBounds(v.fit, { animate: false });
+        else if (v.zoom != null) map.setZoom(v.zoom, { animate: false });
+      });
+      terenLayer.on('remove', () => map.setMinZoom(0));
     }
     return terenLayer;
   };
@@ -173,11 +191,35 @@ export function initKarte(L, map, registerTeren, repo) {
     if (bounds) map.fitBounds(bounds);
     if (m && map.getZoom() < m.minzoom) map.setZoom(m.minzoom);
   });
-  $('btn-karte-uvoz').addEventListener('click', () => { transfer = 'uvoz'; bridge.uvezi(); });
+  // Samo jedan prenos odjednom: dva paralelna preuzimanja bi pisala u isti privremeni fajl.
+  const setBusy = (kind) => {
+    transfer = kind;
+    $('btn-teren-preuzmi').disabled = kind === 'teren';
+    $('btn-karte-uvoz').disabled = kind === 'teren';
+    $('teren-napredak').hidden = kind !== 'teren';
+    if (kind === 'teren') { $('btn-teren-preuzmi').textContent = 'Preuzimam…'; $('teren-napredak').value = 0; }
+    renderTeren();
+  };
+  // Uvoz se ne zaključava: ako lovac odustane od izbora fajla, aplikacija ne dobije nikakav odgovor.
+  $('btn-karte-uvoz').addEventListener('click', () => {
+    if (transfer === 'teren') return;
+    transfer = 'uvoz';
+    bridge.uvezi();
+  });
 
+  // Veliki fajl: prvi dodir upozori na veličinu (mobilni podaci), drugi pokreće preuzimanje.
   $('btn-teren-preuzmi').addEventListener('click', () => {
-    transfer = 'teren';
-    $('karte-status').textContent = 'Preuzimam teren… 0 %';
+    if (transfer === 'teren') return;
+    const b = $('btn-teren-preuzmi');
+    if (!armedDownload) {
+      b.textContent = 'Veliki fajl (stotine MB) — dodirni ponovo';
+      armedDownload = setTimeout(() => { armedDownload = null; renderTeren(); }, 4000);
+      return;
+    }
+    clearTimeout(armedDownload);
+    armedDownload = null;
+    setBusy('teren');
+    $('teren-preuzimanje').textContent = 'Preuzimam teren… 0 %';
     bridge.preuzmi(terenUrl(repo), TEREN_FILE);
   });
   wireTwoTap($('btn-teren-ukloni'), 'Dodirni ponovo za uklanjanje', () => {
@@ -187,12 +229,25 @@ export function initKarte(L, map, registerTeren, repo) {
   });
 
   globalThis.__karteNapredak = (pct) => {
-    $('karte-status').textContent = transfer === 'teren' ? `Preuzimam teren… ${pct} %` : `Kopiram kartu na telefon… ${pct} %`;
+    if (transfer === 'teren') {
+      $('teren-preuzimanje').textContent = `Preuzimam teren… ${pct} %`;
+      delete $('teren-preuzimanje').dataset.greska;
+      $('teren-napredak').value = Number(pct) || 0;
+    } else {
+      $('karte-status').textContent = `Kopiram kartu na telefon… ${pct} %`;
+    }
   };
-  globalThis.__karteGreska = (msg) => { $('karte-status').textContent = msg; };
+  globalThis.__karteGreska = (msg) => {
+    const el = $(transfer === 'teren' ? 'teren-preuzimanje' : 'karte-status');
+    el.textContent = msg;
+    el.dataset.greska = '1';
+    setBusy(null);
+  };
   globalThis.__karteUvoz = (json) => {
     const m = JSON.parse(json);
     $('karte-status').textContent = '';
+    $('teren-preuzimanje').textContent = '';
+    setBusy(null);
     if (m.id === TEREN_FILE) {
       render();
       document.querySelector('[data-podloga="teren"]')?.click();

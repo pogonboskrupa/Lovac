@@ -39,11 +39,19 @@ test('Teren nije preuzet: izbor vodi na preuzimanje sa Release-a, napredak, pa s
   await expect(page.locator('#karte')).toBeVisible();
   await expect(page.locator('#teren-status')).toContainText('nije preuzet');
   await expect(page.locator('#btn-teren-ukloni')).toBeHidden();
+  // Veliki fajl: prvi dodir samo upozorava, drugi pokreće preuzimanje.
   await page.locator('#btn-teren-preuzmi').click();
+  await expect(page.locator('#btn-teren-preuzmi')).toContainText('dodirni ponovo');
+  expect(await page.evaluate(() => window.__poziv)).toEqual([]);
+  await page.locator('#btn-teren-preuzmi').click();
+  // Dok preuzimanje traje dugme je zaključano (dvostruko preuzimanje bi pokvarilo fajl).
+  await expect(page.locator('#btn-teren-preuzmi')).toBeDisabled();
+  await page.locator('#btn-teren-preuzmi').click({ force: true });
   const poziv = await page.evaluate(() => window.__poziv);
   expect(poziv).toEqual([{ url: expect.stringMatching(/^https:\/\/github\.com\/[^/]+\/[^/]+\/releases\/download\/karte\/teren\.mbtiles$/), naziv: 'teren.mbtiles' }]);
   await page.evaluate(() => window.__karteNapredak('37'));
-  await expect(page.locator('#karte-status')).toHaveText('Preuzimam teren… 37 %');
+  await expect(page.locator('#teren-preuzimanje')).toHaveText('Preuzimam teren… 37 %');
+  await expect(page.locator('#teren-napredak')).toHaveJSProperty('value', 37);
 
   const tiles = [];
   await page.route(/appassets\.androidplatform\.net\/mbtiles\//, (r) => { tiles.push(r.request().url()); return r.fulfill({ status: 200, body: PNG, headers: { 'content-type': 'image/png' } }); });
@@ -85,6 +93,9 @@ test('greška preuzimanja se prikazuje lovcu', async ({ page }) => {
   await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-karte').click();
   await page.locator('#btn-teren-preuzmi').click();
+  await page.locator('#btn-teren-preuzmi').click();
   await page.evaluate(() => window.__karteGreska('Teren još nije objavljen (Release "karte" nema fajl teren.mbtiles)'));
-  await expect(page.locator('#karte-status')).toContainText('još nije objavljen');
+  await expect(page.locator('#teren-preuzimanje')).toContainText('još nije objavljen');
+  // poslije greške dugme se otključa za novi pokušaj
+  await expect(page.locator('#btn-teren-preuzmi')).toBeEnabled();
 });

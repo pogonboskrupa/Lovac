@@ -76,8 +76,17 @@ public class KarteBridge {
             js("__karteGreska", "Neispravna adresa karte");
             return;
         }
-        new Thread(() -> download(url, naziv)).start();
+        // Dva istovremena preuzimanja istog fajla bi pisala u isti privremeni fajl i pokvarila kartu.
+        if (!U_TOKU.add(naziv)) {
+            js("__karteGreska", "Preuzimanje je već u toku");
+            return;
+        }
+        new Thread(() -> {
+            try { download(url, naziv); } finally { U_TOKU.remove(naziv); }
+        }).start();
     }
+
+    private static final java.util.Set<String> U_TOKU = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
     // Preuzimanje u komadima (fajl može imati stotine MB) uz napredak; GitHub preusmjerava na svoj CDN.
     private void download(String url, String name) {

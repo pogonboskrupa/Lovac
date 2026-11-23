@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.8.4';
+  const APP_VER = 'v0.8.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -315,6 +315,18 @@
   <header class="postavke-glava">
     <h2 id="karte-naslov">Karte i offline</h2>
   </header>
+  <div class="p-kartica karte-glavna" id="teren-kartica">
+    <h3>Offline karta društva (Teren)</h3>
+    <p id="teren-status" class="red-info"></p>
+    <p class="sitno">Karta lovišta koju objavljuje društvo. Preuzimaš je jednom (veliki fajl, stotine MB — koristi wifi), pa radi bez interneta. Na mapi se bira gore desno: podloga <b>Teren</b>.</p>
+    <progress id="teren-napredak" max="100" value="0" hidden></progress>
+    <p id="teren-preuzimanje" class="status" role="status"></p>
+    <div class="red-dugmadi">
+      <button id="btn-teren-preuzmi" class="dugme glavno" type="button">Preuzmi offline kartu</button>
+      <button id="btn-teren-ukloni" class="dugme" type="button" hidden>Ukloni teren</button>
+    </div>
+  </div>
+
   <div class="sk-hero tr-hero" id="karte-hero">
     <div class="sk-statovi sk-statovi-hero">
       <div><b id="karte-hero-plocice">—</b><span>pločica u kešu</span></div>
@@ -355,16 +367,6 @@
     </div>
     <ul id="podrucja-spisak" class="spisak"></ul>
     <p id="podrucja-prazno" class="sitno">Još nema preuzetih područja.</p>
-  </div>
-
-  <div class="p-kartica">
-    <h3>Teren (karta društva)</h3>
-    <p id="teren-status" class="red-info"></p>
-    <p class="sitno">Teren je karta koju objavljuje društvo; preuzimaš je jednom (veliki fajl, koristi wifi), pa radi bez interneta. Bira se na mapi: dugme gore desno.</p>
-    <div class="red-dugmadi">
-      <button id="btn-teren-preuzmi" class="dugme glavno" type="button">Preuzmi teren</button>
-      <button id="btn-teren-ukloni" class="dugme" type="button" hidden>Ukloni teren</button>
-    </div>
   </div>
 
   <div class="p-kartica">
