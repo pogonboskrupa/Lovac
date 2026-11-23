@@ -120,6 +120,10 @@ test('lov u toku: pozicija se šalje i bez otvorenog rasporeda; ekran lokacije; 
   await expect(page.locator(`#lokacija-clanovi [data-uid="${LOVAC2.id}"]`)).toContainText(/Dijeli|Bez signala|Ne dijeli/);
   // marker sa inicijalima na mapi
   await expect(page.locator('.uc-marker').first()).toContainText('GG');
+  // dodir na marker kolege: ime i prezime + udaljenost od mene
+  await page.locator('.uc-marker').first().evaluate((el) => el.click());
+  await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText('Goran');
+  await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText(/ od tebe/);
 
   await page.locator('#lokacija-interval [data-interval="stedi"]').click();
   await expect(page.locator('#lokacija-interval [data-interval="stedi"]')).toHaveAttribute('aria-pressed', 'true');

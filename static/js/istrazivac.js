@@ -52,3 +52,11 @@ export function rangeLabel(from, to) {
   if (!from || !to) return '';
   return `${formatMemberDistance(distanceM(from, to))} ${compassName(bearingDeg(from, to))}`;
 }
+
+// Kartica kolege na karti: ime i prezime, udaljenost i strana svijeta od mene, starost pozicije. Bez GPS-a nema udaljenosti.
+export function memberCard(name, from, to, ageMin = 0, extra = '') {
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const dist = from && to ? `${rangeLabel(from, to)} od tebe` : 'Udaljenost nije poznata (nema tvog GPS-a)';
+  const age = ageMin > 1 ? `Pozicija prije ${ageMin} min` : 'Pozicija upravo';
+  return `<div class="kolega-kartica"><b>${esc(name)}</b><span>${esc(dist)}</span><span class="sitno">${esc(age)}${extra ? ` · ${esc(extra)}` : ''}</span></div>`;
+}

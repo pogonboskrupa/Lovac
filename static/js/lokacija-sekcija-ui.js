@@ -10,7 +10,7 @@ import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { myStatus } from './sekcije.js';
 import { formatCoordMode, nextCoordMode, COORD_MODES, compassName } from './geo.js';
 import { getCoordMode } from './map.js';
-import { formatMemberDistance, rangeLabel } from './istrazivac.js';
+import { formatMemberDistance, memberCard } from './istrazivac.js';
 import { getShareSettings, setShareSettings } from './lokacija-ui.js';
 import { shareIntervalMs, initialsOf, PRIKAZ_KEY, showOwnMarker } from './lokacija.js';
 import { SHARE_DURATIONS, shareUntil, activeShare, canShareToSection, sectionShareList, untilText } from './lokacija-sekcija.js';
@@ -89,7 +89,7 @@ export function initMojaLokacija(L, map) {
     for (const m of sectionShareList(rows, me()?.id, memberName, currentFix())) {
       const icon = L.divIcon({ className: 'uc-ikona', html: `<span class="uc-marker sek-marker" data-stanje="${m.stanje}">${escapeHtml(initialsOf(m.ime))}</span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
       L.marker([m.lat, m.lon], { icon, keyboard: false })
-        .bindTooltip(() => `${m.ime} (sekcija)${currentFix() ? ` · ${rangeLabel(currentFix(), m)}` : ''}`).addTo(markers);
+        .bindPopup(() => memberCard(m.ime, currentFix(), m, m.starost, 'sekcija'), { closeButton: true, autoPan: true }).addTo(markers);
     }
   };
 

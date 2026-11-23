@@ -435,3 +435,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Crni bljesak pri zumu (v0.7.8)**
 - Uzrok: Leaflet blijedi nove pločice od providnosti 0 (`fadeAnimation`), a stari nivo se ukloni čim se nove učitaju, pa nekoliko desetina ms prije toga polovina karte je tamna. Sada je `fadeAnimation: false` na karti, pločice dobijaju `updateWhenZooming: false` (nema međunivoa tokom zuma) i `keepBuffer: 4`, a nedavne pločice su u memoriji (`memTilesGet/Put`, 400 komada) pa zum naprijed-nazad ne čeka Cache API. Test u `plocice.spec.mjs` broji okvire bez učitane pločice ispod sredine ekrana pri zumu (staro: ~14, sada ≤ 1–2 jer Leaflet pri samoj zamjeni nivoa jedan okvir ostavi prazan).
+
+**Kartica kolege na karti (v0.7.9)**
+- Dodir na marker kolege (krug sa inicijalima, i za lov `uzivo-ui` i za sekciju `lokacija-sekcija-ui`) otvara popup `istrazivac.js memberCard`: ime i prezime, udaljenost i strana svijeta od mene (`rangeLabel`, računa se pri otvaranju iz mog zadnjeg fiksa; bez GPS-a piše da udaljenost nije poznata) i starost pozicije. Prije je to bio samo tooltip, koji na dodirnom ekranu ne radi pouzdano. E2e testovi okidaju `el.click()` na markeru jer ekran lokacije/ploča prekriva kartu.

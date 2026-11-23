@@ -148,6 +148,9 @@ test('lokacije članova koji dijele: spisak u ploči, marker na karti i "Na kart
   await expect(page.locator(`#lok-sek-lista [data-uid="${GV.id}"]`)).toContainText('Goran Grupovođa');
   await expect(page.locator('#lok-sek-broj')).toHaveText('(1)');
   await expect(page.locator('.sek-marker')).toHaveText('GG');
+  await page.locator('.sek-marker').evaluate((el) => el.click());
+  await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText('Goran Grupovođa');
+  await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText(/ od tebe/);
   await page.locator(`#lok-sek-lista [data-uid="${GV.id}"] [data-akcija="na-karti"]`).click();
   await expect(page.locator('#lok-ploca')).toBeHidden();
   await expect(page.locator('#koord-gk')).toHaveText(/^44\.882\d*, 16\.152\d*$/);

@@ -8,7 +8,7 @@ import { currentFix } from './gps.js';
 import { idbAll } from './db.js';
 import { pickActiveHunt, shareIntervalMs, sharingState, initialsOf } from './lokacija.js';
 import { getShareSettings, initLokacijaEkran } from './lokacija-ui.js';
-import { rangeLabel } from './istrazivac.js';
+import { memberCard } from './istrazivac.js';
 import { shouldRecordPoint, pushPoint, removeSentPoints } from './lovtrag.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { uuid } from './zapisi.js';
@@ -59,7 +59,7 @@ export function initUzivo(L, map) {
         iconSize: [34, 34], iconAnchor: [17, 17],
       });
       L.marker([p.lat, p.lon], { icon, keyboard: false })
-        .bindTooltip(() => `${name}${age > 1 ? ` (prije ${age} min)` : ''}${currentFix() ? ` · ${rangeLabel(currentFix(), p)}` : ''}`, { permanent: false }).addTo(others);
+        .bindPopup(() => memberCard(name, currentFix(), p, age), { closeButton: true, autoPan: true }).addTo(others);
     }
   };
 
