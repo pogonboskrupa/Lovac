@@ -59,7 +59,20 @@ const RECV_TABLES = new Set(['lov_tragovi', 'poruke', 'lov_dogadjaji', 'dojave']
 export async function startSim(page, world, { rpc = true, recv = true } = {}) {
   const db = world;
   const ja = db.korisnici[0];
-  const sim = { db, ja, now: START, stat: new Map(), bytes: new Map() };
+  // net: 'ok' | 'hang' (mrtva veza: zahtjev visi) | 'flaky' (slab signal: ~40 % pada, ~30 % visi, ostalo prolazi)
+  const sim = { db, ja, now: START, stat: new Map(), bytes: new Map(), net: 'ok', posts: [] };
+  let flakySeed = 7;
+  const flakyRoll = () => { flakySeed = (flakySeed * 16807) % 2147483647; return flakySeed / 2147483647; };
+  // vraća true ako je zahtjev "progutala" loša mreža
+  const badNet = (route) => {
+    if (sim.net === 'hang') return new Promise(() => {});
+    if (sim.net === 'flaky') {
+      const r = flakyRoll();
+      if (r < 0.4) return route.abort('failed');
+      if (r < 0.7) return new Promise(() => {});
+    }
+    return null;
+  };
   const bump = (k, b = 0) => { sim.stat.set(k, (sim.stat.get(k) || 0) + 1); sim.bytes.set(k, (sim.bytes.get(k) || 0) + b); };
   const match = (row, params) => [...params].every(([k, v]) => {
     if (['select', 'order', 'limit', 'on_conflict', 'offset', 'columns'].includes(k)) return true;
@@ -99,8 +112,10 @@ export async function startSim(page, world, { rpc = true, recv = true } = {}) {
     const res = await route.fetch();
     await route.fulfill({ response: res, body: (await res.text()).replace(/SUPABASE_URL = '[^']*'/, "SUPABASE_URL = 'https://lazni.supabase.test'") });
   });
-  await page.route(/lazni\.supabase\.test\/auth\//, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.route(/lazni\.supabase\.test\/auth\//, (r) => badNet(r) || r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   await page.route(/lazni\.supabase\.test\/rest\/v1\//, async (route) => {
+    const bad = badNet(route);
+    if (bad) return bad;
     const req = route.request(); const url = new URL(req.url()); const table = url.pathname.split('/').pop();
     const key = `${req.method()} ${url.pathname.includes('/rpc/') ? 'rpc/' : ''}${table}`;
     if (url.pathname.includes('/rpc/')) {
@@ -120,8 +135,11 @@ export async function startSim(page, world, { rpc = true, recv = true } = {}) {
       return json(route, 200, recv || !RECV_TABLES.has(table) ? out : out.map(({ primljeno, ...r }) => r), key);
     }
     if (req.method() === 'POST') {
+      for (const r of [].concat(req.postDataJSON())) sim.posts.push({ table, id: r.id });
+      const conflict = (url.searchParams.get('on_conflict') || '').split(',').filter(Boolean);
       for (const r of [].concat(req.postDataJSON())) {
         if (r.id && rows.some((x) => x.id === r.id)) continue;
+        if (conflict.length && rows.some((x) => conflict.every((c) => String(x[c]) === String(r[c])))) continue;
         rows.push({ id: ID(900000 + rows.length), ...r, ...(RECV_TABLES.has(table) && recv ? { primljeno: iso(sim.now + (++korak)) } : {}),
           ...(table === 'lovovi' ? { promijenjeno: iso(sim.now + (++korak)) } : {}) });
       }

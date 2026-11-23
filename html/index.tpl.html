@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.1';
+  const APP_VER = 'v1.1.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -184,40 +184,50 @@
       <h2>Moja lokacija</h2>
       <button id="btn-lok-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
     </header>
-    <div id="gps-status" class="gps-status" hidden>
-      <span id="gps-tacnost" class="tacnost">GPS…</span>
-      <span>fiks prije <span id="gps-starost">—</span></span>
+    <div class="lok-info">
+      <div class="lok-info-red">
+        <div id="gps-status" class="gps-status" hidden>
+          <span id="gps-tacnost" class="tacnost">GPS…</span>
+          <span class="sitno">fiks <span id="gps-starost">—</span></span>
+        </div>
+        <span id="lok-sek-znacka" class="lok-sek-znacka" hidden></span>
+      </div>
+      <div class="lok-koord-red">
+        <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+        <button id="btn-lok-kopiraj" class="dugme lok-kopiraj" type="button" aria-label="Kopiraj koordinate">Kopiraj</button>
+      </div>
     </div>
-    <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
     <div class="lok-mreza" id="lok-akcije">
-      <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj na mene</span></button>
+      <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj</span></button>
       <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>
       <button id="btn-snimaj" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-record"/></svg><span>Snimaj trag</span></button>
-      <button id="btn-opazanje" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-eye"/></svg><span>Opažanje divljači</span></button>
-      <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač (3D)</span></button>
-      <button id="btn-lok-kopiraj" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Kopiraj koordinate</span></button>
+      <button id="btn-opazanje" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-eye"/></svg><span>Opažanje</span></button>
+      <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač 3D</span></button>
+      <button id="btn-lok-posalji" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Pošalji lokaciju</span></button>
     </div>
-    <div class="lok-pravac" id="lok-prikaz">
-      <button id="btn-lok-prikaz" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija na karti"><span class="lok-prekidac-ruka"></span></button>
-      <div class="lok-pravac-tekst">
-        <b>Moja lokacija</b>
-        <span id="lok-prikaz-stanje" class="sitno" role="status">Uključeno: vidiš se na karti</span>
+    <div class="lok-prekidaci">
+      <div class="lok-pravac" id="lok-prikaz">
+        <button id="btn-lok-prikaz" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija na karti"><span class="lok-prekidac-ruka"></span></button>
+        <div class="lok-pravac-tekst">
+          <b>Moja lokacija</b>
+          <span id="lok-prikaz-stanje" class="sitno" role="status">Uključeno: vidiš se na karti</span>
+        </div>
       </div>
-    </div>
-    <div class="lok-pravac" id="lok-auto">
-      <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Dijeli lokaciju u lovu"><span class="lok-prekidac-ruka"></span></button>
-      <div class="lok-pravac-tekst">
-        <b>Dijeli lokaciju</b>
-        <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: učesnici lova vide tvoju poziciju</span>
+      <div class="lok-pravac" id="lok-auto">
+        <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Dijeli lokaciju u lovu"><span class="lok-prekidac-ruka"></span></button>
+        <div class="lok-pravac-tekst">
+          <b>Dijeli lokaciju</b>
+          <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: učesnici lova vide tvoju poziciju</span>
+        </div>
       </div>
-    </div>
-    <div class="lok-pravac" id="kompas">
-      <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja">
-        <span class="lok-prekidac-ruka"></span>
-      </button>
-      <div class="lok-pravac-tekst">
-        <b>Pravac gledanja</b>
-        <span id="kompas-izvor" class="sitno" role="status">Čekam kompas…</span>
+      <div class="lok-pravac" id="kompas">
+        <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja">
+          <span class="lok-prekidac-ruka"></span>
+        </button>
+        <div class="lok-pravac-tekst">
+          <b>Pravac gledanja</b>
+          <span id="kompas-izvor" class="sitno" role="status">Čekam kompas…</span>
+        </div>
       </div>
     </div>
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>

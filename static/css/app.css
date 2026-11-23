@@ -1434,3 +1434,19 @@ svg[hidden] { display: none; }
 .tok-ucesnik[data-stanje="u-pokretu"] { border-left-color: #f59e0b; }
 .tok-ucesnik[data-stanje="pauza"] { border-left-color: #60a5fa; }
 .tok-ucesnik[data-stanje="nema"] { border-left-color: #6b7280; }
+
+/* Moja lokacija — unaprijeđena ploča (v1.1.2): × uvijek vidljiv, kompaktni prekidači, Pošalji lokaciju */
+#lok-ploca > .lok-glava { position: sticky; top: -8px; z-index: 3; margin: -8px -12px 0; padding: 8px 12px 6px; background: var(--povrsina, #1c2419); border-radius: 16px 16px 0 0; }
+.lok-info { display: grid; gap: 4px; padding: 8px 10px; border-radius: 12px; background: var(--dugme); margin: 6px 0; }
+.lok-info-red { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lok-info .gps-status { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; background: none; }
+.lok-info .gps-status[hidden] { display: none; }
+.lok-sek-znacka { margin-left: auto; padding: 4px 10px; border-radius: 999px; background: #0f766e; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.lok-sek-znacka[hidden] { display: none; }
+.lok-koord-red { display: flex; align-items: center; gap: 8px; }
+.lok-koord-red .lok-koord { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.lok-kopiraj { flex: none; min-height: 44px; padding: 0 12px; }
+.lok-prekidaci { border-radius: 14px; background: var(--dugme); margin: 6px 0; overflow: hidden; }
+.lok-prekidaci .lok-pravac { margin: 0; border-radius: 0; background: none; padding: 6px 10px; }
+.lok-prekidaci .lok-pravac + .lok-pravac { border-top: 1px solid var(--okvir); }
+.lok-prekidaci .lok-pravac-tekst .sitno { font-size: 13px; }

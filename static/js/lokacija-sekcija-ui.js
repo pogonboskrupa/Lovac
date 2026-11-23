@@ -8,7 +8,8 @@ import { connectionQuality } from './net.js';
 import { memberName } from './dijeljenje-ui.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { myStatus } from './sekcije.js';
-import { formatCoordMode, nextCoordMode, COORD_MODES, compassName } from './geo.js';
+import { formatCoordMode, nextCoordMode, COORD_MODES, compassName, locationShareText } from './geo.js';
+import { shareText } from './dijeljenje.js';
 import { getCoordMode } from './map.js';
 import { formatMemberDistance, memberCard } from './istrazivac.js';
 import { getShareSettings, setShareSettings } from './lokacija-ui.js';
@@ -75,6 +76,10 @@ export function initMojaLokacija(L, map) {
     $('lok-sek-stanje').textContent = sh
       ? `Dijeliš lokaciju sa sekcijom ${sections.find((s) => s.id === sh.sekcijaId)?.naziv || ''} do ${untilText(sh.do)}.`
       : (none ? '' : 'Ne dijeliš lokaciju.');
+    // značka na vrhu ploče: dijeljenje sa sekcijom se vidi bez listanja do dna
+    const znacka = $('lok-sek-znacka');
+    znacka.hidden = !sh;
+    if (sh) znacka.textContent = `Dijeliš sa sekcijom do ${untilText(sh.do)}`;
     const list = sectionShareList(rows, me()?.id, memberName, currentFix());
     $('lok-sek-broj').textContent = list.length ? `(${list.length})` : '';
     $('lok-sek-lista').innerHTML = list.map((m) => `<li class="clan-red" data-uid="${escapeHtml(m.id)}" data-stanje="${m.stanje}">
@@ -202,6 +207,15 @@ export function initMojaLokacija(L, map) {
     const text = COORD_MODES.map((m) => { const f = formatCoordMode(m, fix.lat, fix.lon); return `${f.oznaka} ${f.tekst}`; }).join(' | ');
     toast(await copyText(text) ? 'Koordinate kopirane' : text);
   });
+
+  // Pošalji lokaciju (SMS, Viber…): kad neko traži lovca ili lovac traži pomoć; radi i bez interneta (SMS).
+  $('btn-lok-posalji').addEventListener('click', async () => {
+    const p = me();
+    const text = locationShareText(currentFix(), { ime: p ? `${p.ime || ''} ${p.prezime || ''}`.trim() : '' });
+    if (!text) { toast('Čekam GPS…'); return; }
+    if (shareText(text) === 'nema') toast(await copyText(text) ? 'Lokacija je kopirana — zalijepi je u poruku' : text, 6000);
+  });
+  $('lok-sek-znacka').addEventListener('click', () => $('lok-sekcija').scrollIntoView({ block: 'start' }));
 
   $('lok-sek-trajanje').addEventListener('click', (e) => {
     const b = e.target.closest('[data-trajanje]');

@@ -30,7 +30,9 @@ test('starost fiksa', () => {
   assert.equal(formatFixAge(4200), '4 s');
   assert.equal(formatFixAge(125000), '2 min');
   assert.equal(formatFixAge(3 * 3600e3 + 5 * 60e3), '3 h 5 min');
-  assert.equal(formatFixAge(-1), '—');
+  assert.equal(formatFixAge(-1), 'upravo'); // GPS sat malo ispred sata telefona
+  assert.equal(formatFixAge(1500), 'upravo');
+  assert.equal(formatFixAge(-600000), '—');
 });
 
 import { gk6ToWgs84 } from '../../static/js/geo.js';
@@ -111,4 +113,15 @@ test('prati me: udaljenost od centra ekrana kao udio, gasi se na 80 %', () => {
   assert.equal(shouldStopFollow({ x: 200 + 0.81 * 200, y: 400 }, size), true);
   assert.equal(shouldStopFollow({ x: 200, y: 400 - 0.85 * 400 }, size), true, 'računa se i po visini');
   assert.equal(offCenterRatio({ x: 5, y: 5 }, { x: 0, y: 0 }), 0, 'prazan ekran ne daje NaN');
+});
+
+import { locationShareText } from '../../static/js/geo.js';
+test('Pošalji lokaciju: WGS84, MGI 5 i link karte; bez fiksa ništa', () => {
+  const t = locationShareText({ lat: 44.862, lon: 16.1, acc: 6.4 }, { ime: 'Lovro Lovac' });
+  const r = t.split('\n');
+  assert.equal(r[0], 'Lovro Lovac — moja lokacija (±6 m):');
+  assert.match(r[1], /^WGS84 44\.862/);
+  assert.match(r[2], /^MGI 5 /);
+  assert.equal(r[3], 'https://www.google.com/maps?q=44.862000,16.100000');
+  assert.equal(locationShareText(null), null);
 });

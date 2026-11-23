@@ -600,6 +600,8 @@ export function initSekcijaEkran(L, map) {
   const lnForm = $('forma-sk-lov');
   let lnSection = null;
   let lnRoles = {};
+  let lnHuntId = null; // id lova koji se pravi (isti kroz ponovne pokušaje)
+  let lnHuntSection = null;
   let lnPreset = null;
   const lnSync = () => {
     for (const row of lnForm.querySelectorAll('#slf-clanovi .slf-red')) {
@@ -725,24 +727,33 @@ export function initSekcijaEkran(L, map) {
     const s = lnSection;
     if (!s || !me()) return;
     if (!online()) { $('slf-status').textContent = 'Za pravljenje lova potreban je internet.'; return; }
-    const plan = huntCreatePlan(s, uuid(), me().id, {
+    // Isti id lova dok pravljenje ne uspije: na slabom signalu ponovni pokušaj ne pravi drugi lov,
+    // a upisi su idempotentni (lov bez učesnika se dopuni, ne duplira).
+    if (!lnHuntId || lnHuntSection !== s.id) { lnHuntId = uuid(); lnHuntSection = s.id; }
+    const plan = huntCreatePlan(s, lnHuntId, me().id, {
       naziv: lnForm.naziv.value, datum: lnForm.datum.value, napomena: lnForm.napomena.value, okupljanje: lnForm.okupljanje.value,
       pokreni: lnForm.pokreni.checked, ucesnici: [...lnForm.querySelectorAll('#slf-clanovi input:checked')].map((b) => b.value), uloge: lnRoles,
     });
     const sb = getClient();
     const btn = lnForm.querySelector('button[type=submit]');
     btn.disabled = true;
+    $('slf-status').textContent = 'Šaljem…';
     try {
-      closeNewHunt();
-      await runHunt(async () => {
-        await qSk(sb.from('lovovi').insert(plan.lov));
-        await qSk(sb.from('lov_ucesnici').insert(plan.ucesnici));
-        if (plan.pokreni) await qSk(sb.from('lovovi').update({ status: 'u_toku' }).eq('id', plan.lov.id));
-      }, plan.pokreni ? 'Lov je napravljen i pokrenut' : 'Lov je napravljen — članovi se mogu prijaviti');
-      document.dispatchEvent(new CustomEvent('lovovi:promjena'));
-    } finally {
+      await qSk(sb.from('lovovi').upsert(plan.lov, { onConflict: 'id', ignoreDuplicates: true }));
+      await qSk(sb.from('lov_ucesnici').upsert(plan.ucesnici, { onConflict: 'lov_id,korisnik_id', ignoreDuplicates: true }));
+      if (plan.pokreni) await qSk(sb.from('lovovi').update({ status: 'u_toku' }).eq('id', plan.lov.id));
+    } catch (err) {
+      // forma ostaje otvorena sa istim izborom; "Napravi lov" ponovo dovršava ISTI lov
+      $('slf-status').textContent = /row-level security|permission/i.test(err.message)
+        ? `Server nije dozvolio: ${err.message}` : 'Veza je pukla — dodirni "Napravi lov" ponovo kad bude signala (lov se neće duplirati).';
       btn.disabled = false;
+      return;
     }
+    lnHuntId = null;
+    btn.disabled = false;
+    closeNewHunt();
+    await runHunt(async () => {}, plan.pokreni ? 'Lov je napravljen i pokrenut' : 'Lov je napravljen — članovi se mogu prijaviti');
+    document.dispatchEvent(new CustomEvent('lovovi:promjena'));
   });
   registerBackHandler(() => {
     if (lnSheet.hidden) return false;

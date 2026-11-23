@@ -96,7 +96,9 @@ export function accuracyLevel(meters) {
 }
 
 export function formatFixAge(ms) {
-  if (!Number.isFinite(ms) || ms < 0) return '—';
+  // Vrijeme fiksa (GPS sat) zna biti malo ispred sata telefona: kratka "negativna" starost je svjež fiks, ne nepoznato.
+  if (!Number.isFinite(ms) || ms < -120000) return '—';
+  if (ms < 3000) return 'upravo';
   const s = Math.round(ms / 1000);
   if (s < 60) return `${s} s`;
   const m = Math.floor(s / 60);
@@ -205,6 +207,17 @@ export function formatScale(n) {
 
 // Prikaz koordinata na karti: WGS84 (zadano) pa MGI zona 5 pa MGI zona 6 (dodir na okvir mijenja redom).
 export const COORD_MODES = ['wgs', 'mgi5', 'mgi6'];
+
+// "Pošalji lokaciju" (SMS, Viber…): WGS84 i MGI 5 (koordinate sa terena) + link karte koji otvara svaki telefon.
+export function locationShareText(fix, { ime = '' } = {}) {
+  if (!fix || !Number.isFinite(fix.lat) || !Number.isFinite(fix.lon)) return null;
+  const w = formatCoordMode('wgs', fix.lat, fix.lon);
+  const g = formatCoordMode('mgi5', fix.lat, fix.lon);
+  const lat = fix.lat.toFixed(6);
+  const lon = fix.lon.toFixed(6);
+  return [`${ime ? `${ime} — ` : ''}moja lokacija${Number.isFinite(fix.acc) ? ` (±${Math.round(fix.acc)} m)` : ''}:`,
+    `${w.oznaka} ${w.tekst}`, `${g.oznaka} ${g.tekst}`, `https://www.google.com/maps?q=${lat},${lon}`].join('\n');
+}
 
 export function nextCoordMode(mode) {
   return COORD_MODES[(Math.max(0, COORD_MODES.indexOf(mode)) + 1) % COORD_MODES.length];

@@ -102,7 +102,8 @@ export function initGps(L, map) {
     state.fix = {
       lat: c.latitude, lon: c.longitude, acc: c.accuracy,
       heading: Number.isFinite(c.heading) && c.speed > 0.5 ? c.heading : null,
-      t: pos.timestamp || Date.now(),
+      // GPS sat i sat telefona se znaju razilaziti (minute): bez toga je starost fiksa "—" ili negativna.
+      t: Number.isFinite(pos.timestamp) && Math.abs(Date.now() - pos.timestamp) < 60000 ? Math.min(pos.timestamp, Date.now()) : Date.now(),
     };
     lastFix = state.fix;
     render();
