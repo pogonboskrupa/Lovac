@@ -1,10 +1,12 @@
 // "Preuzmi područje za offline": pločice izabrane podloge + DEM za vidljivo područje karte.
 
-import { BASE_LAYERS, PREDOWNLOAD_ALLOWED, MAX_PREDOWNLOAD_TILES, tilesForBounds, estimateDownload, tileUrl, predownloadTiles } from './tiles.js';
+import { BASE_LAYERS, PREDOWNLOAD_ALLOWED, MAX_PREDOWNLOAD_TILES, tilesForBounds, estimateDownload, tileUrl, predownloadTiles, releaseOfflineTiles, adoptOfflineTiles } from './tiles.js';
 import { predownloadDem } from './dem.js';
 import { toast, escapeHtml, wireTwoTap } from './ui.js';
 import { loadJSON, saveSoft } from './storage.js';
-import { PODRUCJA_KEY, addArea, removeArea, coveringArea, areaTitle, areaDetail, areasSummary, newAreaId } from './podrucja.js';
+import { PODRUCJA_KEY, addArea, removeArea, coveringArea, areaTitle, areaDetail, areasSummary, newAreaId, exclusiveUrls } from './podrucja.js';
+
+const TRAJNO_KEY = 'lovac.pred.trajno';
 
 const $ = (id) => document.getElementById(id);
 
@@ -30,6 +32,23 @@ export function initPreuzimanje(map, activeBase, L = globalThis.L) {
     }
   };
 
+  const urlsOf = (a) => {
+    const base = BASE_LAYERS.find((b) => b.id === a.base);
+    return base ? tilesForBounds(a.bounds, a.zMin, a.zMax).map((t) => tileUrl(base.url, t, base.options.subdomains)) : [];
+  };
+  // Područje koje ispadne sa spiska (uklonjeno ili najstarije preko granice) oslobađa svoje pločice.
+  const setAreas = (next) => {
+    const gone = areas.filter((a) => !next.some((b) => b.id === a.id));
+    areas = next;
+    saveSoft(PODRUCJA_KEY, areas);
+    for (const a of gone) releaseOfflineTiles(exclusiveUrls(a, areas, urlsOf)).catch((err) => console.warn('područje', err));
+  };
+
+  // Područja preuzeta prije v0.9.5 su u običnom kešu (koji se skraćuje): jednom ih prepiši u trajni.
+  if (areas.length && !loadJSON(TRAJNO_KEY, false)) {
+    adoptOfflineTiles(areas.flatMap(urlsOf)).then(() => saveSoft(TRAJNO_KEY, true)).catch((err) => console.warn('područja', err));
+  }
+
   const renderAreas = () => {
     const sum = areasSummary(areas);
     $('podrucja-broj').textContent = sum.broj ? `(${sum.broj} · ${sum.plocica} pločica)` : '';
@@ -37,11 +56,10 @@ export function initPreuzimanje(map, activeBase, L = globalThis.L) {
     $('btn-podrucja-pokrivenost').setAttribute('aria-checked', String(showCoverage));
     $('podrucja-spisak').innerHTML = areas.map((a) => `<li class="trag-red tr-kartica" data-id="${escapeHtml(a.id)}">
       <div class="trag-naslov"><b>${escapeHtml(areaTitle(a))}</b><span class="sitno">${escapeHtml(areaDetail(a))}</span></div>
-      <div class="red-dugmadi"><button type="button" class="dugme" data-akcija="na-karti">Na karti</button><button type="button" class="dugme" data-akcija="ukloni">Ukloni sa spiska</button></div></li>`).join('');
+      <div class="red-dugmadi"><button type="button" class="dugme" data-akcija="na-karti">Na karti</button><button type="button" class="dugme" data-akcija="ukloni">Ukloni</button></div></li>`).join('');
     $('podrucja-spisak').querySelectorAll('[data-akcija="ukloni"]').forEach((b) => {
       wireTwoTap(b, 'Dodirni ponovo', () => {
-        areas = removeArea(areas, b.closest('[data-id]').dataset.id);
-        saveSoft(PODRUCJA_KEY, areas);
+        setAreas(removeArea(areas, b.closest('[data-id]').dataset.id));
         renderAreas();
         drawCoverage();
       });
@@ -113,8 +131,7 @@ export function initPreuzimanje(map, activeBase, L = globalThis.L) {
     bar.hidden = true;
     if (!aborted) {
       const area = { id: newAreaId(base.id, bounds, plan.zMax), base: base.id, bounds, zMin: plan.zMin, zMax: plan.zMax, plocica: res.done - res.errors, gresaka: res.errors, t: Date.now() };
-      areas = addArea(areas, area);
-      saveSoft(PODRUCJA_KEY, areas);
+      setAreas(addArea(areas, area));
       renderAreas();
       drawCoverage();
     }

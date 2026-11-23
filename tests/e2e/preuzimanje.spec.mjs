@@ -74,3 +74,36 @@ test('preuzeto područje ulazi u spisak, označava se kao već preuzeto, prikazu
   await expect(page.locator('#podrucja-spisak [data-id]')).toHaveCount(0);
   await expect(page.locator('#podrucja-prazno')).toBeVisible();
 });
+
+test('preuzeto područje se preuzima JEDNOM: ostaje poslije brisanja/skraćivanja keša, odjave i ponovnog ulaska', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 15 })));
+  await page.reload();
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-karte').click();
+  await page.locator('#pred-zoom').selectOption('16');
+  await page.locator('#btn-pred-preuzmi').click();
+  await expect(page.locator('#poruka')).toContainText('Područje preuzeto', { timeout: 20000 });
+
+  // obični keš se skraćuje (najstarije prvo) ili ga lovac obriše — preuzeto područje ne smije nestati
+  await page.locator('#btn-kes-obrisi').click();
+  await page.locator('#btn-kes-obrisi').click();
+  await expect(page.locator('#poruka')).toContainText('preuzeta područja i Teren ostaju');
+  // odjava i ponovni ulazak na istom telefonu (profil se briše i vraća)
+  await page.evaluate(() => { localStorage.removeItem('lovac.profil'); for (const k of Object.keys(localStorage)) if (k.startsWith('sb-')) localStorage.removeItem(k); });
+
+  await page.unroute(TILE_HOSTS);
+  await page.route(TILE_HOSTS, (r) => r.abort('internetdisconnected'));
+  await page.evaluate(() => localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 16 })));
+  await page.reload();
+  await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
+  await page.waitForTimeout(500);
+  expect(await page.locator('#karta .leaflet-tile:not(.leaflet-tile-loaded)').count()).toBe(0);
+
+  // "Ukloni" (drugi dodir) briše pločice tog područja
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-karte').click();
+  await page.locator('#podrucja-spisak [data-akcija="ukloni"]').click();
+  await page.locator('#podrucja-spisak [data-akcija="ukloni"]').click();
+  await expect.poll(() => page.evaluate(async () => (await (await caches.open('plocice-offline-v1')).keys()).length)).toBe(0);
+});

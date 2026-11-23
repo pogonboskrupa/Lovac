@@ -44,3 +44,9 @@ export function newAreaId(base, bounds, zMax) {
   const r = (n) => Math.round(n * 1000);
   return `${base}:${r(bounds.south)}:${r(bounds.west)}:${r(bounds.north)}:${r(bounds.east)}:${zMax}`;
 }
+
+// Pločice koje pripadaju SAMO uklonjenom području (druga preuzeta područja iste podloge ih i dalje trebaju).
+export function exclusiveUrls(removed, rest, urlsOf) {
+  const keep = new Set(rest.filter((a) => a.base === removed.base).flatMap(urlsOf));
+  return urlsOf(removed).filter((u) => !keep.has(u));
+}

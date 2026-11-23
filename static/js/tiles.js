@@ -5,6 +5,9 @@
 import { fetchWithTimeout, connectionQuality } from './net.js';
 
 export const TILE_CACHE = 'plocice-v1';
+// Pločice PREUZETIH područja su u posebnom kešu koji se nikad sam ne skraćuje: u zajedničkom kešu sa gornjom
+// granicom prve se brišu najstarije, a to su upravo preuzeta područja, pa ih je lovac morao preuzimati ponovo.
+export const OFFLINE_CACHE = 'plocice-offline-v1';
 export const MAX_CACHED_TILES = 20000;
 export const MAX_PARALLEL_TILES = 6;
 const TRIM_EVERY = 200;
@@ -65,6 +68,18 @@ function getTileCache() {
   return cachePromise;
 }
 
+let offlinePromise = null;
+function getOfflineCache() {
+  if (!globalThis.caches) return Promise.resolve(null);
+  if (!offlinePromise) {
+    offlinePromise = caches.open(OFFLINE_CACHE).then(
+      (c) => c,
+      () => { offlinePromise = null; return null; },
+    );
+  }
+  return offlinePromise;
+}
+
 export function keysToTrim(keys, max) {
   return keys.length > max ? keys.slice(0, keys.length - max) : [];
 }
@@ -78,8 +93,22 @@ async function trimTileCache(cache) {
 }
 
 export async function tileCacheCount() {
-  const cache = await getTileCache();
-  return cache ? (await cache.keys()).length : 0;
+  const [cache, offline] = await Promise.all([getTileCache(), getOfflineCache()]);
+  return (cache ? (await cache.keys()).length : 0) + (offline ? (await offline.keys()).length : 0);
+}
+
+export async function offlineTileCount() {
+  const offline = await getOfflineCache();
+  return offline ? (await offline.keys()).length : 0;
+}
+
+// Uklanjanje preuzetog područja briše samo njegove pločice koje ne koristi nijedno drugo preuzeto područje.
+export async function releaseOfflineTiles(urls) {
+  const offline = await getOfflineCache();
+  if (!offline) return 0;
+  let n = 0;
+  for (const u of urls) if (await offline.delete(u)) n++;
+  return n;
 }
 
 export async function clearTileCache() {
@@ -112,26 +141,31 @@ export function memTilesPut(url, blob, max = MEM_TILES_MAX) {
   while (memTiles.size > max) memTiles.delete(memTiles.keys().next().value);
 }
 
-export async function loadTileBlob(url, signal, attempt = 0) {
-  const mem = memTilesGet(url);
-  if (mem) return mem;
-  const cache = await getTileCache();
-  const hit = cache && await cache.match(url);
-  if (hit) { const b = await hit.blob(); memTilesPut(url, b); return b; }
+async function networkTile(url, signal, attempt) {
   return tileLimiter.run(async () => {
     const timeout = tileTimeoutMs(connectionQuality(), attempt);
     const res = await fetchWithTimeout(url, { mode: 'cors', credentials: 'omit', signal }, timeout);
     if (!isImageResponse(res)) throw new Error(`Pločica nije slika (${res.status})`);
-    if (cache) {
-      try {
-        await cache.put(url, res.clone());
-        await trimTileCache(cache);
-      } catch (err) { console.warn('tile cache put', err); }
-    }
-    const blob = await res.blob();
-    memTilesPut(url, blob);
-    return blob;
+    return res;
   }, signal);
+}
+
+export async function loadTileBlob(url, signal, attempt = 0) {
+  const mem = memTilesGet(url);
+  if (mem) return mem;
+  const [offline, cache] = await Promise.all([getOfflineCache(), getTileCache()]);
+  const hit = (offline && await offline.match(url)) || (cache && await cache.match(url));
+  if (hit) { const b = await hit.blob(); memTilesPut(url, b); return b; }
+  const res = await networkTile(url, signal, attempt);
+  if (cache) {
+    try {
+      await cache.put(url, res.clone());
+      await trimTileCache(cache);
+    } catch (err) { console.warn('tile cache put', err); }
+  }
+  const blob = await res.blob();
+  memTilesPut(url, blob);
+  return blob;
 }
 
 export const TILE_RETRY_DELAYS = [1500, 4000, 9000];
@@ -282,15 +316,20 @@ export function tileUrl(template, { z, x, y }, subdomains = 'abc') {
   return template.replace('{s}', s).replace('{z}', z).replace('{x}', x).replace('{y}', y);
 }
 
-// Preuzima pločice u keš (preskače već keširane). onProgress(urađeno, ukupno, greške).
+// Preuzima pločice u trajni keš preuzetih područja (preskače već preuzete; viđenu pločicu samo prepiše
+// iz običnog keša). onProgress(urađeno, ukupno, greške).
 export async function predownloadTiles(urls, { onProgress = () => {}, signal } = {}) {
   let done = 0;
   let errors = 0;
-  const cache = await getTileCache();
+  const [offline, cache] = await Promise.all([getOfflineCache(), getTileCache()]);
   await Promise.all(urls.map(async (url) => {
     try {
       if (signal?.aborted) return;
-      if (!(cache && await cache.match(url))) await loadTileBlob(url, signal);
+      if (offline && await offline.match(url)) return;
+      const seen = cache && await cache.match(url);
+      const res = seen || await networkTile(url, signal, 0);
+      if (offline) await offline.put(url, res);
+      else await loadTileBlob(url, signal);
     } catch (err) {
       if (err?.name !== 'AbortError') errors++;
     } finally {
@@ -299,4 +338,17 @@ export async function predownloadTiles(urls, { onProgress = () => {}, signal } =
     }
   }));
   return { done, errors };
+}
+
+// Područja preuzeta prije v0.9.5 su u običnom kešu: prepiši njihove pločice (one koje još postoje) u trajni.
+export async function adoptOfflineTiles(urls) {
+  const [offline, cache] = await Promise.all([getOfflineCache(), getTileCache()]);
+  if (!offline || !cache) return 0;
+  let n = 0;
+  for (const url of urls) {
+    if (await offline.match(url)) continue;
+    const hit = await cache.match(url);
+    if (hit) { await offline.put(url, hit); n++; }
+  }
+  return n;
 }

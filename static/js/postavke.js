@@ -238,7 +238,7 @@ function wireCacheButton() {
   wireTwoTap(el('btn-kes-obrisi'), 'Dodirni ponovo za brisanje', async () => {
     await clearTileCache();
     await refreshCacheCount();
-    toast('Keš karte obrisan');
+    toast('Keš karte obrisan — preuzeta područja i Teren ostaju');
   });
 }
 
