@@ -10,7 +10,10 @@ import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { formatDecimalBs } from './odstrel.js';
 import { formatWhen } from './opazanja-ui.js';
 import { MJESECI } from './divljac.js';
-import { scopeOptions, periodDates, buildStats } from './statistika-opsega.js';
+
+const MJESECI_PUNI = ['januar', 'februar', 'mart', 'april', 'maj', 'juni', 'juli', 'august', 'septembar', 'oktobar', 'novembar', 'decembar'];
+import { scopeOptions, periodDates, buildStats, shareOfMax, bestMonth } from './statistika-opsega.js';
+import { speciesBadge } from './evidencija.js';
 import { rankMembers, mergeCriteria, validateWeights, ZADANI_KRITERIJI } from './rejting.js';
 import { registerBackHandler, escapeHtml } from './ui.js';
 
@@ -75,8 +78,14 @@ export function initStatistika() {
 
   const revirName = (id) => ctx.reviri.find((r) => r.id === id)?.naziv || 'Revir';
   const sekName = (id) => ctx.sekcije.find((s) => s.id === id)?.naziv || 'Sekcija';
-  const line = (naslov, g, extra = '') => `<li class="tr-kartica ev-kartica" data-kljuc="${escapeHtml(String(g.sekcija_id || g.revir_id))}"><b>${escapeHtml(naslov)}</b>
-      <span class="sitno">${g.lovova} lovova · odaziv ${g.odaziv != null ? `${String(g.odaziv).replace('.', ',')} %` : '—'} · ${g.komada} kom. · ${escapeHtml(kg(g.kg))} kg${extra}</span></li>`;
+  // Kartica grupe: naziv, tri broja i traka odaziva (koliko je lovaca dolazilo na lovove).
+  const line = (naslov, g, extra = '') => {
+    const od = g.odaziv != null ? Math.round(g.odaziv) : null;
+    return `<li class="tr-kartica ev-kartica st-grupa" data-kljuc="${escapeHtml(String(g.sekcija_id || g.revir_id))}">
+      <div class="st-grupa-glava"><b>${escapeHtml(naslov)}</b>${extra ? `<span class="sitno">${escapeHtml(extra)}</span>` : ''}</div>
+      <div class="st-brojke"><span><b>${g.lovova}</b> lovova</span><span><b>${g.komada}</b> kom.</span><span><b>${escapeHtml(kg(g.kg))}</b> kg</span></div>
+      <div class="st-traka" data-pct="${od ?? ''}"><span>Odaziv</span><span class="st-traka-bar"><i style="width:${od ?? 0}%"></i></span><b>${od != null ? `${od} %` : '—'}</b></div></li>`;
+  };
 
   const renderStats = async () => {
     const vrste = await getSpisakAll('vrste');
@@ -91,11 +100,22 @@ export function initStatistika() {
     const isRevir = scope?.kljuc?.startsWith('revir:');
     $('st-reviri-blok').hidden = !society;
     $('st-sekcije-blok').hidden = !(society || isRevir);
-    $('st-reviri').innerHTML = s.reviri.map((r) => line(revirName(r.revir_id), r, ` · ${r.sekcija} sekcija`)).join('') || '<li class="sitno">Nema podataka.</li>';
+    $('st-reviri').innerHTML = s.reviri.map((r) => line(revirName(r.revir_id), r, `${r.sekcija} ${r.sekcija === 1 ? 'sekcija' : 'sekcija'}`)).join('') || '<li class="sitno">Nema podataka.</li>';
     $('st-sekcije').innerHTML = s.sekcije.map((g) => line(`${society ? `${revirName(g.revir_id)} · ` : ''}${sekName(g.sekcija_id)}`, g)).join('') || '<li class="sitno">Nema podataka.</li>';
-    $('st-vrste').innerHTML = s.vrste.map((g) => `<li>${escapeHtml(lookupNaziv(vrste, g.vrsta))}: <b>${g.komada}</b> kom., ${escapeHtml(kg(g.kg))} kg</li>`).join('') || '<li>Nema prijavljenog ulova u ovom periodu.</li>';
+    const maxVrsta = Math.max(0, ...s.vrste.map((g) => g.komada));
+    $('st-vrste').innerHTML = s.vrste.map((g) => {
+      const naziv = lookupNaziv(vrste, g.vrsta);
+      const b = speciesBadge(g.vrsta, naziv);
+      const pct = shareOfMax(g.komada, maxVrsta);
+      return `<li class="st-vrsta" data-vrsta="${escapeHtml(g.vrsta)}"><span class="div-emblem" style="background:${escapeHtml(b.boja)}" aria-hidden="true">${escapeHtml(b.znak)}</span>
+        <div class="st-vrsta-tekst"><b>${escapeHtml(naziv)}</b><span class="st-traka-bar"><i style="width:${pct}%"></i></span></div>
+        <span class="st-vrsta-broj"><b>${g.komada}</b> kom.<br><span class="sitno">${escapeHtml(kg(g.kg))} kg</span></span></li>`;
+    }).join('') || '<li class="sitno">Nema prijavljenog ulova u ovom periodu.</li>';
     const max = Math.max(1, ...s.mjeseci);
-    $('st-mjeseci').innerHTML = s.mjeseci.map((n, i) => `<div class="pr-mj" data-mjesec="${i + 1}" data-n="${n}"><span class="pr-mj-bar"><i style="height:${Math.round((n / max) * 100)}%"></i></span><b>${n || ''}</b><span class="sitno">${MJESECI[i]}</span></div>`).join('');
+    const nowMonth = String(year) === String(new Date().getFullYear()) ? new Date().getMonth() + 1 : null;
+    $('st-mjeseci').innerHTML = s.mjeseci.map((n, i) => `<div class="pr-mj" data-mjesec="${i + 1}" data-n="${n}"${nowMonth === i + 1 ? ' data-sada' : ''}><span class="pr-mj-bar"><i style="height:${Math.round((n / max) * 100)}%"></i></span><b>${n || ''}</b><span class="sitno">${MJESECI[i]}</span></div>`).join('');
+    const best = bestMonth(s.mjeseci);
+    $('st-mjesec-najbolji').textContent = best ? `Najviše ulova: ${MJESECI_PUNI[best.mjesec - 1]} (${best.komada} kom.)` : '';
   };
 
   const renderRating = () => {

@@ -155,6 +155,11 @@ test('Statistika (administrator): društvo, po revirima i sekcijama, godina i iz
   await expect(page.locator('#st-reviri .tr-kartica')).toHaveCount(2);
   await expect(page.locator('#st-sekcije .tr-kartica')).toHaveCount(2);
   await expect(page.locator('#st-mjeseci .pr-mj[data-mjesec="3"]')).toHaveAttribute('data-n', '2');
+  // kartice grupa imaju brojeve i traku odaziva, vrste emblem i traku udjela, ispod mjeseci je najbolji mjesec
+  await expect(page.locator('#st-reviri .st-traka').first()).toHaveAttribute('data-pct', /^\d+$/);
+  await expect(page.locator('#st-vrste .st-vrsta')).toHaveCount(2);
+  await expect(page.locator('#st-vrste .st-vrsta').first().locator('.div-emblem')).toBeVisible();
+  await expect(page.locator('#st-mjesec-najbolji')).toContainText('Najviše ulova');
   const first = calls.find((c) => c.name === 'statistika_ulov');
   expect(first.args).toMatchObject({ p_sek: null, p_revir: null, p_od: `${new Date().getFullYear()}-01-01` });
   // sekcija

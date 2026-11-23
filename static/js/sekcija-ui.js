@@ -17,6 +17,7 @@ import { trailEnabled } from './lov-tragovi-ui.js';
 import { avatarOf } from './profil-ui.js';
 import { logoStyle } from './sekcija-logo.js';
 import { initialsOf } from './lokacija.js';
+import { huntDateText } from './lov.js';
 import { myStatus, pendingRequests, pristupText, creationMode, isLeadership, seesSectionList, groupSectionsByRevir } from './sekcije.js';
 import {
   validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES, KANAL_RUKOVODSTVO,
@@ -243,7 +244,7 @@ export function initSekcijaEkran(L, map) {
     const odstrel = live && extra.lovId === lov.id ? summarizeHarvest(extra.odstrel.map((o) => ({ vrsta: o.vrsta, tezina: o.tezina }))) : [];
     const traceOn = trailEnabled(lov.id);
     return `<div class="sk-lov-glava"><b>${escapeHtml(lov.naziv)}</b><span class="lov-status" data-status="${lov.status}">${live ? 'U TOKU' : lov.status === 'zavrsen' ? 'Završen' : 'Planiran'}</span></div>
-      <p class="sitno">${escapeHtml(String(lov.datum))}</p>
+      <p class="lk-datum">${escapeHtml(huntDateText(lov.datum))}</p>
       <div class="sk-statovi">
         <div data-stat="prisutnih"><b>${ucesnici.length}</b><span>prisutnih</span></div>
         ${live ? `<div data-stat="aktivnih"><b>${aktivnih}</b><span>aktivnih sada</span></div>` : ''}
@@ -325,6 +326,7 @@ export function initSekcijaEkran(L, map) {
       </li>`;
     }).join('') || `<li class="sitno">${rows.length ? 'Nijedan lovac ne odgovara pretrazi.' : 'Nema članova.'}</li>`;
 
+    queueMicrotask(() => document.dispatchEvent(new Event('sekcija:nacrtana')));
     // poruke
     const msgs = poruke.filter((m) => m.sekcija_id === s.id);
     $('sk-poruke').innerHTML = msgs.map((m) => `<div class="poruka-red${m.autor_id === me()?.id ? ' moja' : ''}" data-id="${escapeHtml(m.id)}">
@@ -359,7 +361,7 @@ export function initSekcijaEkran(L, map) {
       </dl>
       <h4>Lovovi sekcije</h4>
       <ul class="spisak">${huntsOfSection.map((z) => `<li class="trag-red" data-lov="${escapeHtml(z.lov.id)}">
-        <b>${escapeHtml(z.lov.naziv)}</b> <span class="sitno">${escapeHtml(String(z.lov.datum))} · ${STATUS_LOVA[z.lov.status] || z.lov.status} · učesnika ${z.ucesnici.length} · stanova ${z.stanovi.length}</span>
+        <b>${escapeHtml(z.lov.naziv)}</b> <span class="sitno">${escapeHtml(huntDateText(z.lov.datum))} · ${STATUS_LOVA[z.lov.status] || z.lov.status} · učesnika ${z.ucesnici.length} · stanova ${z.stanovi.length}</span>
         <button type="button" class="dugme" data-akcija="raspored" data-lov="${escapeHtml(z.lov.id)}">Raspored na karti</button></li>`).join('') || '<li class="sitno">Još nema lovova ove sekcije (preuzimaju se uz internet).</li>'}</ul>`;
     markRead();
   };
@@ -405,6 +407,23 @@ export function initSekcijaEkran(L, map) {
     const b = e.target.closest('[data-cilj]');
     if (b) $(b.dataset.cilj).scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+  // Traka dijelova pokazuje gdje se lovac nalazi: aktivan je zadnji dio čiji vrh je prošao ispod trake.
+  const markNav = () => {
+    const navBottom = $('sk-nav').getBoundingClientRect().bottom;
+    // Redoslijed dugmadi u traci nije isti kao redoslijed kartica: bira se kartica sa najnižim vrhom koji je prošao traku.
+    let current = null;
+    let best = -Infinity;
+    for (const b of $('sk-nav').querySelectorAll('[data-cilj]')) {
+      const t = $(b.dataset.cilj);
+      if (b.hidden || !t || t.hidden) continue;
+      const top = t.getBoundingClientRect().top;
+      if (top <= navBottom + 24 && top > best) { best = top; current = b; }
+    }
+    if (!current) current = [...$('sk-nav').querySelectorAll('[data-cilj]')].find((b) => !b.hidden && !$(b.dataset.cilj)?.hidden) || null;
+    $('sk-nav').querySelectorAll('[data-cilj]').forEach((b) => b.setAttribute('aria-current', String(b === current)));
+  };
+  screen.addEventListener('scroll', markNav, { passive: true });
+  document.addEventListener('sekcija:nacrtana', markNav);
   $('btn-sk-novi').addEventListener('click', () => document.dispatchEvent(new CustomEvent('lovac:novi', { detail: { sekcijaId: selected()?.id } })));
   $('btn-sk-pristup').addEventListener('click', () => { close(); $('btn-sekcije').click(); });
 

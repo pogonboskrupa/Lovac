@@ -85,3 +85,15 @@ export function buildStats({ ulov = [], lovovi = [] }) {
     sekcije, reviri, vrste: [...vrste.values()].sort((a, b) => b.komada - a.komada || b.kg - a.kg), mjeseci,
   };
 }
+
+// Udio vrijednosti u najvećoj (za trake poređenja), 0–100; najveća grupa je uvijek 100 %.
+export function shareOfMax(n, max) {
+  return max > 0 ? Math.round((Math.max(0, n) / max) * 100) : 0;
+}
+
+// Mjesec sa najviše ulova ({ mjesec 1–12, komada }) ili null kad nema ulova.
+export function bestMonth(mjeseci) {
+  let best = null;
+  mjeseci.forEach((n, i) => { if (n > 0 && (!best || n > best.komada)) best = { mjesec: i + 1, komada: n }; });
+  return best;
+}

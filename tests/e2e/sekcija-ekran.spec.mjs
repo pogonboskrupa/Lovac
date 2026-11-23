@@ -117,6 +117,12 @@ test('dugme u navigaciji nosi ime sekcije; ekran pokazuje članove i ko je aktiv
   // tekući lov
   await expect(page.locator('#sk-lov')).toContainText('Pogon Grmeč');
   await expect(page.locator('#sk-lov')).toContainText('U TOKU');
+  // datum lova je čitljiv (dan u sedmici), ne ISO; traka dijelova označava gdje je lovac
+  await expect(page.locator('#sk-lov .lk-datum')).toHaveText(/^[a-zčćšžđ]+, \d{1,2}\.\d{1,2}\.\d{4}\.$/);
+  await expect(page.locator('#sk-nav [aria-current="true"]')).toHaveCount(1);
+  // pomak do kartice lova označava "Lov" (traka ima drugačiji redoslijed od kartica)
+  await page.locator('#sk-k-lov').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  await expect(page.locator('#sk-nav [aria-current="true"]')).toHaveAttribute('data-cilj', 'sk-k-lov');
   await expect(page.locator('#sk-lov [data-stat="aktivnih"] b')).toHaveText('1');
   await expect(page.locator('#sk-stat-aktivnih')).toHaveText('1');
   await expect(page.locator('#sk-stat-clanova')).toHaveText('3');

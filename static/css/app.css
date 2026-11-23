@@ -1115,3 +1115,37 @@ svg[hidden] { display: none; }
 .obj-vrste { flex-wrap: wrap; overflow-x: visible; }
 .obj-vrste { margin-top: 8px; }
 #objekti .segment button[aria-pressed="true"] .sitno { color: inherit; }
+
+/* Statistika: kartice grupa sa trakom odaziva, vrste sa emblemom i trakom udjela, tekući mjesec */
+.st-grupa { gap: 8px; }
+.st-grupa-glava { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.st-grupa-glava b { font-size: 17px; }
+.st-brojke { display: flex; gap: 6px; }
+.st-brojke span { flex: 1; padding: 6px 4px; border-radius: 10px; background: var(--dugme); color: var(--dugme-tekst); text-align: center; font-size: 13px; }
+.st-brojke b { display: block; font-size: 18px; }
+.st-traka { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 14px; }
+.st-traka-bar { display: block; height: 10px; border-radius: 999px; background: var(--dugme); overflow: hidden; }
+.st-traka-bar i { display: block; height: 100%; border-radius: 999px; background: var(--naglasak); }
+.st-vrste { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.st-vrsta { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--povrsina); border: 1.5px solid var(--okvir); }
+.st-vrsta-tekst { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.st-vrsta-broj { text-align: right; font-size: 14px; }
+.st-vrsta-broj b { font-size: 18px; }
+.pr-mj[data-sada] .sitno { color: var(--naglasak); font-weight: 800; }
+.st-najbolji { font-weight: 700; margin: 8px 0 4px; }
+.st-najbolji:empty { display: none; }
+#statistika :is(.tr-kartica, .p-kartica) { border: 1.5px solid var(--okvir); box-shadow: none; }
+#statistika :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
+#statistika :is(.segment button[aria-pressed="true"], .dugme.glavno) { border: 1.5px solid var(--naglasak); }
+#statistika select { border: 2px solid var(--okvir); }
+
+/* Tab sekcije: okviri, čitljiva dugmad člana, aktivni dio u traci */
+#sekcija-ekran :is(.sk-kartica, .p-kartica, #sk-clanovi .clan-red) { border: 1.5px solid var(--okvir); box-shadow: none; }
+#sekcija-ekran .sk-nav button { border: 1.5px solid var(--okvir); }
+#sekcija-ekran .sk-nav button[aria-current="true"] { background: var(--naglasak); color: var(--naglasak-tekst); border-color: var(--naglasak); }
+#sekcija-ekran :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
+#sekcija-ekran :is(.segment button[aria-pressed="true"], .dugme.glavno) { border: 1.5px solid var(--naglasak); }
+#sekcija-ekran :is(input, select, textarea) { border: 2px solid var(--okvir); }
+#sekcija-ekran .clan-akcije { display: flex; flex-wrap: wrap; gap: 6px; }
+#sekcija-ekran .clan-akcije .dugme { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: nowrap; }
+#sekcija-ekran .sk-lovci { border: 2px solid var(--naglasak); }
