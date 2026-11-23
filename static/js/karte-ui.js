@@ -197,7 +197,7 @@ export function initKarte(L, map, registerTeren, repo) {
     $('btn-teren-preuzmi').disabled = kind === 'teren';
     $('btn-karte-uvoz').disabled = kind === 'teren';
     $('teren-napredak').hidden = kind !== 'teren';
-    if (kind === 'teren') { $('btn-teren-preuzmi').textContent = 'Preuzimam…'; $('teren-napredak').value = 0; }
+    if (kind === 'teren') { $('btn-teren-preuzmi').textContent = 'Preuzimam…'; $('teren-napredak').value = 0; speedText = ''; }
     renderTeren();
   };
   // Uvoz se ne zaključava: ako lovac odustane od izbora fajla, aplikacija ne dobije nikakav odgovor.
@@ -228,9 +228,14 @@ export function initKarte(L, map, registerTeren, repo) {
     toast('Teren uklonjen sa telefona');
   });
 
+  let speedText = ''; // "3,4 MB/s · još 2 min" iz native preuzimanja u dijelovima
+  globalThis.__karteBrzina = (t) => {
+    speedText = String(t || '');
+    if (transfer === 'teren') $('teren-preuzimanje').textContent = `Preuzimam teren… ${$('teren-napredak').value} %${speedText ? ` · ${speedText}` : ''}`;
+  };
   globalThis.__karteNapredak = (pct) => {
     if (transfer === 'teren') {
-      $('teren-preuzimanje').textContent = `Preuzimam teren… ${pct} %`;
+      $('teren-preuzimanje').textContent = `Preuzimam teren… ${pct} %${speedText ? ` · ${speedText}` : ''}`;
       delete $('teren-preuzimanje').dataset.greska;
       $('teren-napredak').value = Number(pct) || 0;
     } else {

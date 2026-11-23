@@ -52,6 +52,9 @@ test('Teren nije preuzet: izbor vodi na preuzimanje sa Release-a, napredak, pa s
   await page.evaluate(() => window.__karteNapredak('37'));
   await expect(page.locator('#teren-preuzimanje')).toHaveText('Preuzimam teren… 37 %');
   await expect(page.locator('#teren-napredak')).toHaveJSProperty('value', 37);
+  // brzina i preostalo vrijeme iz preuzimanja u dijelovima
+  await page.evaluate(() => window.__karteBrzina('3,4 MB/s · još 2 min'));
+  await expect(page.locator('#teren-preuzimanje')).toHaveText('Preuzimam teren… 37 % · 3,4 MB/s · još 2 min');
 
   const tiles = [];
   await page.route(/appassets\.androidplatform\.net\/mbtiles\//, (r) => { tiles.push(r.request().url()); return r.fulfill({ status: 200, body: PNG, headers: { 'content-type': 'image/png' } }); });

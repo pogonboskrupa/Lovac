@@ -38,3 +38,28 @@ export function formatMessageTime(iso, now = Date.now()) {
   const hm = `${p2(d.getHours())}:${p2(d.getMinutes())}`;
   return d.toDateString() === n.toDateString() ? hm : `${d.getDate()}.${d.getMonth() + 1}. ${hm}`;
 }
+
+// Razgovor sa naslovima dana ("Danas", "Jučer", "5.12.2026.") i grupisanjem: uzastopne poruke istog autora
+// u istom danu ne ponavljaju ime (prva = true). Vraća [{ dan }, { poruka, prva }].
+export function conversationItems(messages, now = Date.now()) {
+  const dayKey = (t) => new Date(t).toDateString();
+  const today = dayKey(now);
+  const yesterday = dayKey(now - 86400000);
+  const label = (t) => {
+    const k = dayKey(t);
+    if (k === today) return 'Danas';
+    if (k === yesterday) return 'Jučer';
+    const d = new Date(t);
+    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}.`;
+  };
+  const out = [];
+  let lastDay = null;
+  let lastAuthor = null;
+  for (const m of messages) {
+    const k = dayKey(m.created_at);
+    if (k !== lastDay) { out.push({ dan: label(m.created_at) }); lastDay = k; lastAuthor = null; }
+    out.push({ poruka: m, prva: m.autor_id !== lastAuthor });
+    lastAuthor = m.autor_id;
+  }
+  return out;
+}

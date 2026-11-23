@@ -14,6 +14,11 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -88,29 +93,63 @@ public class KarteBridge {
 
     private static final java.util.Set<String> U_TOKU = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
-    // Preuzimanje u komadima (fajl može imati stotine MB) uz napredak; GitHub preusmjerava na svoj CDN.
+    // Preuzimanje velikog fajla (stotine MB). Jedna konekcija prema GitHub-ovom CDN-u je ograničena brzinom po konekciji,
+    // pa se fajl, kad server podržava Range, preuzima u DIJELOVA paralelnih dijelova; svaki dio se sam nastavlja od mjesta
+    // gdje je veza pukla. Bez Range podrške ide stari put (jedan tok). Napredak, brzina i preostalo vrijeme idu u JS.
+    private static final int DIJELOVA = 4;
+    private static final int POKUSAJA = 5;
+
+    private static HttpURLConnection open(String url, String range) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(30000);
+        c.setInstanceFollowRedirects(true);
+        if (range != null) c.setRequestProperty("Range", range);
+        return c;
+    }
+
+    // "bytes 0-0/552333312" -> 552333312; -1 ako server ne javlja ukupnu veličinu.
+    static long totalFromContentRange(String header) {
+        if (header == null) return -1;
+        Matcher m = Pattern.compile("/(\\d+)\\s*$").matcher(header);
+        return m.find() ? Long.parseLong(m.group(1)) : -1;
+    }
+
     private void download(String url, String name) {
         File out = new File(MbtilesStore.dir(activity), name);
         File tmp = new File(out.getPath() + ".dio");
-        HttpURLConnection c = null;
         try {
-            c = (HttpURLConnection) new URL(url).openConnection();
-            c.setConnectTimeout(15000);
-            c.setReadTimeout(30000);
-            c.setInstanceFollowRedirects(true);
-            int code = c.getResponseCode();
-            if (code != 200) {
-                js("__karteGreska", code == 404
-                        ? "Teren još nije objavljen (Release \"karte\" nema fajl " + name + ")"
-                        : "Server je vratio grešku " + code);
+            HttpURLConnection probe = open(url, "bytes=0-0");
+            int code = probe.getResponseCode();
+            long total = code == 206 ? totalFromContentRange(probe.getHeaderField("Content-Range")) : probe.getContentLengthLong();
+            probe.disconnect();
+            if (code == 404) {
+                js("__karteGreska", "Teren još nije objavljen (Release \"karte\" nema fajl " + name + ")");
                 return;
             }
-            long total = c.getContentLengthLong();
+            if (code != 206 && code != 200) {
+                js("__karteGreska", "Server je vratio grešku " + code);
+                return;
+            }
             File dir = MbtilesStore.dir(activity);
             if (total > 0 && dir.getUsableSpace() < total + total / 10) {
                 js("__karteGreska", "Nema dovoljno prostora na telefonu za " + (total / 1048576) + " MB");
                 return;
             }
+            if (code == 206 && total > 8L * 1048576) downloadParallel(url, tmp, total);
+            else downloadSingle(url, tmp);
+            finishImport(name, tmp, out);
+        } catch (Exception e) {
+            Log.e("Lovac", "Preuzimanje karte", e);
+            if (tmp.exists() && !tmp.delete()) Log.w("Lovac", "Privremeni fajl nije obrisan");
+            js("__karteGreska", "Preuzimanje nije uspjelo (provjeri internet): " + e.getMessage());
+        }
+    }
+
+    private void downloadSingle(String url, File tmp) throws Exception {
+        HttpURLConnection c = open(url, null);
+        try {
+            long total = c.getContentLengthLong();
             try (InputStream in = c.getInputStream(); FileOutputStream os = new FileOutputStream(tmp)) {
                 byte[] buf = new byte[1 << 16];
                 long done = 0;
@@ -126,14 +165,94 @@ public class KarteBridge {
                 }
                 os.getFD().sync();
             }
-            finishImport(name, tmp, out);
-        } catch (Exception e) {
-            Log.e("Lovac", "Preuzimanje karte", e);
-            if (tmp.exists() && !tmp.delete()) Log.w("Lovac", "Privremeni fajl nije obrisan");
-            js("__karteGreska", "Preuzimanje nije uspjelo (provjeri internet): " + e.getMessage());
         } finally {
-            if (c != null) c.disconnect();
+            c.disconnect();
         }
+    }
+
+    private void downloadParallel(String url, File tmp, long total) throws Exception {
+        try (RandomAccessFile raf = new RandomAccessFile(tmp, "rw")) { raf.setLength(total); }
+        AtomicLong done = new AtomicLong();
+        AtomicBoolean failed = new AtomicBoolean(false);
+        final Exception[] error = new Exception[1];
+        long part = (total + DIJELOVA - 1) / DIJELOVA;
+        Thread[] workers = new Thread[DIJELOVA];
+        for (int i = 0; i < DIJELOVA; i++) {
+            final long start = i * part;
+            final long end = Math.min(total, start + part) - 1;
+            workers[i] = new Thread(() -> {
+                try { downloadRange(url, tmp, start, end, done, failed); } catch (Exception e) {
+                    failed.set(true);
+                    synchronized (error) { if (error[0] == null) error[0] = e; }
+                }
+            });
+            workers[i].start();
+        }
+        long t0 = System.currentTimeMillis();
+        long lastDone = 0;
+        long lastT = t0;
+        double speed = 0;
+        int lastPct = -1;
+        while (true) {
+            boolean alive = false;
+            for (Thread w : workers) alive |= w.isAlive();
+            long d = done.get();
+            long now = System.currentTimeMillis();
+            int pct = (int) (d * 100 / total);
+            if (now - lastT >= 1000) {
+                double inst = (d - lastDone) * 1000.0 / (now - lastT);
+                speed = speed == 0 ? inst : speed * 0.7 + inst * 0.3; // glađenje
+                lastDone = d;
+                lastT = now;
+                js("__karteBrzina", speedText(speed, total - d));
+            }
+            if (pct != lastPct) { lastPct = pct; js("__karteNapredak", String.valueOf(pct)); }
+            if (!alive) break;
+            Thread.sleep(250);
+        }
+        if (failed.get()) throw error[0] != null ? error[0] : new Exception("dio fajla nije preuzet");
+        if (done.get() < total) throw new Exception("fajl nije cijel");
+    }
+
+    private void downloadRange(String url, File tmp, long start, long end, AtomicLong done, AtomicBoolean failed) throws Exception {
+        long pos = start;
+        int attempt = 0;
+        while (pos <= end) {
+            if (failed.get()) return;
+            try {
+                HttpURLConnection c = open(url, "bytes=" + pos + "-" + end);
+                try {
+                    if (c.getResponseCode() != 206) throw new Exception("server ne podržava nastavak (" + c.getResponseCode() + ")");
+                    try (InputStream in = c.getInputStream(); RandomAccessFile raf = new RandomAccessFile(tmp, "rw")) {
+                        raf.seek(pos);
+                        byte[] buf = new byte[1 << 16];
+                        int n;
+                        while (pos <= end && (n = in.read(buf)) > 0) {
+                            int len = (int) Math.min(n, end - pos + 1);
+                            raf.write(buf, 0, len);
+                            pos += len;
+                            done.addAndGet(len);
+                        }
+                    }
+                } finally {
+                    c.disconnect();
+                }
+                attempt = 0;
+            } catch (Exception e) {
+                if (++attempt > POKUSAJA) throw e;
+                Log.w("Lovac", "Dio karte se nastavlja (pokušaj " + attempt + ")", e);
+                Thread.sleep(1500L * attempt);
+            }
+        }
+    }
+
+    // "3,4 MB/s · još 2 min"
+    static String speedText(double bytesPerSec, long left) {
+        if (bytesPerSec <= 0) return "";
+        String mbs = String.format(java.util.Locale.ROOT, "%.1f", bytesPerSec / 1048576).replace('.', ',');
+        long sec = (long) (left / bytesPerSec);
+        String eta = sec >= 60 ? "još " + (sec + 59) / 60 + " min" : "još " + Math.max(1, sec) + " s";
+        return mbs + " MB/s · " + eta;
     }
 
     // Zamjenjuje staru kartu novom tek kad je fajl cijel; neispravan fajl se uklanja.

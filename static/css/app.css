@@ -1183,3 +1183,17 @@ svg[hidden] { display: none; }
 #op-period { margin-top: 10px; }
 #azur-napredak { width: 100%; height: 14px; accent-color: var(--naglasak); }
 #azur-preuzimanje:empty { display: none; }
+
+/* Poruke sekcije: naslovi dana, inicijali sagovornika, nizovi istog autora, brze poruke u jednom redu */
+.poruka-dan { display: flex; justify-content: center; margin: 6px 0 2px; }
+.poruka-dan span { padding: 2px 12px; border-radius: 999px; background: var(--dugme); color: var(--dugme-tekst); font-size: 12px; font-weight: 700; }
+.poruka-red { position: relative; }
+.poruka-red:not(.moja) { margin-left: 34px; }
+.poruka-red.nastavak { margin-top: -2px; }
+.poruka-red .poruka-vrijeme { opacity: .7; }
+.poruka-av { position: absolute; left: -34px; top: 0; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--povrsina); border: 1.5px solid var(--okvir); font-size: 11px; font-weight: 800; color: var(--tekst); }
+.poruke-prazno { text-align: center; padding: 12px 4px; }
+#sekcija-ekran .brze-poruke { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+#sekcija-ekran .brze-poruke button { flex: none; border: 1.5px solid var(--okvir); }
+#sekcija-ekran .poruke { border: 1.5px solid var(--okvir); }
+#sekcija-ekran .forma-poruka { margin-top: 10px; }

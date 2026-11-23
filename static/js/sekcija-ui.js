@@ -20,7 +20,7 @@ import { initialsOf } from './lokacija.js';
 import { huntDateText } from './lov.js';
 import { myStatus, pendingRequests, pristupText, creationMode, isLeadership, seesSectionList, groupSectionsByRevir } from './sekcije.js';
 import {
-  validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES, KANAL_RUKOVODSTVO,
+  validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES, KANAL_RUKOVODSTVO, conversationItems,
 } from './poruke.js';
 import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
@@ -257,6 +257,18 @@ export function initSekcijaEkran(L, map) {
       ${huntControls(s, cur, st)}`;
   };
 
+  // Jedan način crtanja razgovora za sekciju i rukovodstvo: naslovi dana, ime i inicijali samo na prvoj poruci niza.
+  const chatHtml = (list, showHunt) => conversationItems(list).map((it) => {
+    if (it.dan) return `<div class="poruka-dan"><span>${escapeHtml(it.dan)}</span></div>`;
+    const m = it.poruka;
+    const mine = m.autor_id === me()?.id;
+    const name = mine ? 'Ti' : memberName(m.autor_id);
+    const head = it.prva ? `<small>${escapeHtml(name)} · ${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}${showHunt && m.lov_id ? ' · u lovu' : ''}</small>`
+      : `<small class="poruka-vrijeme">${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}</small>`;
+    const av = !mine && it.prva ? `<span class="poruka-av" aria-hidden="true">${escapeHtml(initialsOf(name))}</span>` : '';
+    return `<div class="poruka-red${mine ? ' moja' : ''}${it.prva ? '' : ' nastavak'}" data-id="${escapeHtml(m.id)}">${av}${head}${escapeHtml(m.tekst)}</div>`;
+  }).join('');
+
   const render = () => {
     const list = mine();
     const s = selected();
@@ -329,9 +341,7 @@ export function initSekcijaEkran(L, map) {
     queueMicrotask(() => document.dispatchEvent(new Event('sekcija:nacrtana')));
     // poruke
     const msgs = poruke.filter((m) => m.sekcija_id === s.id);
-    $('sk-poruke').innerHTML = msgs.map((m) => `<div class="poruka-red${m.autor_id === me()?.id ? ' moja' : ''}" data-id="${escapeHtml(m.id)}">
-      <small>${m.autor_id === me()?.id ? 'Ti' : escapeHtml(memberName(m.autor_id))} · ${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}${m.lov_id ? ' · u lovu' : ''}</small>
-      ${escapeHtml(m.tekst)}</div>`).join('') || '<p class="sitno">Još nema poruka.</p>';
+    $('sk-poruke').innerHTML = chatHtml(msgs, true) || '<p class="sitno poruke-prazno">Još nema poruka. Pošalji prvu ili dodirni brzu poruku ispod.</p>';
     const box = $('sk-poruke');
     box.scrollTop = box.scrollHeight;
     $('sk-brze').innerHTML = QUICK_MESSAGES.map((t) => `<button type="button" data-brza="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
@@ -342,9 +352,7 @@ export function initSekcijaEkran(L, map) {
     $('sk-nav-ruk').hidden = !isLeader;
     if (isLeader) {
       const ruk = rukPoruke();
-      $('sk-ruk-poruke').innerHTML = ruk.map((m) => `<div class="poruka-red${m.autor_id === me()?.id ? ' moja' : ''}" data-id="${escapeHtml(m.id)}">
-        <small>${m.autor_id === me()?.id ? 'Ti' : escapeHtml(memberName(m.autor_id))} · ${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}</small>
-        ${escapeHtml(m.tekst)}</div>`).join('') || '<p class="sitno">Još nema poruka.</p>';
+      $('sk-ruk-poruke').innerHTML = chatHtml(ruk, false) || '<p class="sitno poruke-prazno">Još nema poruka u rukovodstvu.</p>';
       $('sk-ruk-poruke').scrollTop = $('sk-ruk-poruke').scrollHeight;
     }
 
