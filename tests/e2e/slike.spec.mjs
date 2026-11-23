@@ -40,13 +40,19 @@ test('slika čeke na poziciji: čuva se lokalno i prikazuje na karti kao sličic
 
   const marker = page.locator('.slika-marker img');
   await expect(marker).toBeVisible();
+  // dodir na sličicu odmah otvara veliku sliku; Nazad je zatvara
   await marker.click();
-  await expect(page.locator('.slika-popup')).toContainText('Čeka');
-  await expect(page.locator('.slika-popup')).toContainText('Čeka na Vrhu');
-  await page.locator('.slika-popup [data-akcija="velika"]').click();
   await expect(page.locator('#slika-velika')).toBeVisible();
   await expect(page.locator('#slika-velika-opis')).toContainText('Čeka na Vrhu');
   expect(await page.evaluate(() => window.__nazad())).toBe(true);
+  await expect(page.locator('#slika-velika')).toBeHidden();
+  // "Detalji i brisanje" otvara karticu, a "Veća slika" iz nje opet pregled
+  await marker.click();
+  await page.locator('#slika-velika-akcije button', { hasText: 'Detalji' }).click();
+  await expect(page.locator('.slika-popup')).toContainText('Čeka na Vrhu');
+  await page.locator('.slika-popup [data-akcija="velika"]').click();
+  await expect(page.locator('#slika-velika')).toBeVisible();
+  await page.locator('#btn-slika-velika-zatvori').click();
   await expect(page.locator('#slika-velika')).toBeHidden();
 
   // sačuvano: ostaje i poslije ponovnog pokretanja
@@ -62,6 +68,7 @@ test('slika ulova i objekta se razlikuju bojom; brisanje drugim dodirom briše i
   await page.locator('#btn-slika-sacuvaj').click();
   await expect(page.locator('.slika-marker')).toHaveCSS('--boja', '#dc2626');
   await page.locator('.slika-marker img').click();
+  await page.locator('#slika-velika-akcije button', { hasText: 'Detalji' }).click();
   const del = page.locator('.slika-popup [data-akcija="obrisi"]');
   await del.click();
   expect(await all(page, 'slike')).toHaveLength(1); // prvi dodir samo traži potvrdu

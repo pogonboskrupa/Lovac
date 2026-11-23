@@ -586,9 +586,21 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .slika-popup .dugme { margin-top: 4px; min-height: 44px; }
 .slika-velika { position: fixed; inset: 0; z-index: 7000; background: rgba(0,0,0,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; }
 .slika-velika[hidden] { display: none; }
-.slika-velika img { max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 8px; }
+.slika-velika img { max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 8px; cursor: zoom-in; }
 .slika-velika p { margin: 0; color: #ffffff; text-align: center; }
-.slika-velika .ikona-dugme { position: absolute; top: calc(8px + env(safe-area-inset-top)); right: 8px; }
+.slika-x, .slika-pun {
+  position: absolute; top: calc(12px + env(safe-area-inset-top)); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%;
+  display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0, 0, 0, .5);
+}
+.slika-x { right: 12px; background: #dc2626; color: #ffffff; }
+.slika-x .ic { width: 28px; height: 28px; stroke-width: 3; }
+.slika-pun { left: 12px; background: rgba(255, 255, 255, .16); color: #ffffff; }
+.slika-pun[aria-pressed="true"] { background: rgba(255, 255, 255, .32); }
+/* Cijeli ekran: slika zauzima cijeli ekran, bez opisa i dugmadi (X i povratak ostaju). */
+.slika-velika.pun { padding: 0; background: #000000; }
+.slika-velika.pun img { width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; border-radius: 0; cursor: zoom-out; }
+.slika-velika.pun p, .slika-velika.pun #slika-velika-akcije { display: none; }
+.slika-velika #slika-velika-akcije { justify-content: center; }
 .slika-popup-img { max-height: 110px; }
 .slika-popup .red-dugmadi { flex-wrap: nowrap; gap: 6px; margin-top: 4px; }
 .slika-popup .dugme { flex: 1; padding: 0 8px; margin-top: 0; }

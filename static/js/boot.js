@@ -55,6 +55,7 @@ import { initSync } from './sync.js';
 import { initNavigation } from './navigacija.js';
 import { refreshAllSpiskovi } from './spiskovi.js';
 import { initDodaj } from './dodaj-ui.js';
+import { initImageViewer } from './slika-pregled.js';
 import { hasAppAccess, inTrial, trialBannerText, waitingText } from './probni.js';
 import { initLovDanas } from './lov-danas-ui.js';
 import { initMapDisplaySettings } from './razmjer-prikaz.js';
@@ -136,6 +137,7 @@ function enter(screen) {
       ['upute', () => initUpute()],
       ['kontakt', () => initKontakt()],
       ['propisi', () => initPropisiAdmin()],
+      ['slika-pregled', () => initImageViewer()],
     ]) {
       try { fn(); } catch (err) { console.error(name, err); }
     }

@@ -1,6 +1,7 @@
 // Arhiva lova: prošli i tekući lovovi sekcija sa učesnicima, početkom i krajem, ulovom, rezultatom, slikama i tragom kretanja.
 // Spisak radi iz keša (offline); detalji se preuzimaju kad ima veze i keširaju. Slike idu kroz izlaznu kutiju (IndexedDB).
 
+import { openImageViewer } from './slika-pregled.js';
 import { getClient, cachedProfile } from './auth.js';
 import { idbAll, idbGet, idbPut, idbDelete } from './db.js';
 import { connectionQuality } from './net.js';
@@ -203,9 +204,7 @@ export function initArhiva() {
     const s = (details.get(currentId)?.slike || []).find((x) => x.id === id);
     if (!s) return;
     if (e.target.closest('[data-akcija="obrisi"]')) return; // brisanje ima svoj rukovalac
-    $('slika-velika-img').src = s.mala;
-    $('slika-velika-opis').textContent = `${s.opis || 'Slika lova'} · ${memberName(s.autor_id)}`;
-    $('slika-velika').hidden = false;
+    openImageViewer({ src: s.mala, caption: `${s.opis || 'Slika lova'} · ${memberName(s.autor_id)}` });
     // velika slika: prvo keš na telefonu, pa server; na serveru traje samo nekoliko dana (migracija 018), sličica ostaje
     const cached = await idbGet('arhiva', `slika:${id}`).catch(() => null);
     if (cached?.slika) { $('slika-velika-img').src = cached.slika; return; }

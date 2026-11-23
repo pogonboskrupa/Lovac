@@ -2,6 +2,7 @@
 // dodir otvara veću sliku, opis, udaljenost i brisanje. Slike ostaju na telefonu (ne šalju se na server).
 
 import { gateLayer } from './razmjer-prikaz.js';
+import { openImageViewer } from './slika-pregled.js';
 import { idbAll, idbPut, idbDelete } from './db.js';
 import { savePhoto, deletePhoto, photoUrl, makeThumbnail } from './foto.js';
 import { uuid } from './zapisi.js';
@@ -21,9 +22,7 @@ export function initSlike(L, map) {
   gateLayer(map, layer, 'slike');
   const sheet = $('slika-forma');
   const form = $('forma-slika');
-  const viewer = $('slika-velika');
   let draft = null; // { kategorija, foto, mala, lat, lon, izvor }
-  let viewerUrl = null;
 
   const icon = (s) => L.divIcon({
     className: 'slika-ikona',
@@ -39,23 +38,24 @@ export function initSlike(L, map) {
     <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="velika">Veća slika</button>
     <button type="button" class="dugme" data-akcija="obrisi">Obriši</button></div></div>`;
 
+  const POPUP_OPC = { minWidth: 190, autoPanPaddingTopLeft: [10, 90], autoPanPaddingBottomRight: [10, 100] };
   const renderLayer = async () => {
     layer.clearLayers();
     for (const s of sortSlike(await idbAll(STORE).catch(() => [])).reverse()) {
-      L.marker([s.lat, s.lon], { icon: icon(s), keyboard: false }).bindPopup(popupHtml(s), { minWidth: 190, autoPanPaddingTopLeft: [10, 90], autoPanPaddingBottomRight: [10, 100] }).addTo(layer);
+      // Dodir na sličicu odmah otvara veliku sliku; detalji i brisanje su dugme ispod nje.
+      L.marker([s.lat, s.lon], { icon: icon(s), keyboard: false }).on('click', () => openViewer(s, true)).addTo(layer);
     }
   };
 
-  // ---------- veća slika ----------
-  const closeViewer = () => {
-    viewer.hidden = true;
-    if (viewerUrl) { URL.revokeObjectURL(viewerUrl); viewerUrl = null; }
-  };
-  const openViewer = async (s) => {
-    viewerUrl = await photoUrl(s.foto);
-    $('slika-velika-img').src = viewerUrl || s.mala;
-    $('slika-velika-opis').textContent = `${pictureCategoryName(s.kategorija)}${s.opis ? ` — ${s.opis}` : ''} · ${whenText(s.vrijeme)}`;
-    viewer.hidden = false;
+  // ---------- veća slika (zajednički pregled preko cijelog ekrana) ----------
+  const openViewer = async (s, withDetails = false) => {
+    const url = await photoUrl(s.foto).catch(() => null);
+    openImageViewer({
+      src: url || s.mala,
+      revoke: Boolean(url),
+      caption: `${pictureCategoryName(s.kategorija)}${s.opis ? ` — ${s.opis}` : ''} · ${whenText(s.vrijeme)}`,
+      actions: withDetails ? [{ label: 'Detalji i brisanje', onClick: () => map.openPopup(L.popup(POPUP_OPC).setLatLng([s.lat, s.lon]).setContent(popupHtml(s))) }] : [],
+    });
   };
 
   // popup: dugmad se vezuju kad se otvori (sadržaj nastaje tek tada)
@@ -145,10 +145,7 @@ export function initSlike(L, map) {
     toast('Slika je na karti');
   });
 
-  $('btn-slika-velika-zatvori').addEventListener('click', closeViewer);
-  viewer.addEventListener('click', (e) => { if (e.target === viewer) closeViewer(); });
   registerBackHandler(() => {
-    if (!viewer.hidden) { closeViewer(); return true; }
     if (!sheet.hidden) { close(false); return true; }
     return false;
   });

@@ -8,6 +8,7 @@ import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clamp
 import { cachedProfile } from './auth.js';
 import { savePhoto, deletePhoto, createPhotoStrip, photoUrl } from './foto.js';
 import { gateLayer } from './razmjer-prikaz.js';
+import { openImageViewer } from './slika-pregled.js';
 import { currentFix } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
@@ -59,6 +60,13 @@ export function initOpazanja(L, map) {
       .filter((o) => matchesQuery([lookupNaziv(vrste, o.vrsta), o.napomena], searchText));
   };
 
+  const observationCaption = (o, vrste) => `${lookupNaziv(vrste, o.vrsta)} × ${o.broj} · ${formatWhen(o.vrijeme)} · Vidio: ${observerLabel(o, cachedProfile(), memberName)}`;
+  const openPhoto = async (o, vrste, details) => {
+    const url = await photoUrl(o.fotografije[0]).catch(() => null);
+    if (!url) { details(); return; }
+    openImageViewer({ src: url, revoke: true, caption: observationCaption(o, vrste), actions: [{ label: 'Detalji', onClick: details }] });
+  };
+
   // Kartica opažanja na karti: ko je vidio, šta, kad; vlasnik može podijeliti i obrisati (drugi dodir).
   const popupFor = (o, vrste) => {
     const el = document.createElement('div');
@@ -79,7 +87,8 @@ export function initOpazanja(L, map) {
           urls.push(u);
           const img = document.createElement('img');
           img.src = u;
-          img.alt = 'Slika opažanja';
+          img.alt = 'Slika opažanja — dodirni za veliku sliku';
+          img.addEventListener('click', () => openImageViewer({ src: u, caption: observationCaption(o, vrste) }));
           fotoBox.append(img);
         }
         if (!urls.length) fotoBox.textContent = 'Slika nije na ovom telefonu.';
@@ -130,9 +139,11 @@ export function initOpazanja(L, map) {
       if (url) {
         // Opažanje sa slikom: sličica u okviru boje vrste (kao "Slika na poziciji").
         markerUrls.push(url);
+        // Dodir na sličicu odmah otvara veliku sliku; "Detalji" otvara karticu (ko je vidio, dijeli, obriši).
+        const details = () => map.openPopup(L.popup({ ...POPUP_OPC, offset: [0, -58] }).setLatLng([o.lat, o.lon]).setContent(popupFor(o, vrste)));
         L.marker([o.lat, o.lon], {
-          icon: L.divIcon({ className: 'slika-ikona op-slika', html: `<div class="slika-marker" style="--boja:${color}"><img src="${url}" alt=""></div>`, iconSize: [56, 64], iconAnchor: [28, 62], popupAnchor: [0, -58] }),
-        }).bindPopup(() => popupFor(o, vrste), POPUP_OPC).addTo(layer);
+          icon: L.divIcon({ className: 'slika-ikona op-slika', html: `<div class="slika-marker" style="--boja:${color}"><img src="${url}" alt=""></div>`, iconSize: [56, 64], iconAnchor: [28, 62] }),
+        }).on('click', () => openPhoto(o, vrste, details)).addTo(layer);
         return;
       }
       L.circleMarker([o.lat, o.lon], {

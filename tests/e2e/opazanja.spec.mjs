@@ -158,9 +158,29 @@ test('opažanje sa slikom: na karti je sličica, kartica pokazuje sliku; vidi se
   const slika = page.locator('.op-slika .slika-marker img');
   await expect(slika).toHaveCount(1);
   await expect(page.locator('path.op-tacka')).toHaveCount(0);
+  // dodir na sličicu: velika slika preko ekrana, crveni X, cijeli ekran; "Detalji" otvara karticu
   await page.locator('.op-slika').click();
+  const pregled = page.locator('#slika-velika');
+  await expect(pregled).toBeVisible();
+  await expect(page.locator('#slika-velika-opis')).toContainText('Vidio: ti');
+  await expect.poll(() => page.locator('#slika-velika-img').evaluate((i) => i.complete && i.naturalWidth > 0)).toBe(true);
+  expect(await page.locator('#btn-slika-velika-zatvori').evaluate((b) => getComputedStyle(b).backgroundColor)).toBe('rgb(220, 38, 38)');
+  await page.locator('#btn-slika-pun').click();
+  await expect(pregled).toHaveClass(/pun/);
+  const box = await page.locator('#slika-velika-img').boundingBox();
+  const vp = page.viewportSize();
+  expect(Math.round(box.width)).toBe(vp.width);
+  await page.locator('#btn-slika-pun').click();
+  await expect(pregled).not.toHaveClass(/pun/);
+  await page.locator('#slika-velika-akcije button', { hasText: 'Detalji' }).click();
+  await expect(pregled).toBeHidden();
   await expect(page.locator('.leaflet-popup .op-popup-foto img')).toHaveCount(1);
   expect(await page.locator('.leaflet-popup .op-popup-foto img').evaluate((i) => i.complete && i.naturalWidth > 0)).toBe(true);
+  // i slika u kartici se otvara velika; crveni X zatvara
+  await page.locator('.leaflet-popup .op-popup-foto img').click();
+  await expect(pregled).toBeVisible();
+  await page.locator('#btn-slika-velika-zatvori').click();
+  await expect(pregled).toBeHidden();
 
   // zoom 13 (~1:51 000): ne crta se
   await page.evaluate(() => localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 13 })));
