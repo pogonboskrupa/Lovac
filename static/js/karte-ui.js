@@ -33,6 +33,25 @@ export function layerOptions(info) {
   };
 }
 
+// Offline karta (MBTiles) se čita sa telefona, pa je brza: učitava se i DOK se karta pomjera (na telefonu Leaflet
+// zadano čeka da prst stane, pa se na rubovima vidi crna pozadina), sa pojasom od PRELOAD_PX oko ekrana koji se
+// učita unaprijed i većim baferom, da rubovi pri pomjeranju već imaju kartu.
+export const PRELOAD_PX = 256;
+export const OFFLINE_LAYER_OPTIONS = { updateWhenIdle: false, updateWhenZooming: false, updateInterval: 100, keepBuffer: 6 };
+
+let OfflineTileLayer = null;
+export function offlineTileLayer(L, url, options) {
+  if (!OfflineTileLayer) {
+    OfflineTileLayer = L.TileLayer.extend({
+      _getTiledPixelBounds(center) {
+        const b = L.TileLayer.prototype._getTiledPixelBounds.call(this, center);
+        return L.bounds(b.min.subtract([PRELOAD_PX, PRELOAD_PX]), b.max.add([PRELOAD_PX, PRELOAD_PX]));
+      },
+    });
+  }
+  return new OfflineTileLayer(url, { ...OFFLINE_LAYER_OPTIONS, ...options });
+}
+
 const mb = (n) => `${Math.round(n / 1048576)} MB`;
 
 // ---- Teren: karta društva sa servera (MBTiles u GitHub Release-u "karte"), preuzima se u aplikaciji ----
@@ -96,14 +115,16 @@ export function initKarte(L, map, registerTeren, repo) {
   const provider = () => {
     if (!terenInfo) return null;
     if (!terenLayer) {
-      terenLayer = L.tileLayer(mbtilesUrl(TEREN_FILE), { ...layerOptions(terenInfo), zIndex: 1 });
+      terenLayer = offlineTileLayer(L, mbtilesUrl(TEREN_FILE), { ...layerOptions(terenInfo), zIndex: 1 });
       terenLayer.on('add', () => {
+        // Svijetla pozadina (boja papira karte) umjesto tamne dok pločica još nije nacrtana.
+        map.getContainer().classList.add('podloga-teren');
         const v = terenView(terenInfo, map.getZoom(), map.getCenter());
         map.setMinZoom(v.minZoom);
         if (v.fit) map.fitBounds(v.fit, { animate: false });
         else if (v.zoom != null) map.setZoom(v.zoom, { animate: false });
       });
-      terenLayer.on('remove', () => map.setMinZoom(0));
+      terenLayer.on('remove', () => { map.setMinZoom(0); map.getContainer().classList.remove('podloga-teren'); });
     }
     return terenLayer;
   };
@@ -139,7 +160,7 @@ export function initKarte(L, map, registerTeren, repo) {
     const on = shownIds();
     for (const [id, l] of layers) if (!on.has(id) || !maps.some((m) => m.id === id)) { map.removeLayer(l); layers.delete(id); }
     for (const m of maps) {
-      if (on.has(m.id) && !layers.has(m.id)) layers.set(m.id, L.tileLayer(mbtilesUrl(m.id), layerOptions(m)).addTo(map));
+      if (on.has(m.id) && !layers.has(m.id)) layers.set(m.id, offlineTileLayer(L, mbtilesUrl(m.id), layerOptions(m)).addTo(map));
     }
   };
 

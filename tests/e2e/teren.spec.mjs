@@ -102,3 +102,24 @@ test('greška preuzimanja se prikazuje lovcu', async ({ page }) => {
   // poslije greške dugme se otključa za novi pokušaj
   await expect(page.locator('#btn-teren-preuzmi')).toBeEnabled();
 });
+
+test('Teren: pločice se učitavaju i u pojasu oko ekrana (rubovi pri pomjeranju nisu crni), pozadina je svijetla', async ({ page }) => {
+  await bridge(page, { teren: TEREN });
+  await page.route(/appassets\.androidplatform\.net\/mbtiles\//, (r) => r.fulfill({ status: 200, body: PNG, headers: { 'content-type': 'image/png' } }));
+  await page.addInitScript(() => localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 13 })));
+  await page.goto('/');
+  await page.locator('#btn-podloga').click();
+  await page.locator('#meni-podloga [data-podloga="teren"]').click();
+  await expect(page.locator('#karta')).toHaveClass(/podloga-teren/);
+  const izvan = () => page.evaluate(() => {
+    const w = innerWidth; const h = innerHeight;
+    return [...document.querySelectorAll('#karta img.leaflet-tile[src*="/mbtiles/"]')].filter((t) => {
+      const r = t.getBoundingClientRect();
+      return r.left >= w || r.right <= 0 || r.top >= h || r.bottom <= 0;
+    }).length;
+  });
+  await expect.poll(izvan).toBeGreaterThan(0);
+  await page.locator('#btn-podloga').click();
+  await page.locator('#meni-podloga [data-podloga="topo"]').click();
+  await expect(page.locator('#karta')).not.toHaveClass(/podloga-teren/);
+});

@@ -1238,3 +1238,4 @@ svg[hidden] { display: none; }
 .ld-akcije .glavno { grid-column: 1 / -1; }
 #lov-danas, #sk-lov-forma { overflow-y: auto; }
 #sk-lov-forma, #lov-danas { z-index: 3100; }
+#karta.podloga-teren { background: #e7e2d3; }
