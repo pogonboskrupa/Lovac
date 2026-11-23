@@ -527,3 +527,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Greška prijave nosi detalj (v1.0.1)**
 - `auth.js friendlyAuthError`: mrežna greška prijave piše "Nema veze sa serverom (<tehnički detalj>)…", jer bez detalja se "nema interneta" (`Failed to fetch` na svemu) ne razlikuje od servera koji ne prima zahtjeve. Zapis iz prakse: besplatni Supabase projekat se PAUZIRA poslije ~7 dana mirovanja; tada preglednik javi samo `Failed to fetch` (odgovor bez CORS zaglavlja) uz dobar internet — projekat se vraća dugmetom "Restore" u Supabase nadzornoj ploči.
+
+**Moderan ekran prijave (v1.0.2)**
+- `#ekran-prijava` (klasa `ekran-prijava`): hero sa logom (fiksne brend boje, tamnozeleni radijalni gradijent) i kartica koja koristi teme (noć/dan). Tabovi `#pr-mod` Prijava / Novi nalog mijenjaju JEDNO dugme `#btn-prijava` (`value` = `prijava`/`registracija`, pa `e.submitter.value` i testovi sa `button[value=prijava]` rade), polja sa ikonama (`ic-korisnik`, `ic-brava`), prikaz PIN-a (`#btn-pin-prikazi`), nadimak u sklopivom `<details id="pr-nadimak">` (testovi ga prvo otvaraju), vrtilica (`aria-busy`). Poslije uspješne prijave pamti se samo ime/prezime/nadimak (`lovac.prijava.zadnja`, NIKAD PIN). Na stranici postoji još jedno polje `name=pin` (promjena PIN-a) — selektori u testovima idu preko `#forma-prijava`.

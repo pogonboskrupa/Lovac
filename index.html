@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.0.1';
+  const APP_VER = 'v1.0.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -40,6 +40,8 @@
   <symbol id="ic-obj-auto" viewBox="0 0 24 24"><path d="M5 15l1.5-5h11l1.5 5M3 15h18v4H3zM6.5 19v2M17.5 19v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="ic-obj-pin" viewBox="0 0 24 24"><path d="M12 21s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12zM12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="ic-korisnik" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="ic-brava" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
   <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M3 7h11M19 7h2M3 17h2M10 17h11" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16.5" cy="7" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="7.5" cy="17" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5Z" fill="currentColor"/></symbol>
@@ -64,21 +66,38 @@
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
 </svg>
 
-<main id="ekran-prijava" class="ekran ekran-forma" hidden>
-  <img class="logo-prijava" src="static/img/logo-192.png" width="120" height="120" alt="Lovačko društvo Grmeč">
-  <h1>Lovačko društvo "Grmeč"</h1>
-  <form id="forma-prijava" autocomplete="off" novalidate>
-    <label>Ime<input name="ime" required maxlength="40" autocapitalize="words"></label>
-    <label>Prezime<input name="prezime" required maxlength="40" autocapitalize="words"></label>
-    <label>Nadimak ili broj člana <span class="sitno">(samo ako drugi član ima isto ime i prezime)</span><input name="nadimak" maxlength="20" autocapitalize="words"></label>
-    <label>PIN (6–8 cifara)<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required></label>
-    <div class="red-dugmadi">
-      <button type="submit" value="prijava" class="dugme glavno">Prijava</button>
-      <button type="submit" value="registracija" class="dugme">Registracija</button>
+<main id="ekran-prijava" class="ekran ekran-prijava" hidden>
+  <div class="pr-hero">
+    <div class="pr-logo-okvir"><img class="logo-prijava" src="static/img/logo-192.png" width="112" height="112" alt="Lovačko društvo Grmeč"></div>
+    <p class="pr-nadnaslov">Lovačko društvo</p>
+    <h1 class="pr-naslov">Grmeč</h1>
+    <p class="pr-podnaslov">Terenska aplikacija lovaca · Unsko-sanski kanton</p>
+  </div>
+  <section class="pr-kartica" aria-labelledby="pr-mod-naslov">
+    <div id="pr-mod" class="pr-mod" role="tablist" aria-label="Prijava ili novi nalog">
+      <button type="button" role="tab" data-mod="prijava" aria-selected="true">Prijava</button>
+      <button type="button" role="tab" data-mod="registracija" aria-selected="false">Novi nalog</button>
     </div>
-    <p id="prijava-status" class="status" role="status"></p>
-  </form>
-  <p class="sitno">Novi nalog čeka odobrenje administratora društva. <span class="app-ver"></span></p>
+    <h2 id="pr-mod-naslov" class="pr-mod-naslov">Dobro došli</h2>
+    <form id="forma-prijava" autocomplete="off" novalidate>
+      <label class="pr-polje"><span>Ime</span>
+        <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg><input name="ime" required maxlength="40" autocapitalize="words"></span></label>
+      <label class="pr-polje"><span>Prezime</span>
+        <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg><input name="prezime" required maxlength="40" autocapitalize="words"></span></label>
+      <details id="pr-nadimak" class="pr-nadimak">
+        <summary>Imam nadimak ili broj člana</summary>
+        <label class="pr-polje"><span>Nadimak ili broj člana <span class="sitno">(samo ako drugi član ima isto ime i prezime)</span></span>
+          <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg><input name="nadimak" maxlength="20" autocapitalize="words"></span></label>
+      </details>
+      <label class="pr-polje"><span>PIN <span class="sitno">(6–8 cifara)</span></span>
+        <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-brava"/></svg><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required placeholder="••••••">
+        <button type="button" id="btn-pin-prikazi" class="pr-oko" aria-label="Prikaži PIN" aria-pressed="false"><svg class="ic"><use href="#ic-eye"/></svg></button></span></label>
+      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog čeka odobrenje administratora društva. Ako ti nalog pravi grupovođa, ne treba se registrovati.</p>
+      <button type="submit" id="btn-prijava" value="prijava" class="dugme glavno pr-dugme"><span class="pr-vrtilica" aria-hidden="true"></span><span id="btn-prijava-tekst">Prijavi se</span></button>
+      <p id="prijava-status" class="status pr-status" role="status"></p>
+    </form>
+  </section>
+  <p class="pr-podnozje">Poslije prve prijave aplikacija radi i bez signala. <span class="app-ver"></span></p>
 </main>
 
 <main id="ekran-cekanje" class="ekran ekran-forma" hidden>

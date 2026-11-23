@@ -178,27 +178,71 @@ function readForm(form) {
   return { ime: fd.get('ime'), prezime: fd.get('prezime'), nadimak: fd.get('nadimak'), pin: fd.get('pin') };
 }
 
+// Zadnje ime i prezime (bez PIN-a) se pamte da lovac poslije odjave ne kuca sve iznova.
+const ZADNJA_PRIJAVA = 'lovac.prijava.zadnja';
+const MODOVI = {
+  prijava: { naslov: 'Dobro došli', dugme: 'Prijavi se' },
+  registracija: { naslov: 'Novi nalog', dugme: 'Napravi nalog' },
+};
+
 function wireAuthForms() {
   const form = document.getElementById('forma-prijava');
   const status = document.getElementById('prijava-status');
+  const submitBtn = document.getElementById('btn-prijava');
+  let mode = 'prijava';
+  const setMode = (m) => {
+    mode = m;
+    document.querySelectorAll('#pr-mod [data-mod]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.mod === m)));
+    document.getElementById('pr-mod-naslov').textContent = MODOVI[m].naslov;
+    document.getElementById('btn-prijava-tekst').textContent = MODOVI[m].dugme;
+    document.getElementById('pr-reg-napomena').hidden = m !== 'registracija';
+    submitBtn.value = m;
+    status.textContent = '';
+  };
+  document.getElementById('pr-mod')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mod]');
+    if (b) setMode(b.dataset.mod);
+  });
+  document.getElementById('btn-pin-prikazi')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const show = btn.getAttribute('aria-pressed') !== 'true';
+    form.pin.type = show ? 'text' : 'password';
+    btn.setAttribute('aria-pressed', String(show));
+    btn.setAttribute('aria-label', show ? 'Sakrij PIN' : 'Prikaži PIN');
+  });
+  try {
+    const last = JSON.parse(localStorage.getItem(ZADNJA_PRIJAVA) || 'null');
+    if (last?.ime) {
+      form.ime.value = last.ime;
+      form.prezime.value = last.prezime || '';
+      if (last.nadimak) { form.nadimak.value = last.nadimak; document.getElementById('pr-nadimak').open = true; }
+    }
+  } catch { /* zapamćeno ime je samo pogodnost */ }
   // Server se budi dok lovac upisuje ime i PIN (prvi zahtjev poslije mirovanja je spor).
   if (!cachedProfile()) warmServer();
   const submit = async (action) => {
+    status.classList.add('info');
     status.textContent = 'Šaljem…';
+    submitBtn.setAttribute('aria-busy', 'true');
     form.querySelectorAll('button').forEach((b) => { b.disabled = true; });
     const slow = setTimeout(() => { status.textContent = 'Server sporo odgovara, čekam… (do 30 s)'; }, 6000);
     try {
-      const profile = action === 'registracija' ? await register(readForm(form)) : await login(readForm(form));
+      const data = readForm(form);
+      const profile = action === 'registracija' ? await register(data) : await login(data);
       status.textContent = '';
+      try { localStorage.setItem(ZADNJA_PRIJAVA, JSON.stringify({ ime: data.ime, prezime: data.prezime, nadimak: data.nadimak || '' })); } catch { /* nije bitno */ }
+      form.pin.value = '';
       enter(profile.odobren ? 'mapa' : 'cekanje');
     } catch (err) {
+      status.classList.remove('info');
       status.textContent = err.message;
     } finally {
       clearTimeout(slow);
+      submitBtn.removeAttribute('aria-busy');
       form.querySelectorAll('button').forEach((b) => { b.disabled = false; });
     }
   };
-  form?.addEventListener('submit', (e) => { e.preventDefault(); submit(e.submitter?.value || 'prijava'); });
+  form?.addEventListener('submit', (e) => { e.preventDefault(); submit(e.submitter?.value || mode); });
   document.getElementById('btn-provjeri-odobrenje')?.addEventListener('click', () => backgroundSession(true));
   document.getElementById('btn-odjava')?.addEventListener('click', doLogout);
   // Ponovna prijava na zahtjev lovca (traka "Prijava istekla"); neposlani zapisi ostaju u redu.

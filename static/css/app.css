@@ -1256,3 +1256,59 @@ svg[hidden] { display: none; }
 .nagib-stavka { display: inline-flex; align-items: center; gap: 6px; }
 .nagib-stavka i { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--okvir); }
 #nagib-prag button { flex: 1 1 15%; }
+
+/* Prijava (moderan izgled): hero sa logom na tamnozelenoj pozadini, kartica sa tabovima Prijava / Novi nalog.
+   Boje hero-a su fiksne (brend), kartica koristi teme (noć/dan), pa kontrast ostaje i na jakom suncu. */
+.ekran-prijava {
+  position: fixed; inset: 0; overflow-y: auto; padding: calc(28px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  background: radial-gradient(120% 70% at 50% 0%, #3b5a2e 0%, #1a2a16 45%, #0c120a 100%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.pr-hero { text-align: center; color: #f3efe0; margin-bottom: 18px; }
+.pr-logo-okvir {
+  width: 132px; height: 132px; margin: 0 auto 12px; border-radius: 34px; padding: 10px;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 0 6px rgba(217, 164, 65, 0.12);
+}
+.ekran-prijava .logo-prijava { width: 112px; height: 112px; margin: 0; border-radius: 24px; }
+.pr-nadnaslov { margin: 0; font-size: 13px; letter-spacing: .22em; text-transform: uppercase; color: #d9c79a; }
+.pr-naslov { margin: 2px 0 4px; font-size: 40px; line-height: 1.05; font-weight: 800; letter-spacing: .02em; color: #ffffff; }
+.pr-podnaslov { margin: 0; font-size: 14px; color: #c9d1bb; }
+.pr-kartica {
+  width: 100%; max-width: 420px; padding: 18px 18px 16px; border-radius: 22px;
+  background: var(--povrsina); color: var(--tekst); border: 1px solid var(--okvir, rgba(255, 255, 255, .12));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.pr-mod { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--pozadina); }
+.pr-mod button {
+  min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--tekst-2); font-size: 16px; font-weight: 600;
+}
+.pr-mod button[aria-selected="true"] { background: var(--naglasak); color: var(--naglasak-tekst); box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+.pr-mod-naslov { margin: 16px 2px 4px; font-size: 20px; }
+.pr-polje { margin: 12px 0; }
+.pr-polje > span:first-child { display: block; margin: 0 2px 6px; font-size: 14px; font-weight: 600; color: var(--tekst-2); }
+.pr-ulaz { position: relative; display: block; }
+.pr-ulaz > .ic { position: absolute; left: 14px; top: 50%; width: 20px; height: 20px; transform: translateY(-50%); color: var(--tekst-2); pointer-events: none; }
+.ekran-prijava input {
+  margin: 0; min-height: 52px; padding: 12px 14px 12px 44px; border-radius: 14px;
+  background: var(--pozadina); border: 1.5px solid var(--okvir, var(--tekst-2));
+}
+.ekran-prijava input:focus { outline: none; border-color: var(--naglasak); box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.25); }
+.ekran-prijava input::placeholder { color: var(--tekst-2); opacity: .7; }
+.ekran-prijava input[name="pin"] { padding-right: 52px; letter-spacing: .2em; }
+.pr-oko {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px;
+  display: grid; place-items: center; border: 0; border-radius: 12px; background: transparent; color: var(--tekst-2);
+}
+.pr-oko[aria-pressed="true"] { color: var(--naglasak); }
+.pr-nadimak { margin: 4px 2px; }
+.pr-nadimak summary { min-height: 44px; display: flex; align-items: center; color: var(--naglasak); font-weight: 600; cursor: pointer; }
+.pr-napomena { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--pozadina); color: var(--tekst-2); font-size: 14px; border-left: 3px solid var(--naglasak); }
+.pr-dugme { position: relative; width: 100%; min-height: 54px; margin-top: 16px; border-radius: 14px; font-size: 17px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.pr-vrtilica { display: none; width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid currentColor; border-right-color: transparent; animation: pr-krug .8s linear infinite; }
+.pr-dugme[aria-busy="true"] .pr-vrtilica { display: inline-block; }
+@keyframes pr-krug { to { transform: rotate(360deg); } }
+.pr-status { margin: 12px 0 0; text-align: center; }
+.pr-status:empty { display: none; }
+.pr-status.info { color: var(--tekst-2); }
+.pr-podnozje { margin: 18px 0 0; max-width: 420px; text-align: center; font-size: 13px; color: #b9c2a8; }

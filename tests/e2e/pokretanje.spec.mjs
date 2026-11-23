@@ -48,6 +48,7 @@ test('bez profila: prijava, a kratak PIN se odbija bez slanja na server', async 
 test('polja forme su ≥ 48 px i font ≥ 16 px (WebView inače zumira)', async ({ page }) => {
   await fakeServerConfigHanging(page);
   await page.goto('/');
+  await page.locator('#pr-nadimak summary').click(); // nadimak je u sklopivom dijelu
   for (const name of ['ime', 'prezime', 'nadimak', 'pin']) {
     const el = page.locator(`#forma-prijava input[name=${name}]`);
     expect((await el.boundingBox()).height).toBeGreaterThanOrEqual(48);
@@ -73,4 +74,35 @@ test('prijava čeka spor server do 30 s (ne javlja grešku poslije 12 s) i pokaz
   await page.locator('button[value=prijava]').click();
   await expect(page.locator('#prijava-status')).toContainText('Server sporo odgovara, čekam', { timeout: 10000 });
   await expect(page.locator('#prijava-status')).toHaveText('Pogrešno ime, prezime ili PIN.', { timeout: 30000 });
+});
+
+test('prijava: tabovi Prijava / Novi nalog, prikaz PIN-a i zapamćeno ime poslije uspješne prijave', async ({ page }) => {
+  await fakeServerConfigHanging(page);
+  await page.goto('/');
+  await expect(page.locator('#ekran-prijava')).toBeVisible();
+  await expect(page.locator('#btn-prijava')).toHaveText('Prijavi se');
+  await page.locator('#pr-mod [data-mod="registracija"]').click();
+  await expect(page.locator('#btn-prijava')).toHaveText('Napravi nalog');
+  await expect(page.locator('#btn-prijava')).toHaveAttribute('value', 'registracija');
+  await expect(page.locator('#pr-reg-napomena')).toBeVisible();
+  await page.locator('#pr-mod [data-mod="prijava"]').click();
+  await expect(page.locator('#pr-reg-napomena')).toBeHidden();
+  await page.fill('#forma-prijava input[name=pin]', '123456');
+  await page.locator('#btn-pin-prikazi').click();
+  await expect(page.locator('#forma-prijava input[name=pin]')).toHaveAttribute('type', 'text');
+  await page.locator('#btn-pin-prikazi').click();
+  await expect(page.locator('#forma-prijava input[name=pin]')).toHaveAttribute('type', 'password');
+  // dodirne mete
+  for (const sel of ['#pr-mod [data-mod="prijava"]', '#btn-pin-prikazi', '#btn-prijava', '#pr-nadimak summary']) {
+    const b = await page.locator(sel).boundingBox();
+    expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
+  }
+  // zapamćeno ime (bez PIN-a) se upiše pri sljedećem otvaranju
+  await page.evaluate(() => localStorage.setItem('lovac.prijava.zadnja', JSON.stringify({ ime: 'Mujo', prezime: 'Mujić', nadimak: '7' })));
+  await page.reload();
+  await expect(page.locator('#forma-prijava input[name=ime]')).toHaveValue('Mujo');
+  await expect(page.locator('#forma-prijava input[name=prezime]')).toHaveValue('Mujić');
+  await expect(page.locator('#forma-prijava input[name=nadimak]')).toHaveValue('7');
+  await expect(page.locator('#pr-nadimak')).toHaveAttribute('open', '');
+  await expect(page.locator('#forma-prijava input[name=pin]')).toHaveValue('');
 });
