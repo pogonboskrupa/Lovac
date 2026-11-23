@@ -1334,3 +1334,34 @@ svg[hidden] { display: none; }
 }
 .tr-chip[data-zvanicni="true"] { background: #d9a441; color: #1b1405; font-weight: 700; }
 .obj-zvanicni-izbor { padding: 10px 12px; border-radius: 12px; border: 1.5px solid #d9a441; }
+
+/* "Dodaj lov" u ploči + i ekran "Lov traje" (v1.0.9) */
+#meni-dodaj .dodaj-lov-novi { background: #1e3a5f; border-color: #60a5fa; }
+.dodaj-lov-novi small { color: #dbeafe; }
+#ld-tabovi button { flex: 1 1 22%; min-width: 0; padding-left: 4px; padding-right: 4px; }
+.ld-ucesnici { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.ld-lovac { display: block; border: 1.5px solid var(--okvir); border-radius: 12px; padding: 0; overflow: hidden; }
+.ld-lovac.otvoren { border-color: var(--naglasak); }
+.ld-lovac-glava { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px; background: none; border: 0; color: inherit; text-align: left; }
+.ld-lovac .clan-av { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--dugme); font-weight: 700; border: 3px solid #6b7280; }
+.ld-lovac .clan-av[data-svjezina="uzivo"], .ld-lovac .clan-av[data-svjezina="ja"] { border-color: #22c55e; }
+.ld-lovac .clan-av[data-svjezina="zastarjelo"] { border-color: #f59e0b; }
+.ld-lovac .clan-av[data-svjezina="bez-signala"] { border-color: #ef4444; }
+.ld-lovac .clan-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ld-brojaci { flex: none; display: flex; flex-direction: column; align-items: flex-end; font-size: 13px; color: var(--tekst-2); }
+.ld-lovac-detalj { padding: 0 10px 10px; display: grid; gap: 6px; }
+.ld-lovac-poruka { margin: 0; padding: 6px 8px; background: var(--dugme); border-radius: 8px; }
+.ld-lovac-poruka small { color: var(--tekst-2); margin-right: 6px; }
+.ld-poruke { max-height: calc(100dvh - 330px); min-height: 160px; overflow-y: auto; }
+#forma-ld-poruka { display: flex; gap: 8px; margin-top: 8px; }
+#forma-ld-poruka input { flex: 1; min-width: 0; min-height: 48px; font-size: 16px; }
+#forma-ld-poruka[hidden] { display: none; }
+.ld-slika-dodaj { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.ld-slika-dodaj input[type=text] { flex: 1 1 160px; min-height: 48px; font-size: 16px; }
+.ld-slike { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ld-slike-mali { grid-template-columns: repeat(4, 1fr); }
+.ld-slika { position: relative; padding: 0; border: 0; border-radius: 8px; overflow: hidden; aspect-ratio: 1; min-height: 44px; background: var(--dugme); }
+.ld-slika img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ld-ceka { position: absolute; left: 0; right: 0; bottom: 0; font-size: 11px; background: rgba(0, 0, 0, 0.65); color: #ffffff; padding: 2px; }
+#ld-tabovi button { white-space: nowrap; font-size: 15px; }
+#ld-tabovi .sitno { color: inherit; font-size: 13px; }

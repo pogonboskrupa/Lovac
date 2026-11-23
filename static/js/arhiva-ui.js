@@ -170,42 +170,72 @@ export function initArhiva() {
     }
   };
 
+  // Slika lova ide u izlaznu kutiju (radi i bez interneta), pa na server. Koristi je i ekran "Lov traje".
+  const addHuntPhoto = async (lovId, file, opis = '') => {
+    const fix = currentFix();
+    const item = {
+      id: uuid(), lov_id: lovId, autor_id: me().id, mala: await makeThumbnail(file), slika: await resizeToDataUrl(file),
+      opis: String(opis).trim().slice(0, 300), lat: fix?.lat ?? null, lon: fix?.lon ?? null, created_at: new Date().toISOString(),
+    };
+    await idbPut('arhiva_red', item);
+    document.dispatchEvent(new CustomEvent('lov:slike-promjena', { detail: { lovId } }));
+    if (online()) {
+      await flushQueue();
+      await fetchDetail(lovId).catch(() => {});
+      document.dispatchEvent(new CustomEvent('lov:slike-promjena', { detail: { lovId } }));
+      return true;
+    }
+    return false;
+  };
+
   $('ad-slika-ulaz').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
     const z = hunts.find((x) => x.id === currentId);
     if (!file || !z) return;
     try {
-      const fix = currentFix();
-      const item = {
-        id: uuid(), lov_id: z.id, autor_id: me().id, mala: await makeThumbnail(file), slika: await resizeToDataUrl(file),
-        opis: $('ad-slika-opis').value.trim().slice(0, 300), lat: fix?.lat ?? null, lon: fix?.lon ?? null, created_at: new Date().toISOString(),
-      };
-      await idbPut('arhiva_red', item);
+      const sent = await addHuntPhoto(z.id, file, $('ad-slika-opis').value);
       $('ad-slika-opis').value = '';
       await renderDetail();
-      if (online()) {
-        await flushQueue();
-        await fetchDetail(z.id).catch(() => {});
-        await renderDetail();
-        toast('Slika je dodana u arhivu lova');
-      } else {
-        toast('Slika je sačuvana i šalje se kad bude interneta');
-      }
+      toast(sent ? 'Slika je dodana u arhivu lova' : 'Slika je sačuvana i šalje se kad bude interneta');
     } catch (err) {
       $('ad-status').textContent = `Slika nije dodana: ${err.message}`;
     }
+  });
+  document.addEventListener('lov:slika-dodaj', async (e) => {
+    const { lovId, file, opis } = e.detail;
+    try {
+      const sent = await addHuntPhoto(lovId, file, opis);
+      toast(sent ? 'Slika je dodana u lov' : 'Slika je sačuvana i šalje se kad bude interneta');
+    } catch (err) {
+      toast(`Slika nije dodana: ${err.message}`);
+    }
+  });
+  document.addEventListener('lov:slike-osvjezi', async (e) => {
+    const { lovId } = e.detail;
+    if (!online()) return;
+    try { await flushQueue(); await fetchDetail(lovId); } catch (err) { console.warn('slike lova', err.message); return; }
+    document.dispatchEvent(new CustomEvent('lov:slike-promjena', { detail: { lovId } }));
   });
 
   $('ad-slike').addEventListener('click', async (e) => {
     const fig = e.target.closest('.ad-slika[data-id]');
     if (!fig) return;
-    const id = fig.dataset.id;
-    const s = (details.get(currentId)?.slike || []).find((x) => x.id === id);
-    if (!s) return;
     if (e.target.closest('[data-akcija="obrisi"]')) return; // brisanje ima svoj rukovalac
+    await openHuntPhoto((details.get(currentId)?.slike || []).find((x) => x.id === fig.dataset.id));
+  });
+  document.addEventListener('lov:slika-otvori', async (e) => {
+    const { lovId, id } = e.detail;
+    const d = details.get(lovId) || await idbGet('arhiva', `detalj:${lovId}`).catch(() => null);
+    const pending = (await idbAll('arhiva_red').catch(() => [])).find((x) => x.id === id);
+    if (pending) { openImageViewer({ src: pending.slika || pending.mala, caption: `${pending.opis || 'Slika lova'} · čeka slanje` }); return; }
+    await openHuntPhoto((d?.slike || []).find((x) => x.id === id));
+  });
+  // velika slika: prvo keš na telefonu, pa server; na serveru traje samo nekoliko dana (migracija 018), sličica ostaje
+  async function openHuntPhoto(s) {
+    if (!s) return;
+    const id = s.id;
     openImageViewer({ src: s.mala, caption: `${s.opis || 'Slika lova'} · ${memberName(s.autor_id)}` });
-    // velika slika: prvo keš na telefonu, pa server; na serveru traje samo nekoliko dana (migracija 018), sličica ostaje
     const cached = await idbGet('arhiva', `slika:${id}`).catch(() => null);
     if (cached?.slika) { $('slika-velika-img').src = cached.slika; return; }
     if (online()) {
@@ -219,7 +249,7 @@ export function initArhiva() {
         }
       } catch (err) { console.warn('velika slika', err.message); }
     }
-  });
+  }
   // brisanje slike: drugi dodir
   let armed = null;
   $('ad-slike').addEventListener('click', async (e) => {

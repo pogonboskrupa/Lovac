@@ -88,7 +88,8 @@ export const UPUTE = [
     id: 'lov', naslov: 'Zajednički lov i sigurnost',
     uvod: 'Grupovođa u tabu sekcije dodirne "Novi lov" i u formi upiše naziv, datum, okupljanje i napomenu, izabere učesnike i po želji odmah pokrene lov. Članovi javljaju da su prisutni.',
     stavke: [
-      ['Lov danas', 'Dok je lov u toku, u ploči + na mapi je dugme "Lov danas": naziv, sekcija i revir, početak i trajanje, tvoja uloga i stan, vođa lova, napomena i svi učesnici, uz prečice na raspored, tok lova i lokaciju. Radi i bez interneta.'],
+      ['Dodaj lov', 'Grupovođa (i administrator) u ploči + na mapi dodirne "Dodaj lov", izabere lovce sa spiska sekcije i napravi lov; zadano se lov odmah pokreće. Za pravljenje lova potreban je internet.'],
+      ['Lov traje', 'Dok traje lov u kojem si, ploča + umjesto "Dodaj lov" ima "Lov traje". Pregled: početak i trajanje, tvoja uloga i stan, vođa, napomena, zadnja poruka i slike. Lovci: ko dijeli lokaciju uživo, a dodir na lovca pokazuje njegove poruke i slike iz lova i "Na karti". Poruke: razgovor svih u lovu. Slike: dodaj sliku iz lova (šalje se kad bude interneta). Radi i bez interneta iz onoga što je na telefonu.'],
       ['Raspored', 'Meni → Zajednički lov: stanovi, učesnici i uloge. Raspored se preuzima na telefon i radi bez interneta.'],
       ['Sektori pucanja', 'Za svaki stan se računa smjer prema ostalim stanovima. Aplikacija upozorava kad je pravac zabranjen. To je pomoć, a ne zamjena za vođu lova.'],
       ['Tok lova', 'Komande vođe (početak pogona, kraj, okupljanje, prekid) stižu svima; svaki lovac javlja da je na stanu, da je napustio stan ili pauzu. PREKID se šalje i SMS-om.'],

@@ -1,6 +1,29 @@
 <section id="lov-danas" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="ld-naslov" hidden>
-  <header class="postavke-glava"><h2 id="ld-naslov">Lov danas</h2>
+  <header class="postavke-glava"><h2 id="ld-naslov">Lov traje</h2>
     <button id="btn-ld-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
-  <div id="ld-sadrzaj"></div>
+  <div id="ld-tabovi" class="segment p-tabovi" role="tablist" aria-label="Lov traje">
+    <button type="button" role="tab" data-ldtab="pregled" aria-selected="true" aria-pressed="true">Pregled</button>
+    <button type="button" role="tab" data-ldtab="ucesnici" aria-selected="false">Lovci <span id="ld-broj-ucesnika" class="sitno"></span></button>
+    <button type="button" role="tab" data-ldtab="poruke" aria-selected="false">Poruke <span id="ld-broj-poruka" class="sitno"></span></button>
+    <button type="button" role="tab" data-ldtab="slike" aria-selected="false">Slike <span id="ld-broj-slika" class="sitno"></span></button>
+  </div>
+  <div id="ld-sadrzaj" data-ldpanel="pregled"></div>
+  <div id="ld-ucesnici-panel" data-ldpanel="ucesnici" hidden><ul id="ld-ucesnici" class="spisak ld-ucesnici"></ul></div>
+  <div id="ld-poruke-panel" data-ldpanel="poruke" hidden>
+    <div id="ld-poruke" class="poruke ld-poruke" aria-live="polite"></div>
+    <form id="forma-ld-poruka" class="poruka-forma" novalidate>
+      <input name="tekst" type="text" maxlength="1000" autocomplete="off" placeholder="Poruka svim lovcima u lovu" aria-label="Poruka">
+      <button type="submit" class="dugme glavno">Pošalji</button>
+    </form>
+    <p id="ld-poruke-status" class="sitno" role="status"></p>
+  </div>
+  <div id="ld-slike-panel" data-ldpanel="slike" hidden>
+    <div class="ld-slika-dodaj">
+      <input id="ld-slika-opis" type="text" maxlength="300" placeholder="Opis slike (neobavezno)" aria-label="Opis slike">
+      <label class="dugme glavno dugme-fajl">Dodaj sliku<input id="ld-slika-ulaz" type="file" accept="image/*" hidden></label>
+    </div>
+    <div id="ld-slike" class="ld-slike"></div>
+    <p class="sitno">Slike lova vide učesnici i ostaju u arhivi lova. Velika slika je na serveru 14 dana, sličica trajno.</p>
+  </div>
   <p class="sitno">Aplikacija ne zamjenjuje pravila lova ni vođu lova.</p>
 </section>

@@ -27,6 +27,7 @@ import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { canPing } from './ping.js';
 import { fetchNew, nextCursor } from './inkrement.js';
+import { organizableSections } from './lov-traje.js';
 import { sendPing } from './ping-ui.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
@@ -80,7 +81,10 @@ export function initSekcijaEkran(L, map) {
     const t = ++porukeSeq;
     const rows = await idbAll('poruke');
     // IndexedDB vraća redom po id-u (UUID), a razgovor mora ići hronološki.
-    if (t === porukeSeq) poruke = rows.sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
+    if (t === porukeSeq) {
+      poruke = rows.sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
+      document.dispatchEvent(new CustomEvent('poruke:promjena'));
+    }
   };
 
   const loadLocal = async () => {
@@ -596,7 +600,11 @@ export function initSekcijaEkran(L, map) {
   const lnForm = $('forma-sk-lov');
   let lnSection = null;
   const lnCount = () => { $('slf-broj').textContent = `(${lnForm.querySelectorAll('#slf-clanovi input:checked').length + 1} sa tobom)`; };
-  const openNewHunt = (s) => {
+  const fillSectionPicker = (choices, s) => {
+    $('slf-sekcija-blok').hidden = choices.length < 2;
+    $('slf-sekcija-izbor').innerHTML = choices.map((x) => `<option value="${escapeHtml(x.id)}" ${x.id === s.id ? 'selected' : ''}>${escapeHtml(x.naziv)}</option>`).join('');
+  };
+  const openNewHunt = (s, { izbor = [], odmah = false } = {}) => {
     lnSection = s;
     const plan = huntCreatePlan(s, 'x', me()?.id, {});
     lnForm.reset();
@@ -609,9 +617,44 @@ export function initSekcijaEkran(L, map) {
     $('slf-clanovi').innerHTML = ids.map((id) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(memberName(id))}</label>`).join('')
       || '<p class="sitno">U sekciji još nema drugih odobrenih članova.</p>';
     $('btn-slf-svi').hidden = !ids.length;
+    fillSectionPicker(izbor.length ? izbor : [s], s);
+    lnForm.pokreni.checked = odmah;
     lnCount();
     lnSheet.hidden = false;
   };
+  $('slf-sekcija-izbor').addEventListener('change', (e) => {
+    const s = ctx.sekcije.find((x) => x.id === e.target.value);
+    const izbor = organizableSections(ctx, me());
+    if (s) openNewHunt(s, { izbor, odmah: lnForm.pokreni.checked });
+  });
+  // "+" → Dodaj lov: sekcija koja je otvorena u tabu ako je smijem organizovati, inače prva; lov se odmah pokreće.
+  document.addEventListener('lov:dodaj', async () => {
+    await loadLocal();
+    const izbor = organizableSections(ctx, me());
+    if (!izbor.length) { toast('Lov pravi grupovođa sekcije ili administrator'); return; }
+    const cur = selected();
+    openNewHunt(izbor.find((x) => x.id === cur?.id) || izbor[0], { izbor, odmah: true });
+  });
+  // Poruka iz ekrana "Lov traje": ista izlazna kutija kao poruke sekcije, označena lovom.
+  document.addEventListener('lov:poruka', async (e) => {
+    const { sekcijaId, lovId, tekst } = e.detail;
+    const err = validateMessage(tekst);
+    if (err) { toast(err); return; }
+    try {
+      await idbPut('poruke', newMessage({ sekcija_id: sekcijaId, autor_id: me().id, tekst, lov_id: lovId }));
+    } catch (er) {
+      toast(`Poruka nije sačuvana: ${er.message}`);
+      return;
+    }
+    await reloadPoruke();
+    if (isOpen()) render();
+    if (online()) { await flushOutbox(); await reloadPoruke(); }
+  });
+  // Ekran "Lov traje" traži svježe poruke (otvoren je, pa ne čeka pozadinsko osvježavanje od 60 s).
+  document.addEventListener('lov:poruke-osvjezi', async () => {
+    if (!online()) return;
+    try { await flushOutbox(); await pullMessages(); } catch (err) { console.warn('poruke lova', err.message); }
+  });
   const closeNewHunt = () => { lnSheet.hidden = true; lnSection = null; };
   $('slf-clanovi').addEventListener('change', lnCount);
   $('btn-slf-svi').addEventListener('click', () => {
@@ -641,6 +684,7 @@ export function initSekcijaEkran(L, map) {
         await qSk(sb.from('lov_ucesnici').insert(plan.ucesnici));
         if (plan.pokreni) await qSk(sb.from('lovovi').update({ status: 'u_toku' }).eq('id', plan.lov.id));
       }, plan.pokreni ? 'Lov je napravljen i pokrenut' : 'Lov je napravljen — članovi se mogu prijaviti');
+      document.dispatchEvent(new CustomEvent('lovovi:promjena'));
     } finally {
       btn.disabled = false;
     }

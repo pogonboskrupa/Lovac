@@ -222,6 +222,14 @@ export function initUzivo(L, map) {
     if (shown?.lov.status === 'u_toku') await activate(shown);
     else await autoPick();
   });
+  // "Lov traje" → lovac → Na karti
+  document.addEventListener('lov:prikazi-lovca', (e) => {
+    const row = lastRows.find((r) => r.korisnik_id === e.detail?.korisnikId);
+    if (row) map.setView([row.lat, row.lon], Math.max(map.getZoom(), 16), { animate: false });
+    else toast('Pozicija tog lovca još nije stigla');
+  });
+  // novi/pokrenut lov (npr. iz "+" → Dodaj lov): ne čeka provjeru od 60 s
+  document.addEventListener('lovovi:promjena', () => { autoPick(); });
   document.addEventListener('lokacija:postavke', async (e) => {
     if (lov) {
       arm();

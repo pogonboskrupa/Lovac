@@ -122,9 +122,15 @@ export async function startSim(page, world, { rpc = true, recv = true } = {}) {
     if (req.method() === 'POST') {
       for (const r of [].concat(req.postDataJSON())) {
         if (r.id && rows.some((x) => x.id === r.id)) continue;
-        rows.push({ id: ID(900000 + rows.length), ...r, ...(RECV_TABLES.has(table) && recv ? { primljeno: iso(sim.now + (++korak)) } : {}) });
+        rows.push({ id: ID(900000 + rows.length), ...r, ...(RECV_TABLES.has(table) && recv ? { primljeno: iso(sim.now + (++korak)) } : {}),
+          ...(table === 'lovovi' ? { promijenjeno: iso(sim.now + (++korak)) } : {}) });
       }
       return json(route, 201, [], key);
+    }
+    if (req.method() === 'PATCH') {
+      const patch = req.postDataJSON();
+      for (const r of rows.filter((x) => match(x, url.searchParams))) Object.assign(r, patch, table === 'lovovi' ? { promijenjeno: iso(sim.now + (++korak)) } : {});
+      return json(route, 200, [], key);
     }
     bump(key);
     return route.fulfill({ status: 204, body: '' });
