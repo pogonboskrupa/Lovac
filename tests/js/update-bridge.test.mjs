@@ -16,3 +16,19 @@ test('instalacija se nastavi kad se lovac vrati iz postavki dozvole', () => {
   assert.match(bridge, /void resumePendingInstall\(\)/);
   assert.match(main, /onResume\(\)[\s\S]*resumePendingInstall\(\)/);
 });
+
+test('instalacija ide kroz PackageInstaller sesiju (rezerva ACTION_VIEW), uz ručno "Instaliraj preuzeto"', () => {
+  assert.match(bridge, /PackageInstaller\.SessionParams\.MODE_FULL_INSTALL/);
+  assert.match(bridge, /STATUS_PENDING_USER_ACTION/);
+  assert.match(bridge, /installViaIntent\(apk\)/);
+  assert.match(bridge, /public void instalirajPreuzeto\(\)/);
+  assert.match(bridge, /__updateStatus/);
+  // prekinut download (manje bajtova od Content-Length) se ne instalira
+  assert.match(bridge, /tmp\.length\(\) < total/);
+});
+
+test('link na zadnju verziju u WebView-u se preuzima u aplikaciji, a ostala preuzimanja idu u Preuzimanja', () => {
+  assert.match(main, /UpdateBridge\.isTrustedApkUrl\(uri\.toString\(\)\)[\s\S]*updateBridge\.preuzmi/);
+  assert.match(main, /setDownloadListener/);
+  assert.match(main, /setDestinationInExternalPublicDir\(Environment\.DIRECTORY_DOWNLOADS/);
+});

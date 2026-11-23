@@ -85,6 +85,11 @@ export async function terrainAt(lat, lon, { allowNetwork = true } = {}) {
   return { visina: sample(data, t.px, t.py), uzbrdo: uphillAspect(dzdx, dzdy) };
 }
 
+// RGBA piksli DEM pločice zoom 13 (za sloj nagiba); null kad nije keširana, a mreža nije dozvoljena.
+export function demTileRgba(x, y, allowNetwork = true) {
+  return tilePixels(DEM_ZOOM, x, y, allowNetwork);
+}
+
 // DEM pločice za područje (za N.V., nagib i termiku bez interneta).
 export async function predownloadDem(bounds, signal) {
   const z = DEM_ZOOM;

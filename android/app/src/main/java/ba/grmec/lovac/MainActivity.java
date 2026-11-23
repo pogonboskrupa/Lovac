@@ -2,6 +2,7 @@ package ba.grmec.lovac;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
@@ -9,10 +10,12 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.GeolocationPermissions;
+import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -21,6 +24,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
@@ -101,12 +105,31 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if (HOST.equals(uri.getHost())) return false;
+                // Link na zadnju verziju aplikacije se preuzima u aplikaciji, ne otvara u browseru.
+                if (updateBridge != null && UpdateBridge.isTrustedApkUrl(uri.toString())) {
+                    updateBridge.preuzmi(uri.toString());
+                    return true;
+                }
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
                 } catch (Exception e) {
                     Log.w("Lovac", "Ne mogu otvoriti " + uri, e);
                 }
                 return true;
+            }
+        });
+
+        // Svako drugo preuzimanje fajla (npr. izvoz) ide direktno u Preuzimanja na uređaju, ne u prazno.
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
+            try {
+                DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url))
+                        .setMimeType(mimeType)
+                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimeType));
+                ((DownloadManager) getSystemService(DOWNLOAD_SERVICE)).enqueue(req);
+                Toast.makeText(this, "Preuzimanje je počelo (Preuzimanja)", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Log.w("Lovac", "Preuzimanje fajla nije uspjelo", e);
             }
         });
 

@@ -266,6 +266,7 @@ function wireUpdateButton(appVer) {
       el('azur-napredak').value = 0;
       el('btn-preuzmi-zadnju').disabled = true;
       install.disabled = true;
+      installDownloaded.hidden = true;
       st.textContent = 'Preuzimam zadnju verziju… 0 %';
     } else if (mode === 'apk') {
       st.textContent = 'Preuzimanje je pokrenuto (obavijest na telefonu). Kad završi, otvara se instalacija.';
@@ -277,6 +278,10 @@ function wireUpdateButton(appVer) {
     el('btn-preuzmi-zadnju').disabled = false;
     install.disabled = false;
   };
+  // Ako sistemski dijalog instalacije nije izašao (ili je zatvoren), preuzeti APK se instalira bez novog preuzimanja.
+  const installDownloaded = el('btn-instaliraj-preuzeto');
+  installDownloaded.addEventListener('click', () => globalThis.AndroidUpdate?.instalirajPreuzeto?.());
+  globalThis.__updateStatus = (text) => { el('azur-preuzimanje').textContent = text; };
   globalThis.__updateNapredak = (pct) => {
     el('azur-napredak').value = Number(pct) || 0;
     el('azur-preuzimanje').textContent = `Preuzimam zadnju verziju… ${pct} %`;
@@ -284,6 +289,7 @@ function wireUpdateButton(appVer) {
   globalThis.__updatePreuzeto = () => {
     el('azur-napredak').hidden = true;
     el('azur-preuzimanje').textContent = 'Nova verzija je preuzeta na telefon. Potvrdi instalaciju (podaci ostaju).';
+    installDownloaded.hidden = !globalThis.AndroidUpdate?.instalirajPreuzeto;
     doneDownload();
   };
   globalThis.__updateGreska = (msg) => {

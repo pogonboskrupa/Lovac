@@ -2,10 +2,12 @@ package ba.grmec.lovac;
 
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInstaller;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -18,8 +20,10 @@ import android.widget.Toast;
 
 import org.json.JSONObject;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -31,12 +35,14 @@ import java.io.File;
 /** AndroidUpdate: preuzimanje novog APK-a i pokretanje instalacije jednim tapom. */
 public class UpdateBridge {
     private static final String APK_MIME = "application/vnd.android.package-archive";
+    private static final String INSTALL_ACTION = "ba.grmec.lovac.INSTALL_STATUS";
     private final Activity activity;
     private final WebView webView;
     private long downloadId = -1;
     private BroadcastReceiver receiver;
     private volatile boolean downloading = false;
     private File pendingInstall = null; // preuzet APK koji čeka dozvolu za instalaciju
+    private BroadcastReceiver installReceiver;
 
     UpdateBridge(Activity activity, WebView webView) {
         this.activity = activity;
@@ -69,9 +75,26 @@ public class UpdateBridge {
         }).start();
     }
 
-    private void download(String url) {
+    private File targetDir() {
         File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-        if (dir == null) dir = activity.getFilesDir();
+        return dir != null ? dir : activity.getFilesDir();
+    }
+
+    /** Dugme "Instaliraj preuzeto": instalacija već preuzetog APK-a bez ponovnog preuzimanja. */
+    @JavascriptInterface
+    public void instalirajPreuzeto() {
+        activity.runOnUiThread(() -> {
+            File apk = new File(targetDir(), "update.apk");
+            if (!apk.exists() || apk.length() < 1_000_000) {
+                js("__updateGreska", "Nema preuzete verzije na telefonu — preuzmi je ponovo.");
+                return;
+            }
+            installOrAsk(apk);
+        });
+    }
+
+    private void download(String url) {
+        File dir = targetDir();
         File apk = new File(dir, "update.apk");
         File tmp = new File(dir, "update.apk.dio");
         HttpURLConnection c = null;
@@ -90,16 +113,30 @@ public class UpdateBridge {
                 byte[] buf = new byte[1 << 16];
                 long done = 0;
                 int lastPct = -1;
+                long lastMb = -1;
                 int n;
                 while ((n = in.read(buf)) > 0) {
                     os.write(buf, 0, n);
                     done += n;
+                    long mb = done / 1048576;
                     if (total > 0) {
                         int pct = (int) (done * 100 / total);
-                        if (pct != lastPct) { lastPct = pct; js("__updateNapredak", String.valueOf(pct)); }
+                        if (pct != lastPct) {
+                            lastPct = pct;
+                            js("__updateNapredak", String.valueOf(pct));
+                            js("__updateStatus", "Preuzimam zadnju verziju… " + pct + " % (" + mb + " / " + (total / 1048576) + " MB)");
+                        }
+                    } else if (mb != lastMb) {
+                        // Server nije javio veličinu: bez postotka, ali lovac vidi da preuzimanje ide.
+                        lastMb = mb;
+                        js("__updateStatus", "Preuzimam zadnju verziju… " + mb + " MB");
                     }
                 }
                 os.getFD().sync();
+            }
+            if (total > 0 && tmp.length() < total) {
+                js("__updateGreska", "Preuzimanje je prekinuto prije kraja (" + tmp.length() / 1048576 + " od " + total / 1048576 + " MB). Pokušaj ponovo.");
+                return;
             }
             if (apk.exists() && !apk.delete()) Log.w("Lovac", "Stari update.apk nije obrisan");
             if (!tmp.renameTo(apk)) {
@@ -209,14 +246,96 @@ public class UpdateBridge {
     }
 
     private void install(File apk) {
-        Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".files", apk);
-        Intent i = new Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri, APK_MIME)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity.startActivity(i);
+        try {
+            installViaSession(apk);
+        } catch (Exception e) {
+            Log.e("Lovac", "PackageInstaller nije uspio, probam ACTION_VIEW", e);
+            installViaIntent(apk);
+        }
+    }
+
+    /**
+     * Instalacija kroz PackageInstaller sesiju: APK se predaje sistemu direktno (bez FileProvider-a i MIME tipa, koje
+     * neki telefoni ne prihvate), a sistem pokaže svoj dijalog "Ažuriraj". Rezultat stiže u installReceiver.
+     */
+    private void installViaSession(File apk) throws Exception {
+        PackageInstaller installer = activity.getPackageManager().getPackageInstaller();
+        PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+        int sessionId = installer.createSession(params);
+        PackageInstaller.Session session = installer.openSession(sessionId);
+        try {
+            try (InputStream in = new FileInputStream(apk); OutputStream out = session.openWrite("update.apk", 0, apk.length())) {
+                byte[] buf = new byte[1 << 16];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                session.fsync(out);
+            }
+            registerInstallReceiver();
+            Intent intent = new Intent(INSTALL_ACTION).setPackage(activity.getPackageName());
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+            PendingIntent pending = PendingIntent.getBroadcast(activity, sessionId, intent, flags);
+            session.commit(pending.getIntentSender());
+        } catch (Exception e) {
+            session.abandon();
+            throw e;
+        } finally {
+            session.close();
+        }
+    }
+
+    private void registerInstallReceiver() {
+        unregisterInstallReceiver();
+        installReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context ctx, Intent intent) {
+                int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+                if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                    @SuppressWarnings("deprecation")
+                    Intent confirm = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+                    if (confirm != null) {
+                        confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        activity.startActivity(confirm);
+                    }
+                    return;
+                }
+                unregisterInstallReceiver();
+                if (status != PackageInstaller.STATUS_SUCCESS && status != PackageInstaller.STATUS_FAILURE_ABORTED) {
+                    String msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+                    Log.w("Lovac", "Instalacija: status " + status + " " + msg);
+                    js("__updateGreska", "Instalacija nije uspjela" + (msg != null ? " (" + msg + ")" : "") + ". Pokušaj \"Instaliraj preuzeto\".");
+                }
+            }
+        };
+        ContextCompat.registerReceiver(activity, installReceiver,
+                new IntentFilter(INSTALL_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED);
+    }
+
+    private void unregisterInstallReceiver() {
+        if (installReceiver != null) {
+            try {
+                activity.unregisterReceiver(installReceiver);
+            } catch (IllegalArgumentException ignored) {
+                // već odjavljen
+            }
+            installReceiver = null;
+        }
+    }
+
+    private void installViaIntent(File apk) {
+        try {
+            Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".files", apk);
+            Intent i = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, APK_MIME)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(i);
+        } catch (Exception e) {
+            Log.e("Lovac", "Instalacija nije pokrenuta", e);
+            js("__updateGreska", "Instalacija se nije mogla pokrenuti: " + e.getMessage());
+        }
     }
 
     void release() {
+        unregisterInstallReceiver();
         if (receiver != null) {
             try {
                 activity.unregisterReceiver(receiver);

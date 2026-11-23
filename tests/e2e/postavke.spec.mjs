@@ -133,7 +133,7 @@ test('"Preuzmi zadnju verziju" je uvijek dostupno i u APK-u zove AndroidUpdate m
 test('"Preuzmi zadnju verziju" u novoj aplikaciji preuzima APK na uređaj, pokazuje napredak i javlja kraj ili grešku', async ({ page }) => {
   await page.addInitScript(() => {
     window.__pozvano = [];
-    window.AndroidUpdate = { preuzmi: (u) => window.__pozvano.push(u), downloadAndInstall: () => window.__pozvano.push('stari') };
+    window.AndroidUpdate = { preuzmi: (u) => window.__pozvano.push(u), instalirajPreuzeto: () => window.__pozvano.push('instaliraj'), downloadAndInstall: () => window.__pozvano.push('stari') };
   });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
@@ -145,8 +145,13 @@ test('"Preuzmi zadnju verziju" u novoj aplikaciji preuzima APK na uređaj, pokaz
   await page.evaluate(() => window.__updateNapredak('45'));
   await expect(page.locator('#azur-preuzimanje')).toHaveText('Preuzimam zadnju verziju… 45 %');
   await expect(page.locator('#azur-napredak')).toHaveJSProperty('value', 45);
+  await page.evaluate(() => window.__updateStatus('Preuzimam zadnju verziju… 60 % (20 / 33 MB)'));
+  await expect(page.locator('#azur-preuzimanje')).toHaveText('Preuzimam zadnju verziju… 60 % (20 / 33 MB)');
   await page.evaluate(() => window.__updatePreuzeto('update.apk'));
   await expect(page.locator('#azur-preuzimanje')).toContainText('preuzeta na telefon');
+  // ručna instalacija već preuzetog APK-a, bez novog preuzimanja
+  await page.locator('#btn-instaliraj-preuzeto').click();
+  expect((await page.evaluate(() => window.__pozvano)).at(-1)).toBe('instaliraj');
   await expect(page.locator('#btn-preuzmi-zadnju')).toBeEnabled();
   // greška (npr. nema interneta) se prikaže i dugme se otključa za novi pokušaj
   await page.locator('#btn-preuzmi-zadnju').click();

@@ -18,6 +18,7 @@ import { initDanas } from './danas-ui.js';
 import { initOdstrel } from './odstrel-ui.js';
 import { initSlojevi } from './slojevi-ui.js';
 import { initTragoviKarta } from './tragovi-karta-ui.js';
+import { initNagib } from './nagib-ui.js';
 import { initMjerenje } from './mjerenje-ui.js';
 import { initPreuzimanje } from './preuzimanje-ui.js';
 import { initKarte, runKarteAutotest } from './karte-ui.js';
@@ -103,6 +104,7 @@ function enter(screen) {
       ['odstrel-stat', () => initOdstrelStat()],
       ['slojevi', () => initSlojevi(globalThis.L, map)],
       ['tragovi-karta', () => initTragoviKarta(globalThis.L, map)],
+      ['nagib', () => initNagib(globalThis.L, map)],
       ['mjerenje', () => initMjerenje(globalThis.L, map)],
       ['preuzimanje', () => initPreuzimanje(map, activeBase, globalThis.L)],
       ['karte', () => initKarte(globalThis.L, map, registerTeren, GITHUB_REPO)],

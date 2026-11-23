@@ -1250,3 +1250,9 @@ svg[hidden] { display: none; }
 .tr-boja[aria-pressed="true"] { outline: 3px solid var(--naglasak); outline-offset: 2px; }
 #sl-tragovi .tr-dugmad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .tr-popup .red-dugmadi { flex-wrap: wrap; }
+
+/* Sloj nagiba terena */
+.nagib-legenda { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 8px 0; font-size: 14px; }
+.nagib-stavka { display: inline-flex; align-items: center; gap: 6px; }
+.nagib-stavka i { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--okvir); }
+#nagib-prag button { flex: 1 1 15%; }
