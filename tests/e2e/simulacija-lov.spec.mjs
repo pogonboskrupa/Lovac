@@ -45,7 +45,10 @@ async function simulate(page, { rpc }) {
     return true;
   });
   // ostali lovci se pomjeraju i šalju svoje pozicije/tragove (kao njihovi telefoni)
-  const moveOthers = (now) => {
+  // svaki pomak ima svoje vrijeme (isti lovac + isto vrijeme = ista tačka, klijent ih spaja)
+  let korak = 0;
+  const moveOthers = (base) => {
+    const now = base + (++korak);
     db.lov_pozicije = [];
     for (const u of db.korisnici) {
       if (u.id === ja.id) continue;
@@ -122,7 +125,9 @@ async function simulate(page, { rpc }) {
   console.log('ukupno zahtjeva/min/telefon:', (total / MIN).toFixed(1), '· primljeno KB/min:', (bytes / 1024 / MIN).toFixed(0), '· od toga trag KB/min:', (tragBytes / 1024 / MIN).toFixed(0));
   console.log('markera kolega:', markers, '· putanja:', lines);
   console.log('zadnje preuzimanje traga: redova', tragRows.length, 'po lovcu', JSON.stringify(perUser), 'najnovija tačka', tragRows.at(-1)?.t);
-  const svjezih = db.lov_tragovi.filter((r) => r.lov_id === db.lovovi[0].id).length;
+  // server dobija tačke i poslije zadnjeg preuzimanja: poredi se sa stanjem do zadnje preuzete tačke
+  const zadnja = Date.parse(tragRows.at(-1)?.t || 0);
+  const svjezih = db.lov_tragovi.filter((r) => r.lov_id === db.lovovi[0].id && Date.parse(r.t) <= zadnja).length;
   console.log('na serveru za lov 1:', svjezih, 'tačaka');
   return { tragRows, perUser, svjezih, total, bytes, tragBytes, MIN, markers, lastFix: fakeNow };
 }
