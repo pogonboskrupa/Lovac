@@ -438,3 +438,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Kartica kolege na karti (v0.7.9)**
 - Dodir na marker kolege (krug sa inicijalima, i za lov `uzivo-ui` i za sekciju `lokacija-sekcija-ui`) otvara popup `istrazivac.js memberCard`: ime i prezime, udaljenost i strana svijeta od mene (`rangeLabel`, računa se pri otvaranju iz mog zadnjeg fiksa; bez GPS-a piše da udaljenost nije poznata) i starost pozicije. Prije je to bio samo tooltip, koji na dodirnom ekranu ne radi pouzdano. E2e testovi okidaju `el.click()` na markeru jer ekran lokacije/ploča prekriva kartu.
+
+**Admin: tab "Sekcije" sa spiskom (v0.8.0)**
+- Admin vidi sve sekcije, pa tab u navigaciji ne nosi naziv jedne (prije je pisalo ime prve sekcije, npr. "Vignjević gaj") nego "Sekcije" sa ikonom grupe; naslov ekrana je isto "Sekcije". Unutra je vodoravan spisak svih sekcija (`#sk-lista`, `[data-sid]`, logo + naziv + revir, odabrana ima `aria-pressed`) umjesto padajućeg izbora (`#sk-izbor` ostaje za lovce sa više sekcija). Ostali korisnici i dalje vide naziv i logo svoje sekcije.

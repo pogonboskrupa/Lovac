@@ -93,8 +93,9 @@ export function initSekcijaEkran(L, map) {
     + (leader() ? unreadCount(rukPoruke(), loadJSON(READ_KEY(KANAL_RUKOVODSTVO), null), me()?.id) : 0);
 
   const updateNav = () => {
-    const s = selected();
-    $('nav-sekcija-ime').textContent = s ? s.naziv : 'Sekcija';
+    // Admin vidi sve sekcije: tab je "Sekcije" (spisak + izbor unutra), ne naziv jedne sekcije.
+    const s = me()?.is_admin ? null : selected();
+    $('nav-sekcija-ime').textContent = me()?.is_admin ? 'Sekcije' : s ? s.naziv : 'Sekcija';
     $('nav-sekcija-logo').hidden = !s;
     // SVG element nema svojstvo hidden: atribut se postavlja ručno
     if (s) $('nav-sekcija-ikona').setAttribute('hidden', ''); else $('nav-sekcija-ikona').removeAttribute('hidden');
@@ -258,11 +259,18 @@ export function initSekcijaEkran(L, map) {
     const list = mine();
     const s = selected();
     const sel = $('sk-izbor');
-    sel.hidden = list.length < 2;
+    const admin = Boolean(me()?.is_admin);
+    sel.hidden = admin || list.length < 2;
+    const lista = $('sk-lista');
+    lista.hidden = !admin || list.length === 0;
+    lista.innerHTML = admin ? list.map((x) => {
+      const rv = ctx.reviri.find((r) => r.id === x.revir_id);
+      return `<button type="button" class="sk-lista-stavka" data-sid="${escapeHtml(x.id)}" aria-pressed="${s && x.id === s.id}"><span class="sek-logo mali" style="${escapeHtml(logoStyle(x))}"></span><span><b>${escapeHtml(x.naziv)}</b><span class="sitno">Revir ${escapeHtml(rv?.naziv || '')}</span></span></button>`;
+    }).join('') : '';
     sel.innerHTML = list.map((x) => `<option value="${escapeHtml(x.id)}" ${s && x.id === s.id ? 'selected' : ''}>${escapeHtml(x.naziv)}</option>`).join('');
     $('sk-prazno').hidden = Boolean(s);
     $('sk-sadrzaj').hidden = !s;
-    $('sk-naslov').textContent = s ? s.naziv : 'Sekcija';
+    $('sk-naslov').textContent = admin ? 'Sekcije' : s ? s.naziv : 'Sekcija';
     if (!s) { $('sk-podnaslov').textContent = ''; return; }
     const users = loadJSON('lovac.clanovi', []);
     const revir = ctx.reviri.find((r) => r.id === s.revir_id);
@@ -376,6 +384,15 @@ export function initSekcijaEkran(L, map) {
   $('btn-sekcija').addEventListener('click', open);
   $('sk-izbor').addEventListener('change', async (e) => {
     selectedId = e.target.value;
+    saveSoft(SEL_KEY, selectedId);
+    updateNav();
+    render();
+    refresh({ withHunts: true });
+  });
+  $('sk-lista').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sid]');
+    if (!b) return;
+    selectedId = b.dataset.sid;
     saveSoft(SEL_KEY, selectedId);
     updateNav();
     render();

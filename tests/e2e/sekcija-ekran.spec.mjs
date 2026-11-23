@@ -276,3 +276,20 @@ test('lovci sekcije su istaknuti: traka lica, brojevi, filter Aktivni/Vodstvo i 
   const y = async (id) => (await page.locator(id).boundingBox()).y;
   expect(await y('#sk-k-clanovi')).toBeLessThan(await y('#sk-k-lov'));
 });
+
+test('admin: tab se zove "Sekcije", unutra je spisak svih sekcija i izbor; obični član vidi naziv svoje sekcije', async ({ page }) => {
+  const server = makeServer();
+  const ADMIN = { id: ID(9), ime: 'Predsjednik', prezime: 'LD', odobren: true, is_admin: true };
+  server.db.korisnici.push(ADMIN);
+  await setup(page, server, ADMIN);
+  await page.goto('/');
+  await page.locator('#btn-sekcija').click();
+  await expect(page.locator('#sekcija-ekran')).toBeVisible();
+  await expect(page.locator('#btn-sekcija')).toContainText('Sekcije');
+  await expect(page.locator('#btn-sekcija')).not.toContainText('Krupa');
+  await expect(page.locator('#sk-naslov')).toHaveText('Sekcije');
+  await expect(page.locator('#sk-lista')).toBeVisible();
+  expect(await page.locator('#sk-lista [data-sid]').count()).toBeGreaterThan(0);
+  await expect(page.locator('#sk-lista [data-sid][aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.locator('#sk-izbor')).toBeHidden();
+});

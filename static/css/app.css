@@ -1058,3 +1058,9 @@ svg[hidden] { display: none; }
 /* Kartica kolege na karti (dodir na marker) */
 .kolega-kartica { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
 .kolega-kartica b { font-size: 16px; }
+
+/* Spisak sekcija za admina (izbor sekcije) */
+.sk-lista { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 8px; }
+.sk-lista-stavka { flex: none; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 12px; text-align: left; background: var(--povrsina); color: var(--tekst); border: 2px solid var(--dugme); border-radius: 14px; }
+.sk-lista-stavka[aria-pressed="true"] { border-color: var(--naglasak); }
+.sk-lista-stavka > span:last-child { display: flex; flex-direction: column; }
