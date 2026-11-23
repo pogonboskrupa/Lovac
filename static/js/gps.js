@@ -4,6 +4,7 @@ import { accuracyLevel, formatFixAge, shouldStopFollow } from './geo.js';
 import { toast } from './ui.js';
 import { loadJSON } from './storage.js';
 import { coneEnabled, STOZAC_KEY } from './kompas.js';
+import { PRIKAZ_KEY, showOwnMarker } from './lokacija.js';
 
 const ACC_COLORS = { dobro: 'var(--gps-dobro)', srednje: 'var(--gps-srednje)', lose: 'var(--gps-lose)' };
 
@@ -56,10 +57,20 @@ export function initGps(L, map) {
   const elAge = document.getElementById('gps-starost');
   const panel = document.getElementById('gps-status');
 
+  // Prekidač "Moja lokacija" isključen: pozicija se ne crta na karti; GPS i dalje radi (snimanje traga, dijeljenje je poseban prekidač).
+  const markerOn = () => showOwnMarker(loadJSON(PRIKAZ_KEY, null));
+
   const render = () => {
     if (!state.fix) return;
     const { lat, lon, acc } = state.fix;
     const level = accuracyLevel(acc);
+    if (!markerOn()) {
+      state.marker?.remove(); state.circle?.remove();
+      state.marker = null; state.circle = null;
+      if (elAcc) { elAcc.textContent = `±${Math.round(acc)} m`; elAcc.dataset.tacnost = level; }
+      if (panel) panel.hidden = false;
+      return;
+    }
     if (!state.marker) {
       state.circle = L.circle([lat, lon], { radius: acc, weight: 1, interactive: false, className: 'gps-krug' }).addTo(map);
       state.marker = L.marker([lat, lon], { icon: arrowIcon, interactive: false, keyboard: false }).addTo(map);
@@ -99,6 +110,7 @@ export function initGps(L, map) {
   };
 
   document.addEventListener('kompas:promjena', () => render());
+  document.addEventListener('lokacija:prikaz', () => render());
 
   const onErr = (err) => {
     const msg = err.code === 1 ? 'Lokacija nije dozvoljena' : err.code === 3 ? 'GPS još traži signal…' : 'GPS nije dostupan';

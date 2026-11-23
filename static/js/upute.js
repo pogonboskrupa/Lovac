@@ -37,7 +37,7 @@ export const UPUTE = [
       ['Snimanje traga', 'Snima put dok hodaš, i kad je ekran ugašen. Može se pauzirati, dodati tačka ili slika. Trag kraći od 50 m se ne čuva. Na nekim telefonima treba isključiti štednju baterije za aplikaciju.'],
       ['Istraživač (3D)', 'Nagnut pogled karte koji prati tebe. Jedan prst pomjera kartu (možeš istraživati teren van svoje pozicije, dugme ◎ te vraća), dva prsta je okreću i zumiraju (razmak prstiju), a dodir na kompas sa sjeverom vraća pogled na sjever. Dodir na kolegu koji dijeli lokaciju pokazuje koliko je daleko od tebe, a prekidač prikazuje trag kuda se kretao. Izlaz je X uz tipku lokacije ili "Izađi iz 3D" gore lijevo.'],
       ['Prati me', 'Karta prati tvoju poziciju dok je uključeno. Manji pomak karte prstom se vraća na tebe; praćenje se isključuje tek kad odvučeš kartu tako da si 80 % puta od sredine do ruba ekrana.'],
-      ['Moja lokacija (on/off)', 'U ploči Moja lokacija prekidač "Moja lokacija" (zadano uključen, on/off) određuje da li učesnici lova vide tvoju poziciju dok lov traje.'],
+      ['Moja lokacija i Dijeli lokaciju (on/off)', 'U ploči Moja lokacija su dva odvojena prekidača. "Moja lokacija" samo pokazuje ili skriva tvoju poziciju na karti. "Dijeli lokaciju" (zadano uključen) određuje da li učesnici lova vide tvoju poziciju dok lov traje.'],
       ['Dijeljenje sa sekcijom', 'U istoj ploči možeš podijeliti lokaciju sa svojom sekcijom na 1 sat, 4 sata ili do kraja dana. Vide je članovi, grupovođa i lovočuvar te sekcije, a administrator ne (osim ako je u sekciji).'],
     ],
   },

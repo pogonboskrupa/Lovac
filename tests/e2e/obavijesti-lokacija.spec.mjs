@@ -90,3 +90,22 @@ test('značka nepročitanih poruka je crvena puna kružnica sa brojem', async ({
   expect(stil.h).toBe('22px');
   expect(parseFloat(stil.r)).toBeGreaterThanOrEqual(10);
 });
+
+test.describe('prekidač Moja lokacija i marker na karti', () => {
+  test.use({ viewport: { width: 360, height: 740 }, geolocation: { latitude: 44.88, longitude: 16.15 }, permissions: ['geolocation'] });
+  test('isključen prekidač sakriva marker pozicije, uključen ga vraća', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#karta .gps-nisan')).toHaveCount(1);
+    await page.locator('#btn-moja-lokacija').click();
+    // dijeljenje je poseban prekidač: njegovo gašenje NE sakriva marker
+    await page.locator('#btn-lok-auto').click();
+    await expect(page.locator('#btn-lok-auto')).toHaveAttribute('aria-checked', 'false');
+    await expect(page.locator('#karta .gps-nisan')).toHaveCount(1);
+    await page.locator('#btn-lok-prikaz').click();
+    await expect(page.locator('#btn-lok-prikaz')).toHaveAttribute('aria-checked', 'false');
+    await expect(page.locator('#karta .gps-nisan')).toHaveCount(0);
+    expect((await page.evaluate(() => JSON.parse(localStorage.getItem('lovac.lokacija') || 'null')))?.on).toBe(false);
+    await page.locator('#btn-lok-prikaz').click();
+    await expect(page.locator('#karta .gps-nisan')).toHaveCount(1);
+  });
+});

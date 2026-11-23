@@ -56,3 +56,7 @@ export function shareList(ucesnici, rows, myId, nameOf, me, now = Date.now()) {
       || (a.udaljenost ?? Infinity) - (b.udaljenost ?? Infinity)
       || a.ime.localeCompare(b.ime, 'bs'));
 }
+
+// "Moja lokacija" na karti (marker pozicije) je odvojena od dijeljenja: zadano uključeno.
+export const PRIKAZ_KEY = 'lovac.lokacija.prikaz';
+export const showOwnMarker = (raw) => raw !== false;

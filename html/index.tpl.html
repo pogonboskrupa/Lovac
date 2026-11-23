@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v0.7.7';
+  const APP_VER = 'v0.7.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -173,10 +173,17 @@
       <button id="btn-istrazivac" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-hunt"/></svg><span>Istraživač (3D)</span></button>
       <button id="btn-lok-kopiraj" class="lok-dugme" type="button"><svg class="ic"><use href="#ic-pin"/></svg><span>Kopiraj koordinate</span></button>
     </div>
-    <div class="lok-pravac" id="lok-auto">
-      <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija: dijeljenje u lovu"><span class="lok-prekidac-ruka"></span></button>
+    <div class="lok-pravac" id="lok-prikaz">
+      <button id="btn-lok-prikaz" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija na karti"><span class="lok-prekidac-ruka"></span></button>
       <div class="lok-pravac-tekst">
         <b>Moja lokacija</b>
+        <span id="lok-prikaz-stanje" class="sitno" role="status">Uključeno: vidiš se na karti</span>
+      </div>
+    </div>
+    <div class="lok-pravac" id="lok-auto">
+      <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Dijeli lokaciju u lovu"><span class="lok-prekidac-ruka"></span></button>
+      <div class="lok-pravac-tekst">
+        <b>Dijeli lokaciju</b>
         <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: učesnici lova vide tvoju poziciju</span>
       </div>
     </div>

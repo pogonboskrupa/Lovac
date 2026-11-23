@@ -12,7 +12,7 @@ import { formatCoordMode, nextCoordMode, COORD_MODES, compassName } from './geo.
 import { getCoordMode } from './map.js';
 import { formatMemberDistance, rangeLabel } from './istrazivac.js';
 import { getShareSettings, setShareSettings } from './lokacija-ui.js';
-import { shareIntervalMs, initialsOf } from './lokacija.js';
+import { shareIntervalMs, initialsOf, PRIKAZ_KEY, showOwnMarker } from './lokacija.js';
 import { SHARE_DURATIONS, shareUntil, activeShare, canShareToSection, sectionShareList, untilText } from './lokacija-sekcija.js';
 import { toast, copyText, registerBackHandler, escapeHtml } from './ui.js';
 
@@ -165,7 +165,19 @@ export function initMojaLokacija(L, map) {
   const close = () => setOpen(false);
 
   $('btn-moja-lokacija').addEventListener('click', () => (isOpen() ? close() : open()));
-  // Automatsko dijeljenje lokacije u lovu (ista postavka kao u Postavkama → Opšte).
+  // "Moja lokacija": samo prikaz moje pozicije na karti (gps.js).
+  const renderPrikaz = () => {
+    const on = showOwnMarker(loadJSON(PRIKAZ_KEY, null));
+    $('btn-lok-prikaz').setAttribute('aria-checked', String(on));
+    $('lok-prikaz-stanje').textContent = on ? 'Uključeno: vidiš se na karti' : 'Isključeno: pozicija skrivena na karti';
+  };
+  $('btn-lok-prikaz').addEventListener('click', () => {
+    saveSoft(PRIKAZ_KEY, !showOwnMarker(loadJSON(PRIKAZ_KEY, null)));
+    document.dispatchEvent(new CustomEvent('lokacija:prikaz'));
+    renderPrikaz();
+  });
+  renderPrikaz();
+  // "Dijeli lokaciju": automatsko dijeljenje u lovu (ista postavka kao u Postavkama → Opšte).
   const renderAuto = () => {
     const on = getShareSettings().on;
     $('btn-lok-auto').setAttribute('aria-checked', String(on));

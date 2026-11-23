@@ -98,10 +98,26 @@ export function tileTimeoutMs(quality, attempt = 0) {
   return Math.round(base * (1 + attempt * 0.5));
 }
 
+// Nedavno viđene pločice u memoriji: zum naprijed-nazad ne čeka Cache API (nekoliko ms po pločici je dovoljno za crni bljesak).
+export const MEM_TILES_MAX = 400;
+const memTiles = new Map();
+export function memTilesGet(url) {
+  const b = memTiles.get(url);
+  if (b) { memTiles.delete(url); memTiles.set(url, b); }
+  return b;
+}
+export function memTilesPut(url, blob, max = MEM_TILES_MAX) {
+  memTiles.delete(url);
+  memTiles.set(url, blob);
+  while (memTiles.size > max) memTiles.delete(memTiles.keys().next().value);
+}
+
 export async function loadTileBlob(url, signal, attempt = 0) {
+  const mem = memTilesGet(url);
+  if (mem) return mem;
   const cache = await getTileCache();
   const hit = cache && await cache.match(url);
-  if (hit) return hit.blob();
+  if (hit) { const b = await hit.blob(); memTilesPut(url, b); return b; }
   return tileLimiter.run(async () => {
     const timeout = tileTimeoutMs(connectionQuality(), attempt);
     const res = await fetchWithTimeout(url, { mode: 'cors', credentials: 'omit', signal }, timeout);
@@ -112,7 +128,9 @@ export async function loadTileBlob(url, signal, attempt = 0) {
         await trimTileCache(cache);
       } catch (err) { console.warn('tile cache put', err); }
     }
-    return res.blob();
+    const blob = await res.blob();
+    memTilesPut(url, blob);
+    return blob;
   }, signal);
 }
 
@@ -200,7 +218,8 @@ export function createCachedTileLayer(L, urlTemplate, options) {
       return canvas;
     },
   });
-  const layer = new Layer(urlTemplate, options);
+  // Dok traje zum ne učitavaju se međunivoi (stari nivo ostaje vidljiv umjesto crnih rupa), a više pločica oko vidljivog dijela ostaje u DOM-u.
+  const layer = new Layer(urlTemplate, { updateWhenZooming: false, keepBuffer: 4, ...options });
   layer.on('tileunload', (e) => e.tile?._ctrl?.abort());
   layer.on('tileabort', (e) => e.tile?._ctrl?.abort());
   return layer;

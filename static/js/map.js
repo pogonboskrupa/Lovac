@@ -32,6 +32,8 @@ export function initMap(L, elementId) {
     zoomControl: false,
     attributionControl: true,
     preferCanvas: false,
+    // Bez postepenog pojavljivanja pločica: pri zumu stari nivo nestane, a nova pločica izblijedi od 0, pa se vidi crni bljesak.
+    fadeAnimation: false,
   }).setView([view.lat, view.lon], view.z);
 
   const layers = new Map(BASE_LAYERS.map((b) => [b.id, createCachedTileLayer(L, b.url, b.options)]));
