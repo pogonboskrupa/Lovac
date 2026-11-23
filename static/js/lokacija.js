@@ -32,9 +32,13 @@ export function initialsOf(name) {
 }
 
 // Lov u toku u kojem sam učesnik; najnoviji datum ako ih je više.
-export function pickActiveHunt(records, myId) {
+// Aktivan je samo lov od danas ili jučer (noćni lov preko ponoći): lov koji vođa nije završio danima ne smije zauvijek
+// držati traku uživo i slati poziciju. Lov iz kojeg je lovac izašao na ovom telefonu (napusteni) se preskače.
+export function pickActiveHunt(records, myId, { today = null, napusteni = [] } = {}) {
+  const od = today ? new Date(Date.parse(`${today}T12:00:00Z`) - 86400000).toISOString().slice(0, 10) : null;
   return records
     .filter((r) => r?.lov?.status === 'u_toku' && r.ucesnici?.some((u) => u.korisnik_id === myId))
+    .filter((r) => (!od || String(r.lov.datum || '') >= od) && !napusteni.includes(r.id))
     .sort((a, b) => String(b.lov.datum).localeCompare(String(a.lov.datum)))[0] || null;
 }
 

@@ -100,7 +100,7 @@ export async function startSim(page, world, { rpc = true, recv = true } = {}) {
       if (u.id === ja.id) continue;
       const p = db.pos.get(u.id); p.lat += 0.0002; p.lon += (Math.random() - 0.5) * 0.0003;
       const lid = db.lov_ucesnici.find((x) => x.korisnik_id === u.id).lov_id;
-      if (db.lovovi.find((l) => l.id === lid).status !== 'u_toku') continue;
+      if (db.lovovi.find((l) => l.id === lid)?.status !== 'u_toku') continue;
       db.lov_pozicije.push({ lov_id: lid, korisnik_id: u.id, lat: p.lat, lon: p.lon, t: iso(now) });
       db.lov_tragovi.push({ id: ID(500000 + db.lov_tragovi.length), lov_id: lid, korisnik_id: u.id, lat: p.lat, lon: p.lon, t: iso(now), primljeno: iso(now) });
     }

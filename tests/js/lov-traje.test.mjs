@@ -93,3 +93,13 @@ test('sekcije po reviru: lovočuvar pravi i uređuje u svom reviru, admin svuda'
   assert.equal(editsRevir({ id: 'a', is_admin: true }, 'R2', lc), true);
   assert.deepEqual(keeperRevirIds({ id: 'l' }, lc), ['R1']);
 });
+
+import { pickActiveHunt } from '../../static/js/lokacija.js';
+test('aktivan lov: samo danas ili jučer, bez lova iz kojeg sam izašao na telefonu', () => {
+  const r = (id, datum) => ({ id, lov: { status: 'u_toku', datum }, ucesnici: [{ korisnik_id: 'ja' }] });
+  const recs = [r('star', '2026-11-10'), r('juce', '2026-11-22'), r('danas', '2026-11-23')];
+  assert.equal(pickActiveHunt(recs, 'ja', { today: '2026-11-23' }).id, 'danas');
+  assert.equal(pickActiveHunt(recs, 'ja', { today: '2026-11-23', napusteni: ['danas'] }).id, 'juce');
+  assert.equal(pickActiveHunt([r('star', '2026-11-10')], 'ja', { today: '2026-11-23' }), null); // nezavršen stari lov ne drži traku
+  assert.equal(pickActiveHunt([r('star', '2026-11-10')], 'ja').id, 'star'); // bez datuma (stari pozivi) kao prije
+});

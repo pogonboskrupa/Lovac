@@ -19,6 +19,11 @@ import { reportHtml } from './odstrel.js';
 import { printHtml } from './odstrel-ui.js';
 import { sosText, smsNumbers, newSosSince, huntReportData } from './uzivo.js';
 import { toast, wireTwoTap, escapeHtml, registerBackHandler } from './ui.js';
+import { cachedSekcije } from './sekcije-ui.js';
+import { canManageHunt } from './lov-traje.js';
+import { todayIso } from './objekti.js';
+
+const NAPUSTENI_KEY = 'lovac.lov.napusteni';
 
 const POLL_MS = 20000;
 const ODSTREL_RED = 'lovac.lov_odstrel.red';
@@ -207,7 +212,7 @@ export function initUzivo(L, map) {
   // Lov u toku u kojem sam učesnik šalje poziciju i bez otvorenog rasporeda; kraj lova gasi slanje.
   const autoPick = async () => {
     if (!me()) return;
-    const rec = pickActiveHunt(await idbAll('lovovi').catch(() => []), me().id);
+    const rec = pickActiveHunt(await idbAll('lovovi').catch(() => []), me().id, { today: todayIso(), napusteni: loadJSON(NAPUSTENI_KEY, []) });
     if (rec) { await activate(rec); return; }
     if (lov) {
       const ended = lov.id;
@@ -222,6 +227,36 @@ export function initUzivo(L, map) {
     if (shown?.lov.status === 'u_toku') await activate(shown);
     else await autoPick();
   });
+  // ---- Kraj lova iz trake uživo ----
+  // Upravljač (admin, organizator, grupovođa sekcije lova) završava lov za sve (drugi dodir); svako može izaći
+  // iz lova na svom telefonu (prestaje slanje pozicije, traka nestaje) — lov za ostale traje.
+  const krajPloca = $('uzivo-kraj');
+  const closeKraj = () => { krajPloca.hidden = true; };
+  $('btn-uzivo-kraj').addEventListener('click', async () => {
+    if (!lov) return;
+    const ctx = await cachedSekcije().catch(() => ({}));
+    $('uzivo-kraj-naslov').textContent = `Kraj lova: ${lov.lov.naziv}`;
+    $('btn-uzivo-zavrsi').hidden = !canManageHunt(lov, ctx, me());
+    krajPloca.hidden = false;
+  });
+  wireTwoTap($('btn-uzivo-zavrsi'), 'DODIRNI PONOVO — ZAVRŠI LOV ZA SVE', () => {
+    if (!lov) return;
+    closeKraj();
+    document.dispatchEvent(new CustomEvent('lov:upravljanje', { detail: { akcija: 'zavrsi', lovId: lov.id } }));
+  });
+  wireTwoTap($('btn-uzivo-izadji'), 'DODIRNI PONOVO — IZAĐI IZ LOVA', async () => {
+    if (!lov) return;
+    const id = lov.id;
+    closeKraj();
+    saveSoft(NAPUSTENI_KEY, [...new Set([...loadJSON(NAPUSTENI_KEY, []), id])].slice(-20));
+    stop();
+    lov = null;
+    removeMyPosition(id).catch(() => {});
+    toast('Izašao si iz lova na ovom telefonu — tvoja pozicija se više ne šalje');
+  });
+  $('btn-uzivo-kraj-odustani').addEventListener('click', closeKraj);
+  registerBackHandler(() => { if (krajPloca.hidden) return false; closeKraj(); return true; });
+
   // "Lov traje" → lovac → Na karti
   document.addEventListener('lov:prikazi-lovca', (e) => {
     const row = lastRows.find((r) => r.korisnik_id === e.detail?.korisnikId);

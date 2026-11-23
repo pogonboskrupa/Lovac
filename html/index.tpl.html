@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.3';
+  const APP_VER = 'v1.1.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -337,7 +337,15 @@
         <button id="btn-sos" class="dugme dugme-sos" type="button">SOS</button>
         <button id="btn-lokacija" class="dugme" type="button">Lokacija</button>
         <button id="btn-tok" class="dugme" type="button" hidden>Tok</button>
+        <button id="btn-uzivo-kraj" class="dugme" type="button">Kraj</button>
         <span id="uzivo-stanje" class="sitno">Uživo: tvoju poziciju vide učesnici dok lov traje</span>
+      </div>
+      <div id="uzivo-kraj" class="uzivo-kraj" role="dialog" aria-label="Kraj lova" hidden>
+        <b id="uzivo-kraj-naslov">Kraj lova</b>
+        <button id="btn-uzivo-zavrsi" class="dugme dugme-sos" type="button" hidden>Završi lov za sve</button>
+        <button id="btn-uzivo-izadji" class="dugme" type="button">Izađi iz lova na ovom telefonu</button>
+        <p class="sitno">"Izađi" prestaje dijeliti tvoju poziciju i sklanja traku lova samo kod tebe; lov za ostale traje dok ga vođa ne završi.</p>
+        <button id="btn-uzivo-kraj-odustani" class="dugme" type="button">Odustani</button>
       </div>
       <div id="panel-snimanje" class="panel-snimanje" hidden>
         <div class="snim-info"><span id="snim-vrsta"></span><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.<span id="snim-krv"></span></div>

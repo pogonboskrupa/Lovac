@@ -2,7 +2,7 @@
 // sa zabranjenim pravcima i kompasom. SIGURNOSNA funkcija: ne zamjenjuje pravila lova ni vođu lova.
 
 import { getClient, cachedProfile } from './auth.js';
-import { idbPut, idbAll, idbGet } from './db.js';
+import { idbPut, idbAll, idbGet, idbDelete } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA, huntGroups, huntDateText, huntsNeedingDetails, chunks } from './lov.js';
@@ -83,7 +83,13 @@ export async function downloadHunts({ full: force = false } = {}) {
       preuzeto: fresh ? Date.now() : prev.preuzeto || Date.now(),
     });
   }
-  if (full) await idbPut('spiskovi', { id: 'reviri', rows: reviri, preuzeto: Date.now() });
+  if (full) {
+    await idbPut('spiskovi', { id: 'reviri', rows: reviri, preuzeto: Date.now() });
+    // Lov koji server više ne daje (obrisan, izbačen iz sekcije) se uklanja iz keša — inače bi "u toku" lov
+    // zauvijek držao traku uživo i slanje pozicije.
+    const live = new Set(lovovi.map((l) => l.id));
+    for (const id of cached.keys()) if (!live.has(id)) await idbDelete(STORE, id).catch(() => {});
+  }
   return lovovi.length;
 }
 
