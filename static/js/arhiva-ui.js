@@ -15,6 +15,8 @@ import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
 import { archiveHunts, huntDate, huntTimeRange, huntedText, canAddMedia, matchesArchive, MAX_PHOTOS_PER_HUNT, archiveOverview } from './arhiva.js';
 import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
+import { monthGrid, huntsByDate, initialMonth, shiftMonth, monthLabel, monthStats, DANI } from './arhiva-kalendar.js';
+import { todayIso } from './objekti.js';
 
 const $ = (id) => document.getElementById(id);
 const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
@@ -57,7 +59,63 @@ export function initArhiva() {
     $('arh-lovova').textContent = String(ov.lovova);
     $('arh-komada').textContent = String(ov.komada);
     $('arh-slika').textContent = String(ov.slika);
-    $('arhiva-spisak').innerHTML = shown.map((z) => {
+    $('arhiva-spisak').innerHTML = shown.map(cardHtml).join('') || '<li class="sitno">Nema lovova u arhivi (preuzimaju se uz internet).</li>';
+    renderCalendar();
+  };
+
+  // ---------- kalendar ----------
+  let tab = 'spisak';
+  let month = null;
+  let selectedDay = null;
+  const renderCalendar = () => {
+    const today = todayIso();
+    if (!month) month = initialMonth(hunts, today);
+    const by = huntsByDate(hunts);
+    const st = monthStats(hunts, month);
+    $('arh-mjesec').textContent = monthLabel(month);
+    $('arh-mjesec-info').textContent = st.lovova ? `${st.lovova} lov${st.lovova === 1 ? '' : st.lovova < 5 ? 'a' : 'ova'} u ${st.dana} dan${st.dana === 1 ? '' : 'a'}` : 'Nema lovova u ovom mjesecu';
+    $('arh-kalendar').innerHTML = `<div class="arh-kal-red arh-kal-dani">${DANI.map((d) => `<span>${d}</span>`).join('')}</div>`
+      + monthGrid(month, today).map((w) => `<div class="arh-kal-red">${w.map((c) => {
+        const list = by.get(c.datum) || [];
+        const live = list.some((z) => z.lov.status === 'u_toku');
+        return `<button type="button" class="arh-dan" data-datum="${c.datum}" data-u-mjesecu="${c.uMjesecu}" ${c.danas ? 'data-danas="true"' : ''}
+          ${list.length ? `data-lov="${live ? 'u_toku' : 'da'}"` : ''} aria-pressed="${c.datum === selectedDay}" aria-label="${c.datum}${list.length ? `, lovova: ${list.length}` : ''}">
+          <span>${c.dan}</span>${list.length ? `<i>${list.length > 1 ? list.length : ''}</i>` : ''}</button>`;
+      }).join('')}</div>`).join('');
+    const dayHunts = selectedDay ? by.get(selectedDay) || [] : [];
+    $('arh-dan-naslov').textContent = selectedDay ? `${huntDate(selectedDay)}${dayHunts.length ? '' : ' — nema lova'}` : 'Dodirni dan sa oznakom lova';
+    $('arh-dan-lovovi').innerHTML = dayHunts.map(cardHtml).join('');
+  };
+  const setTab = (name) => {
+    tab = name;
+    for (const b of document.querySelectorAll('#arh-tabovi [data-arhtab]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.arhtab === name));
+      b.setAttribute('aria-selected', String(b.dataset.arhtab === name));
+    }
+    $('arh-spisak-panel').hidden = name !== 'spisak';
+    $('arh-kalendar-panel').hidden = name !== 'kalendar';
+    if (name === 'kalendar') renderCalendar();
+  };
+  $('arh-tabovi').addEventListener('click', (e) => { const b = e.target.closest('[data-arhtab]'); if (b) setTab(b.dataset.arhtab); });
+  $('btn-arh-mj-nazad').addEventListener('click', () => { month = shiftMonth(month, -1); renderCalendar(); });
+  $('btn-arh-mj-naprijed').addEventListener('click', () => { month = shiftMonth(month, 1); renderCalendar(); });
+  $('arh-kalendar').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-datum]');
+    if (!b) return;
+    selectedDay = b.dataset.datum;
+    const [y, m] = selectedDay.split('-').map(Number);
+    if (b.dataset.uMjesecu === 'false') month = { y, m: m - 1 };
+    renderCalendar();
+    const list = huntsByDate(hunts).get(selectedDay) || [];
+    if (list.length === 1) openDetail(list[0].id);
+  });
+  $('arh-dan-lovovi').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="otvori"]');
+    if (b) openDetail(b.closest('[data-id]').dataset.id);
+  });
+  void tab;
+
+  function cardHtml(z) {
       const d = details.get(z.id);
       const hunted = d ? huntedText(d.odstrel, speciesName) : '';
       const live = z.lov.status === 'u_toku';
@@ -69,8 +127,7 @@ export function initArhiva() {
           <span class="sitno">${escapeHtml(z.sekcija?.naziv || z.revir?.naziv || '')} · ${escapeHtml(huntTimeRange(z.lov))}</span>
           <span class="arh-cipovi"><span>${z.ucesnici.length} učesnika</span>${hunted ? `<span>${escapeHtml(hunted)}</span>` : ''}${d ? `<span>${d.slike.length} slika</span>` : ''}</span></span>
         </button></li>`;
-    }).join('') || '<li class="sitno">Nema lovova u arhivi (preuzimaju se uz internet).</li>';
-  };
+  }
 
   const openList = async () => {
     $('meni-spiskovi').hidden = true;
@@ -291,11 +348,13 @@ export function initArhiva() {
     }
   });
 
+  // Lov na karti: tragovi i slike sa bočnom kontrolom prikaži/sakrij (arhiva-karta-ui).
   $('btn-ad-trag').addEventListener('click', () => {
-    const id = currentId;
+    const z = hunts.find((x) => x.id === currentId);
+    if (!z) return;
     detail.hidden = true;
     list.hidden = true;
-    document.dispatchEvent(new CustomEvent('lovtrag:arhiva', { detail: { lovId: id } }));
+    document.dispatchEvent(new CustomEvent('arhiva:na-karti', { detail: { lovId: z.id, naziv: z.lov.naziv, datum: z.lov.datum, slike: details.get(z.id)?.slike || [] } }));
   });
 
   // ---------- događaji ----------

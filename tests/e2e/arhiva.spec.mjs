@@ -209,6 +209,56 @@ test('trag kretanja lovaca: iz arhive na karti sa imenima i bojama; checkbox u k
   await expect(page.locator('#lov-trag-legenda')).toContainText('Lovro');
   await expect(page.locator('#karta path.leaflet-interactive, #karta svg path').first()).toBeAttached();
 
+  // bočna kontrola: tragovi i slike tog lova se prikazuju i sakrivaju posebno
+  await expect(page.locator('#arh-karta')).toBeVisible();
+  await expect(page.locator('#arh-karta-naziv')).toHaveText('Pogon Grmeč');
+  await expect(page.locator('.arh-slika-marker')).toHaveCount(1);
+  await expect(page.locator('#arh-karta-slike')).toHaveText('Slike 1');
+  await page.locator('#btn-arh-tragovi').click();
+  await expect(page.locator('#btn-arh-tragovi')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#lov-trag-legenda')).toBeHidden();
+  await expect(page.locator('.arh-slika-marker')).toHaveCount(1); // slike ostaju
+  await page.locator('#btn-arh-slike').click();
+  await expect(page.locator('.arh-slika-marker')).toHaveCount(0);
+  await page.locator('#btn-arh-tragovi').click();
+  await expect(page.locator('#lov-trag-legenda .clan-chip')).toHaveCount(2);
+  await page.locator('#btn-arh-slike').click();
+  await page.locator('.arh-slika-marker').click();
+  await expect(page.locator('#slika-velika')).toBeVisible();
+  await page.locator('#btn-slika-velika-zatvori').click();
+  // Sakrij: lov nestaje sa karte
+  await page.locator('#btn-arh-karta-zatvori').click();
+  await expect(page.locator('#arh-karta')).toBeHidden();
+  await expect(page.locator('#lov-trag-legenda')).toBeHidden();
+  await expect(page.locator('.arh-slika-marker')).toHaveCount(0);
+});
+
+test('arhiva: kalendar pokazuje mjesec zadnjeg lova, dan sa lovom je označen i otvara lov', async ({ page }) => {
+  const server = makeServer();
+  finished(server);
+  await setup(page, server, LOVAC);
+  await openArhiva(page);
+  await page.locator('#arh-tabovi [data-arhtab="kalendar"]').click();
+  await expect(page.locator('#arh-kalendar-panel')).toBeVisible();
+  await expect(page.locator('#arhiva-spisak')).toBeHidden();
+  await expect(page.locator('#arh-mjesec')).toHaveText('Novembar 2026.');
+  await expect(page.locator('#arh-mjesec-info')).toHaveText('1 lov u 1 dan');
+  const dan = page.locator('#arh-kalendar [data-datum="2026-11-22"]');
+  await expect(dan).toHaveAttribute('data-lov', 'da');
+  await expect(page.locator('#arh-kalendar [data-lov]')).toHaveCount(1);
+  // mjesec naprijed: prazno; nazad: opet lov
+  await page.locator('#btn-arh-mj-naprijed').click();
+  await expect(page.locator('#arh-mjesec')).toHaveText('Decembar 2026.');
+  await expect(page.locator('#arh-kalendar [data-lov]')).toHaveCount(0);
+  await page.locator('#btn-arh-mj-nazad').click();
+  await page.locator('#arh-kalendar [data-datum="2026-11-22"]').click();
+  await expect(page.locator('#arhiva-detalj')).toBeVisible();
+  await expect(page.locator('#ad-naslov')).toHaveText('Pogon Grmeč');
+  await page.locator('#btn-ad-zatvori').click();
+  await expect(page.locator('#arh-dan-lovovi [data-id]')).toHaveCount(1);
+  // dan bez lova
+  await page.locator('#arh-kalendar [data-datum="2026-11-10"]').click();
+  await expect(page.locator('#arh-dan-naslov')).toContainText('nema lova');
 });
 
 test('lov u toku: checkbox "Prikaži trag kretanja lovaca sekcije" u kartici lova pamti izbor i crta tragove', async ({ page }) => {

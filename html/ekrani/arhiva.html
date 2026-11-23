@@ -11,8 +11,24 @@
     </div>
   </div>
   <p id="arhiva-status" class="status" role="status"></p>
-  <input id="arhiva-trazi" type="search" placeholder="Traži (datum, naziv, sekcija…)" aria-label="Traži u arhivi" autocomplete="off">
-  <ul id="arhiva-spisak" class="spisak"></ul>
+  <div id="arh-tabovi" class="segment p-tabovi" role="tablist" aria-label="Prikaz arhive">
+    <button type="button" role="tab" data-arhtab="spisak" aria-pressed="true" aria-selected="true">Spisak</button>
+    <button type="button" role="tab" data-arhtab="kalendar" aria-pressed="false" aria-selected="false">Kalendar</button>
+  </div>
+  <div id="arh-spisak-panel">
+    <input id="arhiva-trazi" type="search" placeholder="Traži (datum, naziv, sekcija…)" aria-label="Traži u arhivi" autocomplete="off">
+    <ul id="arhiva-spisak" class="spisak"></ul>
+  </div>
+  <div id="arh-kalendar-panel" hidden>
+    <div class="arh-kal-glava">
+      <button id="btn-arh-mj-nazad" class="ikona-dugme arh-mj-dugme" type="button" aria-label="Prethodni mjesec">‹</button>
+      <div class="arh-kal-naslov"><b id="arh-mjesec"></b><span id="arh-mjesec-info" class="sitno"></span></div>
+      <button id="btn-arh-mj-naprijed" class="ikona-dugme arh-mj-dugme" type="button" aria-label="Sljedeći mjesec">›</button>
+    </div>
+    <div id="arh-kalendar" class="arh-kalendar" role="grid" aria-label="Kalendar lovova"></div>
+    <h3 id="arh-dan-naslov" class="arh-dan-naslov"></h3>
+    <ul id="arh-dan-lovovi" class="spisak"></ul>
+  </div>
 </section>
 
 <section id="arhiva-detalj" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="ad-naslov" hidden>
@@ -28,7 +44,7 @@
       <div data-stat="slika"><b id="ad-stat-slika">0</b><span>slika</span></div>
     </div>
   </div>
-  <button id="btn-ad-trag" class="dugme glavno" type="button">Prikaži trag kretanja lovaca na karti</button>
+  <button id="btn-ad-trag" class="dugme glavno" type="button">Prikaži lov na karti (tragovi i slike)</button>
   <p id="ad-status" class="status" role="status"></p>
   <section class="sk-kartica"><h3>Šta se lovilo</h3><ul id="ad-ulov" class="spisak"></ul></section>
   <section class="sk-kartica">

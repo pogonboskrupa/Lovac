@@ -99,7 +99,8 @@ export const UPUTE = [
       ['Tok lova', 'Komande vođe (početak pogona, kraj, okupljanje, prekid) stižu svima; svaki lovac javlja da je na stanu, da je napustio stan ili pauzu. PREKID se šalje i SMS-om. Učesnici su sažeti po stanju; ekran se zatvara sa × gore (ostaje vidljiv i kad listaš) ili "Zatvori tok lova" na dnu.'],
       ['SOS', 'Šalje se serveru (ako ima veze) i uvijek kao SMS ostalim učesnicima, sa koordinatama. U SMS-u pritisni Pošalji.'],
       ['Lokacija u lovu', 'Dok je lov u toku, pozicija se dijeli sa učesnicima; to se može isključiti. Kraj lova gasi dijeljenje.'],
-      ['Arhiva', 'Meni → Arhiva lova: završeni lovovi sa učesnicima, rezultatom, slikama i tragom kretanja lovaca.'],
+      ['Arhiva', 'Meni → Arhiva lova: završeni lovovi sa učesnicima, rezultatom, slikama i tragom kretanja lovaca. Tab "Kalendar" pokazuje mjesec po mjesec dane sa lovom (zeleno); dodir na dan otvara lov.'],
+      ['Lov iz arhive na karti', 'U detalju lova "Prikaži lov na karti" crta tragove lovaca i slike lova (one koje imaju lokaciju). Sa desne strane karte su dugmad Tragovi i Slike — svako se posebno prikazuje ili sakriva — i Sakrij, koje skida lov sa karte. Dodir na sliku je otvara veliku.'],
     ],
   },
   {

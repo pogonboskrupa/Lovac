@@ -32,6 +32,7 @@ import { initLovTragovi } from './lov-tragovi-ui.js';
 import { initKamere } from './kamere-ui.js';
 import { initSlike } from './slike-ui.js';
 import { initDojave } from './dojave-ui.js';
+import { initArhivaKarta } from './arhiva-karta-ui.js';
 import { initMojaLokacija } from './lokacija-sekcija-ui.js';
 import { initPas } from './pas-ui.js';
 import { initVelicina } from './prikaz.js';
@@ -131,6 +132,7 @@ function enter(screen) {
       ['kamere', () => initKamere(globalThis.L, map)],
       ['lov-tragovi', () => initLovTragovi(globalThis.L, map)],
       ['arhiva', () => initArhiva()],
+      ['arhiva-karta', () => initArhivaKarta(globalThis.L, map)],
       ['fotosync', () => initFotoSync()],
       ['profil-lovca', () => initProfilLovca()],
       ['uzivo', () => initUzivo(globalThis.L, map)],
