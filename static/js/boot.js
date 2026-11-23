@@ -31,6 +31,7 @@ import { initArhiva } from './arhiva-ui.js';
 import { initLovTragovi } from './lov-tragovi-ui.js';
 import { initKamere } from './kamere-ui.js';
 import { initSlike } from './slike-ui.js';
+import { initDojave } from './dojave-ui.js';
 import { initMojaLokacija } from './lokacija-sekcija-ui.js';
 import { initPas } from './pas-ui.js';
 import { initVelicina } from './prikaz.js';
@@ -126,6 +127,7 @@ function enter(screen) {
       ['prijave', () => initPrijave()],
       ['ping', () => initPing()],
       ['slike', () => initSlike(globalThis.L, map)],
+      ['dojave', () => initDojave(globalThis.L, map)],
       ['kamere', () => initKamere(globalThis.L, map)],
       ['lov-tragovi', () => initLovTragovi(globalThis.L, map)],
       ['arhiva', () => initArhiva()],

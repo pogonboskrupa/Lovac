@@ -20,9 +20,10 @@
     <button type="button" data-vrsta="napustio_stan" aria-pressed="false">Napuštam stan</button>
     <button type="button" data-vrsta="pauza" aria-pressed="false">Pauza</button>
   </div>
-  <h3>Učesnici</h3>
-  <ul id="tok-ucesnici" class="spisak"></ul>
+  <h3>Učesnici <span id="tok-ucesnici-broj" class="sitno"></span></h3>
+  <ul id="tok-ucesnici" class="spisak tok-ucesnici"></ul>
   <h3>Događaji</h3>
   <ul id="tok-linija" class="spisak"></ul>
   <p class="sitno">Kod PREKIDA se uz server otvara i SMS svim učesnicima (pritisni Pošalji), jer obavijest stiže samo dok je aplikacija otvorena. Komande i statusi ne zamjenjuju pravila lova ni vođu lova. Bez interneta se događaj sačuva i pošalje kad se veza vrati; obavijest stiže samo dok je aplikacija otvorena.</p>
+  <div class="red-dugmadi tok-dno"><button id="btn-tok-zatvori-dno" class="dugme glavno" type="button">Zatvori tok lova</button></div>
 </section>

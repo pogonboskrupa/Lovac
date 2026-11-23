@@ -1389,3 +1389,48 @@ svg[hidden] { display: none; }
 .ld-brze button { flex: none; border: 1.5px solid var(--okvir); }
 #ld-dodaj-lovce .slf-red { margin: 4px 0; }
 .lk-chip[data-chip="planiran"] { background: var(--naglasak); color: var(--naglasak-tekst); }
+
+/* Prijavi lovočuvaru (v1.1.1) */
+#meni-dodaj .dodaj-dojava { border-color: #f87171; }
+#meni-dodaj .dodaj-dojava .ic { color: #f87171; }
+.dojava-vrste { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dojava-vrste button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 64px; padding: 8px 10px; text-align: left;
+  border: 1.5px solid var(--okvir); border-radius: 12px; background: var(--dugme); color: var(--dugme-tekst); }
+.dojava-vrste button small { font-size: 13px; color: var(--tekst-2); }
+.dojava-vrste button[aria-pressed="true"] { background: var(--naglasak); color: var(--naglasak-tekst); border-color: var(--naglasak); }
+.dojava-vrste button[aria-pressed="true"] small { color: var(--naglasak-tekst); }
+.dojava-pozicija { font-variant-numeric: tabular-nums; }
+.dojava-slika { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+#dojava-slika-pregled img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; display: block; }
+.dojava-kartica { display: grid; gap: 6px; }
+.dojava-kartica[data-status="nova"] { border-color: #ef4444; }
+.dojava-glava { display: flex; align-items: center; gap: 10px; }
+.dojava-ikona { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #7f1d1d; color: #ffffff; }
+.dojava-naslov { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dojava-status { flex: none; font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 10px; background: var(--dugme); }
+.dojava-status[data-status="nova"] { background: #b91c1c; color: #ffffff; }
+.dojava-status[data-status="preuzeta"] { background: #b45309; color: #ffffff; }
+.dojava-status[data-status="rijesena"] { background: #166534; color: #ffffff; }
+.dojava-opis { margin: 0; white-space: pre-wrap; }
+.dojava-odgovor { margin: 0; padding: 6px 8px; border-left: 3px solid var(--naglasak); }
+.dojava-slika-mala { padding: 0; border: 0; background: none; width: 120px; min-height: 44px; }
+.dojava-slika-mala img { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; display: block; }
+.dojava-odgovor-forma { display: flex; gap: 8px; }
+.dojava-odgovor-forma input { flex: 1; min-width: 0; min-height: 48px; font-size: 16px; }
+.dojava-marker { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #b91c1c; color: #ffffff; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.dojava-marker[data-status="preuzeta"] { background: #b45309; }
+.dojava-marker .ic { width: 22px; height: 22px; }
+
+/* Tok lova: zatvaranje uvijek dostupno (v1.1.1) — zaglavlje sa × ostaje gore pri listanju, "Zatvori" na dnu */
+#tok-ekran > .postavke-glava, #lov-danas > .postavke-glava, #dojave > .postavke-glava, #forma-dojava > .postavke-glava {
+  position: sticky; top: calc(-12px - env(safe-area-inset-top)); z-index: 5; background: var(--pozadina);
+  margin: calc(-12px - env(safe-area-inset-top)) -16px 0; padding: calc(12px + env(safe-area-inset-top)) 16px 8px; }
+.tok-dno { margin-top: 16px; }
+.tok-dno .dugme { flex: 1; min-height: 52px; }
+.tok-ucesnici { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tok-ucesnik { display: flex; flex-direction: column; padding: 8px 10px; border: 1.5px solid var(--okvir); border-left-width: 5px; border-radius: 10px; min-width: 0; }
+.tok-ucesnik b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tok-ucesnik[data-stanje="na-stanu"] { border-left-color: #22c55e; }
+.tok-ucesnik[data-stanje="u-pokretu"] { border-left-color: #f59e0b; }
+.tok-ucesnik[data-stanje="pauza"] { border-left-color: #60a5fa; }
+.tok-ucesnik[data-stanje="nema"] { border-left-color: #6b7280; }

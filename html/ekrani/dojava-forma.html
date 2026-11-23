@@ -1,0 +1,25 @@
+<section id="dojava-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="dojava-naslov" hidden>
+  <form id="forma-dojava" novalidate>
+    <header class="postavke-glava"><h2 id="dojava-naslov">Prijavi lovočuvaru</h2>
+      <button id="btn-dojava-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+    <h3>Šta prijavljuješ</h3>
+    <div id="dojava-vrste" class="dojava-vrste" role="group" aria-label="Vrsta dojave"></div>
+    <label>Revir (lovočuvar kojem ide dojava)<select name="revir" id="dojava-revir"></select></label>
+    <p id="dojava-pozicija" class="sitno dojava-pozicija"></p>
+    <div class="red-dugmadi">
+      <button type="button" id="btn-dojava-gps" class="dugme">Moja lokacija</button>
+      <button type="button" id="btn-dojava-nisan" class="dugme">Nišan karte</button>
+    </div>
+    <label>Opis<textarea name="opis" rows="3" maxlength="1000" placeholder="Npr. dva pucnja oko 22 h, svjetla vozila na šumskom putu"></textarea></label>
+    <div class="dojava-slika">
+      <label class="dugme dugme-fajl">Dodaj sliku<input id="dojava-slika-ulaz" type="file" accept="image/*" hidden></label>
+      <div id="dojava-slika-pregled"></div>
+    </div>
+    <p class="sitno">Lokacija i slika idu samo lovočuvaru revira i administratoru. Bez interneta dojava čeka na telefonu i šalje se čim se veza vrati. Kod opasnosti (naoružani krivolovci) ne prilazi — javi se lovočuvaru ili policiji telefonom.</p>
+    <p id="dojava-status" class="sitno" role="status"></p>
+    <div class="red-dugmadi">
+      <button type="submit" class="dugme glavno">Pošalji dojavu</button>
+      <button type="button" id="btn-dojava-odustani" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>

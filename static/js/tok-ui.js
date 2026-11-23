@@ -53,11 +53,14 @@ export function initTok() {
     const mine = memberStatus(all, me()?.id).stanje;
     document.querySelectorAll('#tok-moje [data-vrsta]').forEach((b) => b.setAttribute('aria-pressed', String(
       ({ na_stanu: 'na-stanu', napustio_stan: 'u-pokretu', pauza: 'pauza' })[b.dataset.vrsta] === mine)));
-    $('tok-ucesnici').innerHTML = lov.ucesnici.map((u) => {
-      const st = memberStatus(all, u.korisnik_id);
-      return `<li class="clan-red" data-uid="${escapeHtml(u.korisnik_id)}" data-stanje="${st.stanje}"><span><b>${escapeHtml(memberName(u.korisnik_id))}</b><br>
-        <span class="sitno">${STATUS_TEXT[st.stanje]}${st.t ? ` · ${hm(st.t)}` : ''}</span></span></li>`;
-    }).join('') || '<li class="sitno">Nema učesnika.</li>';
+    const statusi = lov.ucesnici.map((u) => ({ u, st: memberStatus(all, u.korisnik_id) }));
+    // kompaktno (dvije kolone) i sažetak po stanju, da ekran ne bude dugačak kod velikog lova
+    const broj = (k) => statusi.filter((x) => x.st.stanje === k).length;
+    $('tok-ucesnici-broj').textContent = statusi.length
+      ? `(${statusi.length}: na stanu ${broj('na-stanu')} · u pokretu ${broj('u-pokretu')} · pauza ${broj('pauza')} · nije se javio ${broj('nema')})` : '';
+    $('tok-ucesnici').innerHTML = statusi.map(({ u, st }) => `<li class="clan-red tok-ucesnik" data-uid="${escapeHtml(u.korisnik_id)}" data-stanje="${st.stanje}">
+        <b>${escapeHtml(memberName(u.korisnik_id))}</b>
+        <span class="sitno">${STATUS_TEXT[st.stanje]}${st.t ? ` · ${hm(st.t)}` : ''}</span></li>`).join('') || '<li class="sitno">Nema učesnika.</li>';
     const pending = new Set(outbox().map((e) => e.id));
     $('tok-linija').innerHTML = all.slice(-30).reverse().map((e) => `<li data-id="${escapeHtml(e.id)}">
       <span class="sitno">${hm(e.created_at)}${pending.has(e.id) ? ' · čeka slanje' : ''}</span>
@@ -178,6 +181,7 @@ export function initTok() {
   const close = () => { screen.hidden = true; };
   $('btn-tok').addEventListener('click', open);
   $('btn-tok-zatvori').addEventListener('click', close);
+  $('btn-tok-zatvori-dno').addEventListener('click', close);
   registerBackHandler(() => { if (screen.hidden) return false; close(); return true; });
   $('btn-tok-baner-ok').addEventListener('click', () => { $('tok-baner').hidden = true; });
 

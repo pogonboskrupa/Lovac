@@ -78,3 +78,18 @@ test('plan lova: pogonič ostaje pogonič, okupljanje ide na početak napomene',
   assert.equal(plan.lov.napomena, 'Okupljanje u 07:30.\nKod lovačke kuće');
   assert.equal(huntCreatePlan({ id: 'S1', revir_id: 'R1', naziv: 'K' }, 'L', 'ja', { okupljanje: '25:00' }).lov.napomena, undefined);
 });
+
+import { creatableRevirIds, editsRevir, keeperRevirIds } from '../../static/js/sekcije.js';
+test('sekcije po reviru: lovočuvar pravi i uređuje u svom reviru, admin svuda', () => {
+  const reviri = [{ id: 'R1' }, { id: 'R2' }];
+  const lc = [{ korisnik_id: 'l', revir_id: 'R1' }];
+  const gv = [{ korisnik_id: 'g', revir_id: 'R2' }];
+  assert.deepEqual(creatableRevirIds({ id: 'l' }, gv, reviri, lc), ['R1']);
+  assert.deepEqual(creatableRevirIds({ id: 'g' }, gv, reviri, lc), ['R2']);
+  assert.deepEqual(creatableRevirIds({ id: 'a', is_admin: true }, gv, reviri, lc), ['R1', 'R2']);
+  assert.equal(editsRevir({ id: 'l' }, 'R1', lc), true);
+  assert.equal(editsRevir({ id: 'l' }, 'R2', lc), false);
+  assert.equal(editsRevir({ id: 'g' }, 'R2', lc), false);
+  assert.equal(editsRevir({ id: 'a', is_admin: true }, 'R2', lc), true);
+  assert.deepEqual(keeperRevirIds({ id: 'l' }, lc), ['R1']);
+});

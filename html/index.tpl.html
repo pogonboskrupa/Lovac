@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.0';
+  const APP_VER = 'v1.1.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -57,6 +57,7 @@
   <symbol id="ic-deer" viewBox="0 0 24 24"><path d="M7 3c0 3 1 4 3 5M17 3c0 3-1 4-3 5M5 6c1 1 2 1 3 1M19 6c-1 1-2 1-3 1M9 9h6l2 3-2 3v5H9v-5l-2-3Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="10.2" cy="13" r="1" fill="currentColor"/><circle cx="13.8" cy="13" r="1" fill="currentColor"/></symbol>
   <symbol id="ic-stat" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></symbol>
   <symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-stit" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6Z" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linejoin="round"/><path d="M12 8v5M12 16v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
   <symbol id="ic-paw" viewBox="0 0 24 24"><ellipse cx="6" cy="10" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="10.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="15.5" cy="5.8" rx="2" ry="2.8" fill="currentColor"/><ellipse cx="19.5" cy="10" rx="2" ry="2.8" fill="currentColor"/><path d="M12.5 11c-3 0-6 3.3-6 6 0 2.2 1.8 2.8 3.4 2.8 1.2 0 1.8-.5 2.6-.5s1.4.5 2.6.5c1.6 0 3.4-.6 3.4-2.8 0-2.7-3-6-6-6Z" fill="currentColor"/></symbol>
   <symbol id="ic-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
   <symbol id="ic-archive" viewBox="0 0 24 24"><path d="M3 5h18v4H3zM5 9v10h14V9M9.5 13h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/></symbol>
@@ -168,6 +169,7 @@
     <div class="m-red">
       <button type="button" id="btn-odstrel-spisak" class="meni-plocica"><svg class="ic"><use href="#ic-target"/></svg><span class="m-tekst"><span class="m-naslov">Odstrel</span><span class="m-opis" id="btn-odstrel-spisak-opis">Evidencija i statistika</span></span></button>
       <button type="button" id="btn-opazanja" class="meni-plocica"><svg class="ic"><use href="#ic-eye"/></svg><span class="m-tekst"><span class="m-naslov">Opažanja</span><span class="m-opis" id="btn-opazanja-opis">Divljač na terenu</span></span></button>
+      <button type="button" id="btn-dojave" class="meni-plocica"><svg class="ic"><use href="#ic-stit"/></svg><span class="m-tekst"><span class="m-naslov">Prijave lovočuvaru</span><span class="m-opis" id="btn-dojave-opis">Krivolov, divljač, zamke</span></span></button>
       <button type="button" id="btn-objekti" class="meni-plocica"><svg class="ic"><use href="#ic-pin"/></svg><span class="m-tekst"><span class="m-naslov">Objekti</span><span class="m-opis" id="btn-objekti-opis">Čeke, hranilišta, solila</span></span></button>
       <button type="button" id="btn-tragovi" class="meni-plocica"><svg class="ic"><use href="#ic-route"/></svg><span class="m-tekst"><span class="m-naslov">Moji tragovi</span><span class="m-opis" id="btn-tragovi-opis">Snimljene ture</span></span></button>
     </div>
@@ -244,6 +246,7 @@
     <div class="dodaj-mreza">
       <button type="button" id="btn-dodaj-opazanje" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-eye"/></svg><span><b>Opažanje</b><small>Viđena divljač</small></span></button>
       <button type="button" id="btn-dodaj-odstrel" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg><span><b>Odstrel</b><small>Ulov i težina</small></span></button>
+      <button type="button" id="btn-dodaj-dojavu" class="dodaj-plocica dodaj-dojava"><svg class="ic" aria-hidden="true"><use href="#ic-stit"/></svg><span><b>Prijavi lovočuvaru</b><small>Krivolov, ubijena ili ranjena divljač</small></span></button>
       <button type="button" id="btn-dodaj-objekat" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-obj-ceka-visoka"/></svg><span><b>Lovački objekat</b><small>Čeka, hranilište…</small></span></button>
       <button type="button" id="btn-dodaj-sliku" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-camera"/></svg><span><b>Slika na poziciji</b><small>Čeka, objekat, ulov</small></span></button>
     </div>
@@ -373,6 +376,8 @@
 <!--@ekran:opazanje-forma-->
 <!--@ekran:sk-lov-forma-->
 <!--@ekran:lov-danas-->
+<!--@ekran:dojava-forma-->
+<!--@ekran:dojave-->
 
 <!--@ekran:opazanja-->
 

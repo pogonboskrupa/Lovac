@@ -67,8 +67,9 @@ do $$ begin
   update public.lovovi set naziv = 'hak';
   assert not exists (select 1 from public.lovovi where naziv = 'hak'), 'lovočuvar ne organizuje lov';
   begin
-    insert into public.sekcije (revir_id, naziv) values ((select id from public.reviri where naziv = 'Krupa'), 'Nova');
-    raise exception 'FAIL: lovočuvar napravio sekciju';
+    -- od migracije 030 lovočuvar pravi sekcije u SVOM reviru (test 030), ali ne u tuđem
+    insert into public.sekcije (revir_id, naziv) values ((select id from public.reviri where naziv = 'Otoka'), 'Nova');
+    raise exception 'FAIL: lovočuvar napravio sekciju u tuđem reviru';
   exception when insufficient_privilege then null;
   end;
 end $$;

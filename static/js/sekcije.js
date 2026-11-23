@@ -44,9 +44,20 @@ export function canManage(sekcija, user) {
   return Boolean(user && (user.is_admin || sekcija.grupovodja_id === user.id));
 }
 
-export function creatableRevirIds(user, grupovodje, reviri) {
+// Ko pravi sekcije u kojem reviru: admin svuda, grupovođa revira i lovočuvar revira u svom reviru (migracija 030).
+export function creatableRevirIds(user, grupovodje, reviri, lovocuvari = []) {
   if (user?.is_admin) return reviri.map((r) => r.id);
-  return [...new Set(grupovodje.filter((g) => g.korisnik_id === user?.id).map((g) => g.revir_id))];
+  return [...new Set([...grupovodje, ...lovocuvari].filter((g) => g.korisnik_id === user?.id).map((g) => g.revir_id))];
+}
+
+// Uređuje revir (grupovođu sekcije, grupovođe revira): admin ili lovočuvar tog revira. Revir sekcije mijenja samo admin.
+export function editsRevir(user, revirId, lovocuvari = []) {
+  if (!user?.id) return false;
+  return Boolean(user.is_admin) || lovocuvari.some((l) => l.korisnik_id === user.id && l.revir_id === revirId);
+}
+
+export function keeperRevirIds(user, lovocuvari = []) {
+  return [...new Set(lovocuvari.filter((l) => l.korisnik_id === user?.id).map((l) => l.revir_id))];
 }
 
 export function groupByRevir(reviri, sekcije) {
