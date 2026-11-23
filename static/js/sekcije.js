@@ -129,3 +129,26 @@ export function menuSummary(data, user) {
   if (o.moje) return `Moje sekcije: ${o.moje}`;
   return 'Članstvo i odobrenja';
 }
+
+// Ko vidi više sekcija odjednom (admin: sve revire, lovočuvar: svoj revir) dobija tab "Sekcije" sa spiskom;
+// grupovođa i lovac vide svoju sekciju (pristup ionako provodi server).
+export function seesSectionList(user, ctx = {}) {
+  if (!user?.id) return false;
+  if (user.is_admin) return true;
+  return (ctx.lovocuvari || []).some((l) => l.korisnik_id === user.id)
+    || (ctx.sekcije || []).some((x) => x.aktivno !== false && x.lovocuvar_id === user.id);
+}
+
+// Sekcije po reviru (revir po nazivu, pa sekcija po nazivu): [{ revir, sekcije }].
+export function groupSectionsByRevir(sekcije, reviri = []) {
+  const by = new Map();
+  for (const x of sekcije) {
+    const r = reviri.find((v) => v.id === x.revir_id);
+    const key = r?.naziv || '';
+    if (!by.has(key)) by.set(key, []);
+    by.get(key).push(x);
+  }
+  return [...by.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], 'bs'))
+    .map(([revir, list]) => ({ revir, sekcije: list.sort((a, b) => a.naziv.localeCompare(b.naziv, 'bs')) }));
+}

@@ -441,3 +441,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Admin: tab "Sekcije" sa spiskom (v0.8.0)**
 - Admin vidi sve sekcije, pa tab u navigaciji ne nosi naziv jedne (prije je pisalo ime prve sekcije, npr. "Vignjević gaj") nego "Sekcije" sa ikonom grupe; naslov ekrana je isto "Sekcije". Unutra je vodoravan spisak svih sekcija (`#sk-lista`, `[data-sid]`, logo + naziv + revir, odabrana ima `aria-pressed`) umjesto padajućeg izbora (`#sk-izbor` ostaje za lovce sa više sekcija). Ostali korisnici i dalje vide naziv i logo svoje sekcije.
+
+**Opseg sekcija po ulozi (v0.8.1)**
+- Pravilo vlasnika: admin vidi sve revire i sekcije, lovočuvar svoj revir (sve njegove sekcije), grupovođa i lovci svoju sekciju. Provodi server (RLS), a klijent samo prikazuje (`sekcija-podaci.js mySections`). Tab "Sekcije" sa spiskom (`#sk-lista`) dobijaju i admin i lovočuvar (`sekcije.js seesSectionList`); spisak je grupisan po reviru (`groupSectionsByRevir`, zaglavlje `.sk-lista-revir`). Grupovođa i lovac vide naziv svoje sekcije (padajući izbor samo ako imaju više od jedne).

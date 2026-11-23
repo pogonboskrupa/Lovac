@@ -203,15 +203,17 @@ test('lovočuvar revira prati SVE sekcije svog revira (izbor), ne i druge revire
   await setup(page, server, VAN);
   await page.goto('/');
   await page.locator('#btn-sekcija').click();
-  await expect(page.locator('#sk-izbor')).toBeVisible();
-  await expect(page.locator('#sk-izbor option')).toHaveText(['Krupa 1', 'Krupa 2']);
+  await expect(page.locator('#btn-sekcija')).toContainText('Sekcije');
+  await expect(page.locator('#sk-lista')).toBeVisible();
+  await expect(page.locator('#sk-lista .sk-lista-revir')).toHaveText(['Revir Krupa']);
+  await expect(page.locator('#sk-lista [data-sid]')).toHaveText(['Krupa 1', 'Krupa 2']);
   await expect(page.locator('#sk-podnaslov')).toContainText('lovočuvar revira');
   await expect(page.locator(`#sk-clanovi [data-uid="${VAN.id}"]`)).toHaveCount(1);
   await expect(page.locator('#sk-clanovi [data-uid="' + GV.id + '"]')).toContainText('Aktivan u lovu');
-  await page.locator('#sk-izbor').selectOption(ID(201));
-  await expect(page.locator('#sk-naslov')).toHaveText('Krupa 2');
+  await page.locator(`#sk-lista [data-sid="${ID(201)}"]`).click();
+  await expect(page.locator(`#sk-lista [data-sid="${ID(201)}"]`)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sk-podnaslov')).toContainText('Revir Krupa');
   await expect(page.locator('#sk-lov')).toContainText('Nema lova');
-  await expect(page.locator('#btn-sekcija')).toContainText('Krupa 2');
 
   // Lovac koji nije u sekciji: prazan ekran sa putem do zahtjeva.
   const ctx2 = await browser.newContext({ viewport: { width: 412, height: 915 } });

@@ -1064,3 +1064,5 @@ svg[hidden] { display: none; }
 .sk-lista-stavka { flex: none; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 12px; text-align: left; background: var(--povrsina); color: var(--tekst); border: 2px solid var(--dugme); border-radius: 14px; }
 .sk-lista-stavka[aria-pressed="true"] { border-color: var(--naglasak); }
 .sk-lista-stavka > span:last-child { display: flex; flex-direction: column; }
+
+.sk-lista-revir { flex: none; align-self: center; font-size: 13px; font-weight: 700; color: var(--tekst-2); padding: 0 4px 0 8px; }

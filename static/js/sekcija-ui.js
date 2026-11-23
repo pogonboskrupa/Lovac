@@ -17,7 +17,7 @@ import { trailEnabled } from './lov-tragovi-ui.js';
 import { avatarOf } from './profil-ui.js';
 import { logoStyle } from './sekcija-logo.js';
 import { initialsOf } from './lokacija.js';
-import { myStatus, pendingRequests, pristupText, creationMode, isLeadership } from './sekcije.js';
+import { myStatus, pendingRequests, pristupText, creationMode, isLeadership, seesSectionList, groupSectionsByRevir } from './sekcije.js';
 import {
   validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES, KANAL_RUKOVODSTVO,
 } from './poruke.js';
@@ -94,8 +94,9 @@ export function initSekcijaEkran(L, map) {
 
   const updateNav = () => {
     // Admin vidi sve sekcije: tab je "Sekcije" (spisak + izbor unutra), ne naziv jedne sekcije.
-    const s = me()?.is_admin ? null : selected();
-    $('nav-sekcija-ime').textContent = me()?.is_admin ? 'Sekcije' : s ? s.naziv : 'Sekcija';
+    const wide = seesSectionList(me(), ctx);
+    const s = wide ? null : selected();
+    $('nav-sekcija-ime').textContent = wide ? 'Sekcije' : s ? s.naziv : 'Sekcija';
     $('nav-sekcija-logo').hidden = !s;
     // SVG element nema svojstvo hidden: atribut se postavlja ručno
     if (s) $('nav-sekcija-ikona').setAttribute('hidden', ''); else $('nav-sekcija-ikona').removeAttribute('hidden');
@@ -259,14 +260,11 @@ export function initSekcijaEkran(L, map) {
     const list = mine();
     const s = selected();
     const sel = $('sk-izbor');
-    const admin = Boolean(me()?.is_admin);
+    const admin = seesSectionList(me(), ctx);
     sel.hidden = admin || list.length < 2;
     const lista = $('sk-lista');
     lista.hidden = !admin || list.length === 0;
-    lista.innerHTML = admin ? list.map((x) => {
-      const rv = ctx.reviri.find((r) => r.id === x.revir_id);
-      return `<button type="button" class="sk-lista-stavka" data-sid="${escapeHtml(x.id)}" aria-pressed="${s && x.id === s.id}"><span class="sek-logo mali" style="${escapeHtml(logoStyle(x))}"></span><span><b>${escapeHtml(x.naziv)}</b><span class="sitno">Revir ${escapeHtml(rv?.naziv || '')}</span></span></button>`;
-    }).join('') : '';
+    lista.innerHTML = admin ? groupSectionsByRevir(list, ctx.reviri).map((g) => `<span class="sk-lista-revir">Revir ${escapeHtml(g.revir)}</span>${g.sekcije.map((x) => `<button type="button" class="sk-lista-stavka" data-sid="${escapeHtml(x.id)}" aria-pressed="${Boolean(s && x.id === s.id)}"><span class="sek-logo mali" style="${escapeHtml(logoStyle(x))}"></span><b>${escapeHtml(x.naziv)}</b></button>`).join('')}`).join('') : '';
     sel.innerHTML = list.map((x) => `<option value="${escapeHtml(x.id)}" ${s && x.id === s.id ? 'selected' : ''}>${escapeHtml(x.naziv)}</option>`).join('');
     $('sk-prazno').hidden = Boolean(s);
     $('sk-sadrzaj').hidden = !s;

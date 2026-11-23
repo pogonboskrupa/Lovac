@@ -146,7 +146,7 @@ test('lovočuvar piše članovima sekcije kroz kanal sekcije', async ({ page }) 
   await setup(page, server, VAN);
   await page.goto('/');
   await page.locator('#btn-sekcija').click();
-  await expect(page.locator('#sk-izbor')).toBeVisible();
+  await expect(page.locator('#sk-lista')).toBeVisible();
   await page.fill('#forma-poruka input[name=tekst]', 'Pozdrav od lovočuvara');
   await page.locator('#forma-poruka button[type=submit]').click();
   await expect.poll(() => server.db.poruke.some((m) => m.tekst === 'Pozdrav od lovočuvara' && m.sekcija_id === ID(200))).toBe(true);
