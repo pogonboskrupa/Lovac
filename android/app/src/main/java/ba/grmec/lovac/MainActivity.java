@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
             });
         }
 
-        updateBridge = new UpdateBridge(this);
+        updateBridge = new UpdateBridge(this, webView);
         webView.addJavascriptInterface(updateBridge, "AndroidUpdate");
         webView.addJavascriptInterface(new GpsBridge(this), "AndroidGps");
         webView.addJavascriptInterface(new ShareBridge(this), "AndroidShare");
@@ -274,6 +274,7 @@ public class MainActivity extends Activity {
         super.onResume();
         hideSystemBars();
         webView.onResume();
+        if (updateBridge != null) updateBridge.resumePendingInstall();
     }
 
     @Override

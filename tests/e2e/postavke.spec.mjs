@@ -129,3 +129,38 @@ test('"Preuzmi zadnju verziju" je uvijek dostupno i u APK-u zove AndroidUpdate m
   await page.locator('#btn-preuzmi-zadnju').click();
   expect(await page.evaluate(() => window.__pozvano)).toEqual([expect.stringMatching(/\/releases\/latest\/download\/app-debug\.apk$/)]);
 });
+
+test('"Preuzmi zadnju verziju" u novoj aplikaciji preuzima APK na uređaj, pokazuje napredak i javlja kraj ili grešku', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__pozvano = [];
+    window.AndroidUpdate = { preuzmi: (u) => window.__pozvano.push(u), downloadAndInstall: () => window.__pozvano.push('stari') };
+  });
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
+  await page.locator('#btn-preuzmi-zadnju').click();
+  expect(await page.evaluate(() => window.__pozvano)).toEqual([expect.stringMatching(/\/releases\/latest\/download\/app-debug\.apk$/)]);
+  await expect(page.locator('#azur-napredak')).toBeVisible();
+  await expect(page.locator('#btn-preuzmi-zadnju')).toBeDisabled();
+  await page.evaluate(() => window.__updateNapredak('45'));
+  await expect(page.locator('#azur-preuzimanje')).toHaveText('Preuzimam zadnju verziju… 45 %');
+  await expect(page.locator('#azur-napredak')).toHaveJSProperty('value', 45);
+  await page.evaluate(() => window.__updatePreuzeto('update.apk'));
+  await expect(page.locator('#azur-preuzimanje')).toContainText('preuzeta na telefon');
+  await expect(page.locator('#btn-preuzmi-zadnju')).toBeEnabled();
+  // greška (npr. nema interneta) se prikaže i dugme se otključa za novi pokušaj
+  await page.locator('#btn-preuzmi-zadnju').click();
+  await page.evaluate(() => window.__updateGreska('Preuzimanje nije uspjelo (provjeri internet): timeout'));
+  await expect(page.locator('#azur-preuzimanje')).toContainText('provjeri internet');
+  await expect(page.locator('#btn-preuzmi-zadnju')).toBeEnabled();
+});
+
+test('"Preuzmi zadnju verziju" u pregledniku preuzima APK fajl, ne osvježava stranicu', async ({ page }) => {
+  let apk = 0;
+  await page.route(/releases\/latest\/download\/app-debug\.apk/, (r) => { apk++; return r.fulfill({ status: 200, contentType: 'application/vnd.android.package-archive', body: 'APK' }); });
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
+  await page.locator('#btn-preuzmi-zadnju').click().catch(() => {});
+  await expect.poll(() => apk).toBe(1);
+});

@@ -111,7 +111,7 @@ export const UPUTE = [
       ['Izgled', 'Dnevna i noćna tema.'],
       ['Rezervna kopija', 'Postavke → Podaci izvozi tvoje zapise u fajl i može ih vratiti. Vraćanje samo dodaje zapise kojih nema. Napravi kopiju prije promjene telefona.'],
       ['Profil lovca', 'Avatar, pas, prateća oprema (vidiš samo ti), broj telefona i lična statistika.'],
-      ['Ažuriranje', 'Postavke → Nalog → O aplikaciji: Provjeri ažuriranje ili Preuzmi zadnju verziju. Instalacija ide preko postojeće, podaci ostaju.'],
+      ['Ažuriranje', 'Postavke → Nalog → O aplikaciji: Provjeri ažuriranje ili Preuzmi zadnju verziju. Aplikacija sama preuzme novu verziju na telefon (vidi se napredak u %), pa otvori instalaciju; instalacija ide preko postojeće, podaci ostaju. Prvi put telefon traži dozvolu za instalaciju iz ove aplikacije: dozvoli i vrati se, instalacija kreće sama.'],
       ['Odjava', 'Ako ima neposlanih zapisa, traži drugi dodir. Neposlani zapisi se ne brišu.'],
     ],
   },

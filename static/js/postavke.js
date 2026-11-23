@@ -257,8 +257,41 @@ function wireUpdateButton(appVer) {
       status.textContent = 'Provjera nije uspjela (nema veze sa serverom). Možeš preuzeti zadnju verziju dugmetom ispod.';
     }
   });
-  install.addEventListener('click', () => installUpdate());
-  el('btn-preuzmi-zadnju').addEventListener('click', () => installUpdate());
+  const startDownload = () => {
+    const mode = installUpdate();
+    const st = el('azur-preuzimanje');
+    if (mode === 'preuzimanje') {
+      el('azur-napredak').hidden = false;
+      el('azur-napredak').value = 0;
+      el('btn-preuzmi-zadnju').disabled = true;
+      install.disabled = true;
+      st.textContent = 'Preuzimam zadnju verziju… 0 %';
+    } else if (mode === 'apk') {
+      st.textContent = 'Preuzimanje je pokrenuto (obavijest na telefonu). Kad završi, otvara se instalacija.';
+    } else {
+      st.textContent = 'Preuzimam APK fajl na uređaj. Otvori ga iz preuzimanja da instaliraš aplikaciju.';
+    }
+  };
+  const doneDownload = () => {
+    el('btn-preuzmi-zadnju').disabled = false;
+    install.disabled = false;
+  };
+  globalThis.__updateNapredak = (pct) => {
+    el('azur-napredak').value = Number(pct) || 0;
+    el('azur-preuzimanje').textContent = `Preuzimam zadnju verziju… ${pct} %`;
+  };
+  globalThis.__updatePreuzeto = () => {
+    el('azur-napredak').hidden = true;
+    el('azur-preuzimanje').textContent = 'Nova verzija je preuzeta na telefon. Potvrdi instalaciju (podaci ostaju).';
+    doneDownload();
+  };
+  globalThis.__updateGreska = (msg) => {
+    el('azur-napredak').hidden = true;
+    el('azur-preuzimanje').textContent = msg;
+    doneDownload();
+  };
+  install.addEventListener('click', startDownload);
+  el('btn-preuzmi-zadnju').addEventListener('click', startDownload);
 }
 
 export function initPostavke({ setBase, onLogout, appVer }) {

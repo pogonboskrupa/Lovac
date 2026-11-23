@@ -55,12 +55,18 @@ export function shouldUseServiceWorker(loc, hasAndroidBridge) {
   return !hasAndroidBridge && loc?.hostname !== 'appassets.androidplatform.net';
 }
 
+// Preuzimanje zadnje verzije NA UREĐAJ: u aplikaciji je preuzima sama aplikacija (napredak stiže u __updateNapredak),
+// starija aplikacija koristi DownloadManager, a u pregledniku se APK preuzme kao fajl (ranije je samo osvježavalo stranicu).
 export function installUpdate() {
   const bridge = globalThis.AndroidUpdate;
+  if (bridge?.preuzmi) {
+    bridge.preuzmi(APK_URL);
+    return 'preuzimanje';
+  }
   if (bridge?.downloadAndInstall) {
     bridge.downloadAndInstall(APK_URL);
     return 'apk';
   }
-  globalThis.location.reload();
-  return 'reload';
+  globalThis.location.assign(APK_URL);
+  return 'fajl';
 }
