@@ -191,6 +191,11 @@ function wireAuthForms() {
   form?.addEventListener('submit', (e) => { e.preventDefault(); submit(e.submitter?.value || 'prijava'); });
   document.getElementById('btn-provjeri-odobrenje')?.addEventListener('click', () => backgroundSession(true));
   document.getElementById('btn-odjava')?.addEventListener('click', doLogout);
+  // Ponovna prijava na zahtjev lovca (traka "Prijava istekla"); neposlani zapisi ostaju u redu.
+  document.getElementById('prijava-istekla')?.addEventListener('click', () => {
+    document.getElementById('prijava-istekla').hidden = true;
+    doLogout();
+  });
 }
 
 async function backgroundSession(userAsked = false) {
@@ -198,11 +203,18 @@ async function backgroundSession(userAsked = false) {
   try {
     const profile = await refreshProfileInBackground();
     if (profile === null) {
-      // Server je izričito odbio sesiju — tek tada prijava.
+      // Sa sačuvanim profilom lovac NIKAD ne biva izbačen na prijavu sam od sebe: na slabom signalu (prazan ili čudan
+      // odgovor operatera/proksija) i biblioteka za prijavu zna proglasiti sesiju nevažećom. Aplikacija radi dalje
+      // offline, zapisi čekaju u redu (bez sesije se ne šalju), a prijava je jedan dodir na traci kad lovac to želi.
+      if (shownScreen === 'mapa' && cachedProfile()) {
+        document.getElementById('prijava-istekla').hidden = false;
+        return;
+      }
       await logout();
       enter('prijava');
       return;
     }
+    document.getElementById('prijava-istekla').hidden = true;
     const next = profile.odobren ? 'mapa' : 'cekanje';
     if (next !== shownScreen) enter(next);
     else if (userAsked && !profile.odobren) toast('Još čeka odobrenje administratora');
