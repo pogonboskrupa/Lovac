@@ -1,9 +1,27 @@
-<section id="potraga-start" class="dijalog" role="dialog" aria-labelledby="potraga-start-naslov" hidden>
-  <h3 id="potraga-start-naslov">Potraga za ranjenom divljači</h3>
-  <p>Gdje je bio nastrijel? Snimanje traga potrage počinje odmah.</p>
-  <div class="red-dugmadi">
-    <button id="btn-nastrijel-gps" class="dugme glavno" type="button">Na mojoj poziciji</button>
-    <button id="btn-nastrijel-nisan" class="dugme" type="button">Na nišanu karte</button>
-    <button id="btn-nastrijel-odustani" class="dugme" type="button">Odustani</button>
+<section id="potraga-start" class="list-preko potraga-list" role="dialog" aria-modal="true" aria-labelledby="potraga-start-naslov" hidden>
+  <header class="postavke-glava"><h2 id="potraga-start-naslov">Potraga za ranjenom divljači</h2>
+    <button id="btn-nastrijel-odustani" class="ikona-dugme" type="button" aria-label="Odustani"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+  <p class="sitno">Zabilježi nastrijel. Snimanje traga potrage počinje odmah, a vodič psa krvara je može pratiti (Dijeli).</p>
+  <label>Divljač<select id="potraga-vrsta"></select></label>
+  <h3 class="potraga-podnaslov">Kad je pucano</h3>
+  <div id="potraga-prije" class="segment potraga-izbor" role="group" aria-label="Prije koliko je pucano"></div>
+  <h3 class="potraga-podnaslov">Znakovi na nastrijelu</h3>
+  <div id="potraga-znakovi" class="potraga-izbor potraga-cipovi" role="group" aria-label="Znakovi na nastrijelu"></div>
+  <p id="potraga-savjet" class="potraga-savjet" hidden></p>
+  <div class="red-dugmadi potraga-start-dugmad">
+    <button id="btn-nastrijel-gps" class="dugme glavno" type="button">Nastrijel je na mojoj poziciji</button>
+    <button id="btn-nastrijel-nisan" class="dugme" type="button">Nastrijel je na nišanu karte</button>
   </div>
+  <p class="sitno">Savjeti su orijentacioni. Ranjenoj divljači ne prilazi sam; potragu vodi vodič psa krvara ili lovočuvar. Aplikacija ne zamjenjuje pravila lova.</p>
 </section>
+<div id="potraga-znak" class="dijalog dijalog-gore potraga-znak" role="dialog" aria-label="Znak na tragu" hidden>
+  <b>Šta si našao ovdje?</b>
+  <div id="potraga-znak-izbor" class="potraga-znak-izbor"></div>
+  <button id="btn-potraga-znak-odustani" class="dugme" type="button">Odustani</button>
+</div>
+<div id="potraga-kraj" class="dijalog dijalog-gore potraga-kraj" role="dialog" aria-label="Kraj potrage" hidden>
+  <b>Kraj potrage — ishod</b>
+  <div id="potraga-ishod" class="potraga-znak-izbor"></div>
+  <p class="sitno">Trag potrage se čuva sa ishodom i znakovima.</p>
+  <button id="btn-potraga-kraj-odustani" class="dugme" type="button">Nastavi potragu</button>
+</div>

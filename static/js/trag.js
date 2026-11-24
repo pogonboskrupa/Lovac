@@ -263,6 +263,7 @@ export function nearestReturnTargets(from, objekti, potraga) {
 export function trackWaypoints(trag) {
   const w = [];
   if (trag.nastrijel) w.push({ ...trag.nastrijel, naziv: 'Nastrijel' });
-  for (const k of trag.krv || []) w.push({ ...k, naziv: k.napomena ? `Krv: ${k.napomena}` : 'Krv' });
+  const ZNAK = { krv: 'Krv', dlaka: 'Dlaka', kost: 'Kost', lezaj: 'Ležaj', drugo: 'Znak' };
+  for (const k of trag.krv || []) { const n = ZNAK[k.tip] || 'Krv'; w.push({ ...k, naziv: k.napomena ? `${n}: ${k.napomena}` : n }); }
   return w;
 }

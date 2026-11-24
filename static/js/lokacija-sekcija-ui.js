@@ -8,10 +8,11 @@ import { connectionQuality } from './net.js';
 import { memberName } from './dijeljenje-ui.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { myStatus } from './sekcije.js';
-import { formatCoordMode, nextCoordMode, COORD_MODES, compassName, locationShareText } from './geo.js';
+import { formatCoordMode, nextCoordMode, COORD_MODES, compassName, locationShareText, secondaryCoordMode } from './geo.js';
+import { terrainAt } from './dem.js';
 import { shareText } from './dijeljenje.js';
 import { getCoordMode } from './map.js';
-import { formatMemberDistance, memberCard } from './istrazivac.js';
+import { formatMemberDistance, memberCard, distanceM } from './istrazivac.js';
 import { getShareSettings, setShareSettings } from './lokacija-ui.js';
 import { shareIntervalMs, initialsOf, PRIKAZ_KEY, showOwnMarker } from './lokacija.js';
 import { SHARE_DURATIONS, shareUntil, activeShare, canShareToSection, sectionShareList, untilText } from './lokacija-sekcija.js';
@@ -42,12 +43,32 @@ export function initMojaLokacija(L, map) {
   const sharing = () => activeShare(loadJSON(SEKCIJA_DIJELJENJE_KEY, null));
 
   // ---------- koordinate u ploči ----------
+  // N.V. sa modela terena (GPS visina je ~45 m previsoka); računa se kad se pozicija pomjeri ≥ 20 m.
+  let nvFor = null;
+  const renderNv = async (fix) => {
+    if (nvFor && distanceM(nvFor, fix) < 20) return;
+    nvFor = { lat: fix.lat, lon: fix.lon };
+    const t = await terrainAt(fix.lat, fix.lon, { allowNetwork: connectionQuality() !== 'nema' }).catch(() => null);
+    const el = $('lok-nv');
+    el.hidden = !Number.isFinite(t?.visina);
+    if (!el.hidden) el.textContent = `N.V. ${Math.round(t.visina)} m (model terena)`;
+  };
   const renderCoords = () => {
     const fix = currentFix();
-    const f = fix ? formatCoordMode(getCoordMode(), fix.lat, fix.lon) : null;
+    const mode = getCoordMode();
+    const f = fix ? formatCoordMode(mode, fix.lat, fix.lon) : null;
+    const g = fix ? formatCoordMode(secondaryCoordMode(mode), fix.lat, fix.lon) : null;
     $('lok-oznaka').textContent = f ? f.oznaka : '';
     $('lok-koord').textContent = f ? f.tekst : 'Čekam GPS…';
+    $('lok-oznaka2').textContent = g ? g.oznaka : '';
+    $('lok-koord2').textContent = g ? g.tekst : '';
+    if (fix) renderNv(fix);
   };
+  // Dodir bilo gdje na redu prekidača mijenja prekidač (veća meta za prst).
+  panel.addEventListener('click', (e) => {
+    const row = e.target.closest('.lok-prekidaci .lok-pravac');
+    if (row && !e.target.closest('button')) row.querySelector('.lok-prekidac')?.click();
+  });
 
   // ---------- sekcije u kojima mogu dijeliti ----------
   // download: samo pri otvaranju ploče (radnja lovca); pri pokretanju se ne diraju mreža ni događaji ostalih ekrana.

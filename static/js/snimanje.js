@@ -173,6 +173,8 @@ async function updateActive(id, fn) {
 
 // Trag krvi dodirom na trenutnoj poziciji (potraga za ranjenom divljači).
 export const addBloodMark = (id, mark) => updateActive(id, (t, now) => ({ ...t, krv: [...(t.krv || []), { ...mark, t: mark.t ?? now }] }));
+// Ishod potrage (pronađena / nije / prekinuta) upisuje se prije završetka, pa ide na server sa tragom.
+export const setSearchOutcome = (id, ishod) => updateActive(id, (t) => ({ ...t, ishod }));
 
 // Tačka usput (npr. "stan", "trag divljači", "prelaz"): ostaje u zapisu traga i crta se na karti.
 export const addWaypoint = (id, wp) => updateActive(id, (t, now) => {

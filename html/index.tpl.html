@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.9';
+  const APP_VER = 'v1.2.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -198,7 +198,11 @@
         <span id="lok-sek-znacka" class="lok-sek-znacka" hidden></span>
       </div>
       <div class="lok-koord-red">
-        <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+        <div class="lok-koord-blok">
+          <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+          <p class="lok-koord2"><span id="lok-oznaka2" class="pill-oznaka"></span> <span id="lok-koord2"></span></p>
+          <p id="lok-nv" class="lok-nv" hidden></p>
+        </div>
         <button id="btn-lok-kopiraj" class="dugme lok-kopiraj" type="button" aria-label="Kopiraj koordinate">Kopiraj</button>
       </div>
     </div>
@@ -212,32 +216,35 @@
     </div>
     <div class="lok-prekidaci">
       <div class="lok-pravac" id="lok-prikaz">
-        <button id="btn-lok-prikaz" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija na karti"><span class="lok-prekidac-ruka"></span></button>
+        <svg class="ic lok-red-ikona" aria-hidden="true"><use href="#ic-locate"/></svg>
         <div class="lok-pravac-tekst">
           <b>Moja lokacija</b>
           <span id="lok-prikaz-stanje" class="sitno" role="status">Uključeno: vidiš se na karti</span>
         </div>
+        <button id="btn-lok-prikaz" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Moja lokacija na karti"><span class="lok-prekidac-ruka"></span></button>
       </div>
       <div class="lok-pravac" id="lok-auto">
-        <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Dijeli lokaciju u lovu"><span class="lok-prekidac-ruka"></span></button>
+        <svg class="ic lok-red-ikona" aria-hidden="true"><use href="#ic-hunt"/></svg>
         <div class="lok-pravac-tekst">
           <b>Dijeli lokaciju</b>
           <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: učesnici lova vide tvoju poziciju</span>
         </div>
+        <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Dijeli lokaciju u lovu"><span class="lok-prekidac-ruka"></span></button>
       </div>
       <div class="lok-pravac" id="kompas">
-        <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja">
-          <span class="lok-prekidac-ruka"></span>
-        </button>
+        <svg class="ic lok-red-ikona" aria-hidden="true"><use href="#ic-compass"/></svg>
         <div class="lok-pravac-tekst">
           <b>Pravac gledanja</b>
           <span id="kompas-izvor" class="sitno" role="status">Čekam kompas…</span>
         </div>
+        <button id="btn-kompas-stozac" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Pravac gledanja">
+          <span class="lok-prekidac-ruka"></span>
+        </button>
       </div>
     </div>
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
     <section id="lok-sekcija" class="lok-sekcija">
-      <h3>Dijeli lokaciju sa sekcijom</h3>
+      <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-group"/></svg>Dijeli lokaciju sa sekcijom</h3>
       <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi i grupovođa sekcije.</p>
       <div id="lok-sek-forma">
         <select id="lok-sek-izbor" aria-label="Sekcija" hidden></select>
@@ -349,6 +356,7 @@
         <button id="btn-uzivo-kraj-odustani" class="dugme" type="button">Odustani</button>
       </div>
       <div id="panel-snimanje" class="panel-snimanje" hidden>
+        <p id="potraga-info" class="potraga-info" hidden></p>
         <div class="snim-info"><span id="snim-vrsta"></span><b id="snim-status">Snima</b> <span id="snim-vrijeme">0 min</span> · <span id="snim-duzina">0 m</span> · <span id="snim-tacke">0</span> tač.<span id="snim-krv"></span></div>
         <div class="snim-dugmad">
           <button id="btn-snim-tacka" class="dugme" type="button">Tačka</button>
@@ -356,9 +364,10 @@
           <button id="btn-snim-pauza" class="dugme" type="button">Pauza</button>
           <button id="btn-snim-stop" class="dugme glavno" type="button">Završi</button>
         </div>
-        <div id="potraga-dugmad" class="snim-dugmad snim-dugmad-3" hidden>
+        <div id="potraga-dugmad" class="snim-dugmad snim-dugmad-4" hidden>
           <button id="btn-krv" class="dugme dugme-krv" type="button">Krv ovdje</button>
-          <button id="btn-vodi-nazad" class="dugme" type="button">Vodi me nazad</button>
+          <button id="btn-potraga-znak" class="dugme" type="button">Znak…</button>
+          <button id="btn-vodi-nazad" class="dugme" type="button">Nazad</button>
           <button id="btn-potraga-dijeli" class="dugme" type="button">Dijeli</button>
         </div>
       </div>

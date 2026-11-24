@@ -223,6 +223,9 @@ export function nextCoordMode(mode) {
   return COORD_MODES[(Math.max(0, COORD_MODES.indexOf(mode)) + 1) % COORD_MODES.length];
 }
 
+// Drugi red koordinata u ploči "Moja lokacija": uz WGS84 ide MGI 5 (koordinate sa terena), uz MGI ide WGS84.
+export const secondaryCoordMode = (mode) => (mode === 'wgs' ? 'mgi5' : 'wgs');
+
 export function formatCoordMode(mode, lat, lon) {
   if (mode === 'mgi5' || mode === 'mgi6') {
     const g = formatGk(lat, lon, mode === 'mgi5' ? 5 : 6);
