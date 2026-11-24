@@ -42,6 +42,8 @@ export function initMojaLokacija(L, map) {
 
   const isOpen = () => !panel.hidden;
   const sharing = () => activeShare(loadJSON(SEKCIJA_DIJELJENJE_KEY, null));
+  let aktivanLov = null; // lov u toku u kojem sam (iz uzivo-ui, događaj lov:aktivan)
+  let renderAuto = () => {};
 
   // ---------- koordinate u ploči ----------
   // N.V. sa modela terena (GPS visina je ~45 m previsoka); računa se kad se pozicija pomjeri ≥ 20 m.
@@ -101,6 +103,7 @@ export function initMojaLokacija(L, map) {
     // značka na vrhu ploče: dijeljenje sa sekcijom se vidi bez listanja do dna
     const znacka = $('lok-sek-znacka');
     znacka.hidden = !sh;
+    renderAuto();
     setSharing('sekcija', Boolean(sh));
     if (sh) znacka.textContent = `Dijeliš sa sekcijom do ${untilText(sh.do)}`;
     const list = sectionShareList(rows, me()?.id, memberName, currentFix());
@@ -143,10 +146,11 @@ export function initMojaLokacija(L, map) {
     }
   };
 
-  const stopSending = () => { clearInterval(sendTimer); sendTimer = null; setSharing('sekcija', false); };
+  const stopSending = () => { clearInterval(sendTimer); sendTimer = null; setSharing('sekcija', false); renderAuto(); };
   const armSending = () => {
     stopSending();
     setSharing('sekcija', true);
+    renderAuto();
     sendTimer = setInterval(sendNow, shareIntervalMs(getShareSettings().interval));
     sendNow();
   };
@@ -209,14 +213,31 @@ export function initMojaLokacija(L, map) {
     renderPrikaz();
   });
   renderPrikaz();
-  // "Dijeli lokaciju": automatsko dijeljenje u lovu (ista postavka kao u Postavkama → Opšte).
-  const renderAuto = () => {
-    const on = getShareSettings().on;
-    $('btn-lok-auto').setAttribute('aria-checked', String(on));
-    $('lok-auto-stanje').textContent = on ? 'Uključeno: učesnici lova vide tvoju poziciju' : 'Isključeno: niko ne vidi tvoju poziciju';
+  // "Dijeli lokaciju" (odluka vlasnika): dok traje lov u kojem sam, prekidač je dijeljenje u lovu (zadano UKLJUČENO,
+  // ista postavka kao u Postavkama); izvan lova je dijeljenje sa sekcijom (zadano ISKLJUČENO, traje izabrano vrijeme).
+  renderAuto = () => {
+    const sw = $('btn-lok-auto');
+    if (aktivanLov) {
+      const on = getShareSettings().on;
+      sw.setAttribute('aria-checked', String(on));
+      sw.setAttribute('aria-label', 'Dijeli lokaciju u lovu');
+      $('lok-auto-stanje').textContent = on ? `Uključeno: učesnici lova (${aktivanLov.lov?.naziv || 'lov'}) vide tvoju poziciju` : 'Isključeno: učesnici lova ne vide tvoju poziciju';
+      return;
+    }
+    const sh = sharing();
+    sw.setAttribute('aria-checked', String(Boolean(sh)));
+    sw.setAttribute('aria-label', 'Dijeli lokaciju sa sekcijom');
+    const naziv = sh && sections.find((x) => x.id === sh.sekcijaId)?.naziv;
+    $('lok-auto-stanje').textContent = sh ? `Uključeno: sekcija ${naziv || ''} vidi tvoju poziciju do ${untilText(sh.do)}`
+      : sections.length ? 'Isključeno: niko ne vidi tvoju poziciju' : 'Isključeno: nisi član nijedne sekcije';
   };
-  $('btn-lok-auto').addEventListener('click', () => { setShareSettings({ on: !getShareSettings().on }); renderAuto(); });
-  document.addEventListener('lokacija:postavke', renderAuto);
+  $('btn-lok-auto').addEventListener('click', () => {
+    if (aktivanLov) { setShareSettings({ on: !getShareSettings().on }); renderAuto(); return; }
+    if (!sharing() && !sections.length) { toast('Dijeljenje je moguće kad si član sekcije (Meni → Sekcije i pristup)'); return; }
+    $('lok-sek-prekidac').click(); // isti put kao dugme u kartici sekcije (trajanje iz kartice, zadano 1 h)
+  });
+  document.addEventListener('lokacija:postavke', () => renderAuto());
+  document.addEventListener('lov:aktivan', (e) => { aktivanLov = e.detail?.lov || null; renderAuto(); });
   renderAuto();
   $('btn-lok-zatvori').addEventListener('click', close);
   // Dodir na kartu zatvara ploču.
@@ -296,5 +317,5 @@ export function initMojaLokacija(L, map) {
   document.querySelector('#koord-traka')?.addEventListener('click', () => { if (isOpen()) renderCoords(); });
 
   setInterval(() => { expireCheck(); pull(); }, POLL_MS);
-  loadSections().then(() => { if (sharing()) armSending(); pull(); });
+  loadSections().then(() => { if (sharing()) armSending(); renderAuto(); pull(); });
 }

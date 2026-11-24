@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.2.2';
+  const APP_VER = 'v1.2.3';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -227,9 +227,9 @@
         <svg class="ic lok-red-ikona" aria-hidden="true"><use href="#ic-hunt"/></svg>
         <div class="lok-pravac-tekst">
           <b>Dijeli lokaciju</b>
-          <span id="lok-auto-stanje" class="sitno" role="status">Uključeno: učesnici lova vide tvoju poziciju</span>
+          <span id="lok-auto-stanje" class="sitno" role="status">Isključeno: niko ne vidi tvoju poziciju</span>
         </div>
-        <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="true" aria-label="Dijeli lokaciju u lovu"><span class="lok-prekidac-ruka"></span></button>
+        <button id="btn-lok-auto" class="lok-prekidac" type="button" role="switch" aria-checked="false" aria-label="Dijeli lokaciju sa sekcijom"><span class="lok-prekidac-ruka"></span></button>
       </div>
       <div class="lok-pravac" id="kompas">
         <svg class="ic lok-red-ikona" aria-hidden="true"><use href="#ic-compass"/></svg>

@@ -136,6 +136,16 @@ test('član dijeli lokaciju sa sekcijom na izabrano vrijeme i prekida je (red se
   await page.locator('#lok-sek-prekidac').click();
   await expect(page.locator('#lok-sek-prekidac')).toContainText('Počni dijeliti');
   await expect(dugme).not.toHaveClass(/dijeli-lokaciju/);
+  // isti prekidač "Dijeli lokaciju" u ploči (izvan lova): zadano isključen, pali i gasi dijeljenje sa sekcijom
+  const sw = page.locator('#btn-lok-auto');
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#lok-auto-stanje')).toContainText('Krupa 1');
+  await expect.poll(() => server.db.sekcija_lokacije.length).toBeGreaterThan(0);
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await expect.poll(() => server.db.sekcija_lokacije.length).toBe(0);
   await expect.poll(() => server.db.sekcija_lokacije.length).toBe(0);
   expect(await page.evaluate(() => localStorage.getItem('lovac.sekcija_dijeljenje'))).toBe('null');
 });

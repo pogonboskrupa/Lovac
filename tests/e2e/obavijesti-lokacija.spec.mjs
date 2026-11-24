@@ -11,19 +11,29 @@ test.beforeEach(async ({ page }) => {
 
 const share = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('lovac.lokacija') || 'null'));
 
-test('Moja lokacija: prekidač automatskog dijeljenja u lovu (zadano uključeno) gasi i pali dijeljenje', async ({ page }) => {
+test('Moja lokacija: "Dijeli lokaciju" je izvan lova zadano ISKLJUČEN, a u lovu zadano UKLJUČEN (dijeljenje u lovu)', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-moja-lokacija').click();
   const sw = page.locator('#btn-lok-auto');
-  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  // izvan lova: dijeljenje sa sekcijom, zadano isključeno (bez sekcije se ne može uključiti)
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('#lok-auto-stanje')).toContainText('Isključeno');
   expect((await sw.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await sw.click();
   await expect(sw).toHaveAttribute('aria-checked', 'false');
-  await expect(page.locator('#lok-auto-stanje')).toContainText('Isključeno');
+  // lov u toku: isti prekidač je dijeljenje u lovu, zadano uključeno
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('lov:aktivan', { detail: { lov: { id: 'l1', lov: { naziv: 'Pogon', status: 'u_toku' }, ucesnici: [] } } })));
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#lok-auto-stanje')).toContainText('učesnici lova');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
   await expect.poll(async () => (await share(page))?.on).toBe(false);
   await sw.click();
   await expect(sw).toHaveAttribute('aria-checked', 'true');
   await expect.poll(async () => (await share(page))?.on).toBe(true);
+  // kraj lova: nazad na dijeljenje sa sekcijom (isključeno)
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('lov:aktivan', { detail: { lov: null } })));
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
 });
 
 test('ploča podloga i ploča "+" se zatvaraju dodirom na kartu', async ({ page }) => {
@@ -102,14 +112,12 @@ test.describe('prekidač Moja lokacija i marker na karti', () => {
     await page.goto('/');
     await expect(page.locator('#karta .gps-nisan')).toHaveCount(1);
     await page.locator('#btn-moja-lokacija').click();
-    // dijeljenje je poseban prekidač: njegovo gašenje NE sakriva marker
-    await page.locator('#btn-lok-auto').click();
+    // dijeljenje je poseban prekidač (izvan lova zadano isključen) i ne sakriva marker
     await expect(page.locator('#btn-lok-auto')).toHaveAttribute('aria-checked', 'false');
     await expect(page.locator('#karta .gps-nisan')).toHaveCount(1);
     await page.locator('#btn-lok-prikaz').click();
     await expect(page.locator('#btn-lok-prikaz')).toHaveAttribute('aria-checked', 'false');
     await expect(page.locator('#karta .gps-nisan')).toHaveCount(0);
-    expect((await page.evaluate(() => JSON.parse(localStorage.getItem('lovac.lokacija') || 'null')))?.on).toBe(false);
     await page.locator('#btn-lok-prikaz').click();
     await expect(page.locator('#karta .gps-nisan')).toHaveCount(1);
   });
