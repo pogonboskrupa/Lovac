@@ -61,7 +61,7 @@ test('"jednim dodirom": zadnja vrsta je unaprijed izabrana', async ({ page }) =>
   expect(list.map((o) => o.vrsta)).toEqual(['divlja_svinja', 'divlja_svinja']);
 });
 
-test('bez GPS-a se koristi nišan karte i to se jasno kaže', async ({ page }) => {
+test('bez GPS-a se koristi odabir na karti i to se jasno kaže', async ({ page }) => {
   await page.goto('/');
   await lok(page, '#btn-opazanje');
   await expect(page.locator('#op-pozicija')).toContainText('nema GPS-a');

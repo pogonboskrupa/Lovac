@@ -93,7 +93,7 @@ export function initObjekti(L, map) {
       removed: [],
       lat: rec?.lat ?? c.lat,
       lon: rec?.lon ?? c.lng,
-      izvorPozicije: rec ? 'sačuvana' : 'nišan na sredini karte',
+      izvorPozicije: rec ? 'sačuvana' : 'odabrano na sredini karte',
     };
     $('objekt-forma-naslov').textContent = rec ? 'Izmjena objekta' : 'Nov lovački objekat';
     $('objekt-vrste').innerHTML = vrste.map((v) => `<button type="button" data-kod="${escapeHtml(v.kod)}" aria-pressed="false">`
@@ -179,7 +179,7 @@ export function initObjekti(L, map) {
   });
   $('btn-objekt-nisan').addEventListener('click', () => {
     const c = map.getCenter();
-    Object.assign(editing, { lat: c.lat, lon: c.lng, izvorPozicije: 'nišan na sredini karte' });
+    Object.assign(editing, { lat: c.lat, lon: c.lng, izvorPozicije: 'odabrano na sredini karte' });
     updatePositionText();
   });
   $('btn-objekt-odustani').addEventListener('click', () => closeForm(false));

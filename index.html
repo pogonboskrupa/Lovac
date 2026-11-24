@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.2.5';
+  const APP_VER = 'v1.2.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -259,7 +259,7 @@
   </div>
   <div id="meni-dodaj" class="meni meni-dodaj" hidden role="dialog" aria-labelledby="dodaj-naslov">
     <div class="dodaj-glava">
-      <div><h3 id="dodaj-naslov">Dodaj na kartu</h3><p id="dodaj-pozicija" class="sitno">Na tvojoj GPS poziciji, a bez GPS-a na nišanu karte.</p></div>
+      <div><h3 id="dodaj-naslov">Dodaj na kartu</h3><p id="dodaj-pozicija" class="sitno">Na tvojoj GPS poziciji, a bez GPS-a na mjestu koje odabereš na karti.</p></div>
       <button type="button" id="btn-dodaj-zatvori" class="ikona-dugme" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
     </div>
     <button type="button" id="btn-lov-danas" class="dodaj-lov-danas" hidden><svg class="ic" aria-hidden="true"><use href="#ic-hunt"/></svg><span><b id="lov-danas-naslov">Lov traje</b><small id="lov-danas-opis">Lov je u toku</small></span><span id="lov-danas-znacka" class="ld-znacka" hidden></span></button>
@@ -326,7 +326,7 @@
     <p class="sitno">Crveno = zabranjeno. Ne zamjenjuje pravila lova ni vođu lova; kompas može griješiti — provjeri pogledom.</p>
   </div>
   <div id="lov-postavi" class="dijalog dijalog-gore" hidden>
-    <p>Pomjeri kartu tako da nišan bude tačno na mjestu stana.</p>
+    <p>Pomjeri kartu tako da križ na sredini bude tačno na mjestu stana.</p>
     <div class="red-dugmadi">
       <button id="btn-lov-postavi" class="dugme glavno" type="button">Postavi stan ovdje</button>
       <button id="btn-lov-postavi-odustani" class="dugme" type="button">Odustani</button>
@@ -340,9 +340,9 @@
     </div>
     <p><b id="mj-rezultat"></b> <span class="sitno">(tačaka: <span id="mj-tacke">0</span>)</span></p>
     <p id="mj-nagib" class="sitno"></p>
-    <p class="sitno">Dodirni kartu ili postavi nišan i dodaj tačku.</p>
+    <p class="sitno">Dodirni kartu ili odaberi na karti (križ na sredini) i dodaj tačku.</p>
     <div class="red-dugmadi">
-      <button id="btn-mj-nisan" class="dugme glavno" type="button">Dodaj nišan</button>
+      <button id="btn-mj-nisan" class="dugme glavno" type="button">Odaberi na karti</button>
       <button id="btn-mj-ponisti" class="dugme" type="button">Poništi</button>
       <button id="btn-mj-kraj" class="dugme" type="button">Kraj</button>
     </div>
@@ -817,7 +817,7 @@
     <h3>Pozicija</h3>
     <p id="objekt-pozicija" class="sitno"></p>
     <div class="red-dugmadi">
-      <button type="button" id="btn-objekt-nisan" class="dugme">Na nišan karte</button>
+      <button type="button" id="btn-objekt-nisan" class="dugme">Odaberi na karti</button>
       <button type="button" id="btn-objekt-moja-lokacija" class="dugme">Na moju lokaciju</button>
     </div>
     <div class="red-dugmadi">
@@ -960,7 +960,7 @@
     <p id="dojava-pozicija" class="sitno dojava-pozicija"></p>
     <div class="red-dugmadi">
       <button type="button" id="btn-dojava-gps" class="dugme">Moja lokacija</button>
-      <button type="button" id="btn-dojava-nisan" class="dugme">Nišan karte</button>
+      <button type="button" id="btn-dojava-nisan" class="dugme">Odaberi na karti</button>
     </div>
     <label>Opis<textarea name="opis" rows="3" maxlength="1000" placeholder="Npr. dva pucnja oko 22 h, svjetla vozila na šumskom putu"></textarea></label>
     <div class="dojava-slika">
@@ -1241,7 +1241,7 @@
   <p id="potraga-savjet" class="potraga-savjet" hidden></p>
   <div class="red-dugmadi potraga-start-dugmad">
     <button id="btn-nastrijel-gps" class="dugme glavno" type="button">Nastrijel je na mojoj poziciji</button>
-    <button id="btn-nastrijel-nisan" class="dugme" type="button">Nastrijel je na nišanu karte</button>
+    <button id="btn-nastrijel-nisan" class="dugme" type="button">Odaberi nastrijel na karti</button>
   </div>
   <p class="sitno">Savjeti su orijentacioni. Ranjenoj divljači ne prilazi sam; potragu vodi vodič psa krvara ili lovočuvar. Aplikacija ne zamjenjuje pravila lova.</p>
 </section>
@@ -1387,7 +1387,7 @@
   </div>
   <h3>Stanovi i zabranjeni pravci</h3>
   <p class="sitno">Pravci prema drugim stanovima aplikacija računa sama. Ručno dodaj pravce prema putevima, kućama i sl. (od–do u stepenima od sjevera, u smjeru kazaljke).</p>
-  <button id="btn-lov-dodaj-stan" class="dugme glavno" type="button">Postavi stan na nišan karte</button>
+  <button id="btn-lov-dodaj-stan" class="dugme glavno" type="button">Odaberi stan na karti</button>
   <ul id="lov-stanovi" class="spisak"></ul>
 </section>
 

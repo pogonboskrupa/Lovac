@@ -102,7 +102,7 @@ export function initKamere(L, map) {
   const open = () => {
     const fix = currentFix();
     const c = map.getCenter();
-    draft = fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc ?? 0)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — pozicija je nišan na sredini karte' };
+    draft = fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc ?? 0)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — pozicija je odabrana na sredini karte' };
     const f = formatCoordMode(getCoordMode(), draft.lat, draft.lon);
     $('kamera-pozicija').textContent = `Pozicija: ${f.oznaka} ${f.tekst} (${draft.izvor})`;
     $('kamera-revir').innerHTML = reviri.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.naziv)}</option>`).join('');

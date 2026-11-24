@@ -187,7 +187,7 @@ export function initOpazanja(L, map) {
       foto: [],
       vrijeme: Date.now(),
       ...(fix ? { lat: fix.lat, lon: fix.lon, acc: fix.acc, izvor: `GPS ±${Math.round(fix.acc)} m` }
-        : { lat: c.lat, lon: c.lng, acc: null, izvor: 'nema GPS-a — nišan na sredini karte' }),
+        : { lat: c.lat, lon: c.lng, acc: null, izvor: 'nema GPS-a — odabrano na sredini karte' }),
     };
     $('op-vrijeme').textContent = formatWhen(draft.vrijeme);
     $('op-pozicija').textContent = `Pozicija: ${draft.izvor}`;

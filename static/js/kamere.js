@@ -13,7 +13,7 @@ export function validateKamera({ naziv, revir_id: revirId, lat, lon, napomena })
   const n = String(naziv ?? '').trim();
   if (n.length < 1) return 'Upiši naziv kamere';
   if (n.length > 80) return 'Naziv je predug (najviše 80 znakova)';
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'Nema pozicije — čekaj GPS ili postavi nišan';
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'Nema pozicije — čekaj GPS ili odaberi na karti';
   if (String(napomena ?? '').length > 500) return 'Napomena je preduga (najviše 500 znakova)';
   return null;
 }

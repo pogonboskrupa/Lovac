@@ -114,7 +114,7 @@ export function initOdstrel(L, map) {
     const c = map.getCenter();
     draft = {
       vrsta: vrste[0]?.kod, kategorija: null, foto: [], potvrdjeno: false,
-      ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — nišan na sredini karte' }),
+      ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — odabrano na sredini karte' }),
     };
     // Vrste koje su danas u lovostaju se označe odmah, prije izbora (pravila su iz admin spiska).
     const lovostajRows = await getSpisakAll('lovostaj');

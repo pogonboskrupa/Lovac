@@ -87,7 +87,7 @@ export function initSlike(L, map) {
   const open = (tragId = null) => {
     const fix = currentFix();
     const c = map.getCenter();
-    draft = { tragId, kategorija: tragId ? 'ostalo' : 'cekalo', foto: null, mala: null, ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc ?? 0)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — pozicija je nišan na sredini karte' }) };
+    draft = { tragId, kategorija: tragId ? 'ostalo' : 'cekalo', foto: null, mala: null, ...(fix ? { lat: fix.lat, lon: fix.lon, izvor: `GPS ±${Math.round(fix.acc ?? 0)} m` } : { lat: c.lat, lon: c.lng, izvor: 'nema GPS-a — pozicija je odabrano na sredini karte' }) };
     $('slika-kategorija').innerHTML = Object.entries(SLIKA_KATEGORIJE).map(([k, v]) => `<button type="button" data-kat="${k}">${v.naziv}</button>`).join('');
     setPressed();
     $('slika-naslov').textContent = tragId ? 'Slika na tragu' : 'Slika na poziciji';

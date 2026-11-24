@@ -14,7 +14,7 @@ export function pictureCategoryName(kod) {
 export function validateSlika({ kategorija, foto, lat, lon, opis }) {
   if (!SLIKA_KATEGORIJE[kategorija]) return 'Izaberi šta je na slici';
   if (!foto) return 'Dodaj fotografiju';
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'Nema pozicije — čekaj GPS ili postavi nišan na mjesto';
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'Nema pozicije — čekaj GPS ili odaberi mjesto na karti';
   if (String(opis ?? '').length > 300) return 'Opis je predug (najviše 300 znakova)';
   return null;
 }

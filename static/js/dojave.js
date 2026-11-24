@@ -14,7 +14,7 @@ export const vrstaNaziv = (kod) => DOJAVA_VRSTE.find((v) => v.kod === kod)?.nazi
 export function validateDojava({ vrsta, revir_id: revir, lat, lon }) {
   if (!DOJAVA_VRSTE.some((v) => v.kod === vrsta)) return 'Izaberi šta prijavljuješ';
   if (!revir) return 'Izaberi revir (lovočuvar kojem ide dojava)';
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'Nema lokacije — uključi GPS ili pomjeri nišan karte';
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'Nema lokacije — uključi GPS ili odaberi na karti';
   return null;
 }
 

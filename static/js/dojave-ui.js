@@ -76,7 +76,7 @@ export function initDojave(L, map) {
       + ctx.reviri.map((r) => `<option value="${escapeHtml(r.id)}" ${r.id === def ? 'selected' : ''}>${escapeHtml(r.naziv)}</option>`).join('');
     const fix = currentFix();
     if (fix) setPos(fix, `GPS ±${Math.round(fix.acc || 0)} m`);
-    else setPos(map.getCenter() && { lat: map.getCenter().lat, lon: map.getCenter().lng }, 'Nišan karte');
+    else setPos(map.getCenter() && { lat: map.getCenter().lat, lon: map.getCenter().lng }, 'Odabrano na karti');
     $('dojava-slika-pregled').innerHTML = '';
     $('dojava-status').textContent = '';
     sheet.hidden = false;
@@ -93,7 +93,7 @@ export function initDojave(L, map) {
     const fix = currentFix();
     if (fix) setPos(fix, `GPS ±${Math.round(fix.acc || 0)} m`); else toast('GPS još nema poziciju');
   });
-  $('btn-dojava-nisan').addEventListener('click', () => { const c = map.getCenter(); setPos({ lat: c.lat, lon: c.lng }, 'Nišan karte'); });
+  $('btn-dojava-nisan').addEventListener('click', () => { const c = map.getCenter(); setPos({ lat: c.lat, lon: c.lng }, 'Odabrano na karti'); });
   // polje za sliku je statično (forma se ne crta ponovo)
   $('dojava-slika-ulaz').addEventListener('change', async (e) => {
     const file = e.target.files[0];
