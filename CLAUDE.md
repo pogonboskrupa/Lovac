@@ -608,3 +608,9 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Statistika i rejting: `statistika-opsega.js EVIDENCIJA_OD = 2026` (odluka vlasnika). `ratingYears()` nudi godine od tekuće do 2026., `periodDates('sve')` = od 2026-01-01, ranija godina se svodi na 2026; keš ima novi ključ `stat2026:`. `statistika.js statYears` (Profil lovca) je DRUGA funkcija — ne miješati.
 - Provjera stvarnog servera: `docs/PROVJERA-SERVERA.md` (anon ključ, `limit=0`, funkcije sa nepostojećim id-em — PostgREST vraća 42501 kad funkcija postoji, PGRST202 kad je nema; poziv sa pogrešnim imenom parametra NE razlikuje postojeću od nepostojeće). Node `fetch` u sandboxu traži `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt`.
 - Klijent mora podnijeti server bez nove migracije: tabela koje nema (PGRST205/42P01) nije odbijanje — zapis čeka u redu (`slike-lovcima.js missingOnServer`).
+
+**Ispravke poslije pregleda koda (v1.1.8)**
+- Dojave: upisan odgovor lovočuvara (`odgovori`) se briše tek kad ga server primi (`update` vraća false bez veze/na grešku) — inače ga ponovno crtanje spiska izgubi.
+- Slike lovcima: ključevi IndexedDB-a su po nalogu (`arhiva/slike-lovcima:<uid>`, `slike-lovcima-red:<uid>`; stari zapis bez naloga iz v1.1.6 preuzima prvi nalog). 54000 (najviše 30 slika čeka) je privremeno (`retryLater`) — slika ostaje u redu. Primljena slika koja je već na telefonu, a ostala na serveru (brisanje puklo), briše se u sljedećem krugu.
+- Arhiva: `obrisi_lov` koji vrati `false` (lov je već obrisao neko drugi) ipak uklanja lov sa telefona; `qArh` prenosi `error.code`, pa se "nema migracije" prepoznaje po `PGRST202`, ne po riječi "function".
+- `globalThis.__karta` postoji samo pod automatizacijom (`navigator.webdriver`, Playwright), ne u APK-u.

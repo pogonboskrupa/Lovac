@@ -75,7 +75,7 @@ export function initMap(L, elementId) {
   });
   updateCoordBar(map);
   wireMapControls(map, setBase);
-  globalThis.__karta = map; // za e2e testove (markeri kolega)
+  if (globalThis.navigator?.webdriver) globalThis.__karta = map; // samo e2e testovi (Playwright), ne u APK-u
   return { map, setBase, activeBase: () => activeId, registerTeren };
 }
 

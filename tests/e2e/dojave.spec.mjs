@@ -86,6 +86,16 @@ test('lovočuvar revira: nova dojava stiže uz obavijest i marker na karti; Preu
   const kartica = page.locator(`#dojave-spisak [data-id="${ID(880001)}"]`);
   await expect(kartica).toContainText('Srna šepa uz cestu');
   await kartica.locator('[data-odgovor]').fill('Dolazim sa psom krvarom');
+  // server prvi put ne primi izmjenu: upisani odgovor ostaje i poslije ponovnog crtanja spiska
+  let pada = true;
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/dojave/, (r) => (pada && r.request().method() === 'PATCH'
+    ? r.fulfill({ status: 500, contentType: 'application/json', body: '{"code":"XX000","message":"privremena greska"}' }) : r.fallback()));
+  await kartica.locator('[data-akcija="preuzmi"]').click();
+  await expect(page.locator('#poruka')).toContainText('Nije sačuvano');
+  await page.locator('#dojave-filter [data-filter="sve"]').click();
+  await page.locator('#dojave-filter [data-filter="otvorene"]').click();
+  await expect(kartica.locator('[data-odgovor]')).toHaveValue('Dolazim sa psom krvarom');
+  pada = false;
   await kartica.locator('[data-akcija="preuzmi"]').click();
   await expect.poll(() => sim.db.dojave[0].status, { timeout: 10000 }).toBe('preuzeta');
   expect(sim.db.dojave[0].odgovor).toBe('Dolazim sa psom krvarom');

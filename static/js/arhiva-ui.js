@@ -23,7 +23,7 @@ const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova
 
 async function qArh(p) {
   const { data, error } = await p;
-  if (error) throw new Error(error.message);
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
   return data;
 }
 
@@ -355,10 +355,10 @@ export function initArhiva() {
     if (!z) return;
     if (!online()) { $('ad-status').textContent = 'Za brisanje lova potreban je internet.'; return; }
     try {
-      const ok = await qArh(getClient().rpc('obrisi_lov', { p_lov: z.id }));
-      if (ok === false) throw new Error('lov nije pronađen na serveru');
+      // false = lova više nema na serveru (obrisao ga je neko drugi) — i tada se uklanja sa telefona
+      await qArh(getClient().rpc('obrisi_lov', { p_lov: z.id }));
     } catch (err) {
-      $('ad-status').textContent = /function|PGRST202/i.test(err.message)
+      $('ad-status').textContent = err.code === 'PGRST202'
         ? 'Server još nema brisanje lova (administrator treba pokrenuti migraciju 032).' : `Lov nije obrisan: ${err.message}`;
       return;
     }

@@ -256,9 +256,10 @@ export function initDojave(L, map) {
   }
 
   const update = async (id, patch, ok) => {
-    if (!online()) { toast('Za obradu dojave potreban je internet'); return; }
+    if (!online()) { toast('Za obradu dojave potreban je internet'); return false; }
     const { error } = await getClient().from('dojave').update(patch).eq('id', id);
-    if (error) { toast(`Nije sačuvano: ${error.message}`); return; }
+    if (error) { toast(`Nije sačuvano: ${error.message}`); return false; }
+    odgovori.delete(id); // upisan tekst se briše tek kad ga server primi
     rows = rows.map((d) => (d.id === id ? { ...d, ...patch, rijesio: me().id } : d));
     await saveLocal().catch(() => {});
     toast(ok);
@@ -281,7 +282,6 @@ export function initDojave(L, map) {
       return;
     }
     const odgovor = (odgovori.get(d.id) ?? card.querySelector('[data-odgovor]')?.value ?? '').trim() || null;
-    odgovori.delete(d.id);
     if (a === 'preuzmi') await update(d.id, { status: 'preuzeta', odgovor }, 'Dojava je preuzeta');
     if (a === 'rijesi') await update(d.id, { status: 'rijesena', odgovor }, 'Dojava je riješena');
     if (a === 'odgovor') await update(d.id, { odgovor }, 'Odgovor je sačuvan');

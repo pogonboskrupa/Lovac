@@ -11,6 +11,9 @@ export function missingOnServer(err) {
   return ['PGRST205', 'PGRST202', '42P01'].includes(err?.code) || /could not find the (table|function)/i.test(String(err?.message || ''));
 }
 
+// Privremeno odbijanje (najviše 30 slika čeka preuzimanje): slika ostaje u redu i šalje se kasnije.
+export const retryLater = (err) => err?.code === '54000';
+
 export const memberLabel = (m) => `${m.ime || ''} ${m.prezime || ''}${m.nadimak ? ` (${m.nadimak})` : ''}`.trim();
 
 export function recipientsFrom(members = [], myId) {

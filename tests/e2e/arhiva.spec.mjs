@@ -347,3 +347,16 @@ test('brisanje lova u arhivi: grupovođa sekcije briše (drugi dodir) — lov ne
   await expect(p2.locator('#ad-brisanje')).toBeHidden();
   await ctx.close();
 });
+
+test('brisanje lova koji je neko drugi već obrisao sa servera (vraća false): lov se ipak skloni sa telefona', async ({ page }) => {
+  const server = makeServer();
+  finished(server);
+  await setup(page, server, GV);
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: 'false' }));
+  await openArhiva(page);
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await page.locator('#btn-ad-obrisi').click();
+  await page.locator('#btn-ad-obrisi').click();
+  await expect(page.locator('#arhiva-detalj')).toBeHidden();
+  await expect(page.locator('#arhiva-spisak .arhiva-red')).toHaveCount(0);
+});

@@ -69,4 +69,43 @@ test('primljena slika ostaje na telefonu, briše se sa servera, a iz velike slik
   await otvori(page);
   await expect(page.locator('#sl-spisak [data-id]')).toHaveCount(1);
   await expect(page.locator('#btn-slike-lovcima-opis')).toHaveText('Primljeno: 1');
+
+  // drugi lovac prijavljen na istom telefonu ne vidi tuđe primljene slike
+  const drugi = sim.db.korisnici[5];
+  // simulacija pri svakom učitavanju postavlja profil prvog lovca; ova skripta ide poslije nje
+  await page.addInitScript((u) => localStorage.setItem('lovac.profil', JSON.stringify(u)), drugi);
+  await page.reload();
+  await otvori(page);
+  await expect(page.locator('#sl-spisak [data-id]')).toHaveCount(0);
+});
+
+test('slika sačuvana na telefonu (i iz v1.1.6 zapisa bez naloga) a ostala na serveru (brisanje puklo) briše se u sljedećem krugu', async ({ page }) => {
+  const sim = await startSim(page, makeWorld());
+  const id = '11111111-0000-4000-8000-000000000002';
+  sim.db.slike_lovcima = [{ id, posiljalac_id: sim.db.korisnici[2].id, primalac_id: sim.ja.id, slika: 'data:image/png;base64,AA', opis: null,
+    created_at: new Date(sim.now).toISOString(), istice: new Date(sim.now + 3600000).toISOString() }];
+  await page.evaluate(([uid, rid]) => new Promise((res) => {
+    const r = indexedDB.open('lovac');
+    r.onsuccess = () => { const tx = r.result.transaction('arhiva', 'readwrite'); tx.objectStore('arhiva').put({ id: uid ? "slike-lovcima" : "", primljene: [{ id: rid }], poslane: [] }); tx.oncomplete = res; };
+  }), [sim.ja.id, id]);
+  await sim.run(150000);
+  await expect.poll(() => sim.db.slike_lovcima.length).toBe(0);
+});
+
+test('privremeno ograničenje servera (54000): slika ostaje u redu i ode kasnije', async ({ page }) => {
+  const sim = await startSim(page, makeWorld());
+  let odbij = true;
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/slike_lovcima/, (r) => (odbij && r.request().method() === 'POST'
+    ? r.fulfill({ status: 400, contentType: 'application/json', body: '{"code":"54000","message":"Previše poslanih slika"}' }) : r.fallback()));
+  await sim.run(20000);
+  await otvori(page);
+  await page.locator('#sl-ulaz').setInputFiles({ name: 's.png', mimeType: 'image/png', buffer: PNG });
+  await page.locator('#sl-primaoci [data-uid] input').first().check();
+  await page.locator('#btn-sl-posalji').click();
+  await expect(page.locator('#slika-lovcu')).toBeHidden({ timeout: 20000 });
+  await page.locator('#sl-tabovi [data-sltab="poslane"]').click();
+  await expect(page.locator('#sl-spisak .sl-stanje')).toHaveText('Čeka internet');
+  odbij = false;
+  await sim.run(240000);
+  await expect.poll(() => sim.db.slike_lovcima?.length || 0).toBe(1);
 });

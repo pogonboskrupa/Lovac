@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  missingOnServer, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, expiryText, sentStatus, inboxSummary, MAX_PRIMALACA,
+  missingOnServer, retryLater, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, expiryText, sentStatus, inboxSummary, MAX_PRIMALACA,
 } from '../../static/js/slike-lovcima.js';
 
 const M = [
@@ -47,4 +47,9 @@ test('slike lovcima: server bez migracije 033 (tabela ne postoji) nije odbijanje
   assert.equal(missingOnServer({ code: '42501', message: 'row-level security' }), false);
   assert.equal(missingOnServer({ code: '54000', message: 'Previše' }), false);
   assert.equal(missingOnServer(null), false);
+});
+
+test('slike lovcima: 54000 (najviše 30 slika čeka) je privremeno — slika ostaje u redu', () => {
+  assert.equal(retryLater({ code: '54000' }), true);
+  assert.equal(retryLater({ code: '42501' }), false);
 });

@@ -1,6 +1,6 @@
 // Pregled slike preko cijelog ekrana (slika na poziciji, opažanje sa fotografijom): velika slika, crveni X,
 // dodir na sliku ili dugme "Cijeli ekran" prebacuje na prikaz bez opisa preko cijelog ekrana.
-import { registerBackHandler } from './ui.js';
+import { registerBackHandler, toast } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
 let ownedUrl = null;
@@ -50,6 +50,7 @@ export function openImageViewer({ src, revoke = false, caption = '', actions = [
         document.dispatchEvent(new CustomEvent('slika:posalji', { detail: { blob, opis: share.opis ?? caption, lat: share.lat, lon: share.lon } }));
       } catch (err) {
         console.warn('slika za slanje', err.message);
+        toast('Slika se ne može pripremiti za slanje');
       }
     });
     box.append(b);

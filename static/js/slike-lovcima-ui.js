@@ -12,13 +12,14 @@ import { isPolicyRejection, isNetworkFailure } from './sync.js';
 import { openImageViewer } from './slika-pregled.js';
 import { formatMessageTime } from './poruke.js';
 import {
-  MAX_SLIKA, MAX_PRIMALACA, missingOnServer, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, newestFirst, inboxSummary, memberLabel,
+  MAX_SLIKA, MAX_PRIMALACA, missingOnServer, retryLater, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, newestFirst, inboxSummary, memberLabel,
 } from './slike-lovcima.js';
 import { toast, escapeHtml, registerBackHandler } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
-const KES = 'slike-lovcima';
-const RED = 'slike-lovcima-red';
+// Ključevi po nalogu: drugi lovac prijavljen na istom telefonu ne vidi tuđe slike niti šalje tuđi red kao svoj.
+const KES0 = 'slike-lovcima';
+const RED0 = 'slike-lovcima-red';
 const SLIKA = (id) => `slika-lovca:${id}`;
 const POLL_MS = 120000;
 const POLL_OTVORENO_MS = 30000;
@@ -48,12 +49,25 @@ export function initSlikeLovcima(L, map) {
   const me = () => cachedProfile();
   const online = () => connectionQuality() !== 'nema' && Boolean(getClient());
 
+  const KES = () => `${KES0}:${me()?.id || 'niko'}`;
+  const RED = () => `${RED0}:${me()?.id || 'niko'}`;
+  // v1.1.6 je čuvao bez naloga: prvi nalog koji otvori preuzima te zapise, pa se stari ključ briše.
+  const adoptOld = async () => {
+    if (!me()?.id) return;
+    for (const [old, now] of [[KES0, KES()], [RED0, RED()]]) {
+      const o = await idbGet('arhiva', old).catch(() => null);
+      if (!o) continue;
+      if (!(await idbGet('arhiva', now).catch(() => null))) await idbPut('arhiva', { ...o, id: now });
+      await idbDelete('arhiva', old).catch(() => {});
+    }
+  };
   const load = async () => {
-    const c = await idbGet('arhiva', KES).catch(() => null);
+    await adoptOld().catch(() => {});
+    const c = await idbGet('arhiva', KES()).catch(() => null);
     state = { primljene: c?.primljene || [], poslane: c?.poslane || [] };
   };
-  const save = () => idbPut('arhiva', { id: KES, ...state });
-  const outbox = async () => (await idbGet('arhiva', RED).catch(() => null))?.rows || [];
+  const save = () => idbPut('arhiva', { id: KES(), ...state });
+  const outbox = async () => (await idbGet('arhiva', RED()).catch(() => null))?.rows || [];
   const members = () => recipientsFrom(loadJSON('lovac.clanovi', []), me()?.id);
   const updateTile = () => { const el = $('btn-slike-lovcima-opis'); if (el) el.textContent = inboxSummary(state.primljene); };
 
@@ -105,7 +119,7 @@ export function initSlikeLovcima(L, map) {
       const sl = await makeThumbnail(dataUrlToBlob(draft.slika));
       // kritičan upis: slika i red prvo na telefon; ako ne uspije, forma ostaje otvorena
       for (const r of rows) await idbPut('arhiva', { id: SLIKA(r.id), slika: r.slika });
-      await idbPut('arhiva', { id: RED, rows: [...await outbox(), ...rows] });
+      await idbPut('arhiva', { id: RED(), rows: [...await outbox(), ...rows] });
       state.poslane = [...state.poslane, ...rows.map(({ slika, ...r }) => ({ ...r, slicica: sl, poslano: false }))];
       await save();
     } catch (er) {
@@ -140,6 +154,7 @@ export function initSlikeLovcima(L, map) {
       if (error) {
         if (isNetworkFailure(error) || (!isPolicyRejection(error) && !error.code)) break; // veza: ostaje u redu
         if (missingOnServer(error)) { console.warn('slike lovcima: server još nema nadogradnju (033)'); break; }
+        if (retryLater(error)) { toast('Server trenutno ne prima više slika (čekaju preuzimanje) — slika čeka i šalje se kasnije'); break; }
         const razlog = isPolicyRejection(error) ? 'server nije prihvatio (nalog bez odobrenja?)' : error.message;
         // isti id već na serveru (ponovljen pokušaj) nije greška
         if (error.code !== '23505') {
@@ -153,7 +168,7 @@ export function initSlikeLovcima(L, map) {
       }
       left = left.filter((x) => x.id !== r.id);
     }
-    await idbPut('arhiva', { id: RED, rows: left }).catch(() => {});
+    await idbPut('arhiva', { id: RED(), rows: left }).catch(() => {});
     await save().catch(() => {});
     return sent;
   }
@@ -162,7 +177,11 @@ export function initSlikeLovcima(L, map) {
     const sb = getClient();
     const { data, error } = await sb.from('slike_lovcima').select(LAKE).eq('primalac_id', me().id).order('created_at').limit(20);
     if (error) { console.warn('slike lovcima', error.message); return; }
-    const nove = newInboxIds(data, state.primljene.map((p) => p.id));
+    const lokalno = state.primljene.map((p) => p.id);
+    // već sačuvane na telefonu a još na serveru (brisanje ranije puklo): obrisati, da ne zauzimaju prostor 12 h
+    const zaostale = (data || []).map((r) => r.id).filter((id) => lokalno.includes(id));
+    if (zaostale.length) await sb.from('slike_lovcima').delete().in('id', zaostale);
+    const nove = newInboxIds(data, lokalno);
     let primljeno = 0;
     for (const id of nove.slice(0, 5)) {
       const { data: full, error: e2 } = await sb.from('slike_lovcima').select('*').eq('id', id);
@@ -277,7 +296,7 @@ export function initSlikeLovcima(L, map) {
       // samo sa telefona; neposlana slika se skida i iz reda slanja
       state.primljene = state.primljene.filter((x) => x.id !== id);
       state.poslane = state.poslane.filter((x) => x.id !== id);
-      await idbPut('arhiva', { id: RED, rows: (await outbox()).filter((x) => x.id !== id) }).catch(() => {});
+      await idbPut('arhiva', { id: RED(), rows: (await outbox()).filter((x) => x.id !== id) }).catch(() => {});
       await idbDelete('arhiva', SLIKA(id)).catch(() => {});
       await save().catch(() => {});
       renderSlike();
