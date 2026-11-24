@@ -18,7 +18,8 @@ export function closeImageViewer() {
 
 // src: URL slike; revoke: true kad je blob URL napravljen samo za ovaj pregled (oslobađa se pri zatvaranju).
 // actions: [{ label, onClick }] — dugmad ispod slike (npr. "Detalji").
-export function openImageViewer({ src, revoke = false, caption = '', actions = [] }) {
+// share: { lat, lon, opis } za "Pošalji lovcu" (uvijek prisutno osim share: false).
+export function openImageViewer({ src, revoke = false, caption = '', actions = [], share = {} }) {
   const viewer = $('slika-velika');
   if (!viewer || !src) return;
   closeImageViewer();
@@ -35,7 +36,25 @@ export function openImageViewer({ src, revoke = false, caption = '', actions = [
     b.addEventListener('click', () => { closeImageViewer(); a.onClick(); });
     box.append(b);
   }
-  box.hidden = !actions.length;
+  if (share !== false) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dugme';
+    b.id = 'btn-slika-posalji';
+    b.textContent = 'Pošalji lovcu';
+    // slika se pročita PRIJE zatvaranja (zatvaranje oslobađa blob URL)
+    b.addEventListener('click', async () => {
+      try {
+        const blob = await (await fetch(src)).blob();
+        closeImageViewer();
+        document.dispatchEvent(new CustomEvent('slika:posalji', { detail: { blob, opis: share.opis ?? caption, lat: share.lat, lon: share.lon } }));
+      } catch (err) {
+        console.warn('slika za slanje', err.message);
+      }
+    });
+    box.append(b);
+  }
+  box.hidden = !box.children.length;
   viewer.hidden = false;
 }
 

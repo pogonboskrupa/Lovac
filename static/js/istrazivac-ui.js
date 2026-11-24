@@ -40,7 +40,6 @@ export function initIstrazivac(L, map) {
   // ---------- istraživač ----------
   const screen = $('ekran-mapa');
   const btn = $('btn-istrazivac');
-  const bar = $('istrazivac-traka');
   let rows = [];
   let on = false;
   let following = true;
@@ -52,6 +51,7 @@ export function initIstrazivac(L, map) {
 
   // ---- odabrani član: udaljenost od mene, linija i trag kretanja ----
   let selected = null;
+  let selectedRow = null; // pozicija sa markera (i kolege iz sekcije koje nisu u lovu)
   let showTrail = loadJSON('lovac.ist.trag', false) === true;
   let crumbs = loadJSON('lovac.ist.mrvice', { lov: null, by: {} });
   let serverTrail = { uid: null, pts: [], at: 0 };
@@ -78,9 +78,18 @@ export function initIstrazivac(L, map) {
     selLayer.clearLayers();
     const card = $('istrazivac-detalj');
     const me = currentFix();
-    const v = on && selected && me ? memberVectors(me, rows, cachedProfile()?.id, memberName).find((m) => m.id === selected) : null;
-    card.hidden = !v;
+    const src = selectedRow && !rows.some((r) => r.korisnik_id === selected) ? [...rows, selectedRow] : rows;
+    const v = on && selected && me ? memberVectors(me, src, cachedProfile()?.id, memberName, Date.now(), 24 * 3600000).find((m) => m.id === selected) : null;
     $('btn-ist-trag').setAttribute('aria-checked', String(showTrail));
+    // bez GPS-a se ipak kaže ko je lovac
+    if (on && selected && !me) {
+      card.hidden = false;
+      $('ist-detalj-ime').textContent = memberName(selected);
+      $('ist-detalj-udaljenost').textContent = 'Udaljenost nije poznata (čekam GPS)';
+      $('ist-detalj-starost').textContent = '';
+      return;
+    }
+    card.hidden = !v;
     if (!v) return;
     L.polyline([[me.lat, me.lon], [v.lat, v.lon]], { color: '#2563eb', weight: 3, dashArray: '6 8', interactive: false }).addTo(selLayer);
     let pts = [];
@@ -95,12 +104,13 @@ export function initIstrazivac(L, map) {
     $('ist-detalj-starost').textContent = `${detailLine(v).split(' · ').pop()}${showTrail && pts.length > 1 ? ` · trag ${formatMemberDistance(trailMeters(pts))}` : ''}`;
   };
 
-  const selectMember = (uid, { fit = false } = {}) => {
+  const selectMember = (uid, { fit = false, row = null } = {}) => {
     selected = uid;
+    selectedRow = uid ? row : null;
     serverTrail = { uid: null, pts: [], at: 0 };
     if (uid && fit) {
       const me = currentFix();
-      const r = rows.find((x) => x.korisnik_id === uid);
+      const r = rows.find((x) => x.korisnik_id === uid) || row;
       following = false;
       if (me && r) map.fitBounds([[me.lat, me.lon], [r.lat, r.lon]], { padding: [90, 90], animate: false, maxZoom: 17 });
     }
@@ -133,42 +143,30 @@ export function initIstrazivac(L, map) {
     for (const k of ['left', 'top', 'width', 'height']) karta.style[k] = '';
   };
 
+  // Za gest (okretanje, pomjeranje) samo transform: ponovno crtanje svega pri svakom pomaku prsta je trzalo sliku.
+  const applyTransform = () => {
+    const tilt = tiltById(tiltId);
+    karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni, scale: view.scale, p: view.p }) : '';
+    $('ist-n-strelica').setAttribute('transform', `rotate(${rot})`);
+  };
+
   const applyRot = () => {
     const tilt = tiltById(tiltId);
     if (on && layoutView()) map.invalidateSize({ animate: false });
     magla.hidden = !on || !view.fog;
-    karta.style.transform = on ? mapTransformCss(rot, { tilt: tilt.stepeni, scale: view.scale, p: view.p }) : '';
+    applyTransform();
     $('btn-ist-kompas').setAttribute('aria-pressed', String(followCompass));
     $('btn-ist-nagib-tekst').textContent = `${tilt.stepeni}°`;
-    $('ist-n-strelica').setAttribute('transform', `rotate(${rot})`);
     $('btn-ist-ja').setAttribute('aria-pressed', String(following));
     render();
   };
 
-  const render = () => {
-    renderBar();
-    updateSelection();
-  };
-
-  const renderBar = () => {
-    const me = currentFix();
-    if (!on) return;
-    if (!me) { bar.innerHTML = '<span class="sitno">Čekam GPS…</span>'; return; }
-    const v = memberVectors(me, rows, cachedProfile()?.id, memberName);
-    const sum = barSummary(v);
-    bar.innerHTML = (v.length
-      ? `<span class="ist-sazetak" id="ist-sazetak">${escapeHtml(sum.tekst)}</span>` + v.map((m) => `<button type="button" class="clan-chip" data-uid="${escapeHtml(m.id)}" data-svjezina="${freshnessOf(m.starost)}"${m.id === sum.najblizi ? ' data-najblizi' : ''} aria-label="${escapeHtml(m.ime)}, ${compassName(m.smjer)}, ${formatMemberDistance(m.udaljenost)}">
-          <span class="clan-lice">${escapeHtml(initialsOf(m.ime))}</span>
-          <svg class="ic strelica" style="transform:rotate(${Math.round(arrowAngle(m.smjer, upBearing(rot)))}deg)"><use href="#ic-arrow"/></svg>
-          <span><b>${escapeHtml(m.ime.split(' ')[0])}</b> ${compassName(m.smjer)} ${formatMemberDistance(m.udaljenost)}${m.starost > 1 ? ` · ${m.starost} min` : ''}</span></button>`).join('')
-      : '<span class="sitno">Nema kolega koji dijele lokaciju</span>');
-  };
+  const render = () => updateSelection();
 
   const setOn = (value) => {
     on = value;
     screen.classList.toggle('istrazivac', on);
     btn.setAttribute('aria-pressed', String(on));
-    bar.hidden = !on;
     $('btn-ist-izlaz').hidden = !on;
     if (!on) selectMember(null);
     controls.hidden = !on;
@@ -200,34 +198,25 @@ export function initIstrazivac(L, map) {
   });
   // Kompas sa sjeverom je i dugme: dodir vraća kartu na sjever gore.
   $('ist-n').addEventListener('click', () => { followCompass = false; rot = 0; applyRot(); });
-  $('btn-ist-x').addEventListener('click', () => setOn(false));
   $('btn-ist-kompas').addEventListener('click', () => {
     followCompass = !followCompass;
     const h = currentHeading();
     if (followCompass && h != null) rot = rotationForHeading(h);
     applyRot();
   });
-  // Jedan prst pomjera kartu (istraživanje terena), dva prsta je okreću. Leaflet dragging je isključen jer ne zna za nagib i rotaciju.
+  // Jedan prst pomjera kartu (istraživanje terena), dva prsta je okreću (bez zuma — zum je na tipkama +/−). Leaflet dragging je isključen jer ne zna za nagib i rotaciju.
   const pointers = new Map();
   let lastAngle = null;
-  let lastDist = null;
-  let pinchAcc = 0;
-  const ownsGesture = (e) => on && !e.target.closest('button, input, select, a, .leaflet-control, #istrazivac-kontrole, #istrazivac-traka, #istrazivac-detalj, .meni, .list-preko');
+  const ownsGesture = (e) => on && !e.target.closest('button, input, select, a, .leaflet-control, #istrazivac-kontrole, #istrazivac-detalj, .meni, .list-preko, .leaflet-marker-icon, .leaflet-popup');
   const angleOfPair = () => {
     const [a, b] = [...pointers.values()];
     return touchAngle(a, b);
-  };
-  const distOfPair = () => {
-    const [a, b] = [...pointers.values()];
-    return Math.hypot(b.x - a.x, b.y - a.y);
   };
   screen.addEventListener('pointerdown', (e) => {
     if (!ownsGesture(e)) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { screen.setPointerCapture(e.pointerId); } catch { /* nije kritično */ }
     lastAngle = pointers.size === 2 ? angleOfPair() : null;
-    lastDist = pointers.size === 2 ? distOfPair() : null;
-    pinchAcc = 0;
   });
   screen.addEventListener('pointermove', (e) => {
     if (!on || !pointers.has(e.pointerId)) return;
@@ -237,33 +226,31 @@ export function initIstrazivac(L, map) {
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) {
       const a = angleOfPair();
-      if (lastAngle != null) { followCompass = false; rot = rotateBy(rot, gestureDelta(lastAngle, a)); applyRot(); }
-      lastAngle = a;
-      // Razmak prstiju: zumiranje (svaka promjena razmaka za ~41 % je jedan nivo).
-      const d = distOfPair();
-      if (lastDist && d > 0) {
-        pinchAcc += Math.log2(d / lastDist);
-        if (pinchAcc >= 0.5) { map.zoomIn(1, { animate: false }); pinchAcc = 0; }
-        else if (pinchAcc <= -0.5) { map.zoomOut(1, { animate: false }); pinchAcc = 0; }
+      // Dva prsta samo OKREĆU; zum je na tipkama +/− (zum prstima dok je karta nagnuta je trzao i ponovo učitavao sliku).
+      if (lastAngle != null) {
+        const nr = rotateBy(rot, gestureDelta(lastAngle, a));
+        if (nr !== rot) { followCompass = false; rot = nr; applyTransform(); $('btn-ist-kompas').setAttribute('aria-pressed', 'false'); }
       }
-      lastDist = d;
+      lastAngle = a;
       return;
     }
     if (pointers.size === 1 && (dx || dy)) {
       following = false;
       const [px, py] = screenDragToPan(dx, dy, rot, { tilt: tiltById(tiltId).stepeni, scale: view.scale });
       map.panBy([px, py], { animate: false });
-      applyRot();
+      $('btn-ist-ja').setAttribute('aria-pressed', 'false');
     }
   });
-  const endPointer = (e) => { pointers.delete(e.pointerId); lastAngle = null; lastDist = null; pinchAcc = 0; };
+  const endPointer = (e) => { pointers.delete(e.pointerId); lastAngle = null; };
   screen.addEventListener('pointerup', endPointer);
   screen.addEventListener('pointercancel', endPointer);
-  bar.addEventListener('click', (e) => {
-    const c = e.target.closest('[data-uid]');
-    const r = c && rows.find((x) => x.korisnik_id === c.dataset.uid);
-    if (!r) return;
-    selectMember(selected === r.korisnik_id ? null : r.korisnik_id, { fit: true });
+  // Dodir na marker kolege u 3D: popup bi bio nagnut i okrenut zajedno sa kartom, pa se umjesto njega
+  // pokaže kartica na ekranu (ko je, udaljenost, smjer, starost pozicije).
+  map.on('popupopen', (e) => {
+    const clan = e.popup?._source?.options?.clan;
+    if (!on || !clan?.korisnik_id) return;
+    map.closePopup(e.popup);
+    selectMember(selected === clan.korisnik_id ? null : clan.korisnik_id, { row: clan });
   });
   document.addEventListener('uzivo:pozicije', (e) => {
     rows = e.detail.rows || [];

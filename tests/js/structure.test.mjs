@@ -80,7 +80,7 @@ test('kontrast ≥ 4.5:1 u noćnoj i dnevnoj temi', () => {
     ['tekst', 'pozadina'], ['tekst', 'povrsina'], ['tekst-2', 'pozadina'], ['tekst-2', 'povrsina'],
     ['dugme-tekst', 'dugme'], ['naglasak-tekst', 'naglasak'], ['upozorenje-tekst', 'upozorenje'],
     ['greska', 'pozadina'], ['gps-tekst', 'gps-dobro'], ['gps-tekst', 'gps-srednje'], ['gps-tekst', 'gps-lose'],
-    ['pozadina', 'tekst'],
+    ['pozadina', 'tekst'], ['tekst', 'teren-pozadina'], ['teren-tekst', 'teren'],
   ];
   for (const sel of [':root[data-tema="noc"] {', ':root[data-tema="dan"] {']) {
     const t = tokens(css, sel);

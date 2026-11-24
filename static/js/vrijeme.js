@@ -51,5 +51,5 @@ export function windStrength(ms) {
   return 'olujni vjetar';
 }
 
-// Smjer u koji vjetar duva (suprotno od "odakle duva").
+// Smjer u koji vjetar puše (suprotno od "odakle puše").
 export const windBlowsTo = (fromDeg) => (((fromDeg + 180) % 360) + 360) % 360;

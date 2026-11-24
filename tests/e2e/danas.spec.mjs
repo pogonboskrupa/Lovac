@@ -160,7 +160,7 @@ test('Danas: tab Vrijeme i vjetar — temperatura, smjer vjetra (kompas), sati; 
   await expect(page.locator('#vr-vjetar')).toContainText('Vjetar iz JZ');
   await expect(page.locator('#vr-vjetar')).toContainText('prema SI');
   await expect(page.locator('#vr-vjetar')).toContainText('umjeren vjetar');
-  // strelica kompasa pokazuje kamo vjetar duva: iz 225° → 45°
+  // strelica kompasa pokazuje kuda vjetar puše: iz 225° → 45°
   await expect(page.locator('#vr-kompas .kompas-strelica')).toHaveAttribute('transform', 'rotate(45 80 80)');
   await expect(page.locator('#vr-sati .vr-sat.sada')).toContainText('10:00');
   await expect(page.locator('#vr-sati .vr-sat').first()).toContainText('10:00');

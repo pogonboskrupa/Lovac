@@ -5,6 +5,19 @@ test.use({ timezoneId: 'Europe/Sarajevo', geolocation: { latitude: 44.88, longit
 
 test.beforeEach(async ({ page }) => { await fakeServerConfigUnset(page); });
 
+// Pravi Leaflet marker kolege (kao uzivo-ui) i dodir na njega.
+async function openMemberPopup(page, clan) {
+  await page.evaluate((c) => {
+    const icon = window.L.divIcon({ className: 'uc-ikona', html: '<span class="uc-marker test-clan">TT</span>', iconSize: [34, 34] });
+    const m = window.L.marker([c.lat, c.lon], { icon, clan: c }).bindPopup('x');
+    m.addTo(window.__karta);
+    window.__karta.panTo([c.lat, c.lon], { animate: false });
+  }, clan);
+  // pravi dodir (pointerdown/up): 3D gest ne smije progutati dodir na marker
+  const b = await page.locator('.test-clan').last().boundingBox();
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+}
+
 test('čip dnevnog svjetla pokazuje stanje; Istraživač nagne kartu i pokaže smjer i udaljenost članova', async ({ page }) => {
   await serveTiles(page);
   await page.clock.setFixedTime(new Date('2026-11-19T10:00:00Z'));
@@ -16,18 +29,12 @@ test('čip dnevnog svjetla pokazuje stanje; Istraživač nagne kartu i pokaže s
   await expect(page.locator('#ekran-mapa')).toHaveClass(/istrazivac/);
   await expect(page.locator('#btn-istrazivac')).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => getComputedStyle(document.getElementById('karta')).transform)).not.toBe('none');
-  await page.evaluate(() => document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [
-    { korisnik_id: 'x1', lat: 44.89, lon: 16.15, t: new Date().toISOString() },
-  ] } })));
-  const chip = page.locator('#istrazivac-traka .clan-chip');
-  await expect(chip).toHaveCount(1);
-  await expect(chip).toContainText(/S 1[,.]1 km|S 1,1 km/);
-  const box = await chip.boundingBox();
-  expect(box.height).toBeGreaterThanOrEqual(44);
+  // nema trake "ko dijeli lokaciju" (na zahtjev vlasnika), ni duplog X
+  await expect(page.locator('#istrazivac-traka')).toHaveCount(0);
+  await expect(page.locator('#btn-ist-x')).toHaveCount(0);
 
   await lok(page, '#btn-istrazivac');
   await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
-  await expect(page.locator('#istrazivac-traka')).toBeHidden();
 });
 
 test('Istraživač: karta se okreće dugmadima i prati kompas; strelice članova slijede rotaciju; Sjever gore vraća', async ({ page }) => {
@@ -54,7 +61,7 @@ test('Istraživač: karta se okreće dugmadima i prati kompas; strelice članova
   expect(await tr()).toBe('');
 });
 
-test('Istraživač pregled: sažetak, lica sa svježinom, najbliži istaknut, nagib kruži i pamti se, HUD smjera, centriraj na mene', async ({ page }) => {
+test('Istraživač pregled: nagib kruži i pamti se, bez HUD natpisa, centriraj na mene', async ({ page }) => {
   await serveTiles(page);
   await page.goto('/');
   await lok(page, '#btn-istrazivac');
@@ -62,14 +69,6 @@ test('Istraživač pregled: sažetak, lica sa svježinom, najbliži istaknut, na
     { korisnik_id: 'x1', lat: 44.89, lon: 16.15, t: new Date().toISOString() },
     { korisnik_id: 'x2', lat: 44.95, lon: 16.2, t: new Date(Date.now() - 8 * 60000).toISOString() },
   ] } })));
-  await expect(page.locator('#ist-sazetak')).toContainText('2 člana · najbliži');
-  const chips = page.locator('#istrazivac-traka .clan-chip');
-  await expect(chips).toHaveCount(2);
-  await expect(chips.first()).toHaveAttribute('data-najblizi', '');
-  await expect(chips.first()).toHaveAttribute('data-svjezina', 'uzivo');
-  await expect(chips.nth(1)).toHaveAttribute('data-svjezina', 'zastarjelo');
-  await expect(chips.first().locator('.clan-lice')).toHaveText(/^[A-ZČĆŽŠĐ?]{1,2}$/);
-
   await expect(page.locator('#btn-ist-nagib-tekst')).toHaveText('40°');
   await page.locator('#btn-ist-nagib').click();
   await expect(page.locator('#btn-ist-nagib-tekst')).toHaveText('55°');
@@ -104,7 +103,7 @@ test('Istraživač: kontejner karte je veći (pločice i za okrenuti dio), jedan
   await expect(page.locator('#ekran-mapa .leaflet-control-zoom')).toBeHidden();
 });
 
-test('Istraživač: Izađi je gore lijevo, nema HUD natpisa; dodir na kolegu pokazuje udaljenost od mene, a trag se uključuje i ostaje', async ({ page }) => {
+test('Istraživač: Izađi je gore lijevo, nema HUD natpisa; dodir na marker kolege pokazuje udaljenost od mene, a trag se uključuje i ostaje', async ({ page }) => {
   await serveTiles(page);
   await page.goto('/');
   await lok(page, '#btn-istrazivac');
@@ -120,10 +119,8 @@ test('Istraživač: Izađi je gore lijevo, nema HUD natpisa; dodir na kolegu pok
   await emit([{ lov_id: 'L1', korisnik_id: 'x1', lat: 44.8900, lon: 16.15, t: iso(now - 120000) }]);
   await emit([{ lov_id: 'L1', korisnik_id: 'x1', lat: 44.8920, lon: 16.15, t: iso(now - 60000) }]);
   await emit([{ lov_id: 'L1', korisnik_id: 'x1', lat: 44.8940, lon: 16.15, t: iso(now) }]);
-  const chip = page.locator('#istrazivac-traka .clan-chip').first();
-  await expect(chip).toBeVisible();
   await expect(page.locator('#istrazivac-detalj')).toBeHidden();
-  await chip.click();
+  await openMemberPopup(page, { korisnik_id: 'x1', lat: 44.8940, lon: 16.15, t: iso(now) });
   await expect(page.locator('#istrazivac-detalj')).toBeVisible();
   await expect(page.locator('#ist-detalj-udaljenost')).toContainText(/1[,.]6 km S od tebe/);
   await expect(page.locator('#btn-ist-trag')).toHaveAttribute('aria-checked', 'false');
@@ -144,7 +141,7 @@ test('Istraživač: ekran se ne pomjera kad se dodirne dugme (kontrole ostaju na
   await page.goto('/');
   await lok(page, '#btn-istrazivac');
   await page.evaluate(() => document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [{ lov_id: 'L1', korisnik_id: 'x1', lat: 44.8825, lon: 16.1525, t: new Date().toISOString() }] } })));
-  await page.locator('#istrazivac-traka .clan-chip').first().click();
+  await openMemberPopup(page, { korisnik_id: 'x1', lat: 44.8825, lon: 16.1525, t: new Date().toISOString() });
   await page.locator('#btn-ist-trag').click();
   const pos = await page.evaluate(() => ({ s: [document.getElementById('ekran-mapa').scrollTop, document.getElementById('ekran-mapa').scrollLeft], izlaz: document.getElementById('btn-ist-izlaz').getBoundingClientRect().toJSON() }));
   expect(pos.s).toEqual([0, 0]);
@@ -179,7 +176,6 @@ test('Istraživač dizajn: kompas sa sjeverom prati rotaciju, horizont je nebo, 
   await twoFingers(page, { rotate: 30 });
   expect(await rot()).toBe('rotate(30)');
   expect(await page.evaluate(() => getComputedStyle(document.getElementById('ekran-mapa')).backgroundImage)).toContain('linear-gradient');
-  await expect(page.locator('#istrazivac-traka')).toContainText('Nema kolega koji dijele lokaciju');
 
   // panel podloga se otvara iznad kontrola (ne ispod njih)
   await page.locator('#btn-podloga').click();
@@ -193,28 +189,27 @@ test('Istraživač dizajn: kompas sa sjeverom prati rotaciju, horizont je nebo, 
 });
 
 
-test('Istraživač: X uz tipku lokacije izlazi iz 3D, nema tipki lijevo/desno ni S; niže "Izađi iz 3D"; zum sa dva prsta', async ({ page }) => {
+test('Istraživač: nema X ni tipki lijevo/desno/S; dva prsta samo okreću (bez zuma), zum je na tipkama +/−', async ({ page }) => {
   await serveTiles(page);
   await page.goto('/');
   await lok(page, '#btn-istrazivac');
-  for (const id of ['#btn-ist-lijevo', '#btn-ist-desno', '#btn-ist-sjever']) expect(await page.locator(id).count(), id).toBe(0);
+  for (const id of ['#btn-ist-lijevo', '#btn-ist-desno', '#btn-ist-sjever', '#btn-ist-x']) expect(await page.locator(id).count(), id).toBe(0);
   expect((await page.locator('#btn-ist-izlaz').boundingBox()).height).toBeLessThanOrEqual(40);
-  const ja = await page.locator('#btn-ist-ja').boundingBox();
-  const x = await page.locator('#btn-ist-x').boundingBox();
-  expect(x.x).toBeGreaterThan(ja.x + ja.width - 2);
-  expect(Math.abs(x.y - ja.y)).toBeLessThan(4);
-  expect(x.height).toBeGreaterThanOrEqual(44);
-
-  // zum: razmak prstiju se udvostruči = bar jedan nivo bliže
   const z = () => page.evaluate(() => JSON.parse(localStorage.getItem('lovac.pogled') || 'null')?.z ?? null);
+  await page.locator('#btn-zoom-in').click();
+  await expect.poll(z).not.toBeNull();
   const z0 = await z();
-  await twoFingers(page, { scale: 2.4 });
-  await expect.poll(z).toBeGreaterThan(z0 ?? 0);
-  const z1 = await z();
+  // razmak prstiju se mijenja: zum se NE mijenja, a okretanje radi
+  await twoFingers(page, { scale: 2.4, rotate: 20 });
   await twoFingers(page, { scale: 0.4 });
-  await expect.poll(z).toBeLessThan(z1);
-
-  await page.locator('#btn-ist-x').click();
+  await page.waitForTimeout(300);
+  expect(await z()).toBe(z0);
+  expect(await page.evaluate(() => document.getElementById('karta').style.transform)).toContain('rotateZ(20deg)');
+  await page.locator('#btn-zoom-in').click();
+  await expect.poll(z).toBe(z0 + 1);
+  await page.locator('#btn-zoom-out').click();
+  await expect.poll(z).toBe(z0);
+  await page.locator('#btn-ist-izlaz').click();
   await expect(page.locator('#ekran-mapa')).not.toHaveClass(/istrazivac/);
 });
 

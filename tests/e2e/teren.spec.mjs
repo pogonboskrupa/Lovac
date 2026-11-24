@@ -21,10 +21,18 @@ test.beforeEach(async ({ page }) => {
   await serveTiles(page);
 });
 
-test('podloge na mapi su Topo, Satelit i Teren; u browseru Teren objašnjava da radi u aplikaciji', async ({ page }) => {
+test('podloge na mapi: Teren prvi i istaknut, pa Topo i Satelit; u browseru Teren objašnjava da radi u aplikaciji', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-podloga').click();
-  await expect(page.locator('#meni-podloga [data-podloga]')).toHaveText(['Topo', 'Satelit', 'Teren']);
+  const dugmad = page.locator('#meni-podloga [data-podloga]');
+  await expect(dugmad).toHaveCount(3);
+  await expect(dugmad.nth(0)).toHaveAttribute('data-podloga', 'teren');
+  await expect(dugmad.nth(1)).toHaveText('Topo');
+  await expect(dugmad.nth(2)).toHaveText('Satelit');
+  await expect(page.locator('#podloga-teren-stanje')).toHaveText('Radi u aplikaciji na telefonu');
+  // Teren ima vlastitu boju (lijevi rub), različitu od ostalih podloga.
+  const rub = await page.locator('#meni-podloga [data-podloga="teren"]').evaluate((b) => getComputedStyle(b).borderLeftWidth);
+  expect(rub).toBe('6px');
   await page.locator('#meni-podloga [data-podloga="teren"]').click();
   await expect(page.locator('#poruka')).toContainText('Teren radi u aplikaciji');
   await expect(page.locator('#meni-podloga [data-podloga="topo"]')).toHaveAttribute('aria-pressed', 'true');
@@ -35,6 +43,7 @@ test('Teren nije preuzet: izbor vodi na preuzimanje sa Release-a, napredak, pa s
   await bridge(page);
   await page.goto('/');
   await page.locator('#btn-podloga').click();
+  await expect(page.locator('#podloga-teren-stanje')).toHaveText('Nije preuzet — dodirni za preuzimanje');
   await page.locator('#meni-podloga [data-podloga="teren"]').click();
   await expect(page.locator('#karte')).toBeVisible();
   await expect(page.locator('#teren-status')).toContainText('nije preuzet');
@@ -63,6 +72,7 @@ test('Teren nije preuzet: izbor vodi na preuzimanje sa Release-a, napredak, pa s
   await expect(page.locator('#teren-status')).toContainText('zoom 8–16');
   await expect(page.locator('#btn-teren-preuzmi')).toHaveText('Preuzmi ponovo (ažuriraj)');
   await expect(page.locator('#meni-podloga [data-podloga="teren"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#podloga-teren-stanje')).toHaveText('Na telefonu — radi bez interneta');
   // Teren se NE nudi kao dodatni sloj među offline kartama.
   await expect(page.locator('#karte-spisak [data-id]')).toHaveCount(0);
   await page.locator('#nav-mapa').click();

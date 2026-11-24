@@ -4,7 +4,7 @@ import { headingCheck } from './lov.js';
 import { distanceM, bearingDeg, formatMemberDistance } from './istrazivac.js';
 import { compassName } from './geo.js';
 
-// Miris ide NIZ vjetar: suprotno od smjera odakle duva.
+// Miris ide NIZ vjetar: suprotno od smjera odakle puše.
 export function scentDirection(windFromDeg) {
   return (windFromDeg + 180) % 360;
 }

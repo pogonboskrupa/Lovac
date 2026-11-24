@@ -7,7 +7,7 @@ import { decodeTerrarium, tilePixel, uphillAspect } from '../../static/js/dem.js
 import { haversine } from '../../static/js/trag.js';
 import { bearing } from '../../static/js/geo.js';
 
-test('sektor vjetra (odakle duva), 8 strana', () => {
+test('sektor vjetra (odakle puše), 8 strana', () => {
   assert.equal(windSector(0), 0);
   assert.equal(windSector(22), 0);
   assert.equal(windSector(23), 1);
@@ -87,7 +87,7 @@ test('Terrarium DEM: dekodiranje, piksel u pločici, smjer uzbrdo', () => {
 
 import { weatherLabel, hasWeather, currentHour, hoursOfDay, daySummary, windStrength, windBlowsTo } from '../../static/js/vrijeme.js';
 
-test('vrijeme: opis, jačina vjetra i smjer u koji duva', () => {
+test('vrijeme: opis, jačina vjetra i smjer u koji puše', () => {
   assert.equal(weatherLabel(0), 'Vedro');
   assert.equal(weatherLabel(63), 'Kiša');
   assert.equal(weatherLabel(95), 'Grmljavina');

@@ -73,7 +73,7 @@ export function initObjekti(L, map) {
     $('objekt-pozicija').textContent = `Pozicija: ${editing.lat.toFixed(6)}, ${editing.lon.toFixed(6)} (${editing.izvorPozicije})`;
   };
 
-  // Dozvoljeni smjerovi vjetra (odakle duva) samo za čeke i zaklone.
+  // Dozvoljeni smjerovi vjetra (odakle puše) samo za čeke i zaklone.
   const renderWindSectors = () => {
     const show = isStandType(editing.vrsta);
     $('objekt-vjetar-blok').hidden = !show;

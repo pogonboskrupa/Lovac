@@ -37,6 +37,7 @@ export function initDojave(L, map) {
   let filter = null;
   let tempMarker = null;
   let busy = false;
+  const odgovori = new Map(); // upisan, još nesačuvan odgovor: spisak se ponovo crta dok lovočuvar kuca
   const me = () => cachedProfile();
   const online = () => connectionQuality() !== 'nema' && Boolean(getClient());
   const revirs = () => keeperRevirs(ctx, me());
@@ -216,7 +217,7 @@ export function initDojave(L, map) {
         ${keeper && d.status === 'nova' ? '<button type="button" class="dugme glavno" data-akcija="preuzmi">Preuzimam</button>' : ''}
         ${keeper && d.status !== 'rijesena' ? '<button type="button" class="dugme" data-akcija="rijesi">Riješeno</button>' : ''}
       </div>
-      ${keeper ? `<div class="dojava-odgovor-forma"><input type="text" maxlength="1000" data-odgovor placeholder="Odgovor lovcu (neobavezno)" value="${escapeHtml(d.odgovor || '')}" aria-label="Odgovor lovcu">
+      ${keeper ? `<div class="dojava-odgovor-forma"><input type="text" maxlength="1000" data-odgovor placeholder="Odgovor lovcu (neobavezno)" value="${escapeHtml(odgovori.get(d.id) ?? d.odgovor ?? '')}" aria-label="Odgovor lovcu">
         <button type="button" class="dugme" data-akcija="odgovor">Sačuvaj</button></div>` : ''}
     </li>`;
   };
@@ -279,10 +280,15 @@ export function initDojave(L, map) {
       setTimeout(() => { if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; } }, 60000);
       return;
     }
-    const odgovor = card.querySelector('[data-odgovor]')?.value.trim() || null;
+    const odgovor = (odgovori.get(d.id) ?? card.querySelector('[data-odgovor]')?.value ?? '').trim() || null;
+    odgovori.delete(d.id);
     if (a === 'preuzmi') await update(d.id, { status: 'preuzeta', odgovor }, 'Dojava je preuzeta');
     if (a === 'rijesi') await update(d.id, { status: 'rijesena', odgovor }, 'Dojava je riješena');
     if (a === 'odgovor') await update(d.id, { odgovor }, 'Odgovor je sačuvan');
+  });
+  $('dojave-spisak').addEventListener('input', (e) => {
+    const card = e.target.closest('[data-id]');
+    if (card && e.target.matches('[data-odgovor]')) odgovori.set(card.dataset.id, e.target.value);
   });
   $('dojave-filter').addEventListener('click', (e) => {
     const b = e.target.closest('[data-filter]');

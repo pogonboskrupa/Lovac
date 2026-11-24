@@ -2,6 +2,9 @@
 :root,
 :root[data-tema="noc"] {
   --okvir: #6f8463;
+  --teren: #4fb38a;
+  --teren-pozadina: #173328;
+  --teren-tekst: #0b1a12;
   --nav-h: calc(68px + env(safe-area-inset-bottom));
   --gore-1: calc(84px + env(safe-area-inset-top));
   --gore-2: calc(124px + env(safe-area-inset-top));
@@ -24,6 +27,9 @@
 }
 :root[data-tema="dan"] {
   --okvir: #8b8670;
+  --teren: #1f7a55;
+  --teren-pozadina: #e2f2ea;
+  --teren-tekst: #ffffff;
   --pozadina: #f6f3ea;
   --povrsina: #ffffff;
   --tekst: #14170f;
@@ -1043,7 +1049,7 @@ svg[hidden] { display: none; }
 .istrazivac-izlaz { position: absolute; left: 8px; top: calc(env(safe-area-inset-top) + 12px); z-index: 1060; min-height: 48px; padding: 4px 18px; }
 .istrazivac-izlaz[hidden] { display: none; }
 #ekran-mapa.istrazivac .istrazivac-traka { top: calc(env(safe-area-inset-top) + 68px); right: 8px; }
-.istrazivac-detalj { position: absolute; left: 8px; top: calc(env(safe-area-inset-top) + 124px); width: min(240px, calc(100% - 130px)); z-index: 1055; padding: 8px 10px; border-radius: 14px; background: var(--povrsina); box-shadow: var(--sjena); }
+.istrazivac-detalj { position: absolute; left: 8px; top: calc(env(safe-area-inset-top) + 60px); width: min(240px, calc(100% - 130px)); z-index: 1055; padding: 8px 10px; border-radius: 14px; background: var(--povrsina); box-shadow: var(--sjena); }
 .istrazivac-detalj[hidden] { display: none; }
 .ist-detalj-glava { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .ist-detalj-glava .ikona-dugme { width: 44px; height: 44px; }
@@ -1071,7 +1077,18 @@ svg[hidden] { display: none; }
 
 /* Istraživač: horizont kao nebo (umjesto crne), panel podloga iznad kontrola, kompas sa sjeverom */
 #ekran-mapa.istrazivac { background: linear-gradient(#0a1a2e 0%, #1d3a5c 28%, #4a7aa3 46%); }
-#meni-podloga { z-index: 1500; }
+#meni-podloga { z-index: 1500; min-width: 240px; }
+/* Teren je najvažnija podloga (radi bez interneta): vlastita boja i stanje preuzimanja. */
+#meni-podloga .podloga-teren-dugme {
+  display: flex; align-items: center; gap: 12px; margin: 6px 8px 4px; padding: 8px 14px; border-radius: 10px;
+  background: var(--teren-pozadina); color: var(--tekst); border-left: 6px solid var(--teren);
+}
+#meni-podloga .podloga-teren-dugme .ic { width: 26px; height: 26px; color: var(--teren); flex: none; }
+#meni-podloga .podloga-teren-dugme[aria-pressed="true"] { background: var(--teren); color: var(--teren-tekst); }
+#meni-podloga .podloga-teren-dugme[aria-pressed="true"] .ic { color: var(--teren-tekst); }
+.pt-tekst { display: flex; flex-direction: column; line-height: 1.25; }
+.pt-stanje { font-size: 13px; }
+
 #ekran-mapa.istrazivac #meni-podloga { top: calc(env(safe-area-inset-top) + 76px); }
 .istrazivac-kontrole { top: calc(var(--gore-2) + 36px); }
 .ist-n { grid-column: 1 / -1; justify-self: end; display: grid; place-items: center; width: 46px; height: 46px; margin-right: 24px; position: relative; }
@@ -1500,3 +1517,19 @@ svg[hidden] { display: none; }
 .sk-lovci-strelica { margin-left: auto; transition: transform .15s; }
 .sk-lovci-glava[aria-expanded="false"] .sk-lovci-strelica { transform: rotate(-90deg); }
 #sk-k-clanovi.sklopljeno > :not(h3) { display: none; }
+
+/* Slike lovcima */
+.sl-pregled img { display: block; max-width: 100%; max-height: 38dvh; margin: 0 auto 8px; border-radius: 12px; }
+.sl-primaoci { max-height: 32dvh; overflow-y: auto; border: 1.5px solid var(--okvir); border-radius: 12px; padding: 4px 8px; }
+.sl-primalac { display: flex; align-items: center; gap: 10px; min-height: 48px; margin: 0; color: var(--tekst); }
+.sl-primalac input { width: 24px; height: 24px; }
+.sl-kartica { display: flex; gap: 12px; align-items: flex-start; }
+.sl-kartica[data-novo] { border-color: var(--naglasak); }
+.sl-mala { flex: none; width: 72px; height: 72px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--dugme); }
+.sl-mala img { width: 100%; height: 100%; object-fit: cover; }
+.sl-tekst { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sl-stanje[data-stanje="odbijena"] { color: var(--greska); }
+#slike-lovcima .tr-kartica, #slika-lovcu .sl-primaoci { border: 1.5px solid var(--okvir); }
+
+/* Istraživač: transform na vlastitom sloju (GPU), pa okretanje ne trza sliku. */
+#ekran-mapa.istrazivac #karta { will-change: transform; backface-visibility: hidden; }

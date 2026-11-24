@@ -150,6 +150,10 @@ export async function startSim(page, world, { rpc = true, recv = true } = {}) {
       for (const r of rows.filter((x) => match(x, url.searchParams))) Object.assign(r, patch, table === 'lovovi' ? { promijenjeno: iso(sim.now + (++korak)) } : {});
       return json(route, 200, [], key);
     }
+    if (req.method() === 'DELETE') {
+      sim.deletes = [...(sim.deletes || []), ...rows.filter((x) => match(x, url.searchParams)).map((x) => ({ table, id: x.id }))];
+      db[table] = rows.filter((x) => !match(x, url.searchParams));
+    }
     bump(key);
     return route.fulfill({ status: 204, body: '' });
   });

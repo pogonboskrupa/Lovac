@@ -81,6 +81,13 @@ export function terenStatus(hasBridge, info) {
   return { stanje: 'preuzet', tekst: `Teren je na telefonu: ${mb(info.velicina || 0)}, zoom ${info.minzoom}–${info.maxzoom}.` };
 }
 
+// Kratko stanje ispod "Teren" u ploči podloga na mapi.
+export function terenMenuText(stanje) {
+  if (stanje === 'preuzet') return 'Na telefonu — radi bez interneta';
+  if (stanje === 'bez-aplikacije') return 'Radi u aplikaciji na telefonu';
+  return 'Nije preuzet — dodirni za preuzimanje';
+}
+
 async function renderHero(state) {
   try {
     const tiles = await tileCacheCount().catch(() => 0);
@@ -109,6 +116,11 @@ export function initKarte(L, map, registerTeren, repo) {
     if (transfer !== 'teren' && !armedDownload) $('btn-teren-preuzmi').textContent = st.stanje === 'preuzet' ? 'Preuzmi ponovo (ažuriraj)' : 'Preuzmi offline kartu';
     $('btn-teren-ukloni').hidden = st.stanje !== 'preuzet' || transfer === 'teren';
     $('teren-kartica').dataset.stanje = st.stanje;
+    const naMapi = $('podloga-teren-stanje');
+    if (naMapi) {
+      naMapi.dataset.stanje = st.stanje;
+      naMapi.textContent = terenMenuText(st.stanje);
+    }
   };
 
   // Provajder za podlogu "Teren": isti sloj se koristi dok je fajl isti.

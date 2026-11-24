@@ -31,7 +31,7 @@ export function destination(p, bearingDeg, distM) {
   return { lat: φ2 / RAD, lon: λ2 / RAD };
 }
 
-// Poligon: čeka + luk niz vjetar (vjetar duva IZ windFrom, miris ide prema windFrom + 180).
+// Poligon: čeka + luk niz vjetar (vjetar puše IZ windFrom, miris ide prema windFrom + 180).
 export function scentCone(origin, windFromDeg, lengthM = 400, halfAngle = 20, steps = 8) {
   const down = (windFromDeg + 180) % 360;
   const pts = [[origin.lat, origin.lon]];

@@ -89,7 +89,7 @@ function drawArc(svg, sun, now) {
 
 const fmtTemp = (v) => (v == null ? '—' : `${Math.round(v)}°`);
 
-// Kompas: strelica pokazuje u koju stranu vjetar DUVA (suprotno od "odakle duva").
+// Kompas: strelica pokazuje u koju stranu vjetar PUŠE (suprotno od "odakle puše").
 function drawCompass(svg, fromDeg) {
   svg.replaceChildren();
   const add = (tag, attrs, text, parent = svg) => {
@@ -145,7 +145,7 @@ export function initDanas(map) {
     $('vr-minmax').textContent = sum ? ` Danas ${fmtTemp(sum.min)} – ${fmtTemp(sum.max)}${sum.padavine > 0 ? `, padavine ${String(sum.padavine).replace('.', ',')} mm` : ''}` : '';
     drawCompass($('vr-kompas'), wind?.smjer ?? null);
     $('vr-vjetar').innerHTML = wind
-      ? `<b>Vjetar iz ${escapeHtml(compassName(wind.smjer))}</b> (${Math.round(wind.smjer)}°), duva prema ${escapeHtml(compassName(windBlowsTo(wind.smjer)))}<br>${escapeHtml(formatWind(wind).replace(/^\S+ \(\d+°\) /, ''))} · ${escapeHtml(windStrength(wind.brzina))}`
+      ? `<b>Vjetar iz ${escapeHtml(compassName(wind.smjer))}</b> (${Math.round(wind.smjer)}°), puše prema ${escapeHtml(compassName(windBlowsTo(wind.smjer)))}<br>${escapeHtml(formatWind(wind).replace(/^\S+ \(\d+°\) /, ''))} · ${escapeHtml(windStrength(wind.brzina))}`
       : 'Smjer vjetra nije dostupan.';
     $('vr-sati').innerHTML = hours.filter((h) => h.t + 3600000 > now).map((h) => `<li class="vr-sat${cur && h.t === cur.t ? ' sada' : ''}">
         <span class="vr-h">${pad(new Date(h.t).getHours())}:00</span>

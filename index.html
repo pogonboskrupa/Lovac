@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.5';
+  const APP_VER = 'v1.1.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -132,7 +132,6 @@
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
   <button id="btn-ist-izlaz" type="button" class="istrazivac-izlaz" hidden>Izađi iz 3D</button>
-  <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
   <div id="istrazivac-detalj" class="istrazivac-detalj" role="status" hidden>
     <div class="ist-detalj-glava">
       <b id="ist-detalj-ime"></b>
@@ -150,7 +149,6 @@
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
     <button id="btn-ist-nagib" type="button" class="ikona-dugme" aria-label="Promijeni nagib pogleda"><span id="btn-ist-nagib-tekst" class="ist-t">40°</span></button>
     <button id="btn-ist-ja" type="button" class="ikona-dugme" aria-label="Centriraj na mene"><svg class="ic"><use href="#ic-locate"/></svg></button>
-    <button id="btn-ist-x" type="button" class="ikona-dugme" aria-label="Izađi iz 3D"><svg class="ic"><use href="#ic-close"/></svg></button>
   </div>
   <div id="lov-trag-legenda" class="istrazivac-traka lov-trag-legenda" hidden></div>
   <div id="arh-karta" class="arh-karta" role="group" aria-label="Lov iz arhive na karti" hidden>
@@ -176,6 +174,7 @@
       <button type="button" id="btn-odstrel-spisak" class="meni-plocica"><svg class="ic"><use href="#ic-target"/></svg><span class="m-tekst"><span class="m-naslov">Odstrel</span><span class="m-opis" id="btn-odstrel-spisak-opis">Evidencija i statistika</span></span></button>
       <button type="button" id="btn-opazanja" class="meni-plocica"><svg class="ic"><use href="#ic-eye"/></svg><span class="m-tekst"><span class="m-naslov">Opažanja</span><span class="m-opis" id="btn-opazanja-opis">Divljač na terenu</span></span></button>
       <button type="button" id="btn-dojave" class="meni-plocica"><svg class="ic"><use href="#ic-stit"/></svg><span class="m-tekst"><span class="m-naslov">Prijave lovočuvaru</span><span class="m-opis" id="btn-dojave-opis">Krivolov, divljač, zamke</span></span></button>
+      <button type="button" id="btn-slike-lovcima" class="meni-plocica"><svg class="ic"><use href="#ic-camera"/></svg><span class="m-tekst"><span class="m-naslov">Slike lovcima</span><span class="m-opis" id="btn-slike-lovcima-opis">Pošalji sliku drugom lovcu</span></span></button>
       <button type="button" id="btn-objekti" class="meni-plocica"><svg class="ic"><use href="#ic-pin"/></svg><span class="m-tekst"><span class="m-naslov">Objekti</span><span class="m-opis" id="btn-objekti-opis">Čeke, hranilišta, solila</span></span></button>
       <button type="button" id="btn-tragovi" class="meni-plocica"><svg class="ic"><use href="#ic-route"/></svg><span class="m-tekst"><span class="m-naslov">Moji tragovi</span><span class="m-opis" id="btn-tragovi-opis">Snimljene ture</span></span></button>
     </div>
@@ -274,9 +273,11 @@
     </div>
   </div>
   <div id="meni-podloga" class="meni" hidden>
+    <h4 class="meni-podnaslov">Offline karta društva</h4>
+    <button type="button" data-podloga="teren" class="podloga-teren-dugme"><svg class="ic" aria-hidden="true"><use href="#ic-mountain"/></svg><span class="pt-tekst"><b>Teren</b><span id="podloga-teren-stanje" class="pt-stanje" data-stanje="nema">Nije preuzet — dodirni za preuzimanje</span></span></button>
+    <h4 class="meni-podnaslov">Sa interneta</h4>
     <button type="button" data-podloga="topo">Topo</button>
     <button type="button" data-podloga="satelit">Satelit</button>
-    <button type="button" data-podloga="teren">Teren</button>
     <h4 class="meni-podnaslov">Koordinate na mapi</h4>
     <button type="button" id="btn-koord-prikazi" aria-pressed="true">Prikaži visinu i koordinate</button>
   </div>
@@ -776,7 +777,7 @@
       <button type="button" data-stanje="sruseno">Srušeno</button>
     </div>
     <div id="objekt-vjetar-blok" hidden>
-      <h3>Dobar vjetar za ovu čeku (odakle duva)</h3>
+      <h3>Dobar vjetar za ovu čeku (odakle puše)</h3>
       <div id="objekt-vjetar" class="segment segment-8" role="group" aria-label="Dozvoljeni smjerovi vjetra"></div>
     </div>
     <label id="objekt-zvanicni-blok" class="red-check obj-zvanicni-izbor" hidden><input name="zvanicni" type="checkbox"> Zvanični objekat društva — vide ga svi članovi</label>
@@ -962,6 +963,34 @@
   <div id="dojave-filter" class="segment p-tabovi" role="group" aria-label="Prikaz dojava"></div>
   <p id="dojave-status" class="sitno" role="status"></p>
   <ul id="dojave-spisak" class="spisak dojave-spisak"></ul>
+</section>
+<section id="slike-lovcima" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slike-lovcima-naslov" hidden>
+  <header class="postavke-glava"><h2 id="slike-lovcima-naslov">Slike lovcima</h2>
+    <button id="btn-slike-lovcima-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+  <div class="red-dugmadi">
+    <label class="dugme glavno dugme-fajl">Pošalji sliku<input id="sl-ulaz" type="file" accept="image/*" hidden></label>
+  </div>
+  <div id="sl-tabovi" class="segment p-tabovi" role="group" aria-label="Prikaz slika">
+    <button type="button" data-sltab="primljene" aria-pressed="true">Primljene</button>
+    <button type="button" data-sltab="poslane" aria-pressed="false">Poslane</button>
+  </div>
+  <p class="sitno">Server čuva sliku najviše 12 sati. Primljene i poslane slike ostaju na ovom telefonu dok ih ne obrišeš.</p>
+  <ul id="sl-spisak" class="spisak sl-spisak"></ul>
+</section>
+<section id="slika-lovcu" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slika-lovcu-naslov" hidden>
+  <header class="postavke-glava"><h2 id="slika-lovcu-naslov">Pošalji sliku lovcu</h2>
+    <button id="btn-slika-lovcu-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+  <div id="sl-pregled" class="sl-pregled"></div>
+  <label>Kome (najviše 5 lovaca)<input id="sl-trazi" type="search" placeholder="Traži lovca po imenu" autocomplete="off"></label>
+  <p id="sl-izabrani" class="sitno"></p>
+  <ul id="sl-primaoci" class="spisak sl-primaoci"></ul>
+  <label>Poruka uz sliku (neobavezno)<textarea id="sl-opis" rows="2" maxlength="500" placeholder="Npr. trag vepra kod donje čeke"></textarea></label>
+  <p class="sitno">Slika je na serveru najviše 12 sati i briše se čim je lovac preuzme. Kod tebe i kod njega ostaje na telefonu. Bez interneta čeka na telefonu i šalje se kad se veza vrati.</p>
+  <p id="sl-status" class="sitno" role="status"></p>
+  <div class="red-dugmadi">
+    <button type="button" id="btn-sl-posalji" class="dugme glavno">Pošalji</button>
+    <button type="button" id="btn-sl-odustani" class="dugme">Odustani</button>
+  </div>
 </section>
 
 <section id="opazanja" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="opazanja-naslov" hidden>

@@ -63,7 +63,7 @@ export function initUzivo(L, map) {
         html: `<span class="uc-marker" data-stanje="${stanje}" data-uloga="${u?.uloga === 'pogonic' ? 'pogonic' : 'ostali'}">${escapeHtml(initialsOf(name))}</span>`,
         iconSize: [34, 34], iconAnchor: [17, 17],
       });
-      L.marker([p.lat, p.lon], { icon, keyboard: false })
+      L.marker([p.lat, p.lon], { icon, keyboard: false, clan: { korisnik_id: p.korisnik_id, lat: p.lat, lon: p.lon, t: p.t } })
         .bindPopup(() => memberCard(name, currentFix(), p, age), { closeButton: true, autoPan: true }).addTo(others);
     }
   };

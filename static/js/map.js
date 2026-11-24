@@ -75,6 +75,7 @@ export function initMap(L, elementId) {
   });
   updateCoordBar(map);
   wireMapControls(map, setBase);
+  globalThis.__karta = map; // za e2e testove (markeri kolega)
   return { map, setBase, activeBase: () => activeId, registerTeren };
 }
 
@@ -99,8 +100,10 @@ function wireMapControls(map, setBase) {
   map.on('click', () => {
     for (const id of ['meni-podloga', 'meni-dodaj']) { const m = document.getElementById(id); if (m) m.hidden = true; }
   });
-  document.getElementById('btn-zoom-in')?.addEventListener('click', () => map.zoomIn());
-  document.getElementById('btn-zoom-out')?.addEventListener('click', () => map.zoomOut());
+  // U Istraživaču 3D zum bez animacije: animirani zum nagnute karte trza i prazni sliku.
+  const animate = () => !document.getElementById('ekran-mapa')?.classList.contains('istrazivac');
+  document.getElementById('btn-zoom-in')?.addEventListener('click', () => map.zoomIn(1, { animate: animate() }));
+  document.getElementById('btn-zoom-out')?.addEventListener('click', () => map.zoomOut(1, { animate: animate() }));
   // Dodir na okvir mijenja sistem: WGS84 → MGI 5 → MGI 6 → WGS84. Kopiranje je u "Moja lokacija".
   document.getElementById('koord-traka')?.addEventListener('click', () => {
     coordMode = nextCoordMode(coordMode);

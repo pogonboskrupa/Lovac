@@ -81,3 +81,19 @@ test('divljač: grupe, najaktivnije doba i događaji u mjesecu (biološki kalend
   assert.ok(monthEvents(1).some((e) => e.vrsta === 'medvjed' && e.kod === 'san'));
   for (const v of VRSTE_DIVLJACI) assert.match(v.boja, /^#[0-9a-f]{6}$/i) && assert.ok(v.znak.length >= 2);
 });
+
+test('divljač: tekst je na bosanskom (rogovi, lanad, insekti, puše — ne hrvatski/srpski oblici)', () => {
+  const tekst = VRSTE_DIVLJACI.flatMap((v) => [...allSpeciesText(v), ...(v.kalendar || []).map(([, n]) => n)]).join(' \n ');
+  const ZABRANJENO = [/rogovlj/i, /\blanet/i, /\bkukc/i, /\bnametni/i, /\bduva/i, /\bpotkošulj/i, /\btjed/i, /\btočk/i, /\bkamo\b/i, /\btko\b/i];
+  for (const re of ZABRANJENO) assert.ok(!re.test(tekst), `nebosanski oblik ${re}: ${tekst.match(new RegExp(`.{0,40}${re.source}.{0,40}`, 'i'))?.[0]}`);
+  assert.match(tekst, /Rogove nosi samo srndać/);
+  assert.match(tekst, /Lanad se rađa/);
+});
+
+test('aplikacija: vjetar "puše", ne "duva"', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const dir = new URL('../../static/js/', import.meta.url);
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.js'))) {
+    assert.ok(!/\bduva/i.test(readFileSync(new URL(f, dir), 'utf8')), f);
+  }
+});

@@ -13,7 +13,7 @@ const OSNOVA = [
     brojke: [['Težina', 'vepar 80–150 kg (rijetko preko 200), krmača 60–100 kg'], ['Visina grebena', '55–110 cm'], ['Vijek', '8–10 god. (rijetko do 15)']],
     sekcije: [
       ['Izgled i karakteristike', [
-        'Zbijeno tijelo, velika glava, čekinjava tamna dlaka (zimi gusta potkošulja).',
+        'Zbijeno tijelo, velika glava, čekinjava tamna dlaka (zimi i gusta poddlaka).',
         'Vepar ima ocale (donji očnjaci) koje rastu cijeli život; ispod kože na ramenu ima "štit" od zadebljane kože.',
         'Prasad su prvih mjeseci prugasta (crvenkastosmeđa sa svijetlim prugama).',
       ]],
@@ -29,7 +29,7 @@ const OSNOVA = [
         'Valja se u kaljužama (blato štiti od parazita) i trlja o stabla ("tarišta") — vidljivi znakovi na terenu.',
       ]],
       ['Tragovi i znakovi', [
-        'Prevrnuta (ritana) zemlja i travnjaci, kaljuže, tarišta sa blatom i dlakom na stablima.',
+        'Izrovana zemlja i travnjaci (rovanje), kaljuže, tarišta sa blatom i dlakom na stablima.',
         'Otisak papaka je širi i zaobljeniji; u mekom tlu se vide i otisci pobočnih papaka.',
       ]],
       ['Značajno za lov', [
@@ -48,13 +48,13 @@ const OSNOVA = [
     sekcije: [
       ['Izgled i karakteristike', [
         'Ljeti crvenkastosmeđa, zimi sivosmeđa; bijelo "ogledalo" na zadnjici.',
-        'Rogovlje nosi samo srndać; šestak ima po tri ogranka na svakoj strani. Srna nema rogove.',
-        'Srndać rogove odbacuje u jesen (oktobar–decembar) i novo rogovlje raste preko zime; do proljeća se čisti od baršuna (kože).',
+        'Rogove nosi samo srndać; šestak ima po tri parožka na svakom rogu. Srna nema rogove.',
+        'Srndać rogove odbacuje u jesen (oktobar–decembar) i novi rogovi rastu preko zime; do proljeća ih čisti od baršuna (kože).',
       ]],
       ['Biologija i razmnožavanje', [
-        'Parenje ljeti (jul–avgust), a razvoj zametka kasni (odgođena implantacija); laneta se rađaju u maju–junu, najčešće jedno ili dva.',
-        'Laneta imaju bijele pjege i prvih sedmica leže mirno u travi: ne diraj ih, majka je u blizini.',
-        'Srndać je teritorijalan (proljeće–ljeto); zimi se srne okupljaju u rudo.',
+        'Parenje ljeti (jul–avgust), a razvoj zametka kasni (odgođena implantacija); lanad se rađa u maju–junu, najčešće jedno ili dvoje.',
+        'Lanad ima bijele pjege i prvih sedmica leži mirno u travi: ne diraj lane, majka je u blizini.',
+        'Srndać je teritorijalan (proljeće–ljeto); zimi se srne okupljaju u krda.',
       ]],
       ['Ponašanje i prehrana', [
         'Zora i sumrak su vrijeme najveće aktivnosti; dan provodi odmarajući i preživajući u zaklonu.',
@@ -90,12 +90,12 @@ const OSNOVA = [
         'Izbjegava ljude; opasan kad je iznenađen na kratkoj udaljenosti, uz strvinu ili sa mladima.',
       ]],
       ['Tragovi i znakovi', [
-        'Otisak stopala sa pet prstiju i kandžama (stopalo 15–25 cm), razderani trulo drvo i mravinjaci, ogrebana i ugrizena stabla, izmet pun bobica ili žira.',
+        'Otisak stopala sa pet prstiju i kandžama (stopalo 15–25 cm), razderano trulo drvo i mravinjaci, ogrebana i ugrizena stabla, izmet pun bobica ili žira.',
       ]],
       ['Značajno za lov', [
         'Mrki medvjed je u većem dijelu Evrope strogo zaštićen. Da li se, koliko i kada smije loviti određuju važeći propisi i odluka nadležnih: bez pisanog odobrenja se ne lovi.',
         'Uočenog medvjeda, tragove ili štetu prijavi lovočuvaru.',
-        'Susret: ostani miran, ne trči, polako se povlači i govori mirno; ne staj između majke i mladih; psa drži na uzici.',
+        'Susret: ostani miran, ne trči, polako se povlači i govori mirno; ne stani između majke i mladih; psa drži na uzici.',
       ]],
     ],
   },
@@ -161,19 +161,19 @@ const OSNOVA = [
       ]],
       ['Biologija i razmnožavanje', [
         'Poligamija: pijetao ima "harem" od nekoliko koka. Parenje u proljeće (mart–maj); gnijezdo na tlu, u travi ili usjevu.',
-        'Koka snese oko 8–14 jaja i leži 23–25 dana; pilići ostaju uz majku nekoliko sedmica.',
+        'Koka snese oko 8–14 jaja i sjedi na njima 23–25 dana; pilići ostaju uz majku nekoliko sedmica.',
         'Noći provodi na drveću ili u gustom šiblju, danju u polju, uz ivice bara i trstika.',
       ]],
       ['Ponašanje i prehrana', [
-        'Zrnevlje, sjemenje korova, kukuruz, kukci, bobice, pupoljci i mladice.',
-        'Radije trči nego leti; pred pasom ili ljudima uzleti naglo uz jak zvuk krila. Pijetao se javlja oštrim "kukurikanjem".',
+        'Zrnevlje, sjemenje korova, kukuruz, insekti, bobice, pupoljci i mladice.',
+        'Radije trči nego leti; pred pasom ili ljudima uzleti naglo uz jak zvuk krila. Pijetao se javlja oštrim, kratkim glasom ("kokotanje").',
       ]],
       ['Tragovi i znakovi', [
         'Tragovi stopala sa tri prednja prsta, ostaci kupanja u prašini ("kupališta"), perje, pijetlovi na rubu njiva u zoru.',
       ]],
       ['Značajno za lov', [
         'Najčešće se lovi uz pse ptičare ili potjerom uz liniju strijelaca; puca se tek kad ptica uzleti i kad je jasno da je pijetao, ako to propisi traže.',
-        'Populacija često zavisi od naseljavanja iz uzgoja, uz stanište sa zaklonom (živice, trska, neprekošene trake).',
+        'Populacija često zavisi od naseljavanja iz uzgoja, uz stanište sa zaklonom (živice, trska, nepokošene trake).',
         'Pojedini lovci pucaju samo na pijetlove da štite leglo; slijedi pravila društva.',
       ]],
     ],
@@ -230,20 +230,20 @@ const DOPUNE = {
     ],
   },
   srna: {
-    kalendar: [['parenje', 'Parenje', [7, 8]], ['mladi', 'Laneta se rađaju', [5, 6]], ['rogovi', 'Rogovlje se mijenja', [10, 11, 12, 1, 2, 3, 4]]],
+    kalendar: [['parenje', 'Parenje', [7, 8]], ['mladi', 'Lanad se rađa', [5, 6]], ['rogovi', 'Rogovi se mijenjaju', [10, 11, 12, 1, 2, 3, 4]]],
     aktivnost: { zora: 3, dan: 1, sumrak: 3, noc: 1 },
     dodatno: [
       ['Spol i dob (kako procijeniti)', [
-        'Srndać ima rogove (mladi srndać tanke, slabo razgranate "šilaše"; stariji jače i biserasto rogovlje), srna nema rogove, a zimi ima pramen dlake ("kitu") ispod ogledala.',
-        'Laneta su pjegava prvih sedmica. Dob odraslih najpouzdanije govori stanje zuba.',
+        'Srndać ima rogove (mladi srndać tanke, slabo razgranate "šilaše"; stariji jače i biseraste rogove), srna nema rogove, a zimi ima pramen dlake ("kitu") ispod ogledala.',
+        'Lanad je pjegava prvih sedmica. Dob odraslih najpouzdanije govori stanje zuba.',
         'Prije pucanja uvijek odredi spol i dob: odstrel je selektivan i radi se prema planu društva.',
       ]],
       ['Zdravlje i bolesti', [
-        'Česti su nametnici: krpelji, plućni i želučani crvi; slabija životinja, hromost ili ponašanje bez straha su razlog da se oprezno procijeni stanje i prijavi sumnja na bolest.',
+        'Česti su paraziti: krpelji, plućni i želučani crvi; slabija životinja, hromost ili ponašanje bez straha su razlog da se oprezno procijeni stanje i prijavi sumnja na bolest.',
         'Strvinu ili ugibanje više životinja prijavi lovočuvaru.',
       ]],
       ['Poslije odstrela', [
-        'Utrobu izvaditi što prije, meso ohladiti; rogovlje (trofej) čuvati prema pravilima društva.',
+        'Utrobu izvaditi što prije, meso ohladiti; rogove (trofej) čuvati prema pravilima društva.',
       ]],
     ],
   },
@@ -284,7 +284,7 @@ const DOPUNE = {
     aktivnost: { zora: 2, dan: 1, sumrak: 3, noc: 3 },
     dodatno: [
       ['Spol i dob (kako procijeniti)', [
-        'Spol se teško razlikuje na terenu; mladi su manji i svjetliji. Oprezno razlikovanje od lisice (manja, duži rep, uže njuška) i mladog vuka (veći).',
+        'Spol se teško razlikuje na terenu; mladi su manji i svjetliji. Oprezno razlikovanje od lisice (manja, duži rep, uža njuška) i mladog vuka (veći).',
       ]],
       ['Zdravlje i bolesti', [
         'Može nositi trihinelu, ehinokok i bjesnoću: koristi rukavice pri rukovanju i meso/preparaciju ne konzumiraj bez veterinarske provjere.',
@@ -317,10 +317,10 @@ const DOPUNE = {
     dodatno: [
       ['Spol i dob (kako procijeniti)', [
         'Spol se ne razlikuje lako izvana. Mladi zec do oko 8 mjeseci ima "Stiedin čvor": otok na dnu prednje noge, iznad šapice, koji se osjeti pritiskom.',
-        'Mladi su sitniji, mekših ušiju i s mladenačkim izgledom.',
+        'Mladi su sitniji i mekših ušiju.',
       ]],
       ['Zdravlje i bolesti', [
-        'Tularemija (zečja groznica) se može prenijeti na čovjeka dodirom: pri deranju koristi rukavice i oprezno rukuj sa pobolijelim zecom.',
+        'Tularemija (zečja groznica) se može prenijeti na čovjeka dodirom: pri deranju koristi rukavice i oprezno rukuj sa bolesnim zecom.',
         'Ako su jetra pjegava ili uvećana, meso ne koristi; pojavu više uginulih zečeva prijavi lovočuvaru.',
       ]],
       ['Poslije odstrela', [

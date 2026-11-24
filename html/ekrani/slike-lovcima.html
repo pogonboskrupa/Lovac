@@ -1,0 +1,13 @@
+<section id="slike-lovcima" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slike-lovcima-naslov" hidden>
+  <header class="postavke-glava"><h2 id="slike-lovcima-naslov">Slike lovcima</h2>
+    <button id="btn-slike-lovcima-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+  <div class="red-dugmadi">
+    <label class="dugme glavno dugme-fajl">Pošalji sliku<input id="sl-ulaz" type="file" accept="image/*" hidden></label>
+  </div>
+  <div id="sl-tabovi" class="segment p-tabovi" role="group" aria-label="Prikaz slika">
+    <button type="button" data-sltab="primljene" aria-pressed="true">Primljene</button>
+    <button type="button" data-sltab="poslane" aria-pressed="false">Poslane</button>
+  </div>
+  <p class="sitno">Server čuva sliku najviše 12 sati. Primljene i poslane slike ostaju na ovom telefonu dok ih ne obrišeš.</p>
+  <ul id="sl-spisak" class="spisak sl-spisak"></ul>
+</section>

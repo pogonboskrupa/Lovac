@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.5';
+  const APP_VER = 'v1.1.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -132,7 +132,6 @@
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
   <button id="btn-ist-izlaz" type="button" class="istrazivac-izlaz" hidden>Izađi iz 3D</button>
-  <div id="istrazivac-traka" class="istrazivac-traka" hidden></div>
   <div id="istrazivac-detalj" class="istrazivac-detalj" role="status" hidden>
     <div class="ist-detalj-glava">
       <b id="ist-detalj-ime"></b>
@@ -150,7 +149,6 @@
     <button id="btn-ist-kompas" type="button" class="ikona-dugme" aria-pressed="false" aria-label="Karta prati pravac gledanja"><svg class="ic"><use href="#ic-follow"/></svg></button>
     <button id="btn-ist-nagib" type="button" class="ikona-dugme" aria-label="Promijeni nagib pogleda"><span id="btn-ist-nagib-tekst" class="ist-t">40°</span></button>
     <button id="btn-ist-ja" type="button" class="ikona-dugme" aria-label="Centriraj na mene"><svg class="ic"><use href="#ic-locate"/></svg></button>
-    <button id="btn-ist-x" type="button" class="ikona-dugme" aria-label="Izađi iz 3D"><svg class="ic"><use href="#ic-close"/></svg></button>
   </div>
   <div id="lov-trag-legenda" class="istrazivac-traka lov-trag-legenda" hidden></div>
   <div id="arh-karta" class="arh-karta" role="group" aria-label="Lov iz arhive na karti" hidden>
@@ -176,6 +174,7 @@
       <button type="button" id="btn-odstrel-spisak" class="meni-plocica"><svg class="ic"><use href="#ic-target"/></svg><span class="m-tekst"><span class="m-naslov">Odstrel</span><span class="m-opis" id="btn-odstrel-spisak-opis">Evidencija i statistika</span></span></button>
       <button type="button" id="btn-opazanja" class="meni-plocica"><svg class="ic"><use href="#ic-eye"/></svg><span class="m-tekst"><span class="m-naslov">Opažanja</span><span class="m-opis" id="btn-opazanja-opis">Divljač na terenu</span></span></button>
       <button type="button" id="btn-dojave" class="meni-plocica"><svg class="ic"><use href="#ic-stit"/></svg><span class="m-tekst"><span class="m-naslov">Prijave lovočuvaru</span><span class="m-opis" id="btn-dojave-opis">Krivolov, divljač, zamke</span></span></button>
+      <button type="button" id="btn-slike-lovcima" class="meni-plocica"><svg class="ic"><use href="#ic-camera"/></svg><span class="m-tekst"><span class="m-naslov">Slike lovcima</span><span class="m-opis" id="btn-slike-lovcima-opis">Pošalji sliku drugom lovcu</span></span></button>
       <button type="button" id="btn-objekti" class="meni-plocica"><svg class="ic"><use href="#ic-pin"/></svg><span class="m-tekst"><span class="m-naslov">Objekti</span><span class="m-opis" id="btn-objekti-opis">Čeke, hranilišta, solila</span></span></button>
       <button type="button" id="btn-tragovi" class="meni-plocica"><svg class="ic"><use href="#ic-route"/></svg><span class="m-tekst"><span class="m-naslov">Moji tragovi</span><span class="m-opis" id="btn-tragovi-opis">Snimljene ture</span></span></button>
     </div>
@@ -274,9 +273,11 @@
     </div>
   </div>
   <div id="meni-podloga" class="meni" hidden>
+    <h4 class="meni-podnaslov">Offline karta društva</h4>
+    <button type="button" data-podloga="teren" class="podloga-teren-dugme"><svg class="ic" aria-hidden="true"><use href="#ic-mountain"/></svg><span class="pt-tekst"><b>Teren</b><span id="podloga-teren-stanje" class="pt-stanje" data-stanje="nema">Nije preuzet — dodirni za preuzimanje</span></span></button>
+    <h4 class="meni-podnaslov">Sa interneta</h4>
     <button type="button" data-podloga="topo">Topo</button>
     <button type="button" data-podloga="satelit">Satelit</button>
-    <button type="button" data-podloga="teren">Teren</button>
     <h4 class="meni-podnaslov">Koordinate na mapi</h4>
     <button type="button" id="btn-koord-prikazi" aria-pressed="true">Prikaži visinu i koordinate</button>
   </div>
@@ -402,6 +403,8 @@
 <!--@ekran:lov-danas-->
 <!--@ekran:dojava-forma-->
 <!--@ekran:dojave-->
+<!--@ekran:slike-lovcima-->
+<!--@ekran:slika-lovcu-->
 
 <!--@ekran:opazanja-->
 

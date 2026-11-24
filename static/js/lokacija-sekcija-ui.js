@@ -93,7 +93,7 @@ export function initMojaLokacija(L, map) {
     markers.clearLayers();
     for (const m of sectionShareList(rows, me()?.id, memberName, currentFix())) {
       const icon = L.divIcon({ className: 'uc-ikona', html: `<span class="uc-marker sek-marker" data-stanje="${m.stanje}">${escapeHtml(initialsOf(m.ime))}</span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
-      L.marker([m.lat, m.lon], { icon, keyboard: false })
+      L.marker([m.lat, m.lon], { icon, keyboard: false, clan: { korisnik_id: m.id, lat: m.lat, lon: m.lon, t: new Date(Date.now() - m.starost * 60000).toISOString() } })
         .bindPopup(() => memberCard(m.ime, currentFix(), m, m.starost, 'sekcija'), { closeButton: true, autoPan: true }).addTo(markers);
     }
   };
