@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.2.0';
+  const APP_VER = 'v1.2.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -117,7 +117,7 @@
 
   <div class="gornja-traka">
     <div id="koord-okvir" class="pill-info koord-okvir">
-      <button id="btn-nv" class="pill-dio" type="button" aria-expanded="true" aria-label="Nadmorska visina. Dodir sakriva visinu i koordinate"><svg class="ic ic-mali"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b></button>
+      <span id="btn-nv" class="pill-dio pill-nv" aria-label="Nadmorska visina"><svg class="ic ic-mali" aria-hidden="true"><use href="#ic-mountain"/></svg><b id="koord-nv">…</b></span>
       <span class="pill-sep"></span>
       <button id="koord-traka" class="pill-dio" type="button" aria-label="Koordinate centra karte. Dodir mijenja sistem: WGS84, MGI 5, MGI 6"><span id="koord-zona" class="pill-oznaka">WGS84</span><b id="koord-gk">—</b></button>
     </div>

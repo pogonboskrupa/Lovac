@@ -74,8 +74,16 @@ export function initIstrazivac(L, map) {
     }
   };
 
+  // Izabrani kolega se ističe na karti (veći marker sa inicijalima i zlatnim prstenom). Pravilo ide u <style>,
+  // pa važi i kad uzivo-ui / lokacija-sekcija-ui ponovo nacrtaju markere.
+  const selStyle = document.createElement('style');
+  document.head.appendChild(selStyle);
+  const markSelected = (uid) => {
+    selStyle.textContent = uid && on && /^[\w-]+$/.test(uid) ? `.uc-marker[data-uid="${uid}"]{transform:scale(1.35);box-shadow:0 0 0 4px #d9a441,0 2px 8px rgb(0 0 0 / .6);z-index:2}` : '';
+  };
   const updateSelection = () => {
     selLayer.clearLayers();
+    markSelected(selected);
     const card = $('istrazivac-detalj');
     const me = currentFix();
     const src = selectedRow && !rows.some((r) => r.korisnik_id === selected) ? [...rows, selectedRow] : rows;
@@ -112,7 +120,15 @@ export function initIstrazivac(L, map) {
       const me = currentFix();
       const r = rows.find((x) => x.korisnik_id === uid) || row;
       following = false;
-      if (me && r) map.fitBounds([[me.lat, me.lon], [r.lat, r.lon]], { padding: [90, 90], animate: false, maxZoom: 17 });
+      if (me && r) {
+        // U 3D je kontejner karte veći od ekrana (i uvećan), pa običan fitBounds ne staje u vidljivi dio:
+        // zum se računa za ~60 % kraće strane ekrana podijeljeno uvećanjem pogleda.
+        const b = L.latLngBounds([[me.lat, me.lon], [r.lat, r.lon]]);
+        const side = karta.clientWidth || window.innerWidth;
+        const usable = (Math.min(screen.clientWidth || window.innerWidth, screen.clientHeight || window.innerHeight) * 0.6) / (on ? view.scale : 1);
+        const pad = Math.max(20, (side - usable) / 2);
+        map.setView(b.getCenter(), Math.min(17, map.getBoundsZoom(b, false, L.point(pad * 2, pad * 2))), { animate: false });
+      }
     }
     applyRot();
   };
@@ -250,7 +266,9 @@ export function initIstrazivac(L, map) {
     const clan = e.popup?._source?.options?.clan;
     if (!on || !clan?.korisnik_id) return;
     map.closePopup(e.popup);
-    selectMember(selected === clan.korisnik_id ? null : clan.korisnik_id, { row: clan });
+    // popup je već pomjerio kartu (autoPan): pogled se postavi tako da se vide i moja pozicija i izabrani kolega
+    const uid = selected === clan.korisnik_id ? null : clan.korisnik_id;
+    selectMember(uid, { row: clan, fit: Boolean(uid) });
   });
   document.addEventListener('uzivo:pozicije', (e) => {
     rows = e.detail.rows || [];

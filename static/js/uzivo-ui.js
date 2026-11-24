@@ -60,7 +60,7 @@ export function initUzivo(L, map) {
       const name = memberName(p.korisnik_id);
       const icon = L.divIcon({
         className: 'uc-ikona',
-        html: `<span class="uc-marker" data-stanje="${stanje}" data-uloga="${u?.uloga === 'pogonic' ? 'pogonic' : 'ostali'}">${escapeHtml(initialsOf(name))}</span>`,
+        html: `<span class="uc-marker" data-uid="${escapeHtml(p.korisnik_id)}" data-stanje="${stanje}" data-uloga="${u?.uloga === 'pogonic' ? 'pogonic' : 'ostali'}">${escapeHtml(initialsOf(name))}</span>`,
         iconSize: [34, 34], iconAnchor: [17, 17],
       });
       L.marker([p.lat, p.lon], { icon, keyboard: false, clan: { korisnik_id: p.korisnik_id, lat: p.lat, lon: p.lon, t: p.t } })

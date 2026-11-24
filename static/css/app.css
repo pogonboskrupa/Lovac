@@ -796,9 +796,8 @@ svg[hidden] { display: none; }
 .pill-dio { display: flex; align-items: center; gap: 6px; min-height: 56px; padding: 6px 12px; border: 0; background: none; color: var(--tekst); font: inherit; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 #koord-traka { flex: 1; min-width: 0; overflow: hidden; }
 .koord-okvir .pill-sep { flex: none; }
-.koord-okvir[data-sakrivena] { flex: none; width: 56px; border-radius: 50%; justify-content: center; }
-.koord-okvir[data-sakrivena] .pill-sep, .koord-okvir[data-sakrivena] #koord-traka, .koord-okvir[data-sakrivena] #koord-nv { display: none; }
-.koord-okvir[data-sakrivena] .pill-dio { width: 56px; justify-content: center; padding: 0; }
+.koord-okvir[hidden] { display: none; }
+.pill-nv { cursor: default; }
 .meni-podnaslov { margin: 8px 12px 0; font-size: 13px; color: var(--tekst-2); }
 @media (max-width: 370px) {
   .pill-dio { font-size: 13px; padding: 6px 8px; }
