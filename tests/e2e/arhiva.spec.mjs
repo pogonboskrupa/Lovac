@@ -360,3 +360,37 @@ test('brisanje lova koji je neko drugi već obrisao sa servera (vraća false): l
   await expect(page.locator('#arhiva-detalj')).toBeHidden();
   await expect(page.locator('#arhiva-spisak .arhiva-red')).toHaveCount(0);
 });
+
+test('preuzimanje lova na telefon: jedan HTML fajl sa ulovom, učesnicima, velikom slikom i tragovima (Preuzimanja/Lovac)', async ({ page }) => {
+  const server = makeServer();
+  finished(server);
+  await setup(page, server, LOVAC);
+  await page.addInitScript(() => {
+    window.__sacuvano = [];
+    window.AndroidShare = { sacuvaj: (name, mime, content) => { window.__sacuvano.push({ name, mime, content }); return 'preuzimanja'; } };
+  });
+  await openArhiva(page);
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  // trag je na telefonu kad je lov jednom prikazan na karti
+  await page.locator('#btn-ad-trag').click();
+  await expect(page.locator('#arh-karta')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => new Promise((res) => {
+    const r = indexedDB.open('lovac');
+    r.onsuccess = () => { const q = r.result.transaction('arhiva').objectStore('arhiva').getAll(); q.onsuccess = () => res(q.result.some((x) => String(x.id).startsWith('trag:') && x.rows?.length)); };
+  }))).toBe(true);
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-arhiva').click();
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await page.locator('#btn-ad-preuzmi').click();
+  await expect(page.locator('#ad-status')).toContainText('Sačuvano u Preuzimanja/Lovac: lov-2026-11-22-pogon-grmec.html');
+  const f = (await page.evaluate(() => window.__sacuvano))[0];
+  expect(f.name).toBe('lov-2026-11-22-pogon-grmec.html');
+  expect(f.mime).toBe('text/html');
+  expect(f.content).toContain('<h1>Pogon Grmeč</h1>');
+  expect(f.content).toContain('Dvije divlje svinje i lisica');
+  expect(f.content).toContain('Lisica</b>: 1 kom., 6 kg');
+  expect(f.content).toContain('Goran Grupovođa');
+  expect(f.content).toContain('data:image/png;base64,'); // velika slika sa servera, ne samo sličica
+  expect((f.content.match(/<polyline/g) || []).length).toBe(2);
+  expect(f.content).toContain('Ne zamjenjuje službeni lovački dnevnik');
+});

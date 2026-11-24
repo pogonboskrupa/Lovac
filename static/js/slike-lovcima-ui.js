@@ -9,10 +9,10 @@ import { dataUrlToBlob } from './fotosync.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { loadJSON } from './storage.js';
 import { isPolicyRejection, isNetworkFailure } from './sync.js';
-import { openImageViewer } from './slika-pregled.js';
+import { openGallery } from './slika-pregled.js';
 import { formatMessageTime } from './poruke.js';
 import {
-  MAX_SLIKA, MAX_PRIMALACA, missingOnServer, retryLater, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, newestFirst, inboxSummary, memberLabel,
+  MAX_SLIKA, MAX_PRIMALACA, MAX_SLIKA_GRUPA, KATEGORIJE, kategorijaNaziv, groupAlbums, filterAlbums, albumsOverview, missingOnServer, retryLater, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, inboxSummary, memberLabel,
 } from './slike-lovcima.js';
 import { toast, escapeHtml, registerBackHandler } from './ui.js';
 
@@ -24,7 +24,8 @@ const SLIKA = (id) => `slika-lovca:${id}`;
 const POLL_MS = 120000;
 const POLL_OTVORENO_MS = 30000;
 const CISCENJE_MS = 3600000;
-const LAKE = 'id,posiljalac_id,opis,lat,lon,created_at,istice';
+const LAKE = 'id,posiljalac_id,opis,lat,lon,created_at,istice,grupa,redni,kategorija';
+const LAKE_STARO = 'id,posiljalac_id,opis,lat,lon,created_at,istice'; // server sa ranijom 033 (bez albuma)
 
 // Smanji sliku dok ne stane u granicu servera.
 async function toSendable(blob) {
@@ -80,9 +81,17 @@ export function initSlikeLovcima(L, map) {
       || '<li class="sitno">Nema lovaca na spisku. Spisak članova stiže sa servera kad ima interneta.</li>';
     $('sl-izabrani').textContent = draft.izabrani.size ? `Izabrano: ${[...draft.izabrani].map(memberName).join(', ')}` : 'Niko nije izabran.';
   };
-  const openSheet = ({ slika, lat = null, lon = null, opis = '' }) => {
-    draft = { slika, lat, lon, izabrani: new Set() };
-    $('sl-pregled').innerHTML = `<img src="${escapeHtml(slika)}" alt="Slika za slanje">`;
+  const renderDraftPhotos = () => {
+    if (!draft) return;
+    $('sl-pregled').innerHTML = draft.slike.map((src, i) => `<figure class="sl-pregled-slika" data-i="${i}"><img src="${escapeHtml(src)}" alt="Slika ${i + 1}">
+      <button type="button" class="foto-ukloni" data-akcija="ukloni" aria-label="Ukloni sliku ${i + 1}">×</button></figure>`).join('');
+    $('sl-dodaj-vise').hidden = draft.slike.length >= MAX_SLIKA_GRUPA;
+    $('sl-broj-slika').textContent = `${draft.slike.length} / ${MAX_SLIKA_GRUPA} slika`;
+    $('sl-kategorije').innerHTML = KATEGORIJE.map((k) => `<button type="button" data-kat="${k.kod}" aria-pressed="${k.kod === draft.kategorija}">${escapeHtml(k.naziv)}</button>`).join('');
+  };
+  const openSheet = ({ slike, lat = null, lon = null, opis = '', kategorija = 'ostalo' }) => {
+    draft = { slike, lat, lon, kategorija, izabrani: new Set() };
+    renderDraftPhotos();
     $('sl-trazi').value = '';
     $('sl-opis').value = opis;
     $('sl-status').textContent = '';
@@ -91,13 +100,35 @@ export function initSlikeLovcima(L, map) {
     if (online()) refreshMembers().then(renderRecipients).catch(() => {});
   };
   const closeSheet = () => { sheet.hidden = true; draft = null; };
-  const prepareAndOpen = async (blob, extra = {}) => {
-    try {
-      openSheet({ slika: await toSendable(blob), ...extra });
-    } catch (err) {
-      toast(`Slika se ne može pripremiti: ${err.message}`);
+  // Priprema više fajlova (album); kad je forma već otvorena, slike se dodaju u nju.
+  const prepareFiles = async (files, extra = {}) => {
+    const out = [];
+    for (const f of [...files].slice(0, MAX_SLIKA_GRUPA)) {
+      try { out.push(await toSendable(f)); } catch (err) { toast(`Slika se ne može pripremiti: ${err.message}`); }
     }
+    if (!out.length) return;
+    if (draft && !sheet.hidden) {
+      draft.slike = [...draft.slike, ...out].slice(0, MAX_SLIKA_GRUPA);
+      renderDraftPhotos();
+    } else openSheet({ slike: out, ...extra });
   };
+  $('sl-pregled').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="ukloni"]');
+    if (!b || !draft) return;
+    draft.slike.splice(Number(b.closest('[data-i]').dataset.i), 1);
+    renderDraftPhotos();
+  });
+  $('sl-kategorije').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-kat]');
+    if (!b || !draft) return;
+    draft.kategorija = b.dataset.kat;
+    renderDraftPhotos();
+  });
+  $('sl-dodaj-ulaz').addEventListener('change', (e) => {
+    const files = [...e.target.files];
+    e.target.value = '';
+    if (files.length) prepareFiles(files);
+  });
 
   $('sl-trazi').addEventListener('input', renderRecipients);
   $('sl-primaoci').addEventListener('change', (e) => {
@@ -112,36 +143,41 @@ export function initSlikeLovcima(L, map) {
   $('btn-sl-posalji').addEventListener('click', async () => {
     if (!draft || !me()) return;
     const primaoci = [...draft.izabrani];
-    const err = validateSend({ primaoci, slika: draft.slika });
+    const err = validateSend({ primaoci, slike: draft.slike });
     if (err) { $('sl-status').textContent = err; return; }
-    const rows = newSends({ ids: primaoci.map(() => uuid()), primaoci, slika: draft.slika, opis: $('sl-opis').value, lat: draft.lat, lon: draft.lon });
+    const grupa = uuid();
+    const n = primaoci.length * draft.slike.length;
+    const rows = newSends({ ids: Array.from({ length: n }, () => uuid()), primaoci, slike: draft.slike, grupa, kategorija: draft.kategorija,
+      opis: $('sl-opis').value, lat: draft.lat, lon: draft.lon });
     try {
-      const sl = await makeThumbnail(dataUrlToBlob(draft.slika));
-      // kritičan upis: slika i red prvo na telefon; ako ne uspije, forma ostaje otvorena
-      for (const r of rows) await idbPut('arhiva', { id: SLIKA(r.id), slika: r.slika });
+      const sl = [];
+      for (const src of draft.slike) sl.push(await makeThumbnail(dataUrlToBlob(src)).catch(() => null));
+      // kritičan upis: slike (jednom po rednom broju) i red prvo na telefon; ako ne uspije, forma ostaje otvorena
+      for (const [i, src] of draft.slike.entries()) await idbPut('arhiva', { id: SLIKA(`${grupa}:${i}`), slika: src });
       await idbPut('arhiva', { id: RED(), rows: [...await outbox(), ...rows] });
-      state.poslane = [...state.poslane, ...rows.map(({ slika, ...r }) => ({ ...r, slicica: sl, poslano: false }))];
+      state.poslane = [...state.poslane, ...rows.map(({ slika, ...r }) => ({ ...r, slicica: sl[r.redni], slikaKey: SLIKA(`${grupa}:${r.redni}`), poslano: false }))];
       await save();
     } catch (er) {
       $('sl-status').textContent = `Slika nije sačuvana: ${er.message}`;
       return;
     }
+    const vise = draft.slike.length > 1;
     closeSheet();
     const sent = await flushSlike();
-    toast(sent ? 'Slika je poslana' : 'Slika je sačuvana i šalje se čim bude interneta', 5000);
+    toast(sent ? (vise ? 'Slike su poslane' : 'Slika je poslana') : 'Sačuvano na telefonu — šalje se čim bude interneta', 5000);
     renderSlike();
   });
   $('btn-sl-odustani').addEventListener('click', closeSheet);
   $('btn-slika-lovcu-zatvori').addEventListener('click', closeSheet);
   $('sl-ulaz').addEventListener('change', (e) => {
-    const file = e.target.files[0];
+    const files = [...e.target.files];
     e.target.value = '';
-    if (file) prepareAndOpen(file);
+    if (files.length) prepareFiles(files);
   });
   // "Pošalji lovcu" iz velike slike (slika na poziciji, opažanje, arhiva, dojava, primljena slika)
   document.addEventListener('slika:posalji', (e) => {
     const d = e.detail || {};
-    if (d.blob) prepareAndOpen(d.blob, { lat: d.lat ?? null, lon: d.lon ?? null, opis: d.opis || '' });
+    if (d.blob) prepareFiles([d.blob], { lat: d.lat ?? null, lon: d.lon ?? null, opis: d.opis || '' });
   });
 
   // ---------- slanje i preuzimanje ----------
@@ -175,7 +211,8 @@ export function initSlikeLovcima(L, map) {
   const pull = async () => {
     if (!online() || !me()?.id) return;
     const sb = getClient();
-    const { data, error } = await sb.from('slike_lovcima').select(LAKE).eq('primalac_id', me().id).order('created_at').limit(20);
+    let { data, error } = await sb.from('slike_lovcima').select(LAKE).eq('primalac_id', me().id).order('created_at').limit(40);
+    if (error?.code === '42703') ({ data, error } = await sb.from('slike_lovcima').select(LAKE_STARO).eq('primalac_id', me().id).order('created_at').limit(40));
     if (error) { console.warn('slike lovcima', error.message); return; }
     const lokalno = state.primljene.map((p) => p.id);
     // već sačuvane na telefonu a još na serveru (brisanje ranije puklo): obrisati, da ne zauzimaju prostor 12 h
@@ -183,7 +220,7 @@ export function initSlikeLovcima(L, map) {
     if (zaostale.length) await sb.from('slike_lovcima').delete().in('id', zaostale);
     const nove = newInboxIds(data, lokalno);
     let primljeno = 0;
-    for (const id of nove.slice(0, 5)) {
+    for (const id of nove.slice(0, 8)) {
       const { data: full, error: e2 } = await sb.from('slike_lovcima').select('*').eq('id', id);
       const row = full?.[0];
       if (e2 || !row?.slika) continue;
@@ -208,7 +245,7 @@ export function initSlikeLovcima(L, map) {
     }
   };
   const notify = (row) => {
-    const title = `Slika od: ${memberName(row.posiljalac_id)}`;
+    const title = `${row.kategorija === 'trofej' ? 'Trofej' : 'Slika'} od: ${memberName(row.posiljalac_id)}`;
     const text = row.opis || 'Nova slika';
     toast(`${title} — ${text}`, 6000);
     if (globalThis.AndroidNotif?.poruka) globalThis.AndroidNotif.poruka(title, text, 1);
@@ -230,32 +267,57 @@ export function initSlikeLovcima(L, map) {
   };
 
   // ---------- ekran ----------
-  const cardHtml = (p, primljena) => {
-    const ko = primljena ? `Od: ${memberName(p.posiljalac_id)}` : `Za: ${memberName(p.primalac_id)}`;
-    const st = primljena ? null : sentStatus(p);
-    const obrisi = armed.get(p.id) ? 'Dodirni ponovo za brisanje' : 'Obriši';
-    return `<li class="tr-kartica ev-kartica sl-kartica" data-id="${escapeHtml(p.id)}"${p.novo ? ' data-novo="true"' : ''}>
-      <button type="button" class="sl-mala" data-akcija="otvori">${p.slicica ? `<img src="${escapeHtml(p.slicica)}" alt="Slika">` : '<svg class="ic"><use href="#ic-camera"/></svg>'}</button>
-      <div class="sl-tekst"><b>${escapeHtml(ko)}</b>
-        <span class="sitno">${escapeHtml(formatMessageTime(p.created_at))}${p.novo ? ' · nova' : ''}</span>
-        ${p.opis ? `<span>${escapeHtml(p.opis)}</span>` : ''}
-        ${st ? `<span class="sitno sl-stanje" data-stanje="${st.stanje}">${escapeHtml(st.tekst)}</span>` : ''}
-        <div class="red-dugmadi">
-          ${Number.isFinite(p.lat) ? '<button type="button" class="dugme" data-akcija="karta">Na karti</button>' : ''}
-          <button type="button" class="dugme" data-akcija="obrisi">${obrisi}</button>
-        </div></div>
+  let filter = 'sve';
+  const imgKey = (r) => r.slikaKey || SLIKA(r.id);
+  const albumsOf = () => groupAlbums(tab === 'primljene' ? state.primljene : state.poslane, { poslane: tab === 'poslane' });
+  const albumStatus = (a) => {
+    const st = a.redovi.map((r) => sentStatus(r));
+    return st.find((x) => x.stanje === 'odbijena') || st.find((x) => x.stanje === 'ceka') || st[0];
+  };
+  const cardHtml = (a, primljena) => {
+    const ko = primljena ? `Od: ${memberName(a.posiljalac_id)}` : `Za: ${a.primaoci.map(memberName).join(', ')}`;
+    const st = primljena ? null : albumStatus(a);
+    const obrisi = armed.get(a.kljuc) ? 'Dodirni ponovo za brisanje' : 'Obriši';
+    const n = a.slike.length;
+    const prikaz = a.slike.slice(0, 4);
+    return `<li class="tr-kartica ev-kartica sl-kartica" data-id="${escapeHtml(a.kljuc)}" data-kategorija="${escapeHtml(a.kategorija)}"${a.novo ? ' data-novo="true"' : ''}>
+      <div class="sl-glava"><span class="sl-kat" data-kat="${escapeHtml(a.kategorija)}">${escapeHtml(kategorijaNaziv(a.kategorija))}</span>
+        <span class="sl-tekst"><b>${escapeHtml(ko)}</b>
+        <span class="sitno">${escapeHtml(formatMessageTime(a.created_at))}${n > 1 ? ` · ${n} slika` : ''}${a.novo ? ' · nova' : ''}</span></span></div>
+      <div class="sl-mreza" data-broj="${Math.min(n, 4)}">${prikaz.map((x, i) => `<button type="button" class="sl-mala" data-akcija="otvori" data-redni="${i}" aria-label="Otvori sliku ${i + 1}">
+        ${x.slicica ? `<img src="${escapeHtml(x.slicica)}" alt="">` : '<svg class="ic"><use href="#ic-camera"/></svg>'}${i === 3 && n > 4 ? `<span class="sl-jos">+${n - 4}</span>` : ''}</button>`).join('')}</div>
+      ${a.opis ? `<p class="sl-opis">${escapeHtml(a.opis)}</p>` : ''}
+      ${st ? `<span class="sitno sl-stanje" data-stanje="${st.stanje}">${escapeHtml(st.tekst)}</span>` : ''}
+      <div class="red-dugmadi">
+        ${Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="karta">Na karti</button>' : ''}
+        <button type="button" class="dugme" data-akcija="obrisi">${obrisi}</button>
+      </div>
     </li>`;
   };
   function renderSlike() {
     updateTile();
     if (screen.hidden) return;
     document.querySelectorAll('#sl-tabovi [data-sltab]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sltab === tab)));
-    const nove = state.primljene.filter((p) => p.novo).length;
+    const nove = groupAlbums(state.primljene.filter((p) => p.novo)).length;
     $('sl-tabovi').querySelector('[data-sltab="primljene"]').textContent = nove ? `Primljene (${nove})` : 'Primljene';
-    const list = newestFirst(tab === 'primljene' ? state.primljene : state.poslane);
-    $('sl-spisak').innerHTML = list.map((p) => cardHtml(p, tab === 'primljene')).join('')
-      || `<li class="sitno">${tab === 'primljene' ? 'Još nema primljenih slika.' : 'Još nisi slao slike. Dodirni "Pošalji sliku" ili u velikoj slici "Pošalji lovcu".'}</li>`;
+    const o = albumsOverview(state.primljene, state.poslane);
+    $('slh-primljeno').textContent = String(o.primljeno);
+    $('slh-trofeja').textContent = String(o.trofeja);
+    $('slh-poslano').textContent = String(o.poslano);
+    const svi = albumsOf();
+    $('sl-filter').innerHTML = [['sve', 'Sve'], ...KATEGORIJE.map((k) => [k.kod, k.naziv])]
+      .map(([k, nm]) => {
+        const c = k === 'sve' ? svi.length : filterAlbums(svi, k).length;
+        return k !== 'sve' && !c && filter !== k ? '' : `<button type="button" data-filter="${k}" aria-pressed="${k === filter}">${escapeHtml(nm)} ${c}</button>`;
+      }).join('');
+    const list = filterAlbums(svi, filter);
+    $('sl-spisak').innerHTML = list.map((a) => cardHtml(a, tab === 'primljene')).join('')
+      || `<li class="sitno">${tab === 'primljene' ? 'Još nema primljenih slika.' : 'Još nisi slao slike. Dodirni "Pošalji slike" ili u velikoj slici "Pošalji lovcu".'}</li>`;
   }
+  $('sl-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-filter]');
+    if (b) { filter = b.dataset.filter; renderSlike(); }
+  });
   const markRead = async () => {
     if (!state.primljene.some((p) => p.novo)) return;
     state.primljene = state.primljene.map((p) => ({ ...p, novo: false }));
@@ -271,33 +333,39 @@ export function initSlikeLovcima(L, map) {
     const b = e.target.closest('[data-akcija]');
     const card = e.target.closest('[data-id]');
     if (!b || !card) return;
-    const id = card.dataset.id;
-    const p = [...state.primljene, ...state.poslane].find((x) => x.id === id);
-    if (!p) return;
-    const a = b.dataset.akcija;
-    if (a === 'otvori') {
-      const s = (await idbGet('arhiva', SLIKA(id)).catch(() => null))?.slika || p.slicica;
-      if (!s) { toast('Slika nije na telefonu'); return; }
-      const ko = tab === 'primljene' ? `Od: ${memberName(p.posiljalac_id)}` : `Za: ${memberName(p.primalac_id)}`;
-      openImageViewer({ src: s, caption: `${ko} · ${formatMessageTime(p.created_at)}${p.opis ? ` · ${p.opis}` : ''}`, share: { lat: p.lat, lon: p.lon, opis: p.opis } });
+    const a = albumsOf().find((x) => x.kljuc === card.dataset.id);
+    if (!a) return;
+    const akcija = b.dataset.akcija;
+    if (akcija === 'otvori') {
+      const ko = tab === 'primljene' ? `Od: ${memberName(a.posiljalac_id)}` : `Za: ${a.primaoci.map(memberName).join(', ')}`;
+      const items = [];
+      for (const [i, x] of a.slike.entries()) {
+        const src = (await idbGet('arhiva', imgKey(x)).catch(() => null))?.slika || x.slicica;
+        items.push({ src, caption: `${kategorijaNaziv(a.kategorija)} · ${ko} · ${formatMessageTime(a.created_at)}${a.opis ? ` · ${a.opis}` : ''}${a.slike.length > 1 ? ` (${i + 1}/${a.slike.length})` : ''}`,
+          share: { lat: a.lat, lon: a.lon, opis: a.opis } });
+      }
+      if (!items.some((x) => x.src)) { toast('Slika nije na telefonu'); return; }
+      openGallery(items, Number(b.dataset.redni) || 0);
       return;
     }
-    if (a === 'karta') {
+    if (akcija === 'karta') {
       screen.hidden = true;
       if (tempMarker) map.removeLayer(tempMarker);
-      tempMarker = L.circleMarker([p.lat, p.lon], { radius: 14, color: '#2563eb', weight: 3, fillOpacity: 0.15 }).addTo(map);
-      map.setView([p.lat, p.lon], Math.max(map.getZoom(), 16), { animate: false });
+      tempMarker = L.circleMarker([a.lat, a.lon], { radius: 14, color: '#2563eb', weight: 3, fillOpacity: 0.15 }).addTo(map);
+      map.setView([a.lat, a.lon], Math.max(map.getZoom(), 16), { animate: false });
       setTimeout(() => { if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; } }, 60000);
       return;
     }
-    if (a === 'obrisi') {
-      if (!armed.get(id)) { armed.set(id, true); renderSlike(); setTimeout(() => { armed.delete(id); renderSlike(); }, 4000); return; }
-      armed.delete(id);
-      // samo sa telefona; neposlana slika se skida i iz reda slanja
-      state.primljene = state.primljene.filter((x) => x.id !== id);
-      state.poslane = state.poslane.filter((x) => x.id !== id);
-      await idbPut('arhiva', { id: RED(), rows: (await outbox()).filter((x) => x.id !== id) }).catch(() => {});
-      await idbDelete('arhiva', SLIKA(id)).catch(() => {});
+    if (akcija === 'obrisi') {
+      const k = a.kljuc;
+      if (!armed.get(k)) { armed.set(k, true); renderSlike(); setTimeout(() => { armed.delete(k); renderSlike(); }, 4000); return; }
+      armed.delete(k);
+      // cijeli album samo sa telefona; neposlane slike se skidaju i iz reda slanja
+      const ids = new Set(a.redovi.map((r) => r.id));
+      state.primljene = state.primljene.filter((x) => !ids.has(x.id));
+      state.poslane = state.poslane.filter((x) => !ids.has(x.id));
+      await idbPut('arhiva', { id: RED(), rows: (await outbox()).filter((x) => !ids.has(x.id)) }).catch(() => {});
+      for (const key of new Set(a.redovi.map(imgKey))) await idbDelete('arhiva', key).catch(() => {});
       await save().catch(() => {});
       renderSlike();
     }

@@ -18,6 +18,15 @@ export function shareFile(name, mime, content) {
   return 'download';
 }
 
+// Čuvanje fajla NA TELEFON (Preuzimanja/Lovac). Stara aplikacija bez `sacuvaj` dijeli fajl (lovac bira gdje),
+// a preglednik ga preuzima. Vraća 'preuzimanja' | 'dijeljenje' | 'download'.
+export function saveFile(name, mime, content) {
+  const bridge = globalThis.AndroidShare;
+  if (bridge?.sacuvaj) return bridge.sacuvaj(name, mime, content) === 'preuzimanja' ? 'preuzimanja' : 'dijeljenje';
+  const r = shareFile(name, mime, content);
+  return r === 'android' ? 'dijeljenje' : 'download';
+}
+
 export function shareText(text) {
   const bridge = globalThis.AndroidShare;
   if (bridge?.shareText) {

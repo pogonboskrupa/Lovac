@@ -109,3 +109,56 @@ test('privremeno ograničenje servera (54000): slika ostaje u redu i ode kasnije
   await sim.run(240000);
   await expect.poll(() => sim.db.slike_lovcima?.length || 0).toBe(1);
 });
+
+test('trofej sa više slika: šalje se kao album (jedna grupa), prima se kao jedna kartica, galerija lista slike', async ({ page }) => {
+  const sim = await startSim(page, makeWorld());
+  await sim.run(20000);
+  await otvori(page);
+  const f = (n) => ({ name: `t${n}.png`, mimeType: 'image/png', buffer: PNG });
+  await page.locator('#sl-ulaz').setInputFiles([f(1), f(2)]);
+  await expect(page.locator('#sl-pregled .sl-pregled-slika')).toHaveCount(2);
+  await page.locator('#sl-dodaj-ulaz').setInputFiles([f(3)]);
+  await expect(page.locator('#sl-pregled .sl-pregled-slika')).toHaveCount(3);
+  await expect(page.locator('#sl-broj-slika')).toHaveText('3 / 6 slika');
+  await page.locator('#sl-kategorije [data-kat="trofej"]').click();
+  await expect(page.locator('#sl-kategorije [data-kat="trofej"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#sl-primaoci [data-uid] input').first().check();
+  await page.fill('#sl-opis', 'Vepar 112 kg');
+  await page.locator('#btn-sl-posalji').click();
+  await expect(page.locator('#slika-lovcu')).toBeHidden({ timeout: 20000 });
+  await expect.poll(() => sim.db.slike_lovcima?.length || 0).toBe(3);
+  const g = new Set(sim.db.slike_lovcima.map((r) => r.grupa));
+  expect(g.size).toBe(1);
+  expect(sim.db.slike_lovcima.map((r) => [r.redni, r.kategorija])).toEqual([[0, 'trofej'], [1, 'trofej'], [2, 'trofej']]);
+  await page.locator('#sl-tabovi [data-sltab="poslane"]').click();
+  const poslana = page.locator('#sl-spisak [data-id]');
+  await expect(poslana).toHaveCount(1);
+  await expect(poslana.locator('.sl-kat')).toHaveText('Trofej');
+  await expect(poslana.locator('.sl-mreza .sl-mala')).toHaveCount(3);
+  await expect(page.locator('#slh-trofeja')).toHaveText('1');
+
+  // primljen album: dvije slike istog trofeja od drugog lovca
+  const od = sim.db.korisnici[3];
+  const slika = `data:image/png;base64,${PNG.toString('base64')}`;
+  const t = new Date(sim.now).toISOString();
+  const ist = new Date(sim.now + 3600000).toISOString();
+  sim.db.slike_lovcima.push(...[0, 1].map((i) => ({ id: `22222222-0000-4000-8000-00000000000${i}`, posiljalac_id: od.id, primalac_id: sim.ja.id, slika,
+    opis: 'Srndać šestak', grupa: '33333333-0000-4000-8000-000000000001', redni: i, kategorija: 'trofej', created_at: t, istice: ist, lat: null, lon: null })));
+  await sim.run(40000);
+  await page.locator('#sl-tabovi [data-sltab="primljene"]').click();
+  const primljena = page.locator('#sl-spisak [data-id]');
+  await expect(primljena).toHaveCount(1);
+  await expect(primljena).toContainText('Srndać šestak');
+  await expect(primljena.locator('.sl-mreza .sl-mala')).toHaveCount(2);
+  await page.locator('#sl-filter [data-filter="trofej"]').click();
+  await expect(primljena).toHaveCount(1);
+  await primljena.locator('.sl-mala').first().click();
+  await expect(page.locator('#slika-velika')).toBeVisible();
+  await expect(page.locator('#slika-velika-broj')).toHaveText('1 / 2');
+  await page.locator('#btn-slika-sljedeca').click();
+  await expect(page.locator('#slika-velika-broj')).toHaveText('2 / 2');
+  await page.locator('#btn-slika-sljedeca').click();
+  await expect(page.locator('#slika-velika-broj')).toHaveText('1 / 2');
+  await page.locator('#btn-slika-velika-zatvori').click();
+  await expect(page.locator('#slika-velika')).toBeHidden();
+});

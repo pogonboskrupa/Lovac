@@ -17,6 +17,8 @@ import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { monthGrid, huntsByDate, initialMonth, shiftMonth, monthLabel, monthStats, DANI } from './arhiva-kalendar.js';
 import { todayIso } from './objekti.js';
+import { archiveHtml, archiveFileName } from './arhiva-izvoz.js';
+import { saveFile } from './dijeljenje.js';
 
 const $ = (id) => document.getElementById(id);
 const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
@@ -370,6 +372,42 @@ export function initArhiva() {
     renderList();
     document.dispatchEvent(new CustomEvent('lovovi:promjena'));
     toast('Lov je obrisan');
+  });
+
+  // Preuzimanje lova na telefon: jedan HTML fajl (podaci, ulov, učesnici, slike, crtež tragova).
+  // Radi iz keša; kad ima veze, prvo dopuni detalje i velike slike koje još nisu na telefonu (do ~20 MB ukupno).
+  const MAX_IZVOZ = 20 * 1024 * 1024;
+  $('btn-ad-preuzmi').addEventListener('click', async () => {
+    const z = hunts.find((x) => x.id === currentId);
+    if (!z) return;
+    const b = $('btn-ad-preuzmi');
+    b.disabled = true;
+    try {
+      if (online() && !details.has(z.id)) await fetchDetail(z.id).catch(() => {});
+      const d = details.get(z.id) || (await idbGet('arhiva', `detalj:${z.id}`).catch(() => null)) || { odstrel: [], slike: [] };
+      const velike = new Map();
+      let ukupno = 0;
+      for (const [i, s] of (d.slike || []).entries()) {
+        $('ad-status').textContent = `Pripremam slike… ${i + 1}/${d.slike.length}`;
+        let src = (await idbGet('arhiva', `slika:${s.id}`).catch(() => null))?.slika || null;
+        if (!src && online() && ukupno < MAX_IZVOZ) {
+          const rows = await qArh(getClient().from('lov_slike_podaci').select('*').eq('id', s.id)).catch(() => []);
+          src = rows[0]?.slika || null;
+          if (src) await idbPut('arhiva', { id: `slika:${s.id}`, slika: src }).catch(() => {});
+        }
+        if (src && ukupno + src.length <= MAX_IZVOZ) { velike.set(s.id, src); ukupno += src.length; }
+      }
+      const trag = (await idbGet('arhiva', `trag:${z.id}`).catch(() => null))?.rows || [];
+      const html = archiveHtml({ z, d, velike, trag, nameOf: memberName, speciesName });
+      const gdje = saveFile(archiveFileName(z.lov), 'text/html', html);
+      $('ad-status').textContent = gdje === 'preuzimanja' ? `Sačuvano u Preuzimanja/Lovac: ${archiveFileName(z.lov)}`
+        : gdje === 'dijeljenje' ? 'Izaberi gdje da se sačuva (npr. Fajlovi ili Drive).' : `Preuzeto: ${archiveFileName(z.lov)}`;
+      if (!trag.length && z.lov.status !== 'planiran') toast('Trag kretanja nije na telefonu — otvori "Prikaži lov na karti" pa preuzmi ponovo da bi bio u fajlu', 6000);
+    } catch (err) {
+      $('ad-status').textContent = `Fajl nije napravljen: ${err.message}`;
+    } finally {
+      b.disabled = false;
+    }
   });
 
   // Lov na karti: tragovi i slike sa bočnom kontrolom prikaži/sakrij (arhiva-karta-ui).

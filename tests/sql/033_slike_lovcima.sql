@@ -39,6 +39,20 @@ do $$ begin
   end;
 end $$;
 
+-- album: više slika istog slanja (grupa, redni), kategorija trofej; nepoznata kategorija se odbija
+insert into public.slike_lovcima (id, primalac_id, slika, grupa, redni, kategorija) values
+  ('99999999-0000-4000-8000-000000000337', '00000000-0000-0000-0000-0000000033b2', 'x', '99999999-0000-4000-8000-0000000003a0', 0, 'trofej'),
+  ('99999999-0000-4000-8000-000000000338', '00000000-0000-0000-0000-0000000033b2', 'y', '99999999-0000-4000-8000-0000000003a0', 1, 'trofej');
+do $$ begin
+  assert (select count(*) from public.slike_lovcima where grupa = '99999999-0000-4000-8000-0000000003a0' and kategorija = 'trofej') = 2, 'album';
+  begin
+    insert into public.slike_lovcima (id, primalac_id, slika, kategorija) values ('99999999-0000-4000-8000-000000000339', '00000000-0000-0000-0000-0000000033b2', 'z', 'nesto');
+    raise exception 'nepoznata kategorija prošla';
+  exception when check_violation then null;
+  end;
+end $$;
+delete from public.slike_lovcima where grupa = '99999999-0000-4000-8000-0000000003a0';
+
 -- treći lovac i admin ne vide
 do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000033b3', true); end $$;
 do $$ begin assert (select count(*) from public.slike_lovcima) = 0, 'treći ne vidi'; end $$;

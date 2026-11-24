@@ -1,7 +1,8 @@
 -- 033: slanje slike drugom lovcu. Server je samo "poštanski sandučić": slika stoji najviše slike_lovcima_rok()
 -- (12 h) i briše se čim je primalac preuzme ili kad rok istekne; obje strane je zadržavaju na svom telefonu.
 -- Šalje i prima samo stvarni član društva (ne probni nalog — bilo ko može napraviti nalog).
--- Vidi samo pošiljalac i primalac (admin NE). Bez izmjene; brišu pošiljalac i primalac. Idempotentno.
+-- Vidi samo pošiljalac i primalac (admin NE). Bez izmjene; brišu pošiljalac i primalac. Jedno slanje može imati
+-- do 6 slika (album, npr. trofej sa više strana). Idempotentno.
 
 create or replace function public.slike_lovcima_rok()
 returns interval language sql immutable as $$ select interval '12 hours' $$;
@@ -18,6 +19,17 @@ create table if not exists public.slike_lovcima (
   istice timestamptz not null default now() + interval '12 hours',
   check (primalac_id <> posiljalac_id)
 );
+-- Album: više slika istog slanja dijeli `grupa` (redoslijed `redni`), a `kategorija` označava npr. trofej.
+-- Kolone se dodaju i posebno, da ponovno pokretanje dopuni tabelu napravljenu ranijom verzijom ove migracije.
+alter table public.slike_lovcima add column if not exists grupa uuid;
+alter table public.slike_lovcima add column if not exists redni smallint not null default 0;
+alter table public.slike_lovcima add column if not exists kategorija text not null default 'ostalo';
+alter table public.slike_lovcima drop constraint if exists slike_lovcima_kategorija_check;
+alter table public.slike_lovcima add constraint slike_lovcima_kategorija_check
+  check (kategorija in ('trofej', 'trag', 'divljac', 'teren', 'ostalo'));
+alter table public.slike_lovcima drop constraint if exists slike_lovcima_redni_check;
+alter table public.slike_lovcima add constraint slike_lovcima_redni_check check (redni between 0 and 5);
+
 create index if not exists slike_lovcima_primalac on public.slike_lovcima (primalac_id, istice);
 create index if not exists slike_lovcima_posiljalac on public.slike_lovcima (posiljalac_id, istice);
 create index if not exists slike_lovcima_istice on public.slike_lovcima (istice);

@@ -1,12 +1,18 @@
 <section id="slika-lovcu" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slika-lovcu-naslov" hidden>
-  <header class="postavke-glava"><h2 id="slika-lovcu-naslov">Pošalji sliku lovcu</h2>
+  <header class="postavke-glava"><h2 id="slika-lovcu-naslov">Pošalji slike lovcu</h2>
     <button id="btn-slika-lovcu-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
   <div id="sl-pregled" class="sl-pregled"></div>
+  <div class="red-dugmadi sl-dodaj-red">
+    <label id="sl-dodaj-vise" class="dugme dugme-fajl">Dodaj još slika<input id="sl-dodaj-ulaz" type="file" accept="image/*" multiple hidden></label>
+    <span id="sl-broj-slika" class="sitno"></span>
+  </div>
+  <h3 class="sl-podnaslov">Šta šalješ</h3>
+  <div id="sl-kategorije" class="segment sl-kategorije" role="group" aria-label="Vrsta slike"></div>
   <label>Kome (najviše 5 lovaca)<input id="sl-trazi" type="search" placeholder="Traži lovca po imenu" autocomplete="off"></label>
   <p id="sl-izabrani" class="sitno"></p>
   <ul id="sl-primaoci" class="spisak sl-primaoci"></ul>
   <label>Poruka uz sliku (neobavezno)<textarea id="sl-opis" rows="2" maxlength="500" placeholder="Npr. trag vepra kod donje čeke"></textarea></label>
-  <p class="sitno">Slika je na serveru najviše 12 sati i briše se čim je lovac preuzme. Kod tebe i kod njega ostaje na telefonu. Bez interneta čeka na telefonu i šalje se kad se veza vrati.</p>
+  <p class="sitno">Do 6 slika odjednom (npr. trofej sa više strana). Slike su na serveru najviše 12 sati i brišu se čim ih lovac preuzme. Kod tebe i kod njega ostaju na telefonu. Bez interneta čekaju na telefonu i šalju se kad se veza vrati.</p>
   <p id="sl-status" class="sitno" role="status"></p>
   <div class="red-dugmadi">
     <button type="button" id="btn-sl-posalji" class="dugme glavno">Pošalji</button>
