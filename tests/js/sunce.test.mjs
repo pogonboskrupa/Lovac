@@ -325,8 +325,8 @@ test('lokacija sekcije: trajanje, istek, ko dijeli, spisak', () => {
   assert.equal(activeShare(null, now), null);
   assert.equal(canShareToSection('clan'), true);
   assert.equal(canShareToSection('grupovodja'), true);
-  assert.equal(canShareToSection('lovocuvar'), false);
-  assert.equal(canShareToSection('admin'), false);
+  assert.equal(canShareToSection('lovocuvar'), true);
+  assert.equal(canShareToSection('admin'), true);
   assert.equal(canShareToSection('ceka'), false);
   const me = { lat: 44.88, lon: 16.15 };
   const ago = (m) => new Date(now - m * 60000).toISOString();

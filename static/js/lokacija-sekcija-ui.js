@@ -80,7 +80,7 @@ export function initMojaLokacija(L, map) {
     // Prvo otvaranje prije prve sinhronizacije sekcija: preuzmi ih odmah (ako ima veze).
     if (download && !ctx.sekcije.length && online()) { await downloadSekcije().catch(() => {}); ctx = await cachedSekcije(); }
     sections = ctx.sekcije.filter((s) => s.aktivno !== false
-      && canShareToSection(myStatus(s, ctx.clanovi, me()?.id, false, ctx.lovocuvari)));
+      && canShareToSection(myStatus(s, ctx.clanovi, me()?.id, Boolean(me()?.is_admin), ctx.lovocuvari)));
   };
 
   const renderShare = () => {

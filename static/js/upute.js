@@ -43,7 +43,7 @@ export const UPUTE = [
       ['Moja lokacija i Dijeli lokaciju (on/off)', 'U ploči Moja lokacija su dva odvojena prekidača. "Moja lokacija" samo pokazuje ili skriva tvoju poziciju na karti. "Dijeli lokaciju" izvan lova je zadano isključen: uključen dijeli tvoju lokaciju sa sekcijom (na vrijeme izabrano u kartici sekcije, zadano 1 sat). Dok traje lov u kojem si, isti prekidač je dijeljenje u lovu i zadano je uključen — učesnici lova vide tvoju poziciju.'],
       ['Dodir na kolegu na karti', 'Dodirni krug sa inicijalima kolege koji dijeli lokaciju (u lovu ili sa sekcijom): otvara se kartica sa imenom i prezimenom, udaljenošću i stranom svijeta od tebe i starošću pozicije. Udaljenost traži tvoj GPS.'],
       ['Znak dijeljenja na karti', 'Dok dijeliš lokaciju sa lovcima (u lovu ili sa sekcijom), dugme "Moja lokacija" na karti se polako preliva iz tirkizne u crvenu i povremeno blago zadrhti — da ne zaboraviš da te drugi vide. Kad prestaneš dijeliti, dugme je opet obično.'],
-      ['Dijeljenje sa sekcijom', 'U istoj ploči možeš podijeliti lokaciju sa svojom sekcijom na 1 sat, 4 sata ili do kraja dana. Vide je članovi, grupovođa i lovočuvar te sekcije, a administrator ne (osim ako je u sekciji).'],
+      ['Dijeljenje sa sekcijom', 'U istoj ploči možeš podijeliti lokaciju sa sekcijom na 1 sat, 4 sata ili do kraja dana. Dijeliti mogu svi: član, grupovođa, lovočuvar revira i administrator (administrator bira sekciju sa spiska). Vide je članovi, grupovođa i lovočuvar te sekcije; administrator tuđe lokacije ne vidi (nije dio sekcije), ali ga sekcija vidi kad on dijeli.'],
     ],
   },
   {

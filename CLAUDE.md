@@ -641,3 +641,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **"Dijeli lokaciju" u ploči Moja lokacija (v1.2.3)**
 - Odluka vlasnika: izvan lova prekidač `#btn-lok-auto` je dijeljenje SA SEKCIJOM i zadano je ISKLJUČEN (klik ide kroz `#lok-sek-prekidac`, trajanje iz kartice sekcije, zadano 1 h; bez sekcije samo poruka). Dok traje lov u kojem sam (`lov:aktivan` sa lovom), isti prekidač je dijeljenje U LOVU (`getShareSettings().on`, zadano UKLJUČENO, ista postavka kao Postavke i "Lokacija u lovu"). Uzrok: prekidač je ranije uvijek pokazivao postavku lova (uključeno) i izvan lova, pa je izgledalo da lovac stalno dijeli lokaciju. `renderAuto` (lokacija-sekcija-ui) se zove i iz `renderShare`, `armSending/stopSending`.
+
+**Dijeljenje lokacije sa sekcijom svi (migracija 035, v1.2.4)**
+- Odluka vlasnika: dijeliti mogu SVI koji imaju veze sa sekcijom — član, grupovođa, lovočuvar revira i administrator (`lokacija-sekcija.js canShareToSection`; server `moze_dijeliti_sekciji`). Gledanje se NIJE promijenilo (`vidi_lokacije_sekcije`: član, grupovođa, lovočuvar; admin tuđe i dalje NE vidi, ali ga sekcija vidi kad on dijeli). Admin u ploči bira sekciju sa spiska (`myStatus` mu daje `admin` u svakoj). Korisnik bez ikakve veze sa sekcijom i dalje nema kome dijeliti.

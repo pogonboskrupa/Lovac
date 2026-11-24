@@ -182,3 +182,23 @@ test('lovočuvar revira vidi ko dijeli, ali ne dijeli sam; vanjski korisnik nema
   await expect(page.locator('#lok-sek-nema')).toBeVisible();
   await expect(page.locator('#lok-sek-lista [data-uid]')).toHaveCount(1);
 });
+
+test('lovočuvar i administrator mogu dijeliti lokaciju sa sekcijom (ne samo članovi)', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi = [];
+  server.db.sekcije = server.db.sekcije.map((x) => ({ ...x, lovocuvar_id: LOVAC.id }));
+  await setup(page, server, LOVAC);
+  await openLok(page);
+  await expect(page.locator('#lok-sek-forma')).toBeVisible();
+  await expect(page.locator('#lok-sek-prekidac')).toContainText('Počni dijeliti sa: Krupa 1');
+});
+
+test('administrator bira sekciju i dijeli lokaciju', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi = [];
+  server.db.korisnici = server.db.korisnici.map((k) => (k.id === LOVAC.id ? { ...k, is_admin: true } : k)); // profil se osvježava sa servera
+  await setup(page, server, { ...LOVAC, is_admin: true });
+  await openLok(page);
+  await expect(page.locator('#lok-sek-forma')).toBeVisible();
+  await expect(page.locator('#lok-sek-prekidac')).toContainText('Počni dijeliti sa:');
+});
