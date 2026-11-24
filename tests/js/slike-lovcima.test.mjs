@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, expiryText, sentStatus, inboxSummary, MAX_PRIMALACA,
+  missingOnServer, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, expiryText, sentStatus, inboxSummary, MAX_PRIMALACA,
 } from '../../static/js/slike-lovcima.js';
 
 const M = [
@@ -39,4 +39,12 @@ test('slike lovcima: nove u sandučiću, rok na serveru i stanje poslane', () =>
   assert.match(sentStatus({ odbijena: 'Previše' }, now).tekst, /Previše/);
   assert.equal(inboxSummary([{ novo: true }, { novo: true }]), '2 nove slike');
   assert.equal(inboxSummary([{}]), 'Primljeno: 1');
+});
+
+test('slike lovcima: server bez migracije 033 (tabela ne postoji) nije odbijanje — slika čeka u redu', () => {
+  assert.equal(missingOnServer({ code: 'PGRST205', message: "Could not find the table 'public.slike_lovcima' in the schema cache" }), true);
+  assert.equal(missingOnServer({ code: '42P01' }), true);
+  assert.equal(missingOnServer({ code: '42501', message: 'row-level security' }), false);
+  assert.equal(missingOnServer({ code: '54000', message: 'Previše' }), false);
+  assert.equal(missingOnServer(null), false);
 });

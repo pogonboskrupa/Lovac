@@ -30,10 +30,21 @@ export function scopeOptions(me, ctx) {
   return out;
 }
 
-// Raspon datuma za server: godina ili cijelo vrijeme.
+// Odluka vlasnika: statistika i rejting se vode tek od 2026. (ranije nije bilo evidencije u aplikaciji).
+export const EVIDENCIJA_OD = 2026;
+
+// Godine za izbor: od tekuće unazad do EVIDENCIJA_OD.
+export function ratingYears(now = new Date()) {
+  const y = Math.max(now.getFullYear(), EVIDENCIJA_OD);
+  return Array.from({ length: y - EVIDENCIJA_OD + 1 }, (_, i) => String(y - i));
+}
+
+// Raspon datuma za server: godina ili "sve" — nikad prije EVIDENCIJA_OD.
 export function periodDates(godina) {
-  if (godina == null || godina === 'sve') return { od: null, do: null };
+  const od = `${EVIDENCIJA_OD}-01-01`;
+  if (godina == null || godina === 'sve') return { od, do: null };
   const y = Number(godina);
+  if (!Number.isFinite(y) || y < EVIDENCIJA_OD) return { od, do: `${EVIDENCIJA_OD}-12-31` };
   return { od: `${y}-01-01`, do: `${y}-12-31` };
 }
 

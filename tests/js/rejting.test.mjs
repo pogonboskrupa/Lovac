@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ZADANI_KRITERIJI, criterionScore, rateMember, rankMembers, validateWeights, mergeCriteria } from '../../static/js/rejting.js';
-import { scopeOptions, periodDates, buildStats } from '../../static/js/statistika-opsega.js';
+import { scopeOptions, periodDates, buildStats, ratingYears } from '../../static/js/statistika-opsega.js';
 
 const row = (o = {}) => ({ korisnik_id: 'u', sekcija_id: 'S1', revir_id: 'R1', lovova_odrzano: 4, lovova_ucesce: 4, mjeseci_lovova: 4, mjeseci_ucesce: 4,
   komada: 0, kg: 0, vrsta: 0, prijava_ukupno: 0, prijava_u_roku: 0, ...o });
@@ -71,7 +71,10 @@ test('scopeOptions: admin sve, lovočuvar revir (i sekcija ako je i član), grup
 
 test('periodDates i buildStats: zbirke po sekcijama, revirima, vrstama i mjesecima', () => {
   assert.deepEqual(periodDates(2026), { od: '2026-01-01', do: '2026-12-31' });
-  assert.deepEqual(periodDates('sve'), { od: null, do: null });
+  assert.deepEqual(periodDates('sve'), { od: '2026-01-01', do: null }, 'evidencija tek od 2026.');
+  assert.deepEqual(periodDates(2024), { od: '2026-01-01', do: '2026-12-31' }, 'ranija godina se ne računa');
+  assert.deepEqual(ratingYears(new Date('2028-05-01')), ['2028', '2027', '2026']);
+  assert.deepEqual(ratingYears(new Date('2025-05-01')), ['2026']);
   const lovovi = [
     { revir_id: 'R1', sekcija_id: 'S1', lovova: 2, ucesca: 3, clanova: 2 },
     { revir_id: 'R1', sekcija_id: 'S3', lovova: 1, ucesca: 1, clanova: 1 },

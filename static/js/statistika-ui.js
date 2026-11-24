@@ -12,7 +12,7 @@ import { formatWhen } from './opazanja-ui.js';
 import { MJESECI } from './divljac.js';
 
 const MJESECI_PUNI = ['januar', 'februar', 'mart', 'april', 'maj', 'juni', 'juli', 'august', 'septembar', 'oktobar', 'novembar', 'decembar'];
-import { scopeOptions, periodDates, buildStats, shareOfMax, bestMonth } from './statistika-opsega.js';
+import { scopeOptions, periodDates, ratingYears, EVIDENCIJA_OD, buildStats, shareOfMax, bestMonth } from './statistika-opsega.js';
 import { speciesBadge } from './evidencija.js';
 import { rankMembers, mergeCriteria, validateWeights, ZADANI_KRITERIJI } from './rejting.js';
 import { registerBackHandler, escapeHtml } from './ui.js';
@@ -34,7 +34,7 @@ export function initStatistika() {
   let ctx = { reviri: [], sekcije: [], clanovi: [], lovocuvari: [] };
   let options = [];
   let scope = null;
-  let year = String(new Date().getFullYear());
+  let year = ratingYears()[0];
   let tab = 'statistika';
   let data = { ulov: [], lovovi: [], rejting: [] };
   let criteria = ZADANI_KRITERIJI;
@@ -42,7 +42,7 @@ export function initStatistika() {
   let fetchedAt = null;
   let seq = 0;
 
-  const cacheKey = () => `stat:${scope?.kljuc}:${year}`;
+  const cacheKey = () => `stat${EVIDENCIJA_OD}:${scope?.kljuc}:${year}`; // stari keš ('sve' prije 2026) se ne koristi
 
   const loadCriteria = async () => {
     const cached = await idbGet('arhiva', KRIT_CACHE).catch(() => null);
@@ -180,9 +180,8 @@ export function initStatistika() {
   const renderControls = () => {
     $('st-opseg').innerHTML = options.map((o) => `<option value="${escapeHtml(o.kljuc)}"${o.kljuc === scope?.kljuc ? ' selected' : ''}>${escapeHtml(o.naziv)}</option>`).join('');
     $('st-opseg').closest('label').hidden = options.length < 2;
-    const y = new Date().getFullYear();
-    const years = ['sve', ...Array.from({ length: 10 }, (_, i) => String(y - i))];
-    $('st-godine').innerHTML = years.map((v) => `<button type="button" data-godina="${v}" aria-pressed="${v === year}">${v === 'sve' ? 'Sve' : v}</button>`).join('');
+    const years = ['sve', ...ratingYears()];
+    $('st-godine').innerHTML = years.map((v) => `<button type="button" data-godina="${v}" aria-pressed="${v === year}">${v === 'sve' ? `Sve (od ${EVIDENCIJA_OD}.)` : v}</button>`).join('');
   };
 
   const open = async () => {

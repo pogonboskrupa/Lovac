@@ -173,7 +173,12 @@ test('Statistika (administrator): društvo, po revirima i sekcijama, godina i iz
   calls.length = 0;
   await page.locator('#st-godine [data-godina="sve"]').click();
   await expect.poll(() => calls.length).toBeGreaterThan(0);
-  expect(calls[0].args).toMatchObject({ p_od: null, p_do: null });
+  // "Sve" znači od 2026. (odluka vlasnika), a godine prije 2026. se ne nude
+  expect(calls[0].args).toMatchObject({ p_od: '2026-01-01', p_do: null });
+  await expect(page.locator('#st-godine [data-godina="sve"]')).toHaveText('Sve (od 2026.)');
+  await expect(page.locator('#st-godine [data-godina="2025"]')).toHaveCount(0);
+  await expect(page.locator('#st-godine [data-godina="2026"]')).toHaveCount(1);
+  await expect(page.locator('#st-od')).toContainText('od 2026');
 });
 
 test('Rejting: ljestvica po kriterijima, mjesta, "ti" označen, objašnjenje i nerangirani na kraju', async ({ page }) => {

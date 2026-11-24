@@ -6,6 +6,11 @@ export const ROK_SATI = 12;
 export const MAX_PRIMALACA = 5;
 export const MAX_SLIKA = 1200000; // znakova dataURL-a (server prima do 1 300 000)
 
+// Server još nema tabelu/funkciju (migracija nije pokrenuta): slika čeka u redu, ne označava se kao odbijena.
+export function missingOnServer(err) {
+  return ['PGRST205', 'PGRST202', '42P01'].includes(err?.code) || /could not find the (table|function)/i.test(String(err?.message || ''));
+}
+
 export const memberLabel = (m) => `${m.ime || ''} ${m.prezime || ''}${m.nadimak ? ` (${m.nadimak})` : ''}`.trim();
 
 export function recipientsFrom(members = [], myId) {

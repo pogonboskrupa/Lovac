@@ -12,7 +12,7 @@ import { isPolicyRejection, isNetworkFailure } from './sync.js';
 import { openImageViewer } from './slika-pregled.js';
 import { formatMessageTime } from './poruke.js';
 import {
-  MAX_SLIKA, MAX_PRIMALACA, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, newestFirst, inboxSummary, memberLabel,
+  MAX_SLIKA, MAX_PRIMALACA, missingOnServer, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, newestFirst, inboxSummary, memberLabel,
 } from './slike-lovcima.js';
 import { toast, escapeHtml, registerBackHandler } from './ui.js';
 
@@ -139,6 +139,7 @@ export function initSlikeLovcima(L, map) {
       const { data, error } = await getClient().from('slike_lovcima').insert(r).select('id,istice');
       if (error) {
         if (isNetworkFailure(error) || (!isPolicyRejection(error) && !error.code)) break; // veza: ostaje u redu
+        if (missingOnServer(error)) { console.warn('slike lovcima: server još nema nadogradnju (033)'); break; }
         const razlog = isPolicyRejection(error) ? 'server nije prihvatio (nalog bez odobrenja?)' : error.message;
         // isti id već na serveru (ponovljen pokušaj) nije greška
         if (error.code !== '23505') {
