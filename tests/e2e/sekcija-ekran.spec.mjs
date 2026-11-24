@@ -216,8 +216,17 @@ test('lovočuvar revira prati SVE sekcije svog revira (izbor), ne i druge revire
   await expect(page.locator('#sk-podnaslov')).toContainText('lovočuvar revira');
   await expect(page.locator(`#sk-clanovi [data-uid="${VAN.id}"]`)).toHaveCount(1);
   await expect(page.locator('#sk-clanovi [data-uid="' + GV.id + '"]')).toContainText('Aktivan u lovu');
+  // spisak lovaca je zadano sklopljen; dodir na sekciju ga rasklapa, drugi dodir na istu ga sklapa
+  await expect(page.locator('#btn-sk-lovci')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#sk-clanovi')).toBeHidden();
+  await page.locator(`#sk-lista [data-sid="${ID(200)}"]`).click();
+  await expect(page.locator('#btn-sk-lovci')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator(`#sk-clanovi [data-uid="${GV.id}"]`)).toBeVisible();
+  await page.locator(`#sk-lista [data-sid="${ID(200)}"]`).click();
+  await expect(page.locator('#sk-clanovi')).toBeHidden();
   await page.locator(`#sk-lista [data-sid="${ID(201)}"]`).click();
   await expect(page.locator(`#sk-lista [data-sid="${ID(201)}"]`)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#btn-sk-lovci')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#sk-podnaslov')).toContainText('Revir Krupa');
   await expect(page.locator('#sk-lov')).toContainText('Nema lova');
 

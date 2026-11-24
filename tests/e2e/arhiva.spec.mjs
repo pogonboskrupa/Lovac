@@ -310,3 +310,40 @@ test('tokom lova: tačke kretanja se bilježe lokalno i šalju na server (samo d
   await page.clock.runFor(30000);
   expect(server.db.lov_tragovi.length).toBe(before);
 });
+
+test('brisanje lova u arhivi: grupovođa sekcije briše (drugi dodir) — lov nestaje sa servera i iz arhive; član nema dugme', async ({ page, browser }) => {
+  const server = makeServer();
+  finished(server);
+  await setup(page, server, GV);
+  let pozvano = 0;
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, async (route) => {
+    pozvano++;
+    const { p_lov } = route.request().postDataJSON();
+    server.db.lovovi = server.db.lovovi.filter((l) => l.id !== p_lov);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+  });
+  await openArhiva(page);
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await expect(page.locator('#ad-brisanje')).toBeVisible();
+  await page.locator('#btn-ad-obrisi').click();
+  expect(pozvano).toBe(0); // prvi dodir samo pita
+  await page.locator('#btn-ad-obrisi').click();
+  await expect.poll(() => pozvano).toBe(1);
+  await expect(page.locator('#arhiva-detalj')).toBeHidden();
+  await expect(page.locator('#arhiva-spisak .arhiva-red')).toHaveCount(0);
+  expect(server.db.lovovi).toHaveLength(0);
+
+  // član sekcije ne vidi brisanje
+  const server2 = makeServer();
+  finished(server2);
+  const ctx = await browser.newContext({ viewport: { width: 412, height: 915 } });
+  const p2 = await ctx.newPage();
+  await setup(p2, server2, LOVAC);
+  await p2.goto('http://localhost:8123/');
+  await p2.locator('#btn-spiskovi').click();
+  await p2.locator('#btn-arhiva').click();
+  await p2.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await expect(p2.locator('#ad-naslov')).toHaveText('Pogon Grmeč');
+  await expect(p2.locator('#ad-brisanje')).toBeHidden();
+  await ctx.close();
+});

@@ -1,6 +1,6 @@
 // Divljač: osnovne karakteristike, biologija i ono što je značajno za lov (statični sadržaj + pretraga).
 // Brojke su orijentacione (stručna literatura, naš region). Propisi, lovostaj i datumi se NE navode ovdje:
-// njih unosi administrator društva (Danas → "Šta se danas smije loviti").
+// njih unosi administrator društva (Svjetlo, vrijeme, vjetar → "Šta se danas smije loviti").
 
 import { matchesQuery } from './pretraga.js';
 

@@ -60,6 +60,7 @@ export function initSekcijaEkran(L, map) {
   let selectedId = loadJSON(SEL_KEY, null);
   let lastHuntRefresh = 0;
   let lastListsRefresh = 0;
+  const lovciOtvoreni = new Set(); // sekcije čiji je spisak lovaca rasklopljen (admin/lovočuvar)
   let timer = null;
   let marker = null;
   const me = () => cachedProfile();
@@ -338,6 +339,11 @@ export function initSekcijaEkran(L, map) {
     const strip = faceStrip(rows);
     $('sk-lica').innerHTML = strip.lica.map((r) => `<span class="sk-avatar sk-lice${avatarOf(r.id) ? ' ima-sliku' : ''}" data-stanje="${actOf(r.id).stanje}" title="${escapeHtml(r.ime)}"${avatarOf(r.id) ? ` style="background-image:url('${avatarOf(r.id)}')"` : ''}>${avatarOf(r.id) ? '' : escapeHtml(initialsOf(r.ime))}</span>`).join('')
       + (strip.ostalo ? `<span class="sk-lice-vise">+${strip.ostalo}</span>` : '');
+    const sklopivo = seesSectionList(me(), ctx);
+    const otvoreno = !sklopivo || lovciOtvoreni.has(s.id);
+    $('sk-k-clanovi').classList.toggle('sklopljeno', !otvoreno);
+    $('btn-sk-lovci').setAttribute('aria-expanded', String(otvoreno));
+    $('btn-sk-lovci').disabled = !sklopivo;
     const shown = filterHunters(rows, actOf, memFilter, memQuery, matchesQuery);
     $('sk-clanovi').innerHTML = shown.map((r) => {
       const a = actOf(r.id);
@@ -414,9 +420,16 @@ export function initSekcijaEkran(L, map) {
     render();
     refresh({ withHunts: true });
   });
+  // Admin i lovočuvar vide mnogo sekcija: spisak lovaca je zadano sklopljen; dodir na sekciju ga rasklapa (drugi dodir
+  // na istu sekciju ili na naslov kartice ga sklapa). Grupovođa i lovac uvijek vide svoje lovce.
+  const toggleLovci = (sid, open) => {
+    if (open ?? !lovciOtvoreni.has(sid)) lovciOtvoreni.add(sid); else lovciOtvoreni.delete(sid);
+  };
+  $('btn-sk-lovci').addEventListener('click', () => { const s = selected(); if (s) { toggleLovci(s.id); render(); } });
   $('sk-lista').addEventListener('click', (e) => {
     const b = e.target.closest('[data-sid]');
     if (!b) return;
+    toggleLovci(b.dataset.sid, b.dataset.sid === selectedId ? undefined : true);
     selectedId = b.dataset.sid;
     saveSoft(SEL_KEY, selectedId);
     updateNav();

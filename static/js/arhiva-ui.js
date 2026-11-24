@@ -195,6 +195,8 @@ export function initArhiva() {
       || '<p class="sitno">Još nema slika.</p>';
     $('ad-slika-dodaj').hidden = !canAddMedia(z, me()?.id, isManager(z), d.slike.length + pending.length);
     $('btn-ad-trag').hidden = z.lov.status === 'planiran';
+    // briše admin ili grupovođa sekcije lova (server: obrisi_lov, migracija 032)
+    $('ad-brisanje').hidden = !(me()?.is_admin || (z.sekcija?.grupovodja_id && z.sekcija.grupovodja_id === me()?.id));
   };
 
   const openDetail = async (id) => {
@@ -346,6 +348,28 @@ export function initArhiva() {
     } catch (err) {
       $('ad-status').textContent = `Nije sačuvano: ${err.message}`;
     }
+  });
+
+  wireTwoTap($('btn-ad-obrisi'), 'DODIRNI PONOVO — OBRIŠI LOV ZA SVE', async () => {
+    const z = hunts.find((x) => x.id === currentId);
+    if (!z) return;
+    if (!online()) { $('ad-status').textContent = 'Za brisanje lova potreban je internet.'; return; }
+    try {
+      const ok = await qArh(getClient().rpc('obrisi_lov', { p_lov: z.id }));
+      if (ok === false) throw new Error('lov nije pronađen na serveru');
+    } catch (err) {
+      $('ad-status').textContent = /function|PGRST202/i.test(err.message)
+        ? 'Server još nema brisanje lova (administrator treba pokrenuti migraciju 032).' : `Lov nije obrisan: ${err.message}`;
+      return;
+    }
+    for (const key of [`detalj:${z.id}`, `trag:${z.id}`]) await idbDelete('arhiva', key).catch(() => {});
+    await idbDelete('lovovi', z.id).catch(() => {});
+    details.delete(z.id);
+    detail.hidden = true;
+    await loadLocal();
+    renderList();
+    document.dispatchEvent(new CustomEvent('lovovi:promjena'));
+    toast('Lov je obrisan');
   });
 
   // Lov na karti: tragovi i slike sa bočnom kontrolom prikaži/sakrij (arhiva-karta-ui).

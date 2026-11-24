@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.1.4';
+  const APP_VER = 'v1.1.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -167,7 +167,7 @@
       <button type="button" id="btn-lovovi" class="meni-plocica"><svg class="ic"><use href="#ic-hunt"/></svg><span class="m-tekst"><span class="m-naslov">Zajednički lov</span><span class="m-opis" id="btn-lovovi-opis">Raspored, stanovi, sektori</span></span></button>
       <button type="button" id="btn-arhiva" class="meni-plocica"><svg class="ic"><use href="#ic-archive"/></svg><span class="m-tekst"><span class="m-naslov">Arhiva lova</span><span class="m-opis" id="btn-arhiva-opis">Slike, učesnici, ulov, trag</span></span></button>
       <button type="button" id="btn-sekcije" class="meni-plocica"><svg class="ic"><use href="#ic-group"/></svg><span class="m-tekst"><span class="m-naslov">Sekcije i pristup</span><span class="m-opis" id="btn-sekcije-opis">Članstvo i odobrenja</span></span></button>
-      <button type="button" id="btn-danas" class="meni-plocica"><svg class="ic"><use href="#ic-sun"/></svg><span class="m-tekst"><span class="m-naslov">Danas</span><span class="m-opis" id="btn-danas-opis">Lovno vrijeme i lovostaj</span></span></button>
+      <button type="button" id="btn-danas" class="meni-plocica"><svg class="ic"><use href="#ic-sun"/></svg><span class="m-tekst"><span class="m-naslov">Svjetlo, vrijeme, vjetar</span><span class="m-opis" id="btn-danas-opis">Lovno vrijeme i lovostaj</span></span></button>
       <button type="button" id="btn-divljac" class="meni-plocica"><svg class="ic"><use href="#ic-deer"/></svg><span class="m-tekst"><span class="m-naslov">Divljač</span><span class="m-opis" id="btn-divljac-opis">7 vrsta: biologija i lov</span></span></button>
       <button type="button" id="btn-pas" class="meni-plocica"><svg class="ic"><use href="#ic-paw"/></svg><span class="m-tekst"><span class="m-naslov">Moj pas</span><span class="m-opis" id="btn-pas-opis">Pozicija sa ogrlice</span></span></button>
     </div>
@@ -1000,11 +1000,11 @@
 
 <section id="danas" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="danas-naslov" hidden>
   <header class="postavke-glava">
-    <h2 id="danas-naslov">Danas</h2>
+    <h2 id="danas-naslov">Svjetlo, vrijeme, vjetar</h2>
     <button id="btn-danas-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <p id="danas-mjesto" class="sitno"></p>
-  <div id="danas-tabovi" class="segment p-tabovi" role="tablist" aria-label="Danas">
+  <div id="danas-tabovi" class="segment p-tabovi" role="tablist" aria-label="Svjetlo, vrijeme, vjetar">
     <button type="button" role="tab" data-tab="svjetlo" aria-pressed="true">Svjetlo i lov</button>
     <button type="button" role="tab" data-tab="vrijeme" aria-pressed="false">Vrijeme i vjetar</button>
   </div>
@@ -1432,7 +1432,7 @@
     </nav>
 
     <section id="sk-k-clanovi" class="sk-kartica sk-lovci">
-      <h3>Lovci sekcije <span id="sk-broj" class="sitno"></span></h3>
+      <h3><button id="btn-sk-lovci" class="sk-lovci-glava" type="button" aria-expanded="true">Lovci sekcije <span id="sk-broj" class="sitno"></span><span class="sk-lovci-strelica" aria-hidden="true">▾</span></button></h3>
       <div id="sk-brojevi" class="sk-brojevi" aria-live="polite"></div>
       <div id="sk-filter" class="segment" role="group" aria-label="Prikaz lovaca">
         <button type="button" data-mf="svi" aria-pressed="true">Svi</button>
@@ -1748,6 +1748,11 @@
       <label class="dugme dugme-fajl">Dodaj sliku lova<input id="ad-slika-ulaz" type="file" accept="image/*" hidden></label>
     </div>
     <p class="sitno">Slike lova vide učesnici, članovi sekcije i grupovođa. Šalju se na server (smanjene), pa se vide i drugima; velika slika ostaje na serveru 14 dana, a sličica trajno.</p>
+  </section>
+  <section id="ad-brisanje" class="sk-kartica ad-brisanje" hidden>
+    <h3>Brisanje lova</h3>
+    <p class="sitno">Briše lov sa rasporedom, učesnicima, tragom kretanja, tokom i slikama — za sve, trajno. Poruke i prijave ulova ostaju. Potreban je internet.</p>
+    <button id="btn-ad-obrisi" class="dugme dugme-sos" type="button">Obriši lov</button>
   </section>
 </section>
 

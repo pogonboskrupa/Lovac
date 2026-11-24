@@ -1492,3 +1492,11 @@ svg[hidden] { display: none; }
 .uzivo > .dugme[hidden] { display: none; }
 .uzivo > #btn-sos { flex: 1.3 1 0; }
 .uzivo #uzivo-stanje { flex: 1 1 100%; font-size: 12px; line-height: 1.2; }
+
+/* Tab Sekcije (admin/lovočuvar): spisak lovaca sklopljen dok se ne dodirne sekcija (v1.1.5) */
+.sk-lovci-glava { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.sk-lovci-glava:disabled { cursor: default; opacity: 1; }
+.sk-lovci-glava:disabled .sk-lovci-strelica { display: none; }
+.sk-lovci-strelica { margin-left: auto; transition: transform .15s; }
+.sk-lovci-glava[aria-expanded="false"] .sk-lovci-strelica { transform: rotate(-90deg); }
+#sk-k-clanovi.sklopljeno > :not(h3) { display: none; }

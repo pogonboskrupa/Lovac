@@ -150,6 +150,9 @@ test('lovočuvar revira pravi nalog direktno; lovac van sekcije nema dugme', asy
   await withRpc(page, { odobren: true });
   await page.goto('/');
   await page.locator('#btn-sekcija').click();
+  // lovočuvar: spisak lovaca je zadano sklopljen (v1.1.5), dodir na naslov ga rasklapa
+  await expect(page.locator('#btn-sk-lovci')).toHaveAttribute('aria-expanded', 'false');
+  await page.locator('#btn-sk-lovci').click();
   await expect(page.locator('#btn-sk-novi')).toHaveText('Dodaj lovca (novi nalog)');
   await page.locator('#btn-sk-novi').click();
   await expect(page.locator('#ln-sekcija option')).toHaveCount(2);

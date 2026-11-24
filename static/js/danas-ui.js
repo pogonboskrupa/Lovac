@@ -1,4 +1,4 @@
-// Ekran "Danas": svjetlo, lovno vrijeme sa odbrojavanjem i šta se danas smije loviti.
+// Ekran "Svjetlo, vrijeme, vjetar" (id-evi i kod: danas): svjetlo, lovno vrijeme sa odbrojavanjem i šta se danas smije loviti.
 // Sve se računa offline; propise (lovostaj, lovno vrijeme) daje samo admin spisak.
 
 import { sunTimes, moonAge, moonPhaseName, moonIllumination, daylightStatus } from './sunce.js';

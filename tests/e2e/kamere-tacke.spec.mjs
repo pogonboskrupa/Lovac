@@ -140,7 +140,8 @@ test('tokom snimanja traga: tačka sa nazivom i slika vezana za trag; sve ostaje
 async function sekcijeLoaded(page) {
   await page.goto('/');
   await page.locator('#btn-sekcija').click();
-  await expect(page.locator('#sk-clanovi [data-uid]').first()).toBeVisible();
+  // lovočuvar/admin: spisak lovaca je zadano sklopljen (v1.1.5) — čekamo da su lovci nacrtani
+  await expect(page.locator('#sk-clanovi [data-uid]').first()).toBeAttached();
   await page.locator('#nav-mapa').click();
 }
 
