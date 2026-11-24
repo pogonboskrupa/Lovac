@@ -644,3 +644,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Dijeljenje lokacije sa sekcijom svi (migracija 035, v1.2.4)**
 - Odluka vlasnika: dijeliti mogu SVI koji imaju veze sa sekcijom — član, grupovođa, lovočuvar revira i administrator (`lokacija-sekcija.js canShareToSection`; server `moze_dijeliti_sekciji`). Gledanje se NIJE promijenilo (`vidi_lokacije_sekcije`: član, grupovođa, lovočuvar; admin tuđe i dalje NE vidi, ali ga sekcija vidi kad on dijeli). Admin u ploči bira sekciju sa spiska (`myStatus` mu daje `admin` u svakoj). Korisnik bez ikakve veze sa sekcijom i dalje nema kome dijeliti.
+
+**Oznake opažanja na karti (v1.2.5)**
+- Opažanje bez fotografije više nije goli krug nego `L.marker` sa `divIcon` `.op-znak` (`opazanja-ui.js renderLayer`): emblem vrste kao na kartici u spisku (`speciesBadge`: boja i znak iz Divljači), broj grla u uglu (`markerCountText`: 1 bez broja, > 99 = "99+"), starost kroz `data-starost` (`observationAge`: danas / sedmica / mjesec / staro → sve blijeđe), vidljivih 30 px u meti od 44 px (`.op-ikona`). Tek upisano opažanje pulsira 6 s (`highlightId`, `.op-novo`; uz `prefers-reduced-motion` samo bijeli obrub). Opažanje sa slikom je i dalje sličica. E2e testovi broje `.op-znak` (prije `path.op-tacka`). Razmjerom ograničenje (`gateLayer`, vrsta `tacke`) ostaje.

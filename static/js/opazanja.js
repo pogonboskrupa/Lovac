@@ -65,3 +65,19 @@ export function inObservationsText(n) {
   const k = Math.abs(n) % 100;
   return `u ${n} ${n % 10 === 1 && k !== 11 ? 'opažanju' : 'opažanja'}`;
 }
+
+// Starost opažanja za izgled oznake na karti: danas (< 24 h), sedmica (< 7 dana), mjesec (< 30 dana), staro.
+export function observationAge(vrijeme, now = Date.now()) {
+  const d = (now - Number(vrijeme)) / 86400000;
+  if (!Number.isFinite(d)) return 'staro';
+  if (d < 1) return 'danas';
+  if (d < 7) return 'sedmica';
+  return d < 30 ? 'mjesec' : 'staro';
+}
+
+// Broj grla na oznaci: 1 se ne piše (emblem je dovoljan), preko 99 skraćeno.
+export function markerCountText(n) {
+  const k = Math.floor(Number(n));
+  if (!Number.isFinite(k) || k <= 1) return '';
+  return k > 99 ? '99+' : String(k);
+}

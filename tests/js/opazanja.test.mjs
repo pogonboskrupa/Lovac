@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount,
+  filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observationAge, markerCountText,
 } from '../../static/js/opazanja.js';
 
 const D = (s) => new Date(s).getTime();
@@ -58,4 +58,21 @@ test('vidio: moje opažanje sa imenom, podijeljeno tuđe sa imenom vlasnika', ()
   assert.equal(observerLabel({ tudji: false }, me, () => 'x'), 'ti (Adnan Đulić)');
   assert.equal(observerLabel({ tudji: false }, null, () => 'x'), 'ti');
   assert.equal(observerLabel({ tudji: true, vlasnik_id: 'u2' }, me, (id) => `ime-${id}`), 'ime-u2');
+});
+
+test('observationAge: danas / sedmica / mjesec / staro', () => {
+  const now = Date.parse('2026-11-24T12:00:00Z');
+  const dan = 86400000;
+  assert.equal(observationAge(now - 3 * 3600000, now), 'danas');
+  assert.equal(observationAge(now - 3 * dan, now), 'sedmica');
+  assert.equal(observationAge(now - 20 * dan, now), 'mjesec');
+  assert.equal(observationAge(now - 90 * dan, now), 'staro');
+  assert.equal(observationAge('x', now), 'staro');
+});
+
+test('markerCountText: 1 bez broja, preko 99 skraćeno', () => {
+  assert.equal(markerCountText(1), '');
+  assert.equal(markerCountText(undefined), '');
+  assert.equal(markerCountText(3), '3');
+  assert.equal(markerCountText(250), '99+');
 });

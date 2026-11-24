@@ -42,7 +42,13 @@ test('opažanje na GPS poziciji: vrijeme samo, broj, spol/dob, privatno', async 
   const [o] = await allObs(page);
   expect(o).toMatchObject({ vrsta: 'srna', broj: 3, kategorija: 'srndac', lat: 44.9012, lon: 16.1234, vidljivost: 'privatno', napomena: 'Na rubu šume' });
   expect(o.vrijeme).toBeGreaterThanOrEqual(t0 - 1000);
-  await expect(page.locator('path.op-tacka')).toHaveCount(1);
+  await expect(page.locator('.op-znak')).toHaveCount(1);
+  // oznaka: emblem vrste (znak iz Divljači), broj grla u uglu, tek upisano pulsira, meta za prst 44 px
+  const znak = page.locator('.op-znak');
+  await expect(znak.locator('.op-broj')).toHaveText('3');
+  await expect(znak).toHaveAttribute('data-starost', 'danas');
+  await expect(znak).toHaveClass(/op-novo/);
+  expect((await page.locator('.op-ikona').boundingBox()).height).toBeGreaterThanOrEqual(44);
 });
 
 test('"jednim dodirom": zadnja vrsta je unaprijed izabrana', async ({ page }) => {
@@ -87,7 +93,7 @@ test('pregled: filter po vrsti i periodu, zbir grla, gustina umjesto tačaka', a
 
   await page.locator('#op-prikaz [data-prikaz="gustina"]').click();
   await expect(page.locator('path.op-gustina').first()).toBeAttached();
-  await expect(page.locator('path.op-tacka')).toHaveCount(0);
+  await expect(page.locator('.op-znak')).toHaveCount(0);
   await page.locator('#op-na-karti').click();
   await expect(page.locator('path.op-gustina')).toHaveCount(0);
 });
@@ -126,8 +132,8 @@ test('opažanje na karti: kartica pokazuje ko je vidio i može se obrisati (drug
   await page.goto('/');
   await expect(page.locator('#gps-tacnost')).toHaveText('±6 m');
   await quickObs(page, { vrsta: 'srna', plus: 1 });
-  await expect(page.locator('path.op-tacka')).toHaveCount(1);
-  await page.locator('path.op-tacka').dispatchEvent('click');
+  await expect(page.locator('.op-znak')).toHaveCount(1);
+  await page.locator('.op-znak').dispatchEvent('click');
   const kartica = page.locator('.leaflet-popup .op-popup');
   await expect(kartica).toBeVisible();
   await expect(kartica).toContainText('Vidio: ti (Goran Lovac)');
@@ -137,7 +143,7 @@ test('opažanje na karti: kartica pokazuje ko je vidio i može se obrisati (drug
   expect((await allObs(page)).length).toBe(1);
   await del.click();
   await expect.poll(async () => (await allObs(page)).length).toBe(0);
-  await expect(page.locator('path.op-tacka')).toHaveCount(0);
+  await expect(page.locator('.op-znak')).toHaveCount(0);
   await expect(page.locator('.leaflet-popup')).toHaveCount(0);
 });
 
@@ -157,7 +163,7 @@ test('opažanje sa slikom: na karti je sličica, kartica pokazuje sliku; vidi se
   // zoom 15 ≈ 1:12 500: sličica umjesto tačke
   const slika = page.locator('.op-slika .slika-marker img');
   await expect(slika).toHaveCount(1);
-  await expect(page.locator('path.op-tacka')).toHaveCount(0);
+  await expect(page.locator('.op-znak')).toHaveCount(0);
   // dodir na sličicu: velika slika preko ekrana, crveni X, cijeli ekran; "Detalji" otvara karticu
   await page.locator('.op-slika').click();
   const pregled = page.locator('#slika-velika');

@@ -4,7 +4,7 @@ import { speciesBadge, sortObservations, groupByMonthOf, observationLight, light
 import { getSpisak, getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { newRecord, saveRecord, listRecords, deleteRecord, getRecord } from './zapisi.js';
 import { matchesQuery } from './pretraga.js';
-import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observerLabel, inObservationsText } from './opazanja.js';
+import { filterObservations, densityGrid, summarizeBySpecies, periodRange, clampCount, observerLabel, inObservationsText, observationAge, markerCountText } from './opazanja.js';
 import { cachedProfile } from './auth.js';
 import { savePhoto, deletePhoto, createPhotoStrip, photoUrl } from './foto.js';
 import { gateLayer } from './razmjer-prikaz.js';
@@ -115,6 +115,7 @@ export function initOpazanja(L, map) {
   // Gornja traka (koordinate, podloge) prekriva vrh karte: kartica se odmakne ispod nje.
   const POPUP_OPC = { minWidth: 220, autoPanPaddingTopLeft: [12, 140], autoPanPaddingBottomRight: [12, 90] };
   let layerSeq = 0;
+  let highlightId = null; // tek upisano opažanje: oznaka pulsira nekoliko sekundi
   const renderLayer = async () => {
     const seq = ++layerSeq;
     const vrste = await getSpisakAll('vrste');
@@ -146,9 +147,19 @@ export function initOpazanja(L, map) {
         }).on('click', () => openPhoto(o, vrste, details)).addTo(layer);
         return;
       }
-      L.circleMarker([o.lat, o.lon], {
-        radius: 6 + Math.min(o.broj || 1, 10) / 2, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.9, className: 'op-tacka',
-      }).bindPopup(() => popupFor(o, vrste), POPUP_OPC).addTo(layer);
+      // Emblem vrste (kao na kartici u spisku) + broj grla; starije opažanje je blijeđe, tek upisano pulsira.
+      const badge = speciesBadge(o.vrsta, lookupNaziv(vrste, o.vrsta));
+      const cnt = markerCountText(o.broj);
+      const novo = o.id === highlightId;
+      const aria = `${lookupNaziv(vrste, o.vrsta)} × ${o.broj || 1}`;
+      L.marker([o.lat, o.lon], {
+        icon: L.divIcon({
+          className: 'op-ikona',
+          html: `<div class="op-znak div-emblem${novo ? ' op-novo' : ''}" data-vrsta="${escapeHtml(o.vrsta)}" data-starost="${observationAge(o.vrijeme)}" style="background:${escapeHtml(badge.boja)}" aria-label="${escapeHtml(aria)}">${escapeHtml(badge.znak)}${cnt ? `<b class="op-broj">${cnt}</b>` : ''}</div>`,
+          iconSize: [44, 44], iconAnchor: [22, 22],
+        }),
+        keyboard: false,
+      }).bindPopup(() => popupFor(o, vrste), { ...POPUP_OPC, offset: [0, -12] }).addTo(layer);
     });
   };
 
@@ -253,6 +264,8 @@ export function initOpazanja(L, map) {
     }
     saveSoft(LAST_KEY, rec.vrsta);
     await closeForm(true);
+    highlightId = rec.id;
+    setTimeout(() => { highlightId = null; renderLayer().catch(() => {}); }, 6000);
     await renderLayer();
     toast('Opažanje sačuvano');
   });
