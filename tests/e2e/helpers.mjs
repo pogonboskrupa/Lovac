@@ -69,3 +69,11 @@ export async function twoFingers(page, { rotate = 0, scale = 1, cx = 180, cy = 4
     fire('pointerup', 2, 0, 0);
   }, { rotate, scale, cx, cy, r });
 }
+
+// Objekti se crtaju tek do 1:50 000 (v1.2.2); zadani pogled (z11) je cijelo lovište, pa testovi koji diraju
+// markere objekata počinju uvećani.
+export async function pogledBlizu(page, z = 15) {
+  await page.addInitScript((zoom) => {
+    if (!localStorage.getItem('lovac.pogled')) localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: zoom }));
+  }, z);
+}

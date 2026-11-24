@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles } from './helpers.mjs';
+import { serveTiles, pogledBlizu } from './helpers.mjs';
 
 const ME = { id: '00000000-0000-4000-8000-0000000000aa', ime: 'Ado', prezime: 'Adić', odobren: true, is_admin: false };
 const DRUG = { id: '00000000-0000-4000-8000-0000000000bb', ime: 'Drago', prezime: 'Drug', odobren: true, is_admin: false };
@@ -37,6 +37,7 @@ async function setup(page, server) {
     }
     return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
   });
+  await pogledBlizu(page);
   await page.addInitScript((me) => {
     localStorage.setItem('lovac.profil', JSON.stringify(me));
     localStorage.setItem('sb-lazni-auth-token', JSON.stringify({

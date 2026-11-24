@@ -22,6 +22,8 @@ const countPhotos = (page) => page.evaluate(() => new Promise((resolve) => {
 test.beforeEach(async ({ page }) => {
   await fakeServerConfigUnset(page);
   await serveTiles(page);
+  // objekti se crtaju tek do 1:50 000 (zadani pogled z11 je cijelo lovište)
+  await page.addInitScript(() => localStorage.setItem('lovac.pogled', JSON.stringify({ lat: 44.88, lon: 16.15, z: 15 })));
 });
 
 async function addObject(page, { vrsta = 'hraniliste', naziv = '', stanje = 'ispravno' } = {}) {
@@ -122,9 +124,16 @@ test('Vodi me do: udaljenost i pravac iz GPS-a, smanjuje se kad se približiš',
   await expect(page.locator('#nav-cilj')).toHaveText('Cilj');
   await expect(page.locator('#nav-udaljenost')).toHaveText(/^5\d\d m$/);
   await expect(page.locator('#nav-smjer')).toHaveText(/^J 1(79|80|81)°$/);
+  await expect(page.locator('#nav-eta')).toHaveText(/^≈ 1\d min hoda$/);
   const [o] = await allObjects(page);
+  await context.setGeolocation({ latitude: o.lat + 0.002, longitude: o.lon, accuracy: 5 });
+  await expect(page.locator('#nav-trend')).toHaveText('Približavaš se');
+  await expect(page.locator('#navigacija')).toHaveAttribute('data-stanje', 'daleko');
+  await page.locator('#btn-nav-karta').click();
+  await expect(page.locator('#navigacija')).toBeVisible();
   await context.setGeolocation({ latitude: o.lat + 0.00005, longitude: o.lon, accuracy: 5 });
   await expect(page.locator('#nav-udaljenost')).toHaveText('Stigao si');
+  await expect(page.locator('#navigacija')).toHaveAttribute('data-stanje', 'stigao');
   await page.locator('#btn-nav-kraj').click();
   await expect(page.locator('#navigacija')).toBeHidden();
 });
@@ -208,4 +217,19 @@ test('zvanični objekat: običan lovac ne vidi izbor i objekat ostaje privatan',
   expect(o.zvanicni).toBeFalsy();
   expect(o.vidljivost).toBe('privatno');
   await expect(page.locator('.obj-ikona[data-zvanicni="true"]')).toHaveCount(0);
+});
+
+test('objekti su manji i ne vide se na razmjeri većoj od 1:50 000', async ({ page }) => {
+  await page.goto('/');
+  await addObject(page, { vrsta: 'hraniliste', naziv: 'Bara' });
+  const ikona = page.locator('.obj-ikona');
+  await expect(ikona).toHaveCount(1);
+  const box = await ikona.boundingBox();
+  expect(box.width).toBeLessThanOrEqual(32);
+  await page.evaluate(() => window.__karta.setZoom(12, { animate: false }));
+  await expect(ikona).toHaveCount(0);
+  await page.evaluate(() => window.__karta.setZoom(13, { animate: false }));
+  await expect(ikona).toHaveCount(1);
+  await page.evaluate(() => window.__karta.setZoom(16, { animate: false }));
+  await expect(ikona).toHaveCount(1);
 });

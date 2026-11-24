@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.2.1';
+  const APP_VER = 'v1.2.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -289,21 +289,40 @@
     <button type="button" id="btn-koord-prikazi" aria-pressed="true">Prikaži visinu i koordinate</button>
   </div>
 
-  <div id="navigacija" class="navigacija" hidden>
-    <svg id="nav-strelica" class="nav-strelica" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 19 20 12 16 5 20Z"/></svg>
-    <div class="nav-tekst">
+  <div id="navigacija" class="navigacija" data-stanje="ceka" role="region" aria-label="Vodi me do" hidden>
+    <div class="nav-glava">
+      <span class="nav-oznaka">Vodi me do</span>
       <b id="nav-cilj"></b>
-      <span><b id="nav-udaljenost"></b> · <span id="nav-smjer"></span></span>
-      <span id="nav-napomena" class="sitno"></span>
+      <button id="btn-nav-zatvori" class="ikona-dugme" type="button" aria-label="Završi vođenje"><svg class="ic"><use href="#ic-close"/></svg></button>
     </div>
-    <button id="btn-nav-kraj" class="dugme" type="button">Kraj</button>
+    <div class="nav-tijelo">
+      <div class="nav-kompas" aria-hidden="true">
+        <span id="nav-sjever" class="nav-sjever">S</span>
+        <svg id="nav-strelica" class="nav-strelica" viewBox="0 0 24 24"><path d="M12 2 19 20 12 16 5 20Z"/></svg>
+      </div>
+      <div class="nav-tekst">
+        <b id="nav-udaljenost" class="nav-udaljenost"></b>
+        <span id="nav-smjer" class="nav-smjer"></span>
+        <span id="nav-eta" class="sitno"></span>
+        <span id="nav-trend" class="nav-trend" role="status"></span>
+      </div>
+    </div>
+    <span id="nav-napomena" class="sitno"></span>
+    <div class="nav-dugmad">
+      <button id="btn-nav-karta" class="dugme" type="button">Ja i cilj na karti</button>
+      <button id="btn-nav-kraj" class="dugme" type="button">Kraj</button>
+    </div>
   </div>
 
   <div id="lov-panel" class="lov-panel" hidden>
     <div class="lov-panel-red"><b id="lov-panel-naziv"></b><button id="btn-lov-panel-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori raspored"><svg class="ic"><use href="#ic-close"/></svg></button></div>
     <span id="lov-panel-uloga" class="sitno"></span>
     <p id="lov-kompas" class="lov-kompas" data-stanje="nepoznato" role="status"></p>
-    <button id="btn-lov-stan" class="dugme" type="button" hidden>Pregled stana</button>
+    <p id="lov-panel-prazno" class="lov-prazno" hidden>Raspored još nije postavljen — stanove postavlja vođa lova.</p>
+    <div class="red-dugmadi">
+      <button id="btn-lov-stan" class="dugme" type="button" hidden>Pregled stana</button>
+      <button id="btn-lov-panel-uredi" class="dugme glavno" type="button" hidden>Postavi stanove</button>
+    </div>
     <p class="sitno">Crveno = zabranjeno. Ne zamjenjuje pravila lova ni vođu lova; kompas može griješiti — provjeri pogledom.</p>
   </div>
   <div id="lov-postavi" class="dijalog dijalog-gore" hidden>
@@ -449,6 +468,7 @@
 
 <!--@ekran:sos-primljen-->
 <!--@ekran:ping-dijalog-->
+<!--@ekran:odaziv-dijalog-->
 
 <!--@ekran:sekcije-->
 

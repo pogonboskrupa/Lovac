@@ -35,26 +35,42 @@ export function rawScale(lat, zoom) {
 export function detailVisible(kind, lat, zoom, settings = normalizeMapDisplay(null)) {
   const s = normalizeMapDisplay(settings);
   if (!s[kind] || !s.razmjer) return true;
-  return rawScale(lat, zoom) <= s.razmjer * TOLERANCIJA;
+  return withinScale(lat, zoom, s.razmjer);
 }
 
 export function scaleChoiceLabel(n) {
   return n ? `1:${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}` : 'Uvijek';
 }
 
-// Sloj koji se skida sa karte kad je razmjer veći od granice. `active()` može isključiti ograničenje
-// (npr. gustina opažanja je pregled za cijelo lovište). Vraća funkciju za ponovnu provjeru.
-export function gateLayer(map, layer, kind, active = () => true) {
+// Lovački objekti: fiksna granica (odluka vlasnika) — pri pregledu cijelog lovišta ikone bi prekrile kartu.
+export const OBJEKTI_DO_RAZMJERA = 50000;
+export const withinScale = (lat, zoom, maxScale) => rawScale(lat, zoom) <= maxScale * TOLERANCIJA;
+
+const bindGate = (map, layer, visible) => {
   const sync = () => {
-    const c = map.getCenter();
-    const show = !active() || detailVisible(kind, c.lat, map.getZoom(), getMapDisplay());
+    const show = visible();
     if (show && !map.hasLayer(layer)) layer.addTo(map);
     else if (!show && map.hasLayer(layer)) map.removeLayer(layer);
     return show;
   };
   map.on('zoomend', sync);
-  document.addEventListener('prikaz:razmjer', sync);
   sync();
+  return sync;
+};
+
+// Sloj vidljiv samo do fiksne razmjere 1:maxScale (ne zavisi od postavke lovca).
+export function gateLayerAt(map, layer, maxScale) {
+  return bindGate(map, layer, () => withinScale(map.getCenter().lat, map.getZoom(), maxScale));
+}
+
+// Sloj koji se skida sa karte kad je razmjer veći od granice. `active()` može isključiti ograničenje
+// (npr. gustina opažanja je pregled za cijelo lovište). Vraća funkciju za ponovnu provjeru.
+export function gateLayer(map, layer, kind, active = () => true) {
+  const sync = bindGate(map, layer, () => {
+    const c = map.getCenter();
+    return !active() || detailVisible(kind, c.lat, map.getZoom(), getMapDisplay());
+  });
+  document.addEventListener('prikaz:razmjer', sync);
   return sync;
 }
 

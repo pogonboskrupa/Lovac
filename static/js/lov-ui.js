@@ -13,6 +13,7 @@ import { rangeLabel } from './istrazivac.js';
 import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { printHuntReport } from './uzivo-ui.js';
+import { canManageHunt } from './lov-traje.js';
 import { MOJE_SEKCIJE_KEY, cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { mySectionsAsLeader } from './sekcije.js';
 
@@ -90,6 +91,8 @@ export async function downloadHunts({ full: force = false } = {}) {
     const live = new Set(lovovi.map((l) => l.id));
     for (const id of cached.keys()) if (!live.has(id)) await idbDelete(STORE, id).catch(() => {});
   }
+  // novi lov sekcije → pitanje "Dolaziš?" (odaziv-ui)
+  document.dispatchEvent(new CustomEvent('lovovi:preuzeti'));
   return lovovi.length;
 }
 
@@ -143,6 +146,15 @@ export function initLov(L, map) {
       ? `${ULOGE[mine.uloga]}${mine.stan ? ` · stan ${mine.stan.broj}` : ''}${selectedStand && selectedStand !== mine.stan ? ` · prikazan stan ${selectedStand.broj}` : ''}`
       : (focus ? `Prikazan stan ${focus.broj}` : 'Nisi učesnik ovog lova');
     $('btn-lov-stan').hidden = !(focus && Number.isFinite(focus.lat));
+    const bezStanova = !shown.stanovi.some((s) => Number.isFinite(s.lat));
+    $('lov-panel-prazno').hidden = !bezStanova;
+    $('lov-kompas').hidden = bezStanova; // bez stanova nema šta provjeravati; ostaje samo poruka o rasporedu
+    $('btn-lov-panel-uredi').textContent = bezStanova ? 'Postavi stanove' : 'Uredi raspored';
+    // Ko upravlja lovom (admin, organizator, grupovođa sekcije) mora odavde moći postaviti raspored —
+    // lov napravljen iz taba sekcije nema stanova, a spisak "Organizuj" nije na putu do karte.
+    cachedSekcije().catch(() => ({})).then((ctx) => {
+      if (shown) $('btn-lov-panel-uredi').hidden = shown.lov.status === 'zavrsen' || !canManageHunt(shown, ctx, me());
+    });
     const k = $('lov-kompas');
     if (!focus) { k.dataset.stanje = 'nepoznato'; k.textContent = 'Nema stana za provjeru pravca'; return; }
     const st = headingCheck(currentHeading(), sectorsForStand(focus, shown).lukovi);
@@ -184,6 +196,7 @@ export function initLov(L, map) {
     document.dispatchEvent(new CustomEvent('lov:prikazan', { detail: { lov: null } }));
   };
   $('btn-lov-panel-zatvori').addEventListener('click', hideSchedule);
+  $('btn-lov-panel-uredi').addEventListener('click', () => { if (shown) openEditor(shown.id).catch((err) => console.warn('lov', err)); });
 
   // ---------------- spisak ----------------
   const canOrganizeAny = () => Boolean(me()?.is_admin) || loadJSON('lovac.vodja_revira', []).length > 0

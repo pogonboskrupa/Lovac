@@ -81,6 +81,9 @@ test('Istraživač pregled: nagib kruži i pamti se, bez HUD natpisa, centriraj 
   await expect(page.locator('#ist-hud')).toHaveCount(0);
   await page.locator('#btn-ist-ja').click();
   for (const b of await page.locator('#istrazivac-kontrole button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  // jedna kolona: svi su jedan ispod drugog (isti x, rastući y)
+  const kut = await Promise.all((await page.locator('#istrazivac-kontrole button').all()).map((b) => b.boundingBox()));
+  for (let i = 1; i < kut.length; i++) { expect(Math.abs(kut[i].x - kut[0].x)).toBeLessThan(2); expect(kut[i].y).toBeGreaterThan(kut[i - 1].y + 40); }
 });
 
 test('Istraživač: kontejner karte je veći (pločice i za okrenuti dio), jedan prst pomjera kartu od pozicije, ◎ vraća na mene', async ({ page }) => {

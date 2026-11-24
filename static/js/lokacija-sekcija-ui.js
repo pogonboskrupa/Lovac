@@ -2,6 +2,7 @@
 // opažanje, istraživač, kopiranje koordinata i dijeljenje lokacije sa sekcijom (na ograničeno vrijeme).
 
 import { getClient, cachedProfile } from './auth.js';
+import { setSharing } from './dijeli-znak.js';
 import { currentFix, onGpsUpdate } from './gps.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { connectionQuality } from './net.js';
@@ -100,6 +101,7 @@ export function initMojaLokacija(L, map) {
     // značka na vrhu ploče: dijeljenje sa sekcijom se vidi bez listanja do dna
     const znacka = $('lok-sek-znacka');
     znacka.hidden = !sh;
+    setSharing('sekcija', Boolean(sh));
     if (sh) znacka.textContent = `Dijeliš sa sekcijom do ${untilText(sh.do)}`;
     const list = sectionShareList(rows, me()?.id, memberName, currentFix());
     $('lok-sek-broj').textContent = list.length ? `(${list.length})` : '';
@@ -141,9 +143,10 @@ export function initMojaLokacija(L, map) {
     }
   };
 
-  const stopSending = () => { clearInterval(sendTimer); sendTimer = null; };
+  const stopSending = () => { clearInterval(sendTimer); sendTimer = null; setSharing('sekcija', false); };
   const armSending = () => {
     stopSending();
+    setSharing('sekcija', true);
     sendTimer = setInterval(sendNow, shareIntervalMs(getShareSettings().interval));
     sendNow();
   };

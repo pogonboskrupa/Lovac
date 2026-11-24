@@ -43,6 +43,7 @@ import { initPregled } from './pregled-ui.js';
 import { initStatistika } from './statistika-ui.js';
 import { initPrijave } from './prijave-ui.js';
 import { initPing } from './ping-ui.js';
+import { initOdaziv } from './odaziv-ui.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
 import { initMeni } from './meni-ui.js';
 import { initStan } from './stan-ui.js';
@@ -128,6 +129,7 @@ function enter(screen) {
       ['statistika', () => initStatistika()],
       ['prijave', () => initPrijave()],
       ['ping', () => initPing()],
+      ['odaziv', () => initOdaziv()],
       ['slike', () => initSlike(globalThis.L, map)],
       ['dojave', () => initDojave(globalThis.L, map)],
       ['slike-lovcima', () => initSlikeLovcima(globalThis.L, map)],

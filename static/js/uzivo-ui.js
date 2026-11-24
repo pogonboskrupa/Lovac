@@ -21,6 +21,7 @@ import { sosText, smsNumbers, newSosSince, huntReportData } from './uzivo.js';
 import { toast, wireTwoTap, escapeHtml, registerBackHandler } from './ui.js';
 import { cachedSekcije } from './sekcije-ui.js';
 import { canManageHunt } from './lov-traje.js';
+import { setSharing } from './dijeli-znak.js';
 import { todayIso } from './objekti.js';
 
 const NAPUSTENI_KEY = 'lovac.lov.napusteni';
@@ -180,8 +181,10 @@ export function initUzivo(L, map) {
     document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [] } }));
     if (channel) { getClient()?.removeChannel(channel); channel = null; }
     $('uzivo').hidden = true;
+    setSharing('lov', false);
     document.dispatchEvent(new CustomEvent('lov:aktivan', { detail: { lov: null } }));
   };
+  const syncSharing = () => setSharing('lov', Boolean(lov && lov.lov.status === 'u_toku' && getShareSettings().on && iAmParticipant()));
 
   const arm = () => {
     clearInterval(timer);
@@ -198,6 +201,7 @@ export function initUzivo(L, map) {
     loadJSON(`lovac.sos.vidjeni.${lov.id}`, []).forEach((id) => seenSos.add(id));
     await refreshPhones();
     arm();
+    syncSharing();
     tick();
     try {
       channel = getClient()?.channel(`sos-${lov.id}`)
@@ -266,6 +270,7 @@ export function initUzivo(L, map) {
   // novi/pokrenut lov (npr. iz "+" → Dodaj lov): ne čeka provjeru od 60 s
   document.addEventListener('lovovi:promjena', () => { autoPick(); });
   document.addEventListener('lokacija:postavke', async (e) => {
+    syncSharing();
     if (lov) {
       arm();
       if (!e.detail.on) { try { await removeMyPosition(lov.id); } catch (err) { console.warn('uklanjanje pozicije', err.message); } }

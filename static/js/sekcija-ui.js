@@ -29,6 +29,7 @@ import { canPing } from './ping.js';
 import { fetchNew, nextCursor } from './inkrement.js';
 import { organizableSections, lastHuntPreset } from './lov-traje.js';
 import { sendPing } from './ping-ui.js';
+import { answersSummary } from './odaziv.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
 const NOTIF_KEY = 'lovac.sekcija.obavijest';
@@ -57,6 +58,7 @@ export function initSekcijaEkran(L, map) {
   let poruke = [];
   let vrste = [];
   let extra = { pozicije: [], odstrel: [], sos: [], lovId: null }; // uživo podaci tekućeg lova
+  let odazivi = { lovId: null, rows: [] }; // "Dolaziš?" odgovori za grupovođu (034); čita se samo dok je tab otvoren
   let selectedId = loadJSON(SEL_KEY, null);
   let lastHuntRefresh = 0;
   let lastListsRefresh = 0;
@@ -196,6 +198,13 @@ export function initSekcijaEkran(L, map) {
     extra = { pozicije, odstrel, sos, lovId: id };
   };
 
+  const pullOdazivi = async (s, zapis) => {
+    const st = myStatus(s, ctx.clanovi, me()?.id, Boolean(me()?.is_admin), ctx.lovocuvari);
+    if (!zapis || !['grupovodja', 'admin'].includes(st) || zapis.lov.status === 'zavrsen') { odazivi = { lovId: null, rows: [] }; return; }
+    const { data, error } = await getClient().from('lov_odazivi').select('korisnik_id,odgovor').eq('lov_id', zapis.lov.id);
+    odazivi = { lovId: zapis.lov.id, rows: error ? [] : data || [] }; // bez migracije 034: prazno
+  };
+
   const refresh = async ({ withHunts = false } = {}) => {
     if (!online()) return;
     try {
@@ -214,6 +223,7 @@ export function initSekcijaEkran(L, map) {
       await pullMessages();
       const s = selected();
       if (s) await pullLive(currentHunt(lovovi, s.id)?.zapis);
+      if (s && isOpen()) await pullOdazivi(s, currentHunt(lovovi, s.id)?.zapis);
       $('sk-status').textContent = '';
     } catch (err) {
       $('sk-status').textContent = `Nema veze sa serverom — prikazani su sačuvani podaci (${err.message})`;
@@ -239,6 +249,10 @@ export function initSekcijaEkran(L, map) {
     if (lov.status === 'planiran') html += `<button type="button" class="dugme glavno" data-akcija="lov-pokreni" data-lov="${escapeHtml(lov.id)}">Pokreni lov</button>`;
     if (lov.status === 'u_toku') html += `<button type="button" class="dugme" data-akcija="lov-zavrsi" data-lov="${escapeHtml(lov.id)}">Završi lov</button>`;
     const addable = addableMembers(s, ctx.clanovi, ucesnici);
+    if (odazivi.lovId === lov.id) {
+      const sum = answersSummary(odazivi.rows, memberName);
+      html += `<div class="odaziv-odgovori" id="sk-odazivi"><b>${escapeHtml(sum.tekst)}</b>${sum.ne.length ? `<div class="sitno">Ne dolaze: ${sum.ne.map(escapeHtml).join(', ')}</div>` : ''}</div>`;
+    }
     html += `<h4>Prisutni (${ucesnici.length})</h4><ul class="spisak" data-prisutni>${ucesnici.map((u) => `<li class="clan-red" data-uid="${escapeHtml(u.korisnik_id)}">
         <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(memberName(u.korisnik_id)))}</span>
         <span class="clan-tekst"><b>${escapeHtml(memberName(u.korisnik_id))}</b>${u.samoprijava ? ' <span class="sitno">· prijavio se sam</span>' : ''}</span>

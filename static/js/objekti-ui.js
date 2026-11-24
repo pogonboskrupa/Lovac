@@ -16,6 +16,7 @@ import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { cachedProfile } from './auth.js';
 import { cachedSekcije } from './sekcije-ui.js';
 import { viewerRole } from './pregled.js';
+import { gateLayerAt, OBJEKTI_DO_RAZMJERA } from './razmjer-prikaz.js';
 
 const STORE = 'objekti';
 const $ = (id) => document.getElementById(id);
@@ -41,7 +42,8 @@ const renderPhotos = (container, ids, removable) => photos.render(container, ids
 const releaseUrls = () => photos.release();
 
 export function initObjekti(L, map) {
-  const layer = L.layerGroup().addTo(map);
+  const layer = L.layerGroup();
+  gateLayerAt(map, layer, OBJEKTI_DO_RAZMJERA);
   const vjetar = initVjetar(L, map);
   const form = $('forma-objekt');
   const sheet = $('objekt-forma');
@@ -57,7 +59,7 @@ export function initObjekti(L, map) {
     vrsteAll = await getSpisakAll('objekat_vrste');
     layer.clearLayers();
     for (const o of await listRecords(STORE)) {
-      const icon = L.divIcon({ className: 'obj-marker', html: markerHtml(vrsteAll, o), iconSize: [40, 40], iconAnchor: [20, 20] });
+      const icon = L.divIcon({ className: 'obj-marker', html: markerHtml(vrsteAll, o), iconSize: [44, 44], iconAnchor: [22, 22] });
       L.marker([o.lat, o.lon], { icon, title: o.naziv, keyboard: false })
         .on('click', () => openDetail(o.id))
         .addTo(layer);

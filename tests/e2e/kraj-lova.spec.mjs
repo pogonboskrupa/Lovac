@@ -27,6 +27,7 @@ test('član (nije vođa): Kraj → Izađi iz lova na ovom telefonu (drugi dodir)
   await sim.run(90000);
   await seedSekcije(page, sim.db);
   await expect(page.locator('#uzivo')).toBeVisible();
+  await expect(page.locator('#btn-moja-lokacija')).toHaveClass(/dijeli-lokaciju/); // dijelim poziciju u lovu
   await page.locator('#btn-uzivo-kraj').click();
   await expect(page.locator('#uzivo-kraj')).toBeVisible();
   await expect(page.locator('#btn-uzivo-zavrsi')).toBeHidden(); // član ne završava lov za sve
@@ -34,6 +35,7 @@ test('član (nije vođa): Kraj → Izađi iz lova na ovom telefonu (drugi dodir)
   await expect(page.locator('#uzivo')).toBeVisible(); // prvi dodir samo pita
   await page.locator('#btn-uzivo-izadji').click();
   await expect(page.locator('#uzivo')).toBeHidden();
+  await expect(page.locator('#btn-moja-lokacija')).not.toHaveClass(/dijeli-lokaciju/);
   await expect.poll(() => sim.stat.get('DELETE lov_pozicije') || 0, { timeout: 10000 }).toBeGreaterThan(0);
   expect(sim.db.lovovi[0].status).toBe('u_toku'); // za ostale lov traje
   const poslano = sim.stat.get('POST lov_pozicije') || 0;

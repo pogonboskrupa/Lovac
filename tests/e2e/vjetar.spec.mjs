@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
+import { serveTiles, fakeServerConfigUnset, pogledBlizu } from './helpers.mjs';
+
+test.beforeEach(async ({ page }) => { await pogledBlizu(page); });
 
 test.use({ timezoneId: 'Europe/Sarajevo' });
 

@@ -50,7 +50,7 @@ export function makeWorld({ uToku = true, historija = 0, poruka = 0, dogadjaja =
     }
   }
   return { korisnici, reviri: [{ id: ID(100), naziv: 'Krupa', aktivno: true }], grupovodje: [], revir_lovocuvari: [], sekcije, sekcija_clanovi,
-    lovovi, lov_ucesnici, lov_pozicije: [], lov_tragovi, stanovi: [], sektori: [], sos: [], poruke, lov_dogadjaji, pos };
+    lovovi, lov_ucesnici, lov_pozicije: [], lov_tragovi, stanovi: [], sektori: [], sos: [], poruke, lov_dogadjaji, lov_odazivi: [], pos };
 }
 
 const RECV_TABLES = new Set(['lov_tragovi', 'poruke', 'lov_dogadjaji', 'dojave']);

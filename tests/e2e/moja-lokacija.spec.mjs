@@ -129,8 +129,13 @@ test('član dijeli lokaciju sa sekcijom na izabrano vrijeme i prekida je (red se
   const hours = (Date.parse(row.do_) - before) / 3600000;
   expect(hours).toBeGreaterThan(3.9);
   expect(hours).toBeLessThan(4.1);
+  // dok dijeli, dugme "Moja lokacija" na karti trepće tirkizno-crveno i blago podrhtava
+  const dugme = page.locator('#btn-moja-lokacija');
+  await expect(dugme).toHaveClass(/dijeli-lokaciju/);
+  expect(await dugme.evaluate((b) => getComputedStyle(b).animationName)).toContain('dijeli-boja');
   await page.locator('#lok-sek-prekidac').click();
   await expect(page.locator('#lok-sek-prekidac')).toContainText('Počni dijeliti');
+  await expect(dugme).not.toHaveClass(/dijeli-lokaciju/);
   await expect.poll(() => server.db.sekcija_lokacije.length).toBe(0);
   expect(await page.evaluate(() => localStorage.getItem('lovac.sekcija_dijeljenje'))).toBe('null');
 });
