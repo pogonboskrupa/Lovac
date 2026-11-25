@@ -62,3 +62,27 @@ export function sendStateText(st, now = Date.now()) {
   if (st.stanje === 'greska') return st.poruka || 'Slanje nije uspjelo.';
   return 'Šaljem…';
 }
+
+export const ODBIJENO_KEY = 'lovac.izabrani_odbijeno';   // { vlasnikId: do_ } — "Ne sada" važi za TO dijeljenje, novo se ponovo nudi
+export const OBAVIJESTENO_KEY = 'lovac.izabrani_obavijesteno'; // { vlasnikId: do_ } — obavijest se šalje jednom po dijeljenju
+
+// Ko dijeli lokaciju sa mnom, a ja s njim ne dijelim (ponuda "Dijeli i ti"). Samo aktivna dijeljenja; "Ne sada" se pamti
+// po dijeljenju (`do_`), pa novo dijeljenje istog lovca ponovo izaziva ponudu.
+export function reciprocalOffers(rows = [], myId, nameOf, mySharingIds = [], dismissed = {}, now = Date.now()) {
+  return rows
+    .filter((r) => r.primalac_id === myId && r.vlasnik_id !== myId && Date.parse(r.do_) > now)
+    .filter((r) => !mySharingIds.includes(r.vlasnik_id) && dismissed?.[r.vlasnik_id] !== r.do_)
+    .map((r) => ({ id: r.vlasnik_id, ime: nameOf(r.vlasnik_id), do: r.do_ }))
+    .sort((a, b) => a.ime.localeCompare(b.ime, 'bs'));
+}
+
+export function offerBadgeText(n) {
+  return n > 9 ? '9+' : String(n);
+}
+
+export function offerNotice(offers) {
+  if (!offers.length) return '';
+  const names = offers.slice(0, 2).map((o) => o.ime).join(' i ');
+  const more = offers.length > 2 ? ` i još ${offers.length - 2}` : '';
+  return `${names}${more} ${offers.length === 1 ? 'dijeli' : 'dijele'} lokaciju sa tobom. Otvori Moju lokaciju da podijeliš i ti.`;
+}

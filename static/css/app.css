@@ -1709,3 +1709,12 @@ svg[hidden] { display: none; }
 .kor-tekst b { display: inline; }
 .kor-glava .kor-tekst { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 #korisnici-status:empty { display: none; }
+
+/* Ponuda "Dijeli i ti" i značka na dugmetu Moja lokacija */
+#btn-moja-lokacija { position: relative; }
+.lok-znacka { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; background: #e41e3f; color: #fff; font-size: 13px; font-weight: 800; line-height: 22px; text-align: center; border: 2px solid var(--pozadina, #111); }
+.lok-ponude { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.lok-ponuda { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px; border-radius: 12px; background: var(--povrsina); border: 2px solid #e41e3f; }
+.lok-ponuda-tekst { flex: 1 1 160px; min-width: 0; }
+.lok-ponuda-dugmad { display: flex; gap: 8px; flex: 1 1 100%; }
+.lok-ponuda-dugmad .dugme { flex: 1; }

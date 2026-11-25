@@ -73,3 +73,26 @@ test('stanje slanja izabranima: lovac vidi kad lokacija NE odlazi (GPS, veza, se
   assert.match(sendStateText({ stanje: 'veza' }, now), /Nema veze/);
   assert.equal(sendStateText({ stanje: 'greska', poruka: 'X' }, now), 'X');
 });
+
+test('ponuda "Dijeli i ti": ko dijeli sa mnom, a ja s njim ne; "Ne sada" važi samo za to dijeljenje', async () => {
+  const { reciprocalOffers, offerBadgeText, offerNotice } = await import('../../static/js/lokacija-izabrani.js');
+  const now = Date.parse('2026-11-25T12:00:00Z');
+  const future = '2026-11-25T14:00:00Z';
+  const rows = [
+    { vlasnik_id: 'a', primalac_id: 'me', do_: future },
+    { vlasnik_id: 'b', primalac_id: 'me', do_: future },
+    { vlasnik_id: 'c', primalac_id: 'me', do_: '2026-11-25T11:00:00Z' }, // isteklo
+    { vlasnik_id: 'd', primalac_id: 'neko-drugi', do_: future },        // nije za mene
+    { vlasnik_id: 'e', primalac_id: 'me', do_: future },
+  ];
+  const nameOf = (id) => ({ a: 'Ado', b: 'Bego', e: 'Esad' })[id] || id;
+  const offers = reciprocalOffers(rows, 'me', nameOf, ['b'], { e: future }, now);
+  assert.deepEqual(offers.map((o) => o.id), ['a']); // b: već dijelim s njim, e: odbijeno, c: isteklo, d: nije meni
+  // novo dijeljenje istog lovca (drugi do_) se ponovo nudi
+  assert.deepEqual(reciprocalOffers(rows, 'me', nameOf, [], { e: '2026-11-25T10:00:00Z' }, now).map((o) => o.id), ['a', 'b', 'e']);
+  assert.equal(offerBadgeText(3), '3');
+  assert.equal(offerBadgeText(12), '9+');
+  assert.match(offerNotice(offers), /Ado dijeli lokaciju sa tobom/);
+  assert.match(offerNotice([{ ime: 'A' }, { ime: 'B' }, { ime: 'C' }]), /A i B i još 1 dijele/);
+  assert.equal(offerNotice([]), '');
+});

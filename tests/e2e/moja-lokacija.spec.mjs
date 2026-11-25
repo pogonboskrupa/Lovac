@@ -256,3 +256,47 @@ test('dijeljenje sa izabranim: server bez tabele (migracija 037 nije pokrenuta) 
   await page.locator('#lok-iz-rezultati [data-akcija="dodaj"]').click();
   await expect(page.locator('#lok-iz-prekidac')).toBeDisabled();
 });
+
+test('neko dijeli lokaciju sa mnom: značka na dugmetu Moja lokacija, ponuda "Dijeli i ti" šalje i moju lokaciju, "Ne sada" je skriva', async ({ page }) => {
+  const server = makeServer();
+  const dalje = new Date(Date.now() + 3600000).toISOString();
+  server.db.lokacije_izabranih = [{ vlasnik_id: GV.id, primalac_id: LOVAC.id, lat: 44.8805, lon: 16.15, t: new Date().toISOString(), do_: dalje }];
+  await setup(page, server, LOVAC);
+  await page.goto('/');
+  await expect(page.locator('#lok-znacka')).toBeHidden(); // nema izmišljene značke dok se ne preuzme
+  await page.locator('#btn-moja-lokacija').click();
+  await expect(page.locator('#lok-ploca')).toBeVisible();
+  await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(1);
+  await expect(page.locator('#lok-iz-ponude')).toContainText('Goran Grupovođa dijeli lokaciju sa tobom');
+  await expect(page.locator('#lok-znacka')).toHaveText('1');
+  // sistemska obavijest je poslana jednom
+  expect(await page.evaluate(() => window.__notif.filter((n) => /dijeli lokaciju sa tobom/.test(n.t)).length)).toBe(1);
+
+  await page.locator('#lok-iz-ponude [data-akcija="dijeli-i-ti"]').click();
+  await expect.poll(() => server.db.lokacije_izabranih.some((r) => r.vlasnik_id === LOVAC.id && r.primalac_id === GV.id)).toBe(true);
+  await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(0);
+  await expect(page.locator('#lok-znacka')).toBeHidden();
+  await expect(page.locator('#lok-iz-izabrani .lok-iz-cip')).toContainText('Goran');
+  await expect(page.locator('#btn-moja-lokacija')).toHaveClass(/dijeli-lokaciju/);
+});
+
+test('ponuda "Dijeli i ti": "Ne sada" se pamti', async ({ page }) => {
+  const server = makeServer();
+  const dalje = new Date(Date.now() + 3600000).toISOString();
+  server.db.lokacije_izabranih = [{ vlasnik_id: GV.id, primalac_id: LOVAC.id, lat: 44.88, lon: 16.15, t: new Date().toISOString(), do_: dalje }];
+  await setup(page, server, LOVAC);
+  await openLok(page);
+  await page.screenshot({ path: '/tmp/ponuda-ploca.png' });
+  await page.locator('#lok-ploca [data-zatvori], #btn-lok-zatvori').first().click();
+  await expect(page.locator('#lok-znacka')).toBeVisible(); // značka ostaje na dugmetu i kad je ploča zatvorena
+  await page.screenshot({ path: '/tmp/ponuda-dugme.png' });
+  await page.locator('#btn-moja-lokacija').click();
+  await page.locator('#lok-iz-ponude [data-akcija="ne-sada"]').click();
+  await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(0);
+  await expect(page.locator('#lok-znacka')).toBeHidden();
+  expect(server.db.lokacije_izabranih.some((r) => r.vlasnik_id === LOVAC.id)).toBe(false); // ništa se ne šalje
+  await page.reload();
+  await page.locator('#btn-moja-lokacija').click();
+  await expect(page.locator('#lok-iz-lista')).toContainText('Goran Grupovođa'); // i dalje ga vidim na spisku
+  await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(0);
+});

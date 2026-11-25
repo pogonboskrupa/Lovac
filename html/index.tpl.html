@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.3.6';
+  const APP_VER = 'v1.3.7';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -198,6 +198,7 @@
       <button id="btn-lok-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
     </header>
     <span id="lok-sek-znacka" class="lok-sek-znacka" hidden></span>
+    <div id="lok-iz-ponude" class="lok-ponude" role="region" aria-label="Lovci koji dijele lokaciju sa tobom" hidden></div>
     <div class="lok-mreza" id="lok-akcije">
       <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj</span></button>
       <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>
@@ -376,7 +377,7 @@
       </div>
       <div class="desna-kolona">
         <button id="btn-dodaj" class="ikona-dugme glavno" type="button" aria-label="Dodaj na kartu"><svg class="ic"><use href="#ic-plus"/></svg></button>
-        <button id="btn-moja-lokacija" class="ikona-dugme krug veliki" type="button" aria-label="Moja lokacija"><svg class="ic"><use href="#ic-locate"/></svg></button>
+        <button id="btn-moja-lokacija" class="ikona-dugme krug veliki" type="button" aria-label="Moja lokacija"><svg class="ic"><use href="#ic-locate"/></svg><span id="lok-znacka" class="lok-znacka" aria-hidden="true" hidden></span></button>
       </div>
     </div>
     <div class="donji-dio">

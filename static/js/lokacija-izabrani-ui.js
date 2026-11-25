@@ -15,7 +15,7 @@ import { shareIntervalMs, initialsOf } from './lokacija.js';
 import { SHARE_DURATIONS, shareUntil, untilText } from './lokacija-sekcija.js';
 import {
   IZABRANI_KEY, IZABRANI_UKLANJANJE_KEY, MAX_PRIMALACA, searchHunters, displayName, activeSelectedShare, addRecipient, removeRecipient,
-  shareRows, receivedShares, validRecipients, sendStateText,
+  shareRows, receivedShares, validRecipients, sendStateText, reciprocalOffers, offerBadgeText, offerNotice, ODBIJENO_KEY, OBAVIJESTENO_KEY,
 } from './lokacija-izabrani.js';
 import { toast, escapeHtml } from './ui.js';
 
@@ -138,6 +138,8 @@ export function initLokacijaIzabrani(L, map) {
       return;
     }
     drawMarkers();
+    renderOffers();
+    notifyNewOffers();
     if (isOpen()) renderReceived();
   };
 
@@ -183,9 +185,52 @@ export function initLokacijaIzabrani(L, map) {
         <button type="button" class="dugme" data-akcija="na-karti">Na karti</button></li>`).join('')
       || '<li class="sitno">Niko ne dijeli lokaciju samo sa tobom.</li>';
   };
-  const render = () => { renderResults(); renderChips(); renderShare(); renderReceived(); };
+  // ---------- ponuda "Dijeli i ti" (neko dijeli lokaciju sa mnom, a ja s njim ne) ----------
+  const currentOffers = () => reciprocalOffers(received, me()?.id, memberName, sharing()?.ids || [], loadJSON(ODBIJENO_KEY, {}));
+  const renderOffers = () => {
+    const offers = currentOffers();
+    const badge = $('lok-znacka');
+    if (badge) { badge.hidden = !offers.length; badge.textContent = offerBadgeText(offers.length); }
+    const box = $('lok-iz-ponude');
+    if (!box) return;
+    box.hidden = !offers.length;
+    box.innerHTML = offers.map((o) => `<div class="lok-ponuda" data-uid="${escapeHtml(o.id)}" data-do="${escapeHtml(o.do)}">
+        <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(o.ime))}</span>
+        <span class="lok-ponuda-tekst"><b>${escapeHtml(o.ime)}</b> dijeli lokaciju sa tobom. Podijeliti i ti sa njim?</span>
+        <span class="lok-ponuda-dugmad"><button type="button" class="dugme glavno" data-akcija="dijeli-i-ti">Dijeli i ti</button><button type="button" class="dugme" data-akcija="ne-sada">Ne sada</button></span>
+      </div>`).join('');
+  };
+  // Obavijest (toast + sistemska obavijest) jednom po dijeljenju, i kad je ploča zatvorena; samo dok je aplikacija živa.
+  const notifyNewOffers = () => {
+    const seen = loadJSON(OBAVIJESTENO_KEY, {});
+    const fresh = currentOffers().filter((o) => seen[o.id] !== o.do);
+    if (!fresh.length) return;
+    saveSoft(OBAVIJESTENO_KEY, { ...seen, ...Object.fromEntries(fresh.map((o) => [o.id, o.do])) });
+    const text = offerNotice(fresh);
+    toast(text, 7000);
+    globalThis.AndroidNotif?.prikazi?.('Lokacija', text);
+  };
+  const acceptOffer = (id) => {
+    if (!members().some((m) => m.id === id)) { toast('Taj lovac nije u spisku članova društva (osvježi spisak kad imaš internet)'); return; }
+    const next = addRecipient(ids(), id);
+    if (sharing()) { setIds(next); sendNow(); } else {
+      draft = next; saveSoft(DRAFT_KEY, next);
+      saveSoft(IZABRANI_KEY, { ids: next, do: shareUntil(duration) });
+      armSending();
+    }
+    toast(`Sada dijeliš lokaciju i sa: ${memberName(id)}`);
+    render();
+  };
+  const render = () => { renderResults(); renderChips(); renderShare(); renderReceived(); renderOffers(); };
 
   // ---------- radnje ----------
+  $('lok-iz-ponude')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija]');
+    const row = b?.closest('[data-uid]');
+    if (!row) return;
+    if (b.dataset.akcija === 'dijeli-i-ti') acceptOffer(row.dataset.uid);
+    else if (b.dataset.akcija === 'ne-sada') { saveSoft(ODBIJENO_KEY, { ...loadJSON(ODBIJENO_KEY, {}), [row.dataset.uid]: row.dataset.do }); renderOffers(); }
+  });
   $('lok-iz-trazi').addEventListener('input', (e) => { query = e.target.value; renderResults(); });
   $('lok-iz-rezultati').addEventListener('click', (e) => {
     const b = e.target.closest('[data-akcija="dodaj"]');
