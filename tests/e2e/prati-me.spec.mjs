@@ -16,17 +16,17 @@ const drag = async (page, dx) => {
   await page.waitForTimeout(500);
 };
 
-test('Prati me: manji pomak karte se vraća na poziciju, praćenje se gasi tek kad pozicija pređe 80 % puta do ruba', async ({ page }) => {
+test('Prati me: manji pomak karte se vraća na poziciju, praćenje se gasi tek kad pozicija pređe 50 % puta do ruba', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#karta .leaflet-tile-loaded').first()).toBeAttached();
   await lok(page, '#btn-prati');
   await expect(page.locator('#btn-prati')).toHaveAttribute('aria-pressed', 'true');
 
-  // 70 px od 180 px (≈ 39 %): praćenje ostaje uključeno
-  await drag(page, 70);
+  // 60 px od 180 px (≈ 33 %): praćenje ostaje uključeno
+  await drag(page, 60);
   await expect(page.locator('#btn-prati')).toHaveAttribute('aria-pressed', 'true');
 
-  // 160 px od 180 px (≈ 89 %): praćenje se gasi
-  await drag(page, 160);
+  // 130 px od 180 px (≈ 72 %): praćenje se gasi
+  await drag(page, 130);
   await expect(page.locator('#btn-prati')).toHaveAttribute('aria-pressed', 'false');
 });

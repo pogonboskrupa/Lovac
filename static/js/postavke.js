@@ -6,6 +6,7 @@ import { cachedProfile, changePin } from './auth.js';
 import { isServerConfigured } from './config.js';
 import { connectionDetail } from './net.js';
 import { checkForUpdate, installUpdate } from './update.js';
+import { AZUR_EVENT } from './update-stanje.js';
 import { refreshAdminVisibility } from './admin.js';
 import { cachedSekcije } from './sekcije-ui.js';
 import { setVelicina } from './prikaz.js';
@@ -281,22 +282,27 @@ function wireUpdateButton(appVer) {
   // Ako sistemski dijalog instalacije nije izašao (ili je zatvoren), preuzeti APK se instalira bez novog preuzimanja.
   const installDownloaded = el('btn-instaliraj-preuzeto');
   installDownloaded.addEventListener('click', () => globalThis.AndroidUpdate?.instalirajPreuzeto?.());
-  globalThis.__updateStatus = (text) => { el('azur-preuzimanje').textContent = text; };
-  globalThis.__updateNapredak = (pct) => {
-    el('azur-napredak').value = Number(pct) || 0;
-    el('azur-preuzimanje').textContent = `Preuzimam zadnju verziju… ${pct} %`;
-  };
-  globalThis.__updatePreuzeto = () => {
-    el('azur-napredak').hidden = true;
-    el('azur-preuzimanje').textContent = 'Nova verzija je preuzeta na telefon. Potvrdi instalaciju (podaci ostaju).';
-    installDownloaded.hidden = !globalThis.AndroidUpdate?.instalirajPreuzeto;
-    doneDownload();
-  };
-  globalThis.__updateGreska = (msg) => {
-    el('azur-napredak').hidden = true;
-    el('azur-preuzimanje').textContent = msg;
-    doneDownload();
-  };
+  // Isti događaji kao u traci "Nova verzija" na mapi (update-stanje.js)
+  document.addEventListener(AZUR_EVENT, (e) => {
+    const d = e.detail || {};
+    if (d.vrsta === 'status') el('azur-preuzimanje').textContent = d.text;
+    if (d.vrsta === 'napredak') {
+      el('azur-napredak').hidden = false;
+      el('azur-napredak').value = d.pct;
+      el('azur-preuzimanje').textContent = `Preuzimam zadnju verziju… ${Math.round(d.pct)} %`;
+    }
+    if (d.vrsta === 'preuzeto') {
+      el('azur-napredak').hidden = true;
+      el('azur-preuzimanje').textContent = 'Nova verzija je preuzeta na telefon. Potvrdi instalaciju (podaci ostaju).';
+      installDownloaded.hidden = !globalThis.AndroidUpdate?.instalirajPreuzeto;
+      doneDownload();
+    }
+    if (d.vrsta === 'greska') {
+      el('azur-napredak').hidden = true;
+      el('azur-preuzimanje').textContent = d.text;
+      doneDownload();
+    }
+  });
   install.addEventListener('click', startDownload);
   el('btn-preuzmi-zadnju').addEventListener('click', startDownload);
 }

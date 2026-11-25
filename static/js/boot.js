@@ -35,6 +35,7 @@ import { initDojave } from './dojave-ui.js';
 import { initSlikeLovcima } from './slike-lovcima-ui.js';
 import { initArhivaKarta } from './arhiva-karta-ui.js';
 import { initMojaLokacija } from './lokacija-sekcija-ui.js';
+import { initLokacijaIzabrani } from './lokacija-izabrani-ui.js';
 import { initPas } from './pas-ui.js';
 import { initVelicina } from './prikaz.js';
 import { initTraka } from './traka.js';
@@ -64,6 +65,7 @@ import { hasAppAccess, inTrial, trialBannerText, waitingText } from './probni.js
 import { initLovDanas } from './lov-danas-ui.js';
 import { initMapDisplaySettings } from './razmjer-prikaz.js';
 import { checkForUpdate, installUpdate, shouldUseServiceWorker } from './update.js';
+import { initUpdateBridge, AZUR_EVENT, barView, startView } from './update-stanje.js';
 
 const APP_VER = globalThis.APP_VER || 'v0.0.0';
 let mapReady = false;
@@ -123,6 +125,7 @@ function enter(screen) {
       ['novi-lovac', () => initNoviLovac()],
       ['pas', () => initPas(globalThis.L, map)],
       ['moja-lokacija', () => initMojaLokacija(globalThis.L, map)],
+      ['lokacija-izabrani', () => initLokacijaIzabrani(globalThis.L, map)],
       ['traka', () => initTraka()],
       ['divljac', () => initDivljac()],
       ['pregled', () => initPregled()],
@@ -309,9 +312,26 @@ async function updateCheck() {
     const ver = await checkForUpdate(APP_VER);
     if (!ver) return;
     const bar = document.getElementById('nova-verzija');
-    bar.querySelector('.nv-tekst').textContent = `Nova verzija ${ver}`;
+    const text = bar.querySelector('.nv-tekst');
+    const progress = bar.querySelector('.nv-napredak');
+    const btn = bar.querySelector('button');
+    let stage = 'azuriraj';
+    const show = (v) => {
+      stage = v.dugme;
+      text.textContent = v.tekst;
+      progress.hidden = v.napredak == null;
+      if (v.napredak != null) progress.value = v.napredak;
+      btn.disabled = v.dugme === 'zauzeto';
+      btn.textContent = { azuriraj: 'Ažuriraj', instaliraj: 'Instaliraj', ponovo: 'Ponovo', zauzeto: 'Preuzimam…' }[v.dugme];
+    };
+    show(barView(null, ver));
     bar.hidden = false;
-    bar.querySelector('button').addEventListener('click', () => installUpdate(), { once: true });
+    // Dodir odmah pokreće preuzimanje i traka pokazuje napredak (ne treba ići u Postavke).
+    btn.addEventListener('click', () => {
+      if (stage === 'instaliraj') { globalThis.AndroidUpdate?.instalirajPreuzeto?.(); return; }
+      show(startView(installUpdate(), ver));
+    });
+    document.addEventListener(AZUR_EVENT, (e) => show(barView(e.detail, ver)));
   } catch (err) {
     console.warn('provjera verzije', err);
   }
@@ -370,6 +390,7 @@ onDomReady(() => {
     ['spiskovi', () => (isServerConfigured() ? refreshAllSpiskovi() : null)],
     ['sinhronizacija', () => (isServerConfigured() ? initSync() : null)],
     ['sw', registerServiceWorker],
+    ['azuriranje-most', () => initUpdateBridge()],
     ['azuriranje', updateCheck],
     ['autotest', () => {
       const at = new URLSearchParams(globalThis.location.search).get('autotest');

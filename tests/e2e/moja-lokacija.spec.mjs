@@ -202,3 +202,41 @@ test('administrator bira sekciju i dijeli lokaciju', async ({ page }) => {
   await expect(page.locator('#lok-sek-forma')).toBeVisible();
   await expect(page.locator('#lok-sek-prekidac')).toContainText('Počni dijeliti sa:');
 });
+
+test('dijeljenje sa izabranim lovcima: samo pretraga (bez spiska), izbor više lovaca, server dobija red za svakog; primljene se vide; prekid briše', async ({ page }) => {
+  const server = makeServer();
+  server.db.korisnici = [...server.db.korisnici];
+  server.db.lokacije_izabranih = [{ vlasnik_id: GV.id, primalac_id: LOVAC.id, lat: 44.8805, lon: 16.15, t: new Date().toISOString(), do_: new Date(Date.now() + 3600000).toISOString() }];
+  await setup(page, server, LOVAC);
+  await openLok(page);
+  await page.locator('#lok-izabrani').scrollIntoViewIfNeeded();
+  // bez upisa niko nije ponuđen; jedno slovo nije dovoljno
+  await expect(page.locator('#lok-iz-rezultati li')).toHaveCount(0);
+  await page.fill('#lok-iz-trazi', 'p');
+  await expect(page.locator('#lok-iz-rezultati [data-akcija="dodaj"]')).toHaveCount(0);
+  // pretraga bez dijakritika: "pogonic" nalazi Luku Pogonič
+  await page.fill('#lok-iz-trazi', 'pogonic');
+  await expect(page.locator('#lok-iz-rezultati [data-akcija="dodaj"]')).toHaveCount(1);
+  await expect(page.locator('#lok-iz-rezultati')).not.toContainText('Lovro');
+  await page.locator('#lok-iz-rezultati [data-akcija="dodaj"]').click();
+  await page.fill('#lok-iz-trazi', 'vanja');
+  await page.locator('#lok-iz-rezultati [data-akcija="dodaj"]').click();
+  await expect(page.locator('#lok-iz-izabrani .lok-iz-cip')).toHaveCount(2);
+  await expect(page.locator('#lok-iz-prekidac')).toContainText('(2)');
+  await page.locator('#lok-iz-prekidac').click();
+  await expect.poll(() => new Set(server.db.lokacije_izabranih.filter((r) => r.primalac_id !== LOVAC.id).map((r) => r.primalac_id)).size).toBe(2);
+  const mine = server.db.lokacije_izabranih.find((r) => r.primalac_id === LOVAC2.id);
+  expect(mine.do_).toBeTruthy();
+  await expect(page.locator('#btn-moja-lokacija')).toHaveClass(/dijeli-lokaciju/);
+  await expect(page.locator('#lok-iz-stanje')).toContainText('Dijeliš lokaciju sa 2 lovaca');
+  // primljeno: Goran dijeli samo sa mnom
+  await expect(page.locator('#lok-iz-lista')).toContainText('Goran Grupovođa');
+  // ukloni jednog dok dijeliš → red za njega nestaje sa servera
+  await page.locator(`#lok-iz-izabrani [data-uid="${VAN.id}"] [data-akcija="ukloni"]`).click();
+  await expect.poll(() => server.db.lokacije_izabranih.some((r) => r.primalac_id === VAN.id)).toBe(false);
+  // prekid briše sve moje redove (Goranov ostaje)
+  await page.locator('#lok-iz-prekidac').click();
+  await expect.poll(() => server.db.lokacije_izabranih.filter((r) => r.vlasnik_id === LOVAC.id).length).toBe(0);
+  expect(server.db.lokacije_izabranih.some((r) => r.vlasnik_id === GV.id)).toBe(true);
+  await expect(page.locator('#btn-moja-lokacija')).not.toHaveClass(/dijeli-lokaciju/);
+});

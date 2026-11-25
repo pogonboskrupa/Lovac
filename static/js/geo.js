@@ -242,7 +242,7 @@ export function offCenterRatio(point, size) {
   return Math.max(Math.abs(point.x - hx) / hx, Math.abs(point.y - hy) / hy);
 }
 
-export const FOLLOW_STOP_RATIO = 0.8;
+export const FOLLOW_STOP_RATIO = 0.5;
 
 export function shouldStopFollow(point, size, threshold = FOLLOW_STOP_RATIO) {
   return offCenterRatio(point, size) >= threshold;

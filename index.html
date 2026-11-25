@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.2.8';
+  const APP_VER = 'v1.2.9';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -239,6 +239,18 @@
       <h4>Članovi koji dijele lokaciju <span id="lok-sek-broj" class="sitno"></span></h4>
       <ul id="lok-sek-lista" class="spisak"></ul>
       <p class="sitno">Lokaciju vide samo članovi, grupovođa i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
+    </section>
+    <section id="lok-izabrani" class="lok-sekcija">
+      <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg>Dijeli sa izabranim lovcima</h3>
+      <input id="lok-iz-trazi" type="search" placeholder="Traži lovca po imenu…" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Traži lovca po imenu, prezimenu ili nadimku">
+      <p id="lok-iz-uputa" class="sitno">Upiši bar 2 slova imena, prezimena ili nadimka. Spisak svih lovaca se ne prikazuje.</p>
+      <ul id="lok-iz-rezultati" class="spisak"></ul>
+      <div id="lok-iz-izabrani" class="lok-iz-cipovi"></div>
+      <div id="lok-iz-trajanje" class="segment" role="group" aria-label="Koliko dugo dijeliti"></div>
+      <button id="lok-iz-prekidac" class="dugme glavno" type="button" aria-pressed="false">Počni dijeliti sa izabranima</button>
+      <p id="lok-iz-stanje" class="sitno" role="status"></p>
+      <h4>Lovci koji dijele samo sa tobom <span id="lok-iz-broj" class="sitno"></span></h4>
+      <ul id="lok-iz-lista" class="spisak"></ul>
     </section>
     <div class="lok-info">
       <div class="lok-info-red">
@@ -1896,7 +1908,7 @@
 
 <div id="nova-verzija" class="traka-obavijest" hidden>
   <svg class="ic"><use href="#ic-download"/></svg>
-  <span class="nv-tekst"></span>
+  <span class="nv-sadrzaj"><span class="nv-tekst"></span><progress class="nv-napredak" max="100" value="0" hidden></progress></span>
   <button type="button" class="dugme glavno">Ažuriraj</button>
 </div>
 <div id="alarm" class="alarm" role="alert" hidden>

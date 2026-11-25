@@ -103,15 +103,15 @@ test('prikaz koordinata: WGS84 pa MGI 5 pa MGI 6 u krug', () => {
 
 import { offCenterRatio, shouldStopFollow, FOLLOW_STOP_RATIO } from '../../static/js/geo.js';
 
-test('prati me: udaljenost od centra ekrana kao udio, gasi se na 80 %', () => {
+test('prati me: udaljenost od centra ekrana kao udio, gasi se na 50 %', () => {
   const size = { x: 400, y: 800 };
   assert.equal(offCenterRatio({ x: 200, y: 400 }, size), 0);
   assert.equal(offCenterRatio({ x: 400, y: 400 }, size), 1);
   assert.equal(offCenterRatio({ x: 200, y: 0 }, size), 1);
-  assert.equal(FOLLOW_STOP_RATIO, 0.8);
-  assert.equal(shouldStopFollow({ x: 200 + 0.79 * 200, y: 400 }, size), false);
-  assert.equal(shouldStopFollow({ x: 200 + 0.81 * 200, y: 400 }, size), true);
-  assert.equal(shouldStopFollow({ x: 200, y: 400 - 0.85 * 400 }, size), true, 'računa se i po visini');
+  assert.equal(FOLLOW_STOP_RATIO, 0.5);
+  assert.equal(shouldStopFollow({ x: 200 + 0.49 * 200, y: 400 }, size), false);
+  assert.equal(shouldStopFollow({ x: 200 + 0.51 * 200, y: 400 }, size), true);
+  assert.equal(shouldStopFollow({ x: 200, y: 400 - 0.55 * 400 }, size), true, 'računa se i po visini');
   assert.equal(offCenterRatio({ x: 5, y: 5 }, { x: 0, y: 0 }), 0, 'prazan ekran ne daje NaN');
 });
 

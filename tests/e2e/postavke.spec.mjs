@@ -169,3 +169,30 @@ test('"Preuzmi zadnju verziju" u pregledniku preuzima APK fajl, ne osvježava st
   await page.locator('#btn-preuzmi-zadnju').click().catch(() => {});
   await expect.poll(() => apk).toBe(1);
 });
+
+test('traka "Nova verzija" na mapi sama pokreće preuzimanje, pokazuje napredak i nudi instalaciju (bez odlaska u Postavke)', async ({ page }) => {
+  await page.route(/raw\.githubusercontent\.com/, (r) => r.fulfill({
+    status: 200, body: '{"verzija":"v9.9.9"}', headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
+  }));
+  await page.addInitScript(() => {
+    window.__poziv = [];
+    window.AndroidUpdate = { preuzmi: (u) => window.__poziv.push(['preuzmi', u]), instalirajPreuzeto: () => window.__poziv.push(['instaliraj']) };
+  });
+  await page.goto('/');
+  const traka = page.locator('#nova-verzija');
+  await expect(traka).toBeVisible();
+  await traka.locator('button').click();
+  expect((await page.evaluate(() => window.__poziv))[0][0]).toBe('preuzmi');
+  await expect(traka.locator('.nv-tekst')).toContainText('Preuzimam v9.9.9');
+  await expect(traka.locator('button')).toBeDisabled();
+  await page.evaluate(() => window.__updateNapredak('45'));
+  await expect(traka.locator('.nv-tekst')).toContainText('45 %');
+  await expect(traka.locator('.nv-napredak')).toHaveJSProperty('value', 45);
+  await page.evaluate(() => window.__updatePreuzeto());
+  await expect(traka.locator('button')).toHaveText('Instaliraj');
+  await traka.locator('button').click();
+  expect((await page.evaluate(() => window.__poziv)).at(-1)[0]).toBe('instaliraj');
+  await page.evaluate(() => window.__updateGreska('Preuzimanje nije uspjelo: timeout'));
+  await expect(traka.locator('.nv-tekst')).toContainText('timeout');
+  await expect(traka.locator('button')).toHaveText('Ponovo');
+});
