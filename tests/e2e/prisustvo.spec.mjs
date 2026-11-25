@@ -215,3 +215,39 @@ test('član sekcije nema dugme "Obriši lov"', async ({ page }) => {
   await openTab(page);
   await expect(page.locator('#sk-lov [data-akcija="lov-obrisi"]')).toHaveCount(0);
 });
+
+test('"Podaci o sekciji i lovu": grupovođa briše planirani lov iz spiska lovova sekcije; član nema dugme', async ({ page }) => {
+  const server = makeServer();
+  planned(server);
+  // još jedan planirani lov iste sekcije (stariji), a tekući ostaje drugi
+  server.db.lovovi.push({ ...server.db.lovovi[0], id: ID(301), naziv: 'Stari planirani lov', datum: '2026-11-20', status: 'planiran' });
+  await setup(page, server, GV);
+  const rpc = [];
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, async (route) => {
+    const { p_lov } = route.request().postDataJSON();
+    rpc.push(p_lov);
+    server.db.lovovi = server.db.lovovi.filter((l) => l.id !== p_lov);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+  });
+  await openTab(page);
+  const red = page.locator('#sk-podaci [data-lov]', { hasText: 'Stari planirani lov' });
+  const dugme = red.locator('[data-akcija="lov-obrisi"]');
+  await expect(dugme).toBeVisible();
+  await dugme.click();
+  await expect(dugme).toContainText('Dodirni ponovo');
+  expect(rpc).toHaveLength(0);
+  await dugme.click();
+  await expect.poll(() => rpc.length).toBe(1);
+  expect(rpc[0]).toBe(ID(301)); // obrisan je lov sa dugmeta, ne tekući
+  await expect(page.locator('#sk-podaci [data-lov]', { hasText: 'Stari planirani lov' })).toHaveCount(0);
+  expect(server.db.lovovi.some((l) => l.id === LOV)).toBe(true);
+});
+
+test('"Podaci o sekciji i lovu": član sekcije nema "Obriši lov" ni u spisku lovova', async ({ page }) => {
+  const server = makeServer();
+  planned(server);
+  await setup(page, server, LOVAC);
+  await openTab(page);
+  await expect(page.locator('#sk-podaci [data-lov]').first()).toBeVisible();
+  await expect(page.locator('#sk-podaci [data-akcija="lov-obrisi"]')).toHaveCount(0);
+});

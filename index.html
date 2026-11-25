@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.6.3';
+  const APP_VER = 'v1.6.4';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -1441,7 +1441,7 @@
   <h3>Učesnici</h3>
   <ul id="lov-ucesnici" class="spisak"></ul>
   <div class="red-dugmadi">
-    <select id="lov-dodaj-clan" aria-label="Lovac"></select>
+    <div id="lov-dodaj-clan" class="lov-dodaj-lista" role="group" aria-label="Lovci (najaktivniji prvi)"></div>
     <select id="lov-dodaj-uloga" aria-label="Uloga"><option value="strijelac">Strijelac</option><option value="pogonic">Pogonič</option><option value="vodja">Vođa lova</option></select>
     <button id="btn-lov-dodaj-clan" class="dugme" type="button">Dodaj učesnika</button>
   </div>

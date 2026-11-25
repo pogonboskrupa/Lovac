@@ -745,3 +745,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Brisanje lova iz svih ekrana (v1.6.3, bez migracije)**
 - Server je od 032 puštao admina i grupovođu sekcije lova (`obrisi_lov`), ali je dugme postojalo SAMO u detalju Arhive (koja ne prikazuje planirane lovove), pa planirani lov nije mogao nestati. Sada `lov-brisanje.js` (`canDeleteHunt(rec, me)` = admin ili `sekcija.grupovodja_id` je moj; `deleteHunt(id)`: RPC, pa čišćenje keša `lovovi`, `arhiva/detalj:`, `arhiva/trag:` i događaj `lovovi:promjena`) koriste: Meni → Zajednički lov (`data-akcija="obrisi"`, svaki status), tab sekcije (`lov-obrisi`, kartica lova za upravljača) i Arhiva. Svuda drugi dodir i traži internet; greška servera se prikazuje, lov ostaje. Lov bez sekcije: samo admin (isto kao server).
+
+**Brisanje planiranih lovova iz spiska sekcije (v1.6.4, bez migracije)**
+- Spisak "Lovovi sekcije" u tabu sekcije (`sk-podaci`) ima "Obriši lov" uz SVAKI lov (i planirani) za grupovođu i admina (`st`); lovac/član i lovočuvar ga ne vide. Akcija `lov-obrisi` koristi `data-lov` sa dugmeta (ne tekući lov), drugi dodir je vezan za id lova (`armedRemove = lov:<id>`).
+- Uređivač lova (Zajednički lov): dodavanje učesnika je lista sa kvačicama (`#lov-dodaj-clan`, više lovaca odjednom, jedna uloga) poredana po aktivnosti (`lov.js rankByActivity`: broj lovova iz keša u kojima je član učestvovao, isti broj po imenu); uz ime piše broj lovova.

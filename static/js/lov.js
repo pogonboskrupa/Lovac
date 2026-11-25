@@ -72,3 +72,11 @@ export function chunks(list, size) {
   for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
   return out;
 }
+
+// Najaktivniji prvi: broj lovova (iz keša) u kojima je član bio učesnik; isti broj = po imenu.
+export function rankByActivity(memberIds, hunts, nameOf) {
+  const n = new Map();
+  for (const h of hunts || []) for (const u of h?.ucesnici || []) n.set(u.korisnik_id, (n.get(u.korisnik_id) || 0) + 1);
+  return memberIds.map((id) => ({ id, broj: n.get(id) || 0 }))
+    .sort((a, b) => b.broj - a.broj || String(nameOf(a.id)).localeCompare(String(nameOf(b.id)), 'bs'));
+}

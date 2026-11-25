@@ -409,7 +409,8 @@ export function initSekcijaEkran(L, map) {
       <h4>Lovovi sekcije</h4>
       <ul class="spisak">${huntsOfSection.map((z) => `<li class="trag-red" data-lov="${escapeHtml(z.lov.id)}">
         <b>${escapeHtml(z.lov.naziv)}</b> <span class="sitno">${escapeHtml(huntDateText(z.lov.datum))} · ${STATUS_LOVA[z.lov.status] || z.lov.status} · učesnika ${z.ucesnici.length} · stanova ${z.stanovi.length}</span>
-        <button type="button" class="dugme" data-akcija="raspored" data-lov="${escapeHtml(z.lov.id)}">Raspored na karti</button></li>`).join('') || '<li class="sitno">Još nema lovova ove sekcije (preuzimaju se uz internet).</li>'}</ul>`;
+        <button type="button" class="dugme" data-akcija="raspored" data-lov="${escapeHtml(z.lov.id)}">Raspored na karti</button>
+        ${['grupovodja', 'admin'].includes(st) ? `<button type="button" class="dugme" data-akcija="lov-obrisi" data-lov="${escapeHtml(z.lov.id)}">Obriši lov</button>` : ''}</li>`).join('') || '<li class="sitno">Još nema lovova ove sekcije (preuzimaju se uz internet).</li>'}</ul>`;
     markRead();
   };
 
@@ -513,17 +514,19 @@ export function initSekcijaEkran(L, map) {
         await runHunt(() => qSk(sb.from('lovovi').update({ status: b.dataset.akcija === 'lov-pokreni' ? 'u_toku' : 'zavrsen' }).eq('id', lovId)),
           b.dataset.akcija === 'lov-pokreni' ? 'Lov je počeo' : 'Lov je završen');
         break;
-      case 'lov-obrisi':
-        // brisanje je za sve i nepovratno: drugi dodir
-        if (armedRemove !== `lov:${lovId}`) {
-          armedRemove = `lov:${lovId}`;
+      case 'lov-obrisi': {
+        // brisanje je za sve i nepovratno: drugi dodir; lov je onaj sa dugmeta (spisak lovova sekcije) ili tekući
+        const meta = b.dataset.lov || lovId;
+        if (armedRemove !== `lov:${meta}`) {
+          armedRemove = `lov:${meta}`;
           b.textContent = 'Dodirni ponovo — briše lov za sve';
-          setTimeout(() => { if (armedRemove === `lov:${lovId}`) { armedRemove = null; b.textContent = 'Obriši lov'; } }, 4000);
+          setTimeout(() => { if (armedRemove === `lov:${meta}`) { armedRemove = null; if (b.isConnected) b.textContent = 'Obriši lov'; } }, 4000);
           break;
         }
         armedRemove = null;
-        await runHunt(() => deleteHunt(lovId), 'Lov je obrisan');
+        await runHunt(() => deleteHunt(meta), 'Lov je obrisan');
         break;
+      }
       case 'lov-prijavi':
         await runHunt(() => qSk(sb.from('lov_ucesnici').insert({ lov_id: lovId, korisnik_id: me().id, uloga: 'strijelac', samoprijava: true })), 'Javljeno: prisutan si');
         break;

@@ -1851,3 +1851,9 @@ svg[hidden] { display: none; }
   background: #b91c1c; color: #ffffff; border: 3px solid #ffffff; box-shadow: var(--sjena); }
 .arh-pogodak .ic { width: 20px; height: 20px; }
 .ad-mali-naslov { margin: 12px 0 6px; font-size: 0.95rem; color: var(--naglasak); }
+
+/* Dodavanje učesnika lova: lista sa kvačicama (najaktivniji prvi) */
+.lov-dodaj-lista { display: flex; flex-direction: column; gap: 4px; width: 100%; max-height: 40vh; overflow-y: auto; }
+.lov-dodaj-red { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px; border: 1px solid var(--okvir); border-radius: 10px; }
+.lov-dodaj-red input { width: 24px; height: 24px; flex: none; }
+.lov-dodaj-red span:nth-of-type(1) { flex: 1; }

@@ -5,7 +5,7 @@ import { getClient, cachedProfile } from './auth.js';
 import { idbPut, idbAll, idbGet, idbDelete } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA, huntGroups, huntDateText, huntsNeedingDetails, chunks } from './lov.js';
+import { myAssignment, sectorsForStand, nextStandNumber, todaysHunts, headingCheck, KOMPAS_TOLERANCIJA, huntGroups, huntDateText, huntsNeedingDetails, chunks, rankByActivity } from './lov.js';
 import { collectPages } from './pregled.js';
 import { standWarnings, sectorWedge } from './sektori.js';
 import { onGpsUpdate, currentHeading, currentFix } from './gps.js';
@@ -357,7 +357,8 @@ export function initLov(L, map) {
       <b>${escapeHtml(memberName(u.korisnik_id))}</b> <span class="sitno">${ULOGE[u.uloga]}</span>
       <button type="button" class="dugme" data-akcija="ukloni-ucesnika">Ukloni</button></li>`).join('') || '<li class="sitno">Nema učesnika.</li>';
     const notIn = members.filter((m) => !x.ucesnici.some((u) => u.korisnik_id === m.id));
-    $('lov-dodaj-clan').innerHTML = notIn.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(memberName(m.id))}</option>`).join('');
+    const ranked = rankByActivity(notIn.map((m) => m.id), await idbAll(STORE), memberName);
+    $('lov-dodaj-clan').innerHTML = ranked.map((r) => `<label class="lov-dodaj-red"><input type="checkbox" value="${escapeHtml(r.id)}"> <span>${escapeHtml(memberName(r.id))}</span> <span class="sitno">${r.broj ? `${r.broj} ${r.broj === 1 ? 'lov' : 'lovova'}` : 'bez lovova'}</span></label>`).join('') || '<p class="sitno">Svi članovi su već u lovu.</p>';
     const opts = (sel) => `<option value="">— niko —</option>${x.ucesnici.filter((u) => u.uloga !== 'pogonic')
       .map((u) => `<option value="${escapeHtml(u.korisnik_id)}" ${u.korisnik_id === sel ? 'selected' : ''}>${escapeHtml(memberName(u.korisnik_id))}</option>`).join('')}`;
     $('lov-stanovi').innerHTML = x.stanovi.sort((a, b) => a.broj - b.broj).map((s) => `<li class="trag-red" data-id="${escapeHtml(s.id)}">
@@ -376,9 +377,10 @@ export function initLov(L, map) {
   };
 
   $('btn-lov-dodaj-clan').addEventListener('click', () => {
-    const id = $('lov-dodaj-clan').value;
-    if (!id) return;
-    run(() => q(getClient().from('lov_ucesnici').insert({ lov_id: editing, korisnik_id: id, uloga: $('lov-dodaj-uloga').value })), 'Učesnik dodan');
+    const ids = [...$('lov-dodaj-clan').querySelectorAll('input:checked')].map((i) => i.value);
+    if (!ids.length) { toast('Označi bar jednog lovca'); return; }
+    const uloga = $('lov-dodaj-uloga').value;
+    run(() => q(getClient().from('lov_ucesnici').insert(ids.map((korisnik_id) => ({ lov_id: editing, korisnik_id, uloga })))), ids.length > 1 ? `Dodano učesnika: ${ids.length}` : 'Učesnik dodan');
   });
   $('lov-ucesnici').addEventListener('click', (e) => {
     const b = e.target.closest('[data-akcija="ukloni-ucesnika"]');

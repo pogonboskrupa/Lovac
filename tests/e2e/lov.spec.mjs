@@ -83,7 +83,7 @@ test('vođa revira organizuje lov: učesnik, dva stana na nišanu, ručni zabran
   await expect(page.locator('#lov-uredi')).toBeVisible();
   expect(server.db.lovovi[0]).toMatchObject({ naziv: 'Pogon Bara', revir_id: REVIR.id, organizator_id: VODJA.id });
 
-  await page.locator('#lov-dodaj-clan').selectOption(LOVAC.id);
+  await page.locator(`#lov-dodaj-clan input[value="${LOVAC.id}"]`).check();
   await page.locator('#btn-lov-dodaj-clan').click();
   await expect(page.locator('#lov-ucesnici')).toContainText('Lovro Lovac');
 

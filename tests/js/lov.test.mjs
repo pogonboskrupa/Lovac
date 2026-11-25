@@ -49,3 +49,12 @@ test('kompas: zabranjeno uz toleranciju nesigurnosti kompasa (sigurnija strana)'
   const edge = 15 + KOMPAS_TOLERANCIJA - 1;
   assert.equal(headingCheck(edge, s), 'zabranjeno');
 });
+
+test('rankByActivity: najviše učešća prvo, isti broj po imenu', async () => {
+  const { rankByActivity } = await import('../../static/js/lov.js');
+  const hunts = [{ ucesnici: [{ korisnik_id: 'b' }, { korisnik_id: 'c' }] }, { ucesnici: [{ korisnik_id: 'b' }] }, { ucesnici: [{ korisnik_id: 'a' }] }];
+  const names = { a: 'Ado', b: 'Bego', c: 'Cero', d: 'Dino' };
+  const r = rankByActivity(['d', 'c', 'a', 'b'], hunts, (id) => names[id]);
+  assert.deepEqual(r.map((x) => x.id), ['b', 'a', 'c', 'd']);
+  assert.equal(r[0].broj, 2);
+});
