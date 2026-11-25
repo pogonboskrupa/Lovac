@@ -14,6 +14,7 @@ import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { printHuntReport } from './uzivo-ui.js';
 import { canManageHunt } from './lov-traje.js';
+import { canDeleteHunt, deleteHunt } from './lov-brisanje.js';
 import { MOJE_SEKCIJE_KEY, cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { mySectionsAsLeader } from './sekcije.js';
 
@@ -224,7 +225,8 @@ export function initLov(L, map) {
           ${mine ? `<div><b>${escapeHtml(ULOGE[mine.uloga])}</b><span>moja uloga</span></div>` : ''}</div>
         <div class="lk-dugmad"><button type="button" class="dugme glavno" data-akcija="prikazi">Raspored na karti</button>
         <div class="lk-sporedna">${x.lov.status !== 'planiran' ? '<button type="button" class="dugme" data-akcija="izvjestaj">Izvještaj (PDF)</button>' : ''}
-        ${canOrganizeAny() ? '<button type="button" class="dugme" data-akcija="uredi">Organizuj</button>' : ''}</div></div>
+        ${canOrganizeAny() ? '<button type="button" class="dugme" data-akcija="uredi">Organizuj</button>' : ''}
+        ${canDeleteHunt(x, me()) ? '<button type="button" class="dugme" data-akcija="obrisi">Obriši lov</button>' : ''}</div></div>
       </li>`;
     };
     const groups = huntGroups(all, [...today]);
@@ -256,6 +258,22 @@ export function initLov(L, map) {
     if (b.dataset.akcija === 'prikazi') await showSchedule(id);
     if (b.dataset.akcija === 'uredi') await openEditor(id);
     if (b.dataset.akcija === 'izvjestaj') await printHuntReport(id);
+    if (b.dataset.akcija === 'obrisi') {
+      // brisanje je za sve i nepovratno: drugi dodir na isto dugme
+      if (b.dataset.potvrda !== '1') {
+        b.dataset.potvrda = '1';
+        b.textContent = 'Dodirni ponovo — briše lov za sve';
+        setTimeout(() => { if (b.isConnected) { delete b.dataset.potvrda; b.textContent = 'Obriši lov'; } }, 4000);
+        return;
+      }
+      try {
+        await deleteHunt(id);
+        toast('Lov je obrisan');
+        await renderList();
+      } catch (err) {
+        $('lovovi-status').textContent = err.message;
+      }
+    }
   });
   $('btn-lovovi').addEventListener('click', async () => {
     $('meni-spiskovi').hidden = true;

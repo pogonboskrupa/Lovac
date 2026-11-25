@@ -449,3 +449,62 @@ test('lov na karti iz arhive (dugme): pogoci i tragovi zajedno; lov bez lokacija
   await page.locator('#btn-ad-trag').click();
   await expect(page.locator('#btn-arh-pogoci')).toBeDisabled();
 });
+
+test('Zajednički lov: grupovođa sekcije briše lov (i planirani) drugim dodirom; član nema dugme', async ({ page, browser }) => {
+  const server = makeServer();
+  Object.assign(server.db.lovovi[0], { status: 'planiran', datum: new Date(Date.now() + 86400000).toISOString().slice(0, 10) });
+  await setup(page, server, GV);
+  const rpc = [];
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, async (route) => {
+    const { p_lov } = route.request().postDataJSON();
+    rpc.push(p_lov);
+    server.db.lovovi = server.db.lovovi.filter((l) => l.id !== p_lov);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+  });
+  await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-lovovi').click();
+  const kartica = page.locator('#lovovi-spisak [data-id]');
+  await expect(kartica).toHaveCount(1);
+  await expect(kartica).toHaveAttribute('data-status', 'planiran');
+  const dugme = kartica.locator('[data-akcija="obrisi"]');
+  await expect(dugme).toBeVisible();
+  await dugme.click();
+  await expect(dugme).toContainText('Dodirni ponovo');
+  expect(rpc).toHaveLength(0);
+  await dugme.click();
+  await expect.poll(() => rpc.length).toBe(1);
+  expect(rpc[0]).toBe(LOV);
+  await expect(page.locator('#lovovi-spisak [data-id]')).toHaveCount(0);
+  expect(server.db.lovovi).toHaveLength(0);
+
+  // član sekcije nema dugme
+  const server2 = makeServer();
+  Object.assign(server2.db.lovovi[0], { status: 'planiran', datum: new Date(Date.now() + 86400000).toISOString().slice(0, 10) });
+  const ctx = await browser.newContext({ viewport: { width: 412, height: 915 } });
+  const p2 = await ctx.newPage();
+  await setup(p2, server2, LOVAC);
+  await p2.goto('http://localhost:8123/');
+  await p2.locator('#btn-spiskovi').click();
+  await p2.locator('#btn-lovovi').click();
+  await expect(p2.locator('#lovovi-spisak [data-id]')).toHaveCount(1);
+  await expect(p2.locator('#lovovi-spisak [data-akcija="obrisi"]')).toHaveCount(0);
+  await ctx.close();
+});
+
+test('Zajednički lov: administrator vidi "Obriši lov" na svakom lovu; greška servera (nema prava) se prikazuje, lov ostaje', async ({ page }) => {
+  const server = makeServer();
+  Object.assign(server.db.lovovi[0], { status: 'zavrsen', datum: '2026-11-22', pocetak: T(0), kraj: T(60) });
+  server.db.korisnici = server.db.korisnici.map((k) => (k.id === LOVAC.id ? { ...k, is_admin: true } : k));
+  await setup(page, server, { ...LOVAC, is_admin: true });
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, (route) => route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: 'Lov briše administrator ili grupovođa sekcije tog lova' }) }));
+  await page.goto('/');
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-lovovi').click();
+  const dugme = page.locator('#lovovi-spisak [data-akcija="obrisi"]');
+  await expect(dugme).toBeVisible();
+  await dugme.click();
+  await dugme.click();
+  await expect(page.locator('#lovovi-status')).toContainText('Lov nije obrisan');
+  await expect(page.locator('#lovovi-spisak [data-id]')).toHaveCount(1);
+});

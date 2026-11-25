@@ -182,3 +182,36 @@ test('lovočuvar revira prati lov, ali ga ne vodi: nema dugmadi za prijavu ni up
   await expect(page.locator('#sk-lov [data-akcija="lov-pokreni"]')).toHaveCount(0);
   await expect(page.locator('#sk-lov [data-prisutni]')).toHaveCount(0);
 });
+
+test('grupovođa briše lov iz taba sekcije (drugi dodir, za sve); član nema dugme', async ({ page }) => {
+  const server = makeServer();
+  planned(server);
+  await setup(page, server, GV);
+  const rpc = [];
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, async (route) => {
+    const { p_lov } = route.request().postDataJSON();
+    rpc.push(p_lov);
+    server.db.lovovi = server.db.lovovi.filter((l) => l.id !== p_lov);
+    server.db.lov_ucesnici = [];
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+  });
+  await openTab(page);
+  const dugme = page.locator('#sk-lov [data-akcija="lov-obrisi"]');
+  await expect(dugme).toBeVisible();
+  await dugme.click();
+  await expect(dugme).toContainText('Dodirni ponovo');
+  expect(rpc).toHaveLength(0);
+  await dugme.click();
+  await expect.poll(() => rpc.length).toBe(1);
+  expect(rpc[0]).toBe(LOV);
+  await expect(page.locator('#sk-lov [data-akcija="lov-novi"]')).toBeVisible(); // lova više nema, može se napraviti novi
+  await expect(page.locator('#sk-lov [data-akcija="lov-obrisi"]')).toHaveCount(0);
+});
+
+test('član sekcije nema dugme "Obriši lov"', async ({ page }) => {
+  const server = makeServer();
+  planned(server);
+  await setup(page, server, LOVAC);
+  await openTab(page);
+  await expect(page.locator('#sk-lov [data-akcija="lov-obrisi"]')).toHaveCount(0);
+});

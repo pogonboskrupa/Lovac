@@ -19,6 +19,7 @@ import { monthGrid, huntsByDate, initialMonth, shiftMonth, monthLabel, monthStat
 import { todayIso } from './objekti.js';
 import { archiveHtml, archiveFileName } from './arhiva-izvoz.js';
 import { saveFile } from './dijeljenje.js';
+import { canDeleteHunt, deleteHunt } from './lov-brisanje.js';
 
 const $ = (id) => document.getElementById(id);
 const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
@@ -200,7 +201,7 @@ export function initArhiva() {
     renderMovement(z);
     $('btn-ad-trag').hidden = z.lov.status === 'planiran';
     // briše admin ili grupovođa sekcije lova (server: obrisi_lov, migracija 032)
-    $('ad-brisanje').hidden = !(me()?.is_admin || (z.sekcija?.grupovodja_id && z.sekcija.grupovodja_id === me()?.id));
+    $('ad-brisanje').hidden = !canDeleteHunt(z, me());
   };
 
   // ---------- pogoci i kretanje ----------
@@ -411,17 +412,12 @@ export function initArhiva() {
   wireTwoTap($('btn-ad-obrisi'), 'DODIRNI PONOVO — OBRIŠI LOV ZA SVE', async () => {
     const z = hunts.find((x) => x.id === currentId);
     if (!z) return;
-    if (!online()) { $('ad-status').textContent = 'Za brisanje lova potreban je internet.'; return; }
     try {
-      // false = lova više nema na serveru (obrisao ga je neko drugi) — i tada se uklanja sa telefona
-      await qArh(getClient().rpc('obrisi_lov', { p_lov: z.id }));
+      await deleteHunt(z.id);
     } catch (err) {
-      $('ad-status').textContent = err.code === 'PGRST202'
-        ? 'Server još nema brisanje lova (administrator treba pokrenuti migraciju 032).' : `Lov nije obrisan: ${err.message}`;
+      $('ad-status').textContent = err.message;
       return;
     }
-    for (const key of [`detalj:${z.id}`, `trag:${z.id}`]) await idbDelete('arhiva', key).catch(() => {});
-    await idbDelete('lovovi', z.id).catch(() => {});
     details.delete(z.id);
     detail.hidden = true;
     await loadLocal();

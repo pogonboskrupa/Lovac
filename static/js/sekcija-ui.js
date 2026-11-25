@@ -28,6 +28,7 @@ import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { canPing } from './ping.js';
 import { fetchNew, nextCursor } from './inkrement.js';
 import { organizableSections, lastHuntPreset } from './lov-traje.js';
+import { deleteHunt } from './lov-brisanje.js';
 import { sendPing } from './ping-ui.js';
 import { answersSummary } from './odaziv.js';
 
@@ -248,6 +249,7 @@ export function initSekcijaEkran(L, map) {
     if (!manager) return html;
     if (lov.status === 'planiran') html += `<button type="button" class="dugme glavno" data-akcija="lov-pokreni" data-lov="${escapeHtml(lov.id)}">Pokreni lov</button>`;
     if (lov.status === 'u_toku') html += `<button type="button" class="dugme" data-akcija="lov-zavrsi" data-lov="${escapeHtml(lov.id)}">Završi lov</button>`;
+    html += '<button type="button" class="dugme" data-akcija="lov-obrisi">Obriši lov</button>';
     const addable = addableMembers(s, ctx.clanovi, ucesnici);
     if (odazivi.lovId === lov.id) {
       const sum = answersSummary(odazivi.rows, memberName);
@@ -510,6 +512,17 @@ export function initSekcijaEkran(L, map) {
       case 'lov-zavrsi':
         await runHunt(() => qSk(sb.from('lovovi').update({ status: b.dataset.akcija === 'lov-pokreni' ? 'u_toku' : 'zavrsen' }).eq('id', lovId)),
           b.dataset.akcija === 'lov-pokreni' ? 'Lov je počeo' : 'Lov je završen');
+        break;
+      case 'lov-obrisi':
+        // brisanje je za sve i nepovratno: drugi dodir
+        if (armedRemove !== `lov:${lovId}`) {
+          armedRemove = `lov:${lovId}`;
+          b.textContent = 'Dodirni ponovo — briše lov za sve';
+          setTimeout(() => { if (armedRemove === `lov:${lovId}`) { armedRemove = null; b.textContent = 'Obriši lov'; } }, 4000);
+          break;
+        }
+        armedRemove = null;
+        await runHunt(() => deleteHunt(lovId), 'Lov je obrisan');
         break;
       case 'lov-prijavi':
         await runHunt(() => qSk(sb.from('lov_ucesnici').insert({ lov_id: lovId, korisnik_id: me().id, uloga: 'strijelac', samoprijava: true })), 'Javljeno: prisutan si');
