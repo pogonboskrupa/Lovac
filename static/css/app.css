@@ -1818,3 +1818,22 @@ svg[hidden] { display: none; }
 .mjesto-vrste .dugme[aria-checked="true"] { border: 2px solid var(--naglasak); font-weight: 700; }
 .mjesto-vrste .red-dugmadi { margin: 0; gap: 8px; }
 .mjesto-vrste .dugme { margin-top: 0; }
+
+/* Korisnici i odobrenja: upravljanje (sekcije, uloge) */
+.kor-hero-uloge { margin: 8px 0 0; text-align: center; }
+.kor-filter { flex-wrap: wrap; }
+.kor-filter button { flex: 1 1 30%; min-height: 44px; }
+.kor-sek-filter { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-weight: 600; }
+.kor-sek-filter select { flex: 1; min-width: 0; min-height: 48px; font-size: 16px; }
+.kor-podnaslov { margin: 14px 0 6px; font-size: 1rem; color: var(--naglasak); }
+.kor-sek, .kor-uloga-grupa { display: grid; gap: 8px; padding: 10px; margin: 0 0 8px; border: 1.5px solid var(--okvir); border-radius: 12px; }
+.kor-sek-ime { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.kor-sek-akcije { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kor-sek-akcije select { flex: 1 1 160px; min-width: 0; min-height: 48px; font-size: 16px; }
+.kor-sek-akcije .dugme, .kor-uloga-red .dugme { min-height: 44px; flex: none; }
+.kor-uloga-red { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kor-uloga-red > span { min-width: 0; font-weight: 600; }
+.kor-vise > summary { border: 1.5px solid var(--okvir); border-radius: 12px; padding: 0 14px; justify-content: space-between; list-style: none; }
+.kor-vise > summary::-webkit-details-marker { display: none; }
+.kor-vise > summary::after { content: '▾'; font-size: 1.1rem; }
+.kor-vise[open] > summary::after { content: '▴'; }

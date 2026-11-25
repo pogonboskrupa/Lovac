@@ -10,8 +10,8 @@ android {
         applicationId 'ba.grmec.lovac'
         minSdk 24
         targetSdk 35
-        versionCode 135
-        versionName "1.5.1"
+        versionCode 136
+        versionName "1.6.0"
     }
 
     // Fiksan ključ iz repoa: bez njega CI svaki put pravi nov ključ i update preko

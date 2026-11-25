@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.5.1';
+  const APP_VER = 'v1.6.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -826,12 +826,14 @@
       <div><b id="kor-hero-odobreni">0</b><span>odobreno</span></div>
       <div><b id="kor-hero-admini">0</b><span>administratora</span></div>
     </div>
+    <p id="kor-hero-uloge" class="sitno kor-hero-uloge"></p>
   </div>
   <div id="kor-filter" class="segment kor-filter" role="group" aria-label="Filter korisnika"></div>
   <div class="kor-alati">
     <input id="kor-trazi" type="search" class="kor-trazi" placeholder="Traži korisnika" autocomplete="off" aria-label="Traži po imenu, prezimenu ili nadimku">
     <button id="btn-korisnici-osvjezi" class="dugme" type="button">Osvježi</button>
   </div>
+  <label class="kor-sek-filter">Sekcija<select id="kor-sekcija" aria-label="Filter po sekciji"><option value="">Sve sekcije</option></select></label>
   <p id="korisnici-status" class="status" role="status"></p>
   <ul id="korisnici-spisak" class="spisak"></ul>
   <p id="korisnici-prazno" class="sitno" hidden>Nema korisnika za ovaj prikaz.</p>
