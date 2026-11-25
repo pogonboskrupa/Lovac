@@ -157,3 +157,16 @@ test('sekcije: tekst za pločicu u Meniju', () => {
   assert.equal(menuSummary({ ...D, clanovi: [D.clanovi[0]] }, U('l1')), 'Moje sekcije: 1');
   assert.equal(menuSummary(D, U('niko')), 'Članstvo i odobrenja');
 });
+
+test('lovočuvar revira odobrava zahtjeve u sekcijama svog revira, ne tuđeg', async () => {
+  const { approvalsForMe, canApprove } = await import('../../static/js/sekcije.js');
+  const data = {
+    sekcije: [{ id: 's1', revir_id: 'r1', aktivno: true }, { id: 's2', revir_id: 'r2', aktivno: true }],
+    clanovi: [{ sekcija_id: 's1', korisnik_id: 'x', status: 'ceka' }, { sekcija_id: 's2', korisnik_id: 'y', status: 'ceka' }],
+    lovocuvari: [{ korisnik_id: 'lc', revir_id: 'r1' }],
+  };
+  const lc = { id: 'lc' };
+  assert.equal(canApprove(data.sekcije[0], lc, data.lovocuvari), true);
+  assert.equal(canApprove(data.sekcije[1], lc, data.lovocuvari), false);
+  assert.deepEqual(approvalsForMe(data, lc).map((a) => a.sekcija.id), ['s1']);
+});

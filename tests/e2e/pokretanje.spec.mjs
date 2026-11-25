@@ -107,7 +107,7 @@ test('prijava: tabovi Prijava / Novi nalog, prikaz PIN-a i zapamćeno ime poslij
   await expect(page.locator('#forma-prijava input[name=pin]')).toHaveValue('');
 });
 
-test('probni period: neodobren lovac radi 7 dana uz traku, a poslije isteka vidi ekran čekanja', async ({ page }) => {
+test('probni period: neodobren lovac radi 24 sata uz traku, a poslije isteka vidi ekran čekanja', async ({ page }) => {
   await fakeServerConfigHanging(page);
   await serveTiles(page);
   await page.addInitScript(() => {
@@ -129,5 +129,5 @@ test('probni period: neodobren lovac radi 7 dana uz traku, a poslije isteka vidi
   await page.evaluate(() => sessionStorage.setItem('dana', '-1'));
   await page.reload();
   await expect(page.locator('#ekran-cekanje')).toBeVisible();
-  await expect(page.locator('#cekanje-tekst')).toContainText('Probni period od 7 dana je istekao');
+  await expect(page.locator('#cekanje-tekst')).toContainText('Probni period od 24 sata je istekao');
 });

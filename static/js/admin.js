@@ -1,7 +1,7 @@
 // Administracija korisnika. Pravo provjerava SERVER (admin_* funkcije provjeravaju je_admin());
 // skrivanje u UI-ju je samo pogodnost, ne zaštita.
 
-import { inTrial, trialDaysLeft } from './probni.js';
+import { inTrial, trialLeftText } from './probni.js';
 import { getClient, cachedProfile, validatePin } from './auth.js';
 import { registerBackHandler, wireTwoTap, escapeHtml, toast } from './ui.js';
 import { describeProfile } from './postavke.js';
@@ -36,7 +36,7 @@ function userRow(u, meId) {
   const obrisi = ja ? '' : '<button type="button" class="dugme" data-akcija="obrisi">Obriši</button>';
   return `
     <li class="trag-red" data-id="${escapeHtml(u.id)}">
-      <div class="trag-naslov"><b>${escapeHtml(describeProfile(u))}</b>${ja ? '<span class="sitno">(ti)</span>' : ''}${!u.odobren && inTrial(u) ? `<span class="sitno">Probni period: još ${trialDaysLeft(u)} d.</span>` : ''}</div>
+      <div class="trag-naslov"><b>${escapeHtml(describeProfile(u))}</b>${ja ? '<span class="sitno">(ti)</span>' : ''}${!u.odobren && inTrial(u) ? `<span class="sitno">Probni period: još ${trialLeftText(u)}</span>` : ''}</div>
       <div class="red-dugmadi">
         ${odobri}
         <button type="button" class="dugme" data-akcija="admin">${u.is_admin ? 'Ukloni admina' : 'Postavi za admina'}</button>

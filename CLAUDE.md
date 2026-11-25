@@ -669,3 +669,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **APK se čuva u Preuzimanjima (v1.3.0)**
 - `UpdateBridge.saveToDownloads`: poslije kompletnog preuzimanja APK se kopira u javne `Preuzimanja/Lovac/Lovac-<datum>.apk` (MediaStore, Android 10+, bez dozvole za pohranu) i JS dobija `__updateStatus` "APK je sačuvan u …"; instalacija ide dalje iz privatnog `update.apk`. Neuspjelo kopiranje (ili Android < 10) ne prekida instalaciju. Java provjerava tek CI; fajl u Preuzimanjima potvrđuje tek telefon.
+
+**Probni period 24 h i odobravanje lovočuvara (migracija 038, v1.3.1)**
+- Odluka vlasnika: novoregistrovani radi 24 sata (`probni_sati()`, server računa rok; bilo 7 dana), dok ga grupovođa, lovočuvar revira ili administrator ne prihvate. Banner pred kraj pokazuje sate (`probni.js trialLeftText`: do 48 h u satima, inače dani).
+- Lovočuvar revira odobrava/odbija zahtjev za sekciju svog revira kroz `odobri_zahtjev` / `odbij_zahtjev` (SECURITY DEFINER; trigger 026 tada trajno odobri nalog; predloženi nalozi sa `pozvao_id` i dalje idu kroz `odobri_pozvanog`). Klijent: `sekcije.js canApprove`, zahtjevi u kartici lovočuvara (`pendingHtml`). Test `tests/sql/038_probni_24h_lovocuvar.sql`. Treba ručno pokrenuti migraciju 038.

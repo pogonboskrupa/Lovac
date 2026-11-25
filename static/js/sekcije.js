@@ -99,9 +99,14 @@ export function isMine(sekcija, clanovi, myId, isAdmin = false, lovocuvari = [])
 }
 
 // Zahtjevi koje JA smijem odobriti (grupovođa svoje sekcije, admin sve): [{sekcija, zahtjev}] najstariji prvi.
+// Zahtjev za pristup odobrava grupovođa/admin (canManage) i lovočuvar revira te sekcije (migracija 038).
+export function canApprove(sekcija, user, lovocuvari = []) {
+  return canManage(sekcija, user) || keeperRevirIds(user, lovocuvari).includes(sekcija.revir_id);
+}
+
 export function approvalsForMe(data, user) {
   const out = [];
-  for (const s of data.sekcije.filter((x) => x.aktivno !== false && canManage(x, user))) {
+  for (const s of data.sekcije.filter((x) => x.aktivno !== false && canApprove(x, user, data.lovocuvari))) {
     for (const z of pendingRequests(s.id, data.clanovi)) out.push({ sekcija: s, zahtjev: z });
   }
   return out.sort((a, b) => String(a.zahtjev.created_at || '9999').localeCompare(String(b.zahtjev.created_at || '9999'))); // bez datuma ide na kraj
@@ -126,7 +131,7 @@ export function filterSections(data, user, { filter = 'sve', q = '', textOf = ()
   const admin = Boolean(user?.is_admin);
   return data.sekcije.filter((s) => s.aktivno !== false).filter((s) => {
     if (filter === 'moje') return isMine(s, data.clanovi, id, admin, data.lovocuvari);
-    if (filter === 'zahtjevi') return canManage(s, user) && pendingRequests(s.id, data.clanovi).length > 0;
+    if (filter === 'zahtjevi') return canApprove(s, user, data.lovocuvari) && pendingRequests(s.id, data.clanovi).length > 0;
     if (filter === 'slobodne') return myStatus(s, data.clanovi, id, false, data.lovocuvari) === 'nema';
     return true;
   }).filter((s) => !q || match([s.naziv, textOf(s)], q));

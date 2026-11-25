@@ -17,7 +17,7 @@ test('probni period: aplikacija radi dok traje, poslije ekran čekanja', () => {
   assert.equal(inTrial({ odobren: true, probni_do: trial.probni_do }, NOW), false);
   assert.equal(trialDaysLeft(trial, NOW), 4);
   assert.match(trialBannerText(trial, NOW), /još 4 dana/);
-  assert.match(trialBannerText({ odobren: false, probni_do: new Date(NOW + 0.5 * day).toISOString() }, NOW), /još 1 dan\./);
+  assert.match(trialBannerText({ odobren: false, probni_do: new Date(NOW + 0.5 * day).toISOString() }, NOW), /još 12 h\./);
   assert.match(waitingText(expired), /istekao/);
   assert.match(waitingText(none), /grupovođa/);
 });

@@ -14,8 +14,8 @@ update public.korisnici set odobren = true where id in ('00000000-0000-0000-0000
 
 -- 1) Rok postavlja server: 7 dana za samoregistraciju, ništa bez oznake.
 do $$ begin
-  assert (select probni_do between now() + interval '6 days 23 hours' and now() + interval '7 days 1 minute'
-          from public.korisnici where id = '00000000-0000-0000-0000-0000000026d1'), 'probni period 7 dana';
+  assert (select probni_do between now() + interval '23 hours' and now() + interval '24 hours 1 minute'
+          from public.korisnici where id = '00000000-0000-0000-0000-0000000026d1'), 'probni period 24 sata';
   assert (select probni_do is not null from public.korisnici where id = '00000000-0000-0000-0000-0000000026d2'), 'probni i kao JSON true';
   assert (select probni_do is null from public.korisnici where id = '00000000-0000-0000-0000-0000000026e1'), 'bez oznake nema probnog';
 end $$;

@@ -8,7 +8,7 @@ import { refreshMembers, memberName } from './dijeljenje-ui.js';
 import { matchesQuery } from './pretraga.js';
 import { creationMode,
   sectionsOverview, approvalsForMe, filterSections, isMine, SEKCIJE_FILTERI, menuSummary,
-  myStatus, pristupText, canManage, creatableRevirIds, editsRevir, keeperRevirIds, groupByRevir, pendingRequests, candidatesToAdd, validateSekcija, mySectionsAsLeader,
+  myStatus, pristupText, canManage, creatableRevirIds, editsRevir, keeperRevirIds, groupByRevir, pendingRequests, canApprove, candidatesToAdd, validateSekcija, mySectionsAsLeader,
 } from './sekcije.js';
 import { makeThumbnail } from './foto.js';
 import { logoStyle } from './sekcija-logo.js';
@@ -76,6 +76,7 @@ export function initSekcije() {
     }
   };
 
+  const canManageSek = (sid) => { const sk = data.sekcije.find((x) => x.id === sid); return Boolean(sk) && canManage(sk, me()); };
   const invitedBy = (sid, uid) => data.clanovi.find((c) => c.sekcija_id === sid && c.korisnik_id === uid && c.status === 'ceka')?.pozvao_id || null;
 
   // Grupovođa sekcije: admin ili lovočuvar revira (migracija 030). Revir sekcije: samo admin.
@@ -84,7 +85,15 @@ export function initSekcije() {
   const revirPicker = (s) => `<label>Revir sekcije<select data-revir>${data.reviri.map((r) => opt(r.id, r.naziv, r.id === s.revir_id)).join('')}</select></label>
         <button type="button" class="dugme" data-akcija="revir">Premjesti u revir</button>`;
   // Lovočuvar revira koji nije grupovođa sekcije: samo grupovođa (ne članovi — njih vodi grupovođa).
+  const pendingHtml = (s) => {
+    const pending = pendingRequests(s.id, data.clanovi).filter((c) => !c.pozvao_id);
+    return pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak">${pending.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}">
+        <b>${escapeHtml(memberName(c.korisnik_id))}</b>
+        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button>
+        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div></li>`).join('')}</ul>` : '';
+  };
   const revirHtml = (s) => `<details class="uprava sk-revir-uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Grupovođa sekcije (lovočuvar revira)</summary>
+      ${pendingHtml(s)}
       ${gvPicker(s)}
       <button type="button" class="dugme" data-akcija="sakrij">Sakrij sekciju</button></details>`;
 
@@ -135,11 +144,11 @@ export function initSekcije() {
         <div class="sk2-naslov"><b>${escapeHtml(s.naziv)}</b>
           <span class="sitno">Revir ${escapeHtml(revirNaziv)}</span>
           <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span></div>
-        ${pendingN && canManage(s, me()) ? `<span class="znacka-broj" title="Zahtjevi na čekanju" aria-label="Zahtjeva na čekanju: ${pendingN}">${pendingN}</span>` : ''}
+        ${pendingN && canApprove(s, me(), data.lovocuvari) ? `<span class="znacka-broj" title="Zahtjevi na čekanju" aria-label="Zahtjeva na čekanju: ${pendingN}">${pendingN}</span>` : ''}
       </div>
       <div class="sk-statovi sk2-statovi">
         <div><b>${members.length}</b><span>članova</span></div>
-        ${canManage(s, me()) ? `<div><b>${pendingN}</b><span>zahtjeva</span></div>` : ''}
+        ${canApprove(s, me(), data.lovocuvari) ? `<div><b>${pendingN}</b><span>zahtjeva</span></div>` : ''}
       </div>
       <p class="sitno sk2-ljudi">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar revira: ${lovocuvari}</p>
       ${memberList ? `<details class="sk2-clanovi"><summary>Članovi (${members.length})</summary>${memberList}</details>` : ''}
@@ -268,10 +277,12 @@ export function initSekcije() {
         break;
       case 'odobri':
         if (invitedBy(sid, uid)) run(() => qSek(sb().rpc('odobri_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Nalog i pristup odobreni');
+        else if (!canManageSek(sid)) run(() => qSek(sb().rpc('odobri_zahtjev', { p_sekcija: sid, p_korisnik: uid })), 'Pristup odobren');
         else run(() => qSek(sb().from('sekcija_clanovi').update({ status: 'odobren' }).eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Pristup odobren');
         break;
       case 'odbij':
         if (invitedBy(sid, uid)) { run(() => qSek(sb().rpc('odbij_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Predlog odbijen, nalog obrisan'); break; }
+        if (!canManageSek(sid)) { run(() => qSek(sb().rpc('odbij_zahtjev', { p_sekcija: sid, p_korisnik: uid })), 'Gotovo'); break; }
         run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
         break;
       case 'logo-ucitaj':
