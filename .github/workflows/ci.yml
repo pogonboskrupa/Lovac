@@ -56,7 +56,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # Runner zna dobiti nepotpune apt spiskove ("Unable to locate package fonts-…"), pa instalacija pada prije ijednog testa.
+      - name: Playwright + sistemske zavisnosti (do 3 pokušaja)
+        run: |
+          for i in 1 2 3; do
+            sudo apt-get update -o Acquire::Retries=3 && npx playwright install --with-deps chromium && exit 0
+            echo "Pokušaj $i nije uspio, čekam…"; sleep $((i * 20))
+          done
+          exit 1
       - run: npx playwright test --trace off --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
         if: failure()
