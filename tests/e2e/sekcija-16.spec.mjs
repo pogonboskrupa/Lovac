@@ -41,10 +41,21 @@ test('sekcija sa 16 lovaca u lovu: kolege na karti sa inicijalima; u Istraživa�
   test.setTimeout(90000);
   const sim = await startSim(page, svijet16());
   await sim.run(60000);
-  await expect.poll(() => page.locator('.uc-marker').count(), { timeout: 15000 }).toBe(15);
-  await expect(page.locator('.uc-marker[data-uid]').first()).toHaveText(/^[A-ZČĆŽŠĐ]{2}$/);
+  // na početnoj razmjeri se preklopljeni lovci skupljaju u znak sa brojem: svi (15) su i dalje obuhvaćeni
+  const obuhvaceno = () => page.evaluate(() => [...document.querySelectorAll('.uc-marker')].reduce((n, e) => n + (e.dataset.broj ? Number(e.dataset.broj) : 1), 0));
+  await expect.poll(obuhvaceno, { timeout: 15000 }).toBe(15);
+  // početna razmjera (zoom 11): lovci su skupljeni u znakove sa brojem, a znak je manji nego na bližoj razmjeri
+  const zoom0 = await page.evaluate(() => window.__karta.getZoom());
+  expect(await page.locator('.uc-grupa').count()).toBeGreaterThan(0);
+  expect(await page.locator('.uc-grupa').first().evaluate((e) => e.getBoundingClientRect().width)).toBeLessThan(34);
+  // dodir na grupu uvećava kartu do lovaca u njoj
+  await page.locator('.uc-grupa').first().evaluate((e) => e.click());
+  await expect.poll(() => page.evaluate(() => window.__karta.getZoom())).toBeGreaterThan(zoom0);
+  await expect.poll(obuhvaceno).toBe(15);
   await page.evaluate(() => window.__karta.setView([44.8615, 16.1], 15, { animate: false }));
   await page.waitForTimeout(500);
+  await expect.poll(() => page.locator('.uc-marker').count()).toBe(15);
+  await expect(page.locator('.uc-marker[data-uid]').first()).toHaveText(/^[A-ZČĆŽŠĐ]{2}$/);
   await snimak(page, 'sim16-karta');
 
   await lok(page, '#btn-istrazivac');

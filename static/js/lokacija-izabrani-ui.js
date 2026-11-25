@@ -2,6 +2,7 @@
 // dok se ne upiše bar 2 slova), izbor jednog ili više lovaca i dijeljenje lokacije samo sa njima na 1 h / 4 h / do kraja dana.
 // Server: tabela `lokacije_izabranih` (migracija 037); vide je samo lovac koji dijeli i primalac, ne ni administrator.
 
+import { createMemberLayer } from './clan-markeri.js';
 import { getClient, cachedProfile } from './auth.js';
 import { setSharing } from './dijeli-znak.js';
 import { currentFix, onGpsUpdate } from './gps.js';
@@ -113,13 +114,13 @@ export function initLokacijaIzabrani(L, map) {
   };
 
   // ---------- prijem ----------
+  const memberLayer = createMemberLayer(L, map, markers, {
+    cssClass: 'sek-marker',
+    popupFor: (m) => memberCard(m.ime, currentFix(), m, m.starost, 'dijeli samo sa tobom'),
+  });
   const drawMarkers = () => {
-    markers.clearLayers();
-    for (const m of receivedShares(received, me()?.id, memberName, currentFix())) {
-      const icon = L.divIcon({ className: 'uc-ikona', html: `<span class="uc-marker sek-marker" data-uid="${escapeHtml(m.id)}" data-stanje="${m.stanje}">${escapeHtml(initialsOf(m.ime))}</span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
-      L.marker([m.lat, m.lon], { icon, keyboard: false, clan: { korisnik_id: m.id, lat: m.lat, lon: m.lon, t: new Date(Date.now() - m.starost * 60000).toISOString() } })
-        .bindPopup(() => memberCard(m.ime, currentFix(), m, m.starost, 'dijeli samo sa tobom'), { closeButton: true, autoPan: true }).addTo(markers);
-    }
+    memberLayer.draw(receivedShares(received, me()?.id, memberName, currentFix())
+      .map((m) => ({ ...m, t: new Date(Date.now() - m.starost * 60000).toISOString() })));
   };
   let lastPull = 0;
   const pull = async (force = false) => {

@@ -1,6 +1,7 @@
 // "Moja lokacija": ploča koja se otvara dodirom na dugme lokacije. Sadrži centriranje, praćenje, snimanje traga,
 // opažanje, istraživač, kopiranje koordinata i dijeljenje lokacije sa sekcijom (na ograničeno vrijeme).
 
+import { createMemberLayer } from './clan-markeri.js';
 import { getClient, cachedProfile } from './auth.js';
 import { setSharing } from './dijeli-znak.js';
 import { currentFix, onGpsUpdate } from './gps.js';
@@ -38,6 +39,7 @@ export function initMojaLokacija(L, map) {
   let rows = [];
   let sections = []; // sekcije u kojima smijem dijeliti
   let duration = '1';
+  let izabranaSekcija = ''; // sekcija koju je lovac izabrao u padajućoj listi (preživi ponovno crtanje ploče)
   let sendTimer = null;
 
   const isOpen = () => !panel.hidden;
@@ -90,9 +92,16 @@ export function initMojaLokacija(L, map) {
     $('lok-sek-forma').hidden = none;
     const sel = $('lok-sek-izbor');
     sel.hidden = sections.length < 2 || Boolean(sh);
-    sel.innerHTML = sections.map((s) => `<option value="${escapeHtml(s.id)}"${sh?.sekcijaId === s.id ? ' selected' : ''}>${escapeHtml(s.naziv)}</option>`).join('');
-    $('lok-sek-trajanje').innerHTML = SHARE_DURATIONS.map((d) => `<button type="button" data-trajanje="${d.id}" aria-pressed="${d.id === duration}">${d.naziv}</button>`).join('');
-    $('lok-sek-trajanje').hidden = Boolean(sh);
+    // renderShare se zove stalno (nove pozicije, osvježavanje): lista se gradi SAMO kad se promijenila, a izbor lovca
+    // se pamti — inače se padajuća lista zatvarala i vraćala na prvu sekciju ("treperi").
+    const optionsHtml = sections.map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.naziv)}</option>`).join('');
+    if (sel.dataset.sig !== optionsHtml) { sel.innerHTML = optionsHtml; sel.dataset.sig = optionsHtml; }
+    const want = sh?.sekcijaId || izabranaSekcija;
+    if (want && sections.some((s) => s.id === want) && sel.value !== want) sel.value = want;
+    const durHtml = SHARE_DURATIONS.map((d) => `<button type="button" data-trajanje="${d.id}" aria-pressed="${d.id === duration}">${d.naziv}</button>`).join('');
+    const durEl = $('lok-sek-trajanje');
+    if (durEl.dataset.sig !== durHtml) { durEl.innerHTML = durHtml; durEl.dataset.sig = durHtml; }
+    durEl.hidden = Boolean(sh);
     const btn = $('lok-sek-prekidac');
     btn.setAttribute('aria-pressed', String(Boolean(sh)));
     const name = sections.find((s) => s.id === (sh?.sekcijaId || sel.value))?.naziv || 'sekciju';
@@ -115,13 +124,13 @@ export function initMojaLokacija(L, map) {
       || '<li class="sitno">Niko drugi trenutno ne dijeli lokaciju.</li>';
   };
 
+  const memberLayer = createMemberLayer(L, map, markers, {
+    cssClass: 'sek-marker',
+    popupFor: (m) => memberCard(m.ime, currentFix(), m, m.starost, 'sekcija'),
+  });
   const drawMarkers = () => {
-    markers.clearLayers();
-    for (const m of sectionShareList(rows, me()?.id, memberName, currentFix())) {
-      const icon = L.divIcon({ className: 'uc-ikona', html: `<span class="uc-marker sek-marker" data-uid="${escapeHtml(m.id)}" data-stanje="${m.stanje}">${escapeHtml(initialsOf(m.ime))}</span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
-      L.marker([m.lat, m.lon], { icon, keyboard: false, clan: { korisnik_id: m.id, lat: m.lat, lon: m.lon, t: new Date(Date.now() - m.starost * 60000).toISOString() } })
-        .bindPopup(() => memberCard(m.ime, currentFix(), m, m.starost, 'sekcija'), { closeButton: true, autoPan: true }).addTo(markers);
-    }
+    memberLayer.draw(sectionShareList(rows, me()?.id, memberName, currentFix())
+      .map((m) => ({ ...m, t: new Date(Date.now() - m.starost * 60000).toISOString() })));
   };
 
   // ---------- slanje i prijem ----------
@@ -266,7 +275,7 @@ export function initMojaLokacija(L, map) {
     const b = e.target.closest('[data-trajanje]');
     if (b) { duration = b.dataset.trajanje; renderShare(); }
   });
-  $('lok-sek-izbor').addEventListener('change', renderShare);
+  $('lok-sek-izbor').addEventListener('change', (e) => { izabranaSekcija = e.target.value; renderShare(); });
   $('lok-sek-prekidac').addEventListener('click', async () => {
     const sh = sharing();
     if (sh) {

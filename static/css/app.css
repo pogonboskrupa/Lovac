@@ -457,9 +457,17 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 /* Dijeljenje lokacije */
 .uc-ikona { background: none; border: 0; }
 .uc-marker {
-  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
-  border: 3px solid #ffffff; box-shadow: var(--sjena); font: 700 13px/1 system-ui, sans-serif; color: #ffffff; background: #1d4ed8;
+  --d: 34px; position: relative; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; width: var(--d); height: var(--d); border-radius: 50%;
+  border: max(2px, calc(var(--d) * 0.09)) solid #ffffff; box-shadow: var(--sjena);
+  font: 700 calc(var(--d) * 0.38)/1 system-ui, sans-serif; color: #ffffff; background: #1d4ed8;
 }
+/* dodirna meta ostaje 44 px i kad je marker manji (razmjera, puno lovaca) */
+.uc-marker::before { content: ''; position: absolute; inset: min(0px, calc((var(--d) - 44px) / 2)); border-radius: 50%; }
+/* više lovaca na istom mjestu: jedan znak sa brojem */
+.uc-marker.uc-grupa { background: #334155; font-size: calc(var(--d) * 0.5); border-color: #fbbf24; }
+.uc-marker.uc-grupa.sek-marker { background: #0f766e; }
+.uc-grupa-popup ul { margin: 6px 0 0; padding-left: 18px; }
 .uc-marker[data-uloga="pogonic"] { background: #c2410c; }
 .uc-marker[data-stanje="staro"] { opacity: 0.8; }
 .uc-marker[data-stanje="bez-signala"] { background: #475569; opacity: 0.7; }

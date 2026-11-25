@@ -300,3 +300,29 @@ test('ponuda "Dijeli i ti": "Ne sada" se pamti', async ({ page }) => {
   await expect(page.locator('#lok-iz-lista')).toContainText('Goran Grupovođa'); // i dalje ga vidim na spisku
   await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(0);
 });
+
+test('izbor sekcije u ploči ne treperi i ne vraća se na prvu: lista se ne gradi iznova pri svakom GPS fiksu', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi = [];
+  server.db.korisnici = server.db.korisnici.map((k) => (k.id === LOVAC.id ? { ...k, is_admin: true } : k));
+  await setup(page, server, { ...LOVAC, is_admin: true });
+  await openLok(page);
+  const sel = page.locator('#lok-sek-izbor');
+  await expect(sel).toBeVisible();
+  await expect(sel.locator('option')).toHaveCount(3);
+  await sel.selectOption({ label: 'Krupa 2' });
+  // oznaka na elementu opcije: ako se lista ponovo gradi, oznaka nestaje
+  await sel.evaluate((s) => { s.options[0].dataset.zivi = '1'; });
+  for (let i = 0; i < 4; i++) {
+    await page.context().setGeolocation({ latitude: 44.88 + i * 0.0002, longitude: 16.15, accuracy: 5 });
+    await page.waitForTimeout(700);
+  }
+  await expect(sel).toHaveValue(ID(201));
+  expect(await sel.evaluate((s) => s.options[0].dataset.zivi)).toBe('1');
+  await expect(page.locator('#lok-sek-prekidac')).toContainText('Počni dijeliti sa: Krupa 2');
+  // trajanje: izbor traje i poslije novih fiksova
+  await page.locator('#lok-sek-trajanje [data-trajanje]').nth(1).click();
+  await page.context().setGeolocation({ latitude: 44.89, longitude: 16.15, accuracy: 5 });
+  await page.waitForTimeout(700);
+  await expect(page.locator('#lok-sek-trajanje [data-trajanje]').nth(1)).toHaveAttribute('aria-pressed', 'true');
+});

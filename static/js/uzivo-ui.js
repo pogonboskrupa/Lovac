@@ -23,6 +23,7 @@ import { cachedSekcije } from './sekcije-ui.js';
 import { canManageHunt } from './lov-traje.js';
 import { setSharing } from './dijeli-znak.js';
 import { todayIso } from './objekti.js';
+import { createMemberLayer } from './clan-markeri.js';
 
 const NAPUSTENI_KEY = 'lovac.lov.napusteni';
 
@@ -48,25 +49,22 @@ export function initUzivo(L, map) {
 
   const online = () => connectionQuality() !== 'nema' && Boolean(getClient());
 
+  // markeri lovaca: veličina po razmjeri i broju, preklopljeni se grupišu (clan-markeri.js)
+  const othersLayer = createMemberLayer(L, map, others, {
+    popupFor: (m) => memberCard(m.ime, currentFix(), m.p, Math.round((Date.now() - Date.parse(m.p.t)) / 60000)),
+  });
   const drawOthers = (rows) => {
     lastRows = rows;
     document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows } }));
-    others.clearLayers();
+    const members = [];
     for (const p of rows) {
       if (p.korisnik_id === me()?.id) continue;
       const stanje = sharingState(p.t);
       if (stanje === 'nema') continue;
       const u = lov?.ucesnici.find((x) => x.korisnik_id === p.korisnik_id);
-      const age = Math.round((Date.now() - Date.parse(p.t)) / 60000);
-      const name = memberName(p.korisnik_id);
-      const icon = L.divIcon({
-        className: 'uc-ikona',
-        html: `<span class="uc-marker" data-uid="${escapeHtml(p.korisnik_id)}" data-stanje="${stanje}" data-uloga="${u?.uloga === 'pogonic' ? 'pogonic' : 'ostali'}">${escapeHtml(initialsOf(name))}</span>`,
-        iconSize: [34, 34], iconAnchor: [17, 17],
-      });
-      L.marker([p.lat, p.lon], { icon, keyboard: false, clan: { korisnik_id: p.korisnik_id, lat: p.lat, lon: p.lon, t: p.t } })
-        .bindPopup(() => memberCard(name, currentFix(), p, age), { closeButton: true, autoPan: true }).addTo(others);
+      members.push({ id: p.korisnik_id, ime: memberName(p.korisnik_id), lat: p.lat, lon: p.lon, t: p.t, stanje, uloga: u?.uloga === 'pogonic' ? 'pogonic' : 'ostali', p });
     }
+    othersLayer.draw(members);
   };
 
   const showSos = (row) => {
@@ -177,7 +175,7 @@ export function initUzivo(L, map) {
   const stop = () => {
     clearInterval(timer);
     timer = null;
-    others.clearLayers();
+    othersLayer.draw([]);
     document.dispatchEvent(new CustomEvent('uzivo:pozicije', { detail: { rows: [] } }));
     if (channel) { getClient()?.removeChannel(channel); channel = null; }
     $('uzivo').hidden = true;
