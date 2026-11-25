@@ -123,7 +123,7 @@ export function sectionsOverview(data, user) {
   };
 }
 
-export const SEKCIJE_FILTERI = [['moje', 'Moje'], ['zahtjevi', 'Za odobrenje'], ['slobodne', 'Bez pristupa'], ['sve', 'Sve']];
+export const SEKCIJE_FILTERI = [['moje', 'Moje'], ['zahtjevi', 'Zahtjevi'], ['slobodne', 'Bez pristupa'], ['sve', 'Sve']];
 
 // Filter + pretraga sekcija. `textOf(s)` daje tekst za pretragu (naziv, revir, grupovođa, članovi...).
 export function filterSections(data, user, { filter = 'sve', q = '', textOf = () => '', match = (fields, query) => fields.join(' ').toLowerCase().includes(String(query).toLowerCase()) } = {}) {
@@ -167,4 +167,34 @@ export function groupSectionsByRevir(sekcije, reviri = []) {
   return [...by.entries()]
     .sort((a, b) => a[0].localeCompare(b[0], 'bs'))
     .map(([revir, list]) => ({ revir, sekcije: list.sort((a, b) => a.naziv.localeCompare(b.naziv, 'bs')) }));
+}
+
+// ---------- pregled ekrana "Sekcije i pristup" (v1.3.9) ----------
+// Kratka uputa prema ulozi (uloga iz keša sekcija, nikad iz imena).
+export function sectionsHint(user, data) {
+  if (user?.is_admin) return 'Vidiš sve revire i sekcije. Zahtjeve odobravaš ovdje ili u Korisnici i odobrenja.';
+  if (keeperRevirIds(user, data.lovocuvari || []).length) return 'Pratiš sekcije svog revira i odobravaš zahtjeve u njima.';
+  if ((data.sekcije || []).some((s) => s.grupovodja_id === user?.id)) return 'Vodiš svoju sekciju: odobravaš zahtjeve i dodaješ lovce.';
+  return 'U sekciju se ulazi uz odobrenje: zatraži pristup, a grupovođa, lovočuvar ili administrator odobri.';
+}
+
+// Broj sekcija po filteru (za čipove "Moje 1 · Za odobrenje 2 …").
+export function sectionFilterCounts(data, user) {
+  return Object.fromEntries(SEKCIJE_FILTERI.map(([k]) => [k, filterSections(data, user, { filter: k }).length]));
+}
+
+// "danas / jučer / prije N dana" za zahtjev na čekanju.
+export function requestAgeText(createdAt, now = Date.now()) {
+  const t = Date.parse(createdAt || '');
+  if (!Number.isFinite(t)) return '';
+  const d = Math.floor((now - t) / 86400000);
+  return d <= 0 ? 'danas' : d === 1 ? 'jučer' : `prije ${d} dana`;
+}
+
+// Članovi sekcije za traku lica: prvo grupovođa, pa po imenu; prvih `n` i broj ostalih.
+export function memberFaces(sekcija, clanovi, nameOf, n = 6) {
+  const ids = clanovi.filter((c) => c.sekcija_id === sekcija.id && c.status === 'odobren').map((c) => c.korisnik_id);
+  const sorted = [...new Set(ids)].sort((a, b) => Number(b === sekcija.grupovodja_id) - Number(a === sekcija.grupovodja_id)
+    || String(nameOf(a)).localeCompare(String(nameOf(b)), 'bs'));
+  return { lica: sorted.slice(0, n).map((id) => ({ id, ime: nameOf(id) })), ostalo: Math.max(0, sorted.length - n), ukupno: sorted.length };
 }

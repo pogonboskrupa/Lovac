@@ -1721,3 +1721,50 @@ svg[hidden] { display: none; }
 .kor-uloge { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .kor-uloga { background: transparent; border: 2px solid var(--naglasak); color: var(--tekst); }
 .kor-kartica .red-dugmadi .dugme.glavno { flex: 1 1 100%; }
+
+/* Sekcije i pristup — pregled i dizajn (v1.3.9) */
+.sks-hero > button { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 4px; min-height: 64px; border: none; border-radius: 12px; background: var(--dugme); color: var(--dugme-tekst); font: inherit; cursor: pointer; }
+.sks-hero > button b { font-size: 24px; line-height: 1.1; }
+.sks-hero > button span { font-size: 13px; }
+.sks-uputa { margin: 8px 2px 0; }
+.sks-filter { flex-wrap: nowrap; gap: 6px; margin: 10px 0 8px; }
+.sks-filter button { flex: 1 1 0; min-width: 0; padding: 4px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1.15; font-size: 14px; }
+.sks-filter .sks-ime { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.sks-filter .sks-broj { font-weight: 800; opacity: .85; }
+.sks-alati { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; }
+.sks-alati input { flex: 1; min-width: 0; margin: 0; }
+.sks-alati .ikona-dugme { flex: none; }
+#sekcije > #btn-sekcija-nova { width: 100%; margin: 0 0 8px; }
+.sks-revir { margin: 14px 2px 4px; }
+.sk-zahtjevi-lista { display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; }
+.sk-zahtjev { list-style: none; padding: 10px; border-radius: 12px; background: var(--dugme); }
+.sk-zahtjev-glava { display: flex; align-items: center; gap: 10px; }
+.sk-zahtjev-tekst { display: flex; flex-direction: column; min-width: 0; }
+.sk-zahtjev-tekst b { overflow-wrap: anywhere; }
+.sk-zahtjev-dugmad { display: flex; gap: 8px; margin-top: 8px; }
+.sk-zahtjev-dugmad .dugme { flex: 1; margin: 0; }
+.sk-prebaci-vise { margin-top: 6px; }
+.sk-prebaci-vise summary { min-height: 44px; display: flex; align-items: center; font-size: 14px; cursor: pointer; }
+.sk-avatar.mali { width: 32px; height: 32px; border-width: 2px; font-size: 12px; }
+.sk2-glava { position: relative; }
+.sk2 .sk2-znacka { position: static; flex: none; align-self: flex-start; }
+.sk2 .pristup-status { align-self: flex-start; margin-top: 2px; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--dugme); color: var(--dugme-tekst); }
+.sk2 .pristup-status[data-status="grupovodja"], .sk2 .pristup-status[data-status="admin"] { background: #1d4ed8; color: #fff; }
+.sk2 .pristup-status[data-status="clan"] { background: #166534; color: #fff; }
+.sk2 .pristup-status[data-status="ceka"] { background: #92400e; color: #fff; }
+.sk2 .pristup-status[data-status="lovocuvar"] { background: #0f766e; color: #fff; }
+.sk2-brojke { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 4px; font-size: 15px; }
+.sk2-brojke [data-ima="true"] b { color: #e41e3f; }
+.sk2-ljudi { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 6px 0; }
+.sk2-osoba { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sk2-osoba > span:last-child { display: flex; flex-direction: column; line-height: 1.2; }
+.sk2-clanovi summary { gap: 10px; cursor: pointer; }
+.sk2-lica { display: inline-flex; }
+.sk2-lica .sk-avatar { margin-right: -8px; box-shadow: 0 0 0 2px var(--povrsina); }
+.sk2-vise { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; margin-left: 4px; padding: 0 6px; border-radius: 16px; background: var(--dugme); font-size: 12px; font-weight: 800; }
+.sk2-lica + span { margin-left: 12px; }
+.sk2-spisak { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-direction: column; gap: 6px; }
+.sk2-spisak li { display: flex; align-items: center; gap: 8px; }
+.sk2-dugmad[data-glavno="false"] { flex-direction: row; flex-wrap: wrap; }
+.sk2-dugmad[data-glavno="false"] .dugme { width: auto; flex: 1 1 140px; }
+.sks-revir::after { content: ' ' attr(data-broj); font-size: 14px; font-weight: 600; color: var(--tekst-2); }

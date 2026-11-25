@@ -8,11 +8,12 @@ import { refreshMembers, memberName } from './dijeljenje-ui.js';
 import { matchesQuery } from './pretraga.js';
 import { creationMode,
   sectionsOverview, approvalsForMe, filterSections, isMine, SEKCIJE_FILTERI, menuSummary,
-  myStatus, pristupText, canManage, creatableRevirIds, editsRevir, keeperRevirIds, groupByRevir, pendingRequests, canApprove, candidatesToAdd, validateSekcija, mySectionsAsLeader,
+  myStatus, pristupText, canManage, creatableRevirIds, editsRevir, keeperRevirIds, groupByRevir, pendingRequests, canApprove, candidatesToAdd, sectionsHint, sectionFilterCounts, requestAgeText, memberFaces, validateSekcija, mySectionsAsLeader,
 } from './sekcije.js';
 import { makeThumbnail } from './foto.js';
 import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
+import { initialsOf } from './lokacija.js';
 
 const CACHE_ID = 'sekcije';
 export const MOJE_SEKCIJE_KEY = 'lovac.moje_sekcije';
@@ -53,6 +54,8 @@ const fillSelect = (el, html) => {
   if (keep && [...el.options].some((o) => o.value === keep)) el.value = keep;
 };
 
+// 1 sekcija, 2–4 sekcije, 5+ sekcija (11–14 sekcija)
+const sekcijaWord = (n) => (n % 10 >= 2 && n % 10 <= 4 && !(n % 100 >= 12 && n % 100 <= 14) ? 'sekcije' : 'sekcija');
 const opt = (id, label, sel) => `<option value="${escapeHtml(id)}" ${sel ? 'selected' : ''}>${escapeHtml(label)}</option>`;
 
 export function initSekcije() {
@@ -89,15 +92,19 @@ export function initSekcije() {
   const moveHtml = (sid) => {
     const others = data.sekcije.filter((x) => x.aktivno !== false && x.id !== sid);
     if (!others.length) return '';
-    return `<div class="red-dugmadi sk-prebaci"><select data-prebaci aria-label="Prebaci zahtjev u sekciju"><option value="">Prebaci u…</option>${others.map((x) => opt(x.id, `${data.reviri.find((r) => r.id === x.revir_id)?.naziv || ''} · ${x.naziv}`, false)).join('')}</select>
-      <button type="button" class="dugme" data-akcija="prebaci">Prebaci</button></div>`;
+    return `<details class="sk-prebaci-vise"><summary>Prebaci u drugu sekciju</summary><div class="red-dugmadi sk-prebaci"><select data-prebaci aria-label="Prebaci zahtjev u sekciju"><option value="">Izaberi sekciju…</option>${others.map((x) => opt(x.id, `${data.reviri.find((r) => r.id === x.revir_id)?.naziv || ''} · ${x.naziv}`, false)).join('')}</select>
+      <button type="button" class="dugme" data-akcija="prebaci">Prebaci</button></div></details>`;
   };
+  const avatar = (id, cls = '') => `<span class="sk-avatar ${cls}" aria-hidden="true">${escapeHtml(initialsOf(memberName(id)))}</span>`;
+  // Kompaktan red zahtjeva: lice, ime, kuda i od kada; Odobri/Odbij u jednom redu, prebacivanje sklopljeno.
+  const requestRow = (sekcija, z, withSection) => `<li class="sk-zahtjev" data-id="${escapeHtml(sekcija.id)}" data-uid="${escapeHtml(z.korisnik_id)}">
+      <div class="sk-zahtjev-glava">${avatar(z.korisnik_id)}<div class="sk-zahtjev-tekst"><b>${escapeHtml(memberName(z.korisnik_id))}</b>
+        <span class="sitno">${withSection ? `→ ${escapeHtml(sekcija.naziv)}` : 'traži pristup'}${requestAgeText(z.created_at) ? ` · ${requestAgeText(z.created_at)}` : ''}${z.pozvao_id ? ` · predložio ${escapeHtml(memberName(z.pozvao_id))} (novi nalog)` : ''}</span></div></div>
+      <div class="sk-zahtjev-dugmad"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>
+      ${z.pozvao_id ? '' : moveHtml(sekcija.id)}</li>`;
   const pendingHtml = (s) => {
     const pending = pendingRequests(s.id, data.clanovi).filter((c) => !c.pozvao_id);
-    return pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak">${pending.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}">
-        <b>${escapeHtml(memberName(c.korisnik_id))}</b>
-        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button>
-        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>${moveHtml(s.id)}</li>`).join('')}</ul>` : '';
+    return pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>` : '';
   };
   const revirHtml = (s) => `<details class="uprava sk-revir-uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Grupovođa sekcije (lovočuvar revira)</summary>
       ${pendingHtml(s)}
@@ -110,10 +117,7 @@ export function initSekcije() {
     const candidates = candidatesToAdd(s, data.clanovi, users());
     const isAdmin = Boolean(me()?.is_admin);
     return `<details class="uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Upravljanje sekcijom${pending.length ? ` · zahtjeva: ${pending.length}` : ''}</summary>
-      ${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak">${pending.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}">
-        <b>${escapeHtml(memberName(c.korisnik_id))}</b>${c.pozvao_id ? `<span class="sitno"> · predložio: ${escapeHtml(memberName(c.pozvao_id))} (novi nalog)</span>` : ''}
-        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button>
-        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>${c.pozvao_id ? '' : moveHtml(s.id)}</li>`).join('')}</ul>` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
+      ${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
       <h4>Članovi (${members.length})</h4>
       <ul class="spisak">${members.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}"><b>${escapeHtml(memberName(c.korisnik_id))}</b>
         <button type="button" class="dugme" data-akcija="ukloni">Ukloni</button></li>`).join('') || '<li class="sitno">Nema članova.</li>'}</ul>
@@ -134,32 +138,38 @@ export function initSekcije() {
 
   const cardHtml = (s) => {
     const st = myStatus(s, data.clanovi, me()?.id, Boolean(me()?.is_admin), data.lovocuvari);
-    const lovocuvari = data.lovocuvari.filter((l) => l.revir_id === s.revir_id).map((l) => escapeHtml(memberName(l.korisnik_id))).join(', ') || '—';
     const members = data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren');
-    const memberList = ['clan', 'grupovodja', 'lovocuvar', 'admin'].includes(st) && members.length
-      ? `<span class="sitno">Članovi: ${members.map((c) => escapeHtml(memberName(c.korisnik_id))).join(', ')}</span>` : '';
     const buttons = st === 'nema' ? '<button type="button" class="dugme glavno" data-akcija="zatrazi">Zatraži pristup</button>'
       : st === 'ceka' ? '<button type="button" class="dugme" data-akcija="povuci">Povuci zahtjev</button>'
         : st === 'clan' ? '<button type="button" class="dugme" data-akcija="napusti">Napusti sekciju</button>' : '';
     const mode = creationMode(st);
-    const newBtn = mode ? `<button type="button" class="dugme" data-akcija="novi-lovac">${mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava grupovođa)'}</button>` : '';
+    const newBtn = mode ? `<button type="button" class="dugme" data-akcija="novi-lovac">${mode === 'direct' ? 'Dodaj novog lovca' : 'Predloži lovca'}</button>` : '';
     const pendingN = pendingRequests(s.id, data.clanovi).length;
     const revirNaziv = data.reviri.find((r) => r.id === s.revir_id)?.naziv || '';
+    const faces = memberFaces(s, data.clanovi, memberName, 6);
+    const showMembers = ['clan', 'grupovodja', 'lovocuvar', 'admin'].includes(st) && faces.ukupno > 0;
+    const lcIds = data.lovocuvari.filter((l) => l.revir_id === s.revir_id).map((l) => l.korisnik_id);
+    const approver = canApprove(s, me(), data.lovocuvari);
+    const person = (id, uloga) => `<span class="sk2-osoba">${avatar(id, 'mali')}<span><span class="sitno">${uloga}</span><b>${escapeHtml(memberName(id))}</b></span></span>`;
     return `<li class="trag-red sekcija-kartica sk2" data-id="${escapeHtml(s.id)}" data-pristup="${st}">
       <div class="sk2-glava">
         <span class="sek-logo" style="${logoStyle(s)}" role="img" aria-label="Logo sekcije ${escapeHtml(s.naziv)}"></span>
         <div class="sk2-naslov"><b>${escapeHtml(s.naziv)}</b>
           <span class="sitno">Revir ${escapeHtml(revirNaziv)}</span>
           <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span></div>
-        ${pendingN && canApprove(s, me(), data.lovocuvari) ? `<span class="znacka-broj" title="Zahtjevi na čekanju" aria-label="Zahtjeva na čekanju: ${pendingN}">${pendingN}</span>` : ''}
+        ${pendingN && approver ? `<span class="znacka-broj sk2-znacka" title="Zahtjevi na čekanju" aria-label="Zahtjeva na čekanju: ${pendingN}">${pendingN}</span>` : ''}
       </div>
-      <div class="sk-statovi sk2-statovi">
-        <div><b>${members.length}</b><span>članova</span></div>
-        ${canApprove(s, me(), data.lovocuvari) ? `<div><b>${pendingN}</b><span>zahtjeva</span></div>` : ''}
+      <div class="sk2-brojke">
+        <span><b>${members.length}</b> ${members.length === 1 ? 'član' : 'članova'}</span>
+        ${approver ? `<span data-ima="${pendingN > 0}"><b>${pendingN}</b> ${pendingN === 1 ? 'zahtjev' : 'zahtjeva'}</span>` : ''}
       </div>
-      <p class="sitno sk2-ljudi">Grupovođa: ${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'} · Lovočuvar revira: ${lovocuvari}</p>
-      ${memberList ? `<details class="sk2-clanovi"><summary>Članovi (${members.length})</summary>${memberList}</details>` : ''}
-      <div class="sk2-dugmad">${buttons}${newBtn}</div>
+      <div class="sk2-ljudi">
+        ${s.grupovodja_id ? person(s.grupovodja_id, 'Grupovođa') : '<span class="sitno">Grupovođa: —</span>'}
+        ${lcIds.length ? lcIds.map((id) => person(id, 'Lovočuvar revira')).join('') : '<span class="sitno">Lovočuvar revira: —</span>'}
+      </div>
+      ${showMembers ? `<details class="sk2-clanovi"><summary><span class="sk2-lica">${faces.lica.map((f) => avatar(f.id, 'mali')).join('')}${faces.ostalo ? `<span class="sk2-vise">+${faces.ostalo}</span>` : ''}</span><span>Članovi (${faces.ukupno})</span></summary>
+        <ul class="sk2-spisak">${data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren').map((c) => `<li>${avatar(c.korisnik_id, 'mali')}${escapeHtml(memberName(c.korisnik_id))}${c.korisnik_id === s.grupovodja_id ? ' <span class="sitno">· grupovođa</span>' : ''}</li>`).join('')}</ul></details>` : ''}
+      <div class="sk2-dugmad" data-glavno="${st === 'nema'}">${buttons}${newBtn}</div>
       ${canManage(s, me()) ? manageHtml(s) : editsRevir(me(), s.revir_id, data.lovocuvari) ? revirHtml(s) : ''}
     </li>`;
   };
@@ -195,7 +205,9 @@ export function initSekcije() {
     $('sks-ukupno').textContent = String(ov.ukupno);
     if (filterMode == null && data.sekcije.length) filterMode = ov.moje > 0 ? 'moje' : 'sve'; // izbor tek kad su sekcije stigle (prazan keš ne smije zaključati "Sve")
     const activeFilter = filterMode || 'sve';
-    $('sekcije-filter').innerHTML = SEKCIJE_FILTERI.map(([k, n]) => `<button type="button" data-filter="${k}" aria-pressed="${k === activeFilter}">${n}${k === 'zahtjevi' && ov.zaOdobrenje ? ` <span class="znacka-broj">${ov.zaOdobrenje}</span>` : ''}</button>`).join('');
+    const counts = sectionFilterCounts(data, user);
+    $('sekcije-filter').innerHTML = SEKCIJE_FILTERI.map(([k, n]) => `<button type="button" data-filter="${k}" aria-pressed="${k === activeFilter}"><span class="sks-ime">${n}</span>${k === 'zahtjevi' && ov.zaOdobrenje ? ` <span class="znacka-broj">${ov.zaOdobrenje}</span>` : ` <span class="sks-broj">${counts[k]}</span>`}</button>`).join('');
+    $('sekcije-uputa').textContent = sectionsHint(user, data);
     const textOf = (s) => [data.reviri.find((r) => r.id === s.revir_id)?.naziv, s.grupovodja_id ? memberName(s.grupovodja_id) : '',
       ...data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren').map((c) => memberName(c.korisnik_id))].join(' ');
     const visible = filterSections(data, user, { filter: activeFilter, q: searchText, textOf, match: matchesQuery });
@@ -203,10 +215,7 @@ export function initSekcije() {
 
     const approvals = approvalsForMe(data, user);
     const approvalsHtml = approvals.length ? `<section class="sk-zahtjevi" id="sekcije-zahtjevi"><h3>Čeka tvoje odobrenje (${approvals.length})</h3>
-      <ul class="spisak">${approvals.map(({ sekcija, zahtjev }) => `<li class="tr-kartica ev-kartica" data-id="${escapeHtml(sekcija.id)}" data-uid="${escapeHtml(zahtjev.korisnik_id)}">
-        <b>${escapeHtml(memberName(zahtjev.korisnik_id))}</b>
-        <span class="sitno">traži ulaz u: ${escapeHtml(sekcija.naziv)}${zahtjev.pozvao_id ? ` · predložio: ${escapeHtml(memberName(zahtjev.pozvao_id))} (novi nalog)` : ''}</span>
-        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>${zahtjev.pozvao_id ? '' : moveHtml(sekcija.id)}</li>`).join('')}</ul></section>` : '';
+      <ul class="spisak sk-zahtjevi-lista">${approvals.map(({ sekcija, zahtjev }) => requestRow(sekcija, zahtjev, true)).join('')}</ul></section>` : '';
 
     const groups = groupByRevir(data.reviri, data.sekcije).map(({ revir, sekcije }) => ({
       revir,
@@ -221,7 +230,7 @@ export function initSekcije() {
     const keptMove = [...$('sekcije-spisak').querySelectorAll('[data-prebaci]')].filter((el) => el.value)
       .map((el) => [el.closest('[data-id]')?.dataset.id, el.closest('[data-uid]')?.dataset.uid, el.value]);
     $('sekcije-spisak').innerHTML = approvalsHtml + (groups.map(({ revir, sekcije }) => `
-      <h3>Revir ${escapeHtml(revir.naziv)}</h3>
+      <h3 class="sks-revir" data-broj="· ${sekcije.length} ${sekcijaWord(sekcije.length)}">Revir ${escapeHtml(revir.naziv)}</h3>
       <ul class="spisak">${sekcije.map(cardHtml).join('') || '<li class="sitno">Nema sekcija u ovom reviru.</li>'}</ul>`).join('')
       || '<p class="sitno" id="sekcije-prazno">Nema sekcija za ovaj prikaz. Probaj "Sve".</p>');
     for (const [id, uid, value] of keptMove) {
@@ -261,6 +270,10 @@ export function initSekcije() {
   });
   $('sekcije-spisak').addEventListener('input', (e) => {
     if (e.target.matches('[data-naziv]')) e.target.dataset.dirnuto = '1';
+  });
+  document.querySelector('#sekcije .sks-hero')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-filter-skok]');
+    if (b) { filterMode = b.dataset.filterSkok; render(); }
   });
   $('sekcije-filter').addEventListener('click', (e) => {
     const b = e.target.closest('[data-filter]');

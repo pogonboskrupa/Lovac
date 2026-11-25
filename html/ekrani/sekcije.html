@@ -4,19 +4,19 @@
     <button id="btn-sekcije-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <div class="sk-hero tr-hero ev-hero">
-    <div class="sk-statovi sk-statovi-hero">
-      <div data-stat="moje"><b id="sks-moje">0</b><span>moje sekcije</span></div>
-      <div data-stat="odobrenje"><b id="sks-odobrenje">0</b><span>za odobrenje</span></div>
-      <div data-stat="ukupno"><b id="sks-ukupno">0</b><span>sekcija ukupno</span></div>
+    <div class="sk-statovi sk-statovi-hero sks-hero">
+      <button type="button" data-stat="moje" data-filter-skok="moje"><b id="sks-moje">0</b><span>moje sekcije</span></button>
+      <button type="button" data-stat="odobrenje" data-filter-skok="zahtjevi"><b id="sks-odobrenje">0</b><span>za odobrenje</span></button>
+      <button type="button" data-stat="ukupno" data-filter-skok="sve"><b id="sks-ukupno">0</b><span>sekcija ukupno</span></button>
     </div>
+    <p id="sekcije-uputa" class="sitno sks-uputa"></p>
   </div>
-  <p class="sitno">U sekciju se ulazi samo uz odobrenje grupovođe: zatraži pristup, a grupovođa odobri ili odbije.</p>
-  <div id="sekcije-filter" class="segment p-tabovi" role="group" aria-label="Prikaz sekcija"></div>
-  <input id="sekcije-trazi" type="search" placeholder="Traži (sekcija, revir, grupovođa, član…)" aria-label="Traži sekcije" autocomplete="off">
-  <div class="red-dugmadi">
-    <button id="btn-sekcije-osvjezi" class="dugme" type="button">Osvježi sa servera</button>
-    <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
+  <div id="sekcije-filter" class="segment sks-filter" role="group" aria-label="Prikaz sekcija"></div>
+  <div class="sks-alati">
+    <input id="sekcije-trazi" type="search" placeholder="Traži sekciju, revir, lovca…" aria-label="Traži sekcije (sekcija, revir, grupovođa, član)" autocomplete="off">
+    <button id="btn-sekcije-osvjezi" class="ikona-dugme" type="button" aria-label="Osvježi sa servera" title="Osvježi sa servera"><svg class="ic" aria-hidden="true"><use href="#ic-osvjezi"/></svg></button>
   </div>
+  <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
   <p id="sekcije-status" class="status" role="status"></p>
   <details id="uloge-detalji" class="uprava" hidden>
   <summary>Grupovođe i lovočuvari po revirima</summary>

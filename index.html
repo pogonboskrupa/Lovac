@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.3.8';
+  const APP_VER = 'v1.3.9';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -65,6 +65,7 @@
   <symbol id="ic-chev-gore" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="ic-mountain" viewBox="0 0 24 24"><path d="M2 20 9.5 6 14 14l2-3 6 9Z" fill="currentColor"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19" stroke="currentColor" stroke-width="2.5" fill="none"/></symbol>
+    <symbol id="ic-osvjezi" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" fill="none"/></symbol>
 </svg>
 
@@ -1498,19 +1499,19 @@
     <button id="btn-sekcije-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
   <div class="sk-hero tr-hero ev-hero">
-    <div class="sk-statovi sk-statovi-hero">
-      <div data-stat="moje"><b id="sks-moje">0</b><span>moje sekcije</span></div>
-      <div data-stat="odobrenje"><b id="sks-odobrenje">0</b><span>za odobrenje</span></div>
-      <div data-stat="ukupno"><b id="sks-ukupno">0</b><span>sekcija ukupno</span></div>
+    <div class="sk-statovi sk-statovi-hero sks-hero">
+      <button type="button" data-stat="moje" data-filter-skok="moje"><b id="sks-moje">0</b><span>moje sekcije</span></button>
+      <button type="button" data-stat="odobrenje" data-filter-skok="zahtjevi"><b id="sks-odobrenje">0</b><span>za odobrenje</span></button>
+      <button type="button" data-stat="ukupno" data-filter-skok="sve"><b id="sks-ukupno">0</b><span>sekcija ukupno</span></button>
     </div>
+    <p id="sekcije-uputa" class="sitno sks-uputa"></p>
   </div>
-  <p class="sitno">U sekciju se ulazi samo uz odobrenje grupovođe: zatraži pristup, a grupovođa odobri ili odbije.</p>
-  <div id="sekcije-filter" class="segment p-tabovi" role="group" aria-label="Prikaz sekcija"></div>
-  <input id="sekcije-trazi" type="search" placeholder="Traži (sekcija, revir, grupovođa, član…)" aria-label="Traži sekcije" autocomplete="off">
-  <div class="red-dugmadi">
-    <button id="btn-sekcije-osvjezi" class="dugme" type="button">Osvježi sa servera</button>
-    <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
+  <div id="sekcije-filter" class="segment sks-filter" role="group" aria-label="Prikaz sekcija"></div>
+  <div class="sks-alati">
+    <input id="sekcije-trazi" type="search" placeholder="Traži sekciju, revir, lovca…" aria-label="Traži sekcije (sekcija, revir, grupovođa, član)" autocomplete="off">
+    <button id="btn-sekcije-osvjezi" class="ikona-dugme" type="button" aria-label="Osvježi sa servera" title="Osvježi sa servera"><svg class="ic" aria-hidden="true"><use href="#ic-osvjezi"/></svg></button>
   </div>
+  <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
   <p id="sekcije-status" class="status" role="status"></p>
   <details id="uloge-detalji" class="uprava" hidden>
   <summary>Grupovođe i lovočuvari po revirima</summary>

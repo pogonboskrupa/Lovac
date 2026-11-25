@@ -184,3 +184,30 @@ test('javne sekcije za registraciju: grupisanje po reviru, bez duplikata i prazn
   assert.deepEqual(g.map((x) => [x.revir, x.sekcije.map((s) => s.id)]), [['Krupa', ['a', 'c']], ['Otoka', ['b']]]);
   assert.deepEqual(groupPublicSections(null), []);
 });
+
+test('pregled sekcija: uputa po ulozi, broj po filteru, starost zahtjeva, traka lica (grupovođa prvi)', async () => {
+  const { sectionsHint, sectionFilterCounts, requestAgeText, memberFaces } = await import('../../static/js/sekcije.js');
+  const data = {
+    reviri: [{ id: 'r1' }],
+    sekcije: [{ id: 's1', revir_id: 'r1', grupovodja_id: 'g', aktivno: true }, { id: 's2', revir_id: 'r1', aktivno: true }],
+    clanovi: [
+      { sekcija_id: 's1', korisnik_id: 'b', status: 'odobren' }, { sekcija_id: 's1', korisnik_id: 'g', status: 'odobren' },
+      { sekcija_id: 's1', korisnik_id: 'a', status: 'odobren' }, { sekcija_id: 's1', korisnik_id: 'x', status: 'ceka' },
+    ],
+    lovocuvari: [{ korisnik_id: 'lc', revir_id: 'r1' }],
+  };
+  assert.match(sectionsHint({ id: 'adm', is_admin: true }, data), /sve revire/);
+  assert.match(sectionsHint({ id: 'lc' }, data), /svog revira/);
+  assert.match(sectionsHint({ id: 'g' }, data), /Vodiš svoju sekciju/);
+  assert.match(sectionsHint({ id: 'a' }, data), /zatraži pristup/);
+  assert.deepEqual(sectionFilterCounts(data, { id: 'g' }), { moje: 1, zahtjevi: 1, slobodne: 1, sve: 2 });
+  const now = Date.parse('2026-11-25T12:00:00Z');
+  assert.equal(requestAgeText('2026-11-25T08:00:00Z', now), 'danas');
+  assert.equal(requestAgeText('2026-11-22T08:00:00Z', now), 'prije 3 dana');
+  assert.equal(requestAgeText(null, now), '');
+  const names = { a: 'Ado', b: 'Bego', g: 'Goran' };
+  const f = memberFaces(data.sekcije[0], data.clanovi, (id) => names[id], 2);
+  assert.deepEqual(f.lica.map((x) => x.id), ['g', 'a']);
+  assert.equal(f.ostalo, 1);
+  assert.equal(f.ukupno, 3);
+});

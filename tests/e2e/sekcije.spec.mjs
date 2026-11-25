@@ -88,7 +88,9 @@ test('tri revira, a u svakom sekcije; lovac bez odobrenja vidi samo naziv i mož
   const card = page.locator('.sekcija-kartica[data-id="' + ID(200) + '"]');
   await expect(card).toHaveAttribute('data-pristup', 'nema');
   await expect(card).toContainText('Nema pristupa');
-  await expect(card).toContainText('Grupovođa: Goran Grupovođa');
+  await expect(card.locator('.sk2-ljudi')).toContainText('Grupovođa');
+  await expect(card.locator('.sk2-ljudi')).toContainText('Goran Grupovođa');
+  await expect(card.locator('.sk2-clanovi')).toHaveCount(0); // bez pristupa nema spiska članova
   await expect(card.locator('details.uprava')).toHaveCount(0);
   await expect(page.locator('#btn-sekcija-nova')).toBeHidden();
   await card.locator('[data-akcija="zatrazi"]').click();
@@ -185,7 +187,8 @@ test('admin: grupovođe po revirima, nova sekcija sa grupovođom i lovočuvarom,
   await expect.poll(() => server.db.revir_lovocuvari.length).toBe(1);
   expect(server.db.revir_lovocuvari[0]).toMatchObject({ korisnik_id: LOVAC2.id, revir_id: R.krupa });
   await expect(page.locator('#lovocuvari-spisak')).toContainText('Luka Lovac');
-  await expect(page.locator('.sekcija-kartica', { hasText: 'Krupa 1' })).toContainText('Lovočuvar revira: Luka Lovac');
+  await expect(page.locator('.sekcija-kartica', { hasText: 'Krupa 1' }).locator('.sk2-ljudi')).toContainText('Lovočuvar revira');
+  await expect(page.locator('.sekcija-kartica', { hasText: 'Krupa 1' }).locator('.sk2-ljudi')).toContainText('Luka Lovac');
 
   await page.locator('#btn-sekcija-nova').click();
   await expect(page.locator('#sekcija-revir option')).toHaveCount(3);
@@ -214,7 +217,10 @@ test('odobren član vidi članove sekcije; lov sekcije: grupovođa ga pravi za s
   await openSekcije(page);
   const card = page.locator('.sekcija-kartica').first();
   await expect(card).toHaveAttribute('data-pristup', 'clan');
-  await expect(card).toContainText('Članovi: Lovro Lovac');
+  // članovi su traka lica; dodir rastvara spisak imena
+  await expect(card.locator('.sk2-clanovi summary')).toContainText('Članovi (1)');
+  await card.locator('.sk2-clanovi summary').click();
+  await expect(card.locator('.sk2-spisak')).toContainText('Lovro Lovac');
   await expect(card.locator('[data-akcija="napusti"]')).toBeVisible();
   await expect(card.locator('details.uprava')).toHaveCount(0);
 });
@@ -254,11 +260,42 @@ test('admin prebacuje zahtjev lovca u drugu sekciju (lovac se greškom prijavio 
   await openSekcije(page);
   const zahtjev = page.locator('#sekcije-zahtjevi [data-uid="' + LOVAC.id + '"]');
   await expect(zahtjev).toBeVisible();
-  // bez izabrane sekcije ništa se ne šalje
+  // prebacivanje je sklopljeno ispod Odobri/Odbij; bez izabrane sekcije ništa se ne šalje
+  await zahtjev.locator('.sk-prebaci-vise summary').click();
   await zahtjev.locator('[data-akcija="prebaci"]').click();
   expect(poziv).toBeNull();
   await zahtjev.locator('[data-prebaci]').selectOption({ label: 'Otoka · Otoka 1' });
   await zahtjev.locator('[data-akcija="prebaci"]').click();
   await expect.poll(() => poziv).toEqual({ p_iz: ID(200), p_u: ID(201), p_korisnik: LOVAC.id });
   await expect.poll(() => server.db.sekcija_clanovi[0].sekcija_id).toBe(ID(201));
+});
+
+test('pregled (v1.3.9): uputa po ulozi, filteri sa brojem, skok sa brojeva u heroju, kompaktan zahtjev, značka ostaje u kartici', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'ceka', created_at: new Date(Date.now() - 3 * 86400000).toISOString() });
+  await setup(page, server, GV);
+  await openSekcije(page);
+  await expect(page.locator('#sekcije-uputa')).toContainText('Vodiš svoju sekciju');
+  await expect(page.locator('#sekcije-filter [data-filter="moje"] .sks-broj')).toHaveText('1');
+  await expect(page.locator('#sekcije-filter [data-filter="sve"] .sks-broj')).toHaveText('1');
+  // zahtjev: jedan red sa licem, sekcijom i starošću; prebacivanje je sklopljeno
+  const z = page.locator('#sekcije-zahtjevi .sk-zahtjev').first();
+  await expect(z).toContainText('Lovro Lovac');
+  await expect(z).toContainText('→ Krupa 1 · prije 3 dana');
+  await expect(z.locator('[data-prebaci]')).toBeHidden();
+  const [o, d] = [await z.locator('[data-akcija="odobri"]').boundingBox(), await z.locator('[data-akcija="odbij"]').boundingBox()];
+  expect(Math.abs(o.y - d.y)).toBeLessThan(2); // Odobri i Odbij u istom redu
+  expect(o.height).toBeGreaterThanOrEqual(44);
+  // značka broja zahtjeva je u kartici sekcije, ne u uglu ekrana preko ×
+  const card = page.locator('.sekcija-kartica').first();
+  const badge = await card.locator('.sk2-znacka').boundingBox();
+  const cardBox = await card.boundingBox();
+  expect(badge.y).toBeGreaterThanOrEqual(cardBox.y);
+  expect(badge.y + badge.height).toBeLessThanOrEqual(cardBox.y + cardBox.height);
+  // dodir na broj u heroju vodi na filter
+  await page.locator('.sks-hero [data-filter-skok="zahtjevi"]').click();
+  await expect(page.locator('#sekcije-filter [data-filter="zahtjevi"]')).toHaveAttribute('aria-pressed', 'true');
+  // filteri u jednom redu (ne lome se)
+  const ys = await page.locator('#sekcije-filter button').evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().y)));
+  expect(new Set(ys).size).toBe(1);
 });
