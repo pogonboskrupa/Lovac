@@ -143,7 +143,9 @@ public class UpdateBridge {
                 js("__updateGreska", "Fajl nove verzije nije sačuvan");
                 return;
             }
+            String sacuvano = saveToDownloads(apk);
             js("__updatePreuzeto", apk.getName());
+            if (sacuvano != null) js("__updateStatus", "APK je sačuvan u " + sacuvano + ". Pokrećem instalaciju…");
             activity.runOnUiThread(() -> installOrAsk(apk));
         } catch (Exception e) {
             Log.e("Lovac", "Preuzimanje nove verzije", e);
@@ -151,6 +153,42 @@ public class UpdateBridge {
             js("__updateGreska", "Preuzimanje nije uspjelo (provjeri internet): " + e.getMessage());
         } finally {
             if (c != null) c.disconnect();
+        }
+    }
+
+    /**
+     * Kopira preuzeti APK u javne Preuzimanja/Lovac (MediaStore, Android 10+, bez dozvole za pohranu), da lovac
+     * ima fajl na telefonu i kad instalacija ne krene. Vraća opis mjesta ili null kad kopiranje nije uspjelo
+     * (instalacija ide dalje iz privatnog fajla).
+     */
+    private String saveToDownloads(File apk) {
+        if (Build.VERSION.SDK_INT < 29) return null;
+        try {
+            String name = "Lovac-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(new java.util.Date()) + ".apk";
+            android.content.ContentValues v = new android.content.ContentValues();
+            v.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name);
+            v.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, APK_MIME);
+            v.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Lovac");
+            v.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1);
+            android.content.ContentResolver cr = activity.getContentResolver();
+            Uri uri = cr.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+            if (uri == null) return null;
+            try (InputStream in = new FileInputStream(apk); OutputStream out = cr.openOutputStream(uri)) {
+                if (out == null) { cr.delete(uri, null, null); return null; }
+                byte[] buf = new byte[1 << 16];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } catch (Exception e) {
+                cr.delete(uri, null, null);
+                throw e;
+            }
+            android.content.ContentValues done = new android.content.ContentValues();
+            done.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0);
+            cr.update(uri, done, null, null);
+            return "Preuzimanja/Lovac/" + name;
+        } catch (Exception e) {
+            Log.w("Lovac", "APK nije kopiran u Preuzimanja", e);
+            return null;
         }
     }
 

@@ -32,3 +32,10 @@ test('link na zadnju verziju u WebView-u se preuzima u aplikaciji, a ostala preu
   assert.match(main, /setDownloadListener/);
   assert.match(main, /setDestinationInExternalPublicDir\(Environment\.DIRECTORY_DOWNLOADS/);
 });
+
+test('preuzeti APK se sačuva i u javne Preuzimanja/Lovac (MediaStore), prije pokretanja instalacije', () => {
+  assert.match(bridge, /MediaStore\.Downloads\.EXTERNAL_CONTENT_URI/);
+  assert.match(bridge, /DIRECTORY_DOWNLOADS \+ "\/Lovac"/);
+  assert.match(bridge, /APK je sačuvan u /);
+  assert.match(bridge, /saveToDownloads\(apk\)[\s\S]*installOrAsk\(apk\)/);
+});
