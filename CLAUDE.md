@@ -714,3 +714,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Povratak veze poslije slabog signala (v1.4.1)**
 - Uzrok (našao CI test "Dodaj lov na slabom signalu"): ocjena veze se računa iz zadnjih 6 zahtjeva; poslije slabog signala svi su neuspjesi, a dok je ocjena `nema`/`preslaba` jedini zahtjev je provjera svakih 30 s — trebalo je ~4 uspješne provjere (~2 min) da ocjena izađe iz "offline", pa je "Dodaj lov" govorio "potreban je internet" iako je signal postojao. Sada uspješna provjera (`startConnectionProbe` → `forgetOldFailures`) briše stare neuspjehe i ocjena kreće od tog uspjeha; neuspjela provjera ne briše ništa.
+
+**Ponovno dijeljenje sa istim lovcem (migracija 041, v1.4.2)**
+- Uzrok "new row violates row-level security policy (USING expression) for table lokacije_izabranih": upsert (`INSERT … ON CONFLICT DO UPDATE`) traži da POSTOJEĆI red prođe i SELECT politiku; staro dijeljenje sa istim lovcem koje je isteklo dok app nije bila otvorena ostaje u tabeli, a `citanje` ga je skrivalo i od vlasnika. Sada vlasnik vidi i svoje istekle redove (primalac i dalje samo dok traje), a granica od 30 broji samo aktivna dijeljenja. Zamka: svaka tabela u koju klijent piše upsertom mora vlasniku dati SELECT nad svim njegovim redovima, i isteklim.
