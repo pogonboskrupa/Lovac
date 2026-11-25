@@ -4,6 +4,17 @@
 -- Vidi samo pošiljalac i primalac (admin NE). Bez izmjene; brišu pošiljalac i primalac. Jedno slanje može imati
 -- do 6 slika (album, npr. trofej sa više strana). Idempotentno.
 
+-- Iz 026 (isto tijelo): migracija mora raditi i kad 026 još nije pokrenuta na serveru.
+create or replace function public.je_clan_drustva()
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+  select coalesce((select k.odobren from public.korisnici k where k.id = auth.uid()), false);
+$$;
+revoke execute on function public.je_clan_drustva() from public, anon;
+grant execute on function public.je_clan_drustva() to authenticated;
+
 create or replace function public.slike_lovcima_rok()
 returns interval language sql immutable as $$ select interval '12 hours' $$;
 

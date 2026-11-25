@@ -3,6 +3,25 @@
 -- Dijeliti i primati mogu samo stvarni članovi društva (`je_clan_drustva`, `je_stvarni_clan`), ne probni nalozi.
 -- Idempotentno.
 
+-- Iz 026 (isto tijelo): migracija mora raditi i kad 026 još nije pokrenuta na serveru.
+create or replace function public.je_clan_drustva()
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+  select coalesce((select k.odobren from public.korisnici k where k.id = auth.uid()), false);
+$$;
+revoke execute on function public.je_clan_drustva() from public, anon;
+grant execute on function public.je_clan_drustva() to authenticated;
+
+-- Iz 033 (isto tijelo).
+create or replace function public.je_stvarni_clan(p_korisnik uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select k.odobren from public.korisnici k where k.id = p_korisnik), false);
+$$;
+revoke execute on function public.je_stvarni_clan(uuid) from public, anon;
+grant execute on function public.je_stvarni_clan(uuid) to authenticated;
+
 create table if not exists public.lokacije_izabranih (
   vlasnik_id uuid not null default auth.uid() references public.korisnici (id) on delete cascade,
   primalac_id uuid not null references public.korisnici (id) on delete cascade,
