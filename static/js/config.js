@@ -11,6 +11,9 @@ export const RELEASES_API = `https://api.github.com/repos/${GITHUB_REPO}/release
 // version.json objavljuje CI na granu "verzija" nakon uspješnog Release-a. raw.githubusercontent
 // nema limit od 60 zahtjeva/sat po IP adresi kao GitHub API (mobilni operateri dijele IP).
 export const VERSION_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/verzija/version.json`;
+// Minirana područja (BHMAC) se NE pakuju u APK: skidaju se u aplikaciji sa grane "podaci" (raw.githubusercontent šalje
+// CORS zaglavlja, za razliku od Release linkova), pa radi i bez novog APK-a kad BHMAC objavi nove podatke.
+export const MINIRANO_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/podaci/minirano.kml`;
 export const APK_URL = `https://github.com/${GITHUB_REPO}/releases/latest/download/app-debug.apk`;
 
 export function isServerConfigured() {

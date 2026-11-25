@@ -206,6 +206,9 @@ export function parseKml(xml) {
   const features = [];
   for (const pm of kids(doc, 'Placemark')) {
     const props = { name: text(pm, 'name') || '', opis: text(pm, 'description') || '' };
+    const podaci = {};
+    for (const d of kids(pm, 'SimpleData')) podaci[d.getAttribute('name')] = d.textContent.trim();
+    if (Object.keys(podaci).length) props.podaci = podaci;
     const st = styles[text(pm, 'styleUrl') || ''];
     if (st) props._stil = st;
     for (const g of kmlGeometries(pm)) features.push({ type: 'Feature', geometry: g, properties: props });

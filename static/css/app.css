@@ -1678,3 +1678,6 @@ svg[hidden] { display: none; }
 #lok-iz-stanje:is([data-stanje="server"], [data-stanje="greska"], [data-stanje="gps"], [data-stanje="veza"]) {
   padding: 8px 10px; border-radius: 8px; background: var(--upozorenje); color: var(--upozorenje-tekst); font-weight: 600;
 }
+/* Minirana područja (BHMAC): crveni znak u kartici i obrub kartice */
+.minirano-kartica { border-color: #d40000; }
+.minirano-boja { background: rgba(212, 0, 0, 0.6); border: 2px solid #d40000; }

@@ -133,6 +133,7 @@ export const UPUTE = [
       ['Izgled', 'Dnevna i noćna tema.'],
       ['Rezervna kopija', 'Postavke → Podaci izvozi tvoje zapise u fajl i može ih vratiti. Vraćanje samo dodaje zapise kojih nema. Napravi kopiju prije promjene telefona.'],
       ['Profil lovca', 'Avatar, pas, prateća oprema (vidiš samo ti), broj telefona i lična statistika.'],
+            ['Minirana područja', 'Granice lovišta → Minirana područja (BHMAC): minski sumnjiva područja za Bosansku Krupu, Bužim i Cazin crveno na karti (crvena popuna, linija crvena). Aplikacija ih sama preuzme kad ima interneta i provjerava jednom sedmično; poslije se vide i bez interneta. Dodirni područje za podatke. Podaci su orijentacioni i NE zamjenjuju oznake na terenu ni upozorenja nadležnih: ne ulazi u minski sumnjivo područje.'],
       ['Ažuriranje', 'Kad se pri pokretanju pojavi traka "Nova verzija", dodirni "Ažuriraj": preuzimanje počinje odmah, traka pokazuje napredak, a kad završi dodirni "Instaliraj" (nije potrebno ići u Postavke). Postavke → Nalog → O aplikaciji: Provjeri ažuriranje ili Preuzmi zadnju verziju. Aplikacija sama preuzme novu verziju na telefon (vidi se napredak u %), sačuva APK fajl u Preuzimanja/Lovac (Android 10 i novije), pa otvori instalaciju; instalacija ide preko postojeće, podaci ostaju. Prvi put telefon traži dozvolu za instalaciju iz ove aplikacije: dozvoli i vrati se, instalacija kreće sama.'],
       ['Odjava', 'Ako ima neposlanih zapisa, traži drugi dodir. Neposlani zapisi se ne brišu.'],
     ],

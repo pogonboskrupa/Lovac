@@ -6,9 +6,11 @@ import { importFiles, bboxOf, countFeatures } from './slojevi.js';
 import { idbPut, idbAll, idbDelete, idbGet } from './db.js';
 import { getClient, cachedProfile } from './auth.js';
 import { uuid } from './zapisi.js';
+import { isMinefieldLayer, popupLines, MINIRANO_STIL } from './minirano.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 
 const STORE = 'slojevi';
+const MINIRANO_ID_ = 'bhmac-minirano';
 const PANE = 'slojevi';
 const DEFAULT_STIL = { boja: '#ff7a00', debljina: 3, popuna: false, vidljiv: true };
 const $ = (id) => document.getElementById(id);
@@ -32,7 +34,7 @@ export function initSlojevi(L, map) {
       color: stil.boja || ks?.line?.color || DEFAULT_STIL.boja,
       weight: stil.debljina || ks?.weight || DEFAULT_STIL.debljina,
       fillColor: stil.boja || ks?.fill?.color || DEFAULT_STIL.boja,
-      fillOpacity: stil.popuna ? 0.18 : 0,
+      fillOpacity: stil.popuna ? (stil.popunaOpacity ?? 0.18) : 0,
     };
   };
 
@@ -49,6 +51,11 @@ export function initSlojevi(L, map) {
         style: styleFor(stil),
         pointToLayer: (f, ll) => L.circleMarker(ll, { pane: PANE, renderer, radius: 5, color: '#fff', weight: 1, fillColor: stil.boja, fillOpacity: 0.95 }),
         onEachFeature: (f, layer) => {
+          if (isMinefieldLayer(s)) {
+            const lines = popupLines(f.properties);
+            layer.bindPopup(`<b>Minirano područje</b>${lines.map((l) => `<br>${escapeHtml(l)}`).join('')}<br><span class="sitno">BHMAC · ne zamjenjuje oznake na terenu</span>`);
+            return;
+          }
           const n = f.properties?.name;
           if (n) layer.bindPopup(`<b>${escapeHtml(n)}</b><br><span class="sitno">${escapeHtml(s.naziv)}</span>`);
         },
@@ -66,10 +73,17 @@ export function initSlojevi(L, map) {
 
   const render = async () => {
     const isAdmin = Boolean(cachedProfile()?.is_admin);
-    const layers = (await idbAll(STORE)).sort((a, b) => String(a.naziv).localeCompare(String(b.naziv), 'bs'));
-    $('slojevi-prazno').hidden = layers.length > 0;
+    const all = await idbAll(STORE);
+    const mine = all.find(isMinefieldLayer);
+    const layers = all.filter((s) => !isMinefieldLayer(s)).sort((a, b) => String(a.naziv).localeCompare(String(b.naziv), 'bs'));
+    const mst = { ...MINIRANO_STIL, ...(mine?.stil || {}) };
+    const mv = $('minirano-vidljivo');
+    if (mv) { mv.checked = Boolean(mine) && mst.vidljiv !== false; mv.disabled = !mine; }
+    const mk = $('btn-minirano-karta');
+    if (mk) mk.disabled = !mine;
+    $('slojevi-prazno').hidden = all.length > 0;
     $('slojevi-sve').hidden = layers.length < 2;
-    const sum = layersSummary(layers, countFeatures);
+    const sum = layersSummary(all, countFeatures);
     $('sl-hero-broj').textContent = String(sum.broj);
     $('sl-hero-prikazanih').textContent = String(sum.prikazanih);
     $('sl-hero-elemenata').textContent = String(sum.elemenata);
@@ -193,6 +207,15 @@ export function initSlojevi(L, map) {
     toast(`Sloj "${data.naziv}" je na telefonu i radi bez interneta`);
     await draw();
     await render();
+  });
+
+  document.addEventListener('slojevi:promjena', () => { draw().then(render).catch((err) => console.error('slojevi', err)); });
+  $('minirano-vidljivo')?.addEventListener('change', (e) => updateStil(MINIRANO_ID_, { vidljiv: e.target.checked }).then(render));
+  $('btn-minirano-karta')?.addEventListener('click', async () => {
+    const s = await idbGet(STORE, MINIRANO_ID_);
+    if (!s) return;
+    const [w, so, ea, n] = bboxOf(s.geojson);
+    if (Number.isFinite(w)) { panel.hidden = true; map.fitBounds([[so, w], [n, ea]], { padding: [30, 30] }); }
   });
 
   $('btn-slojevi').addEventListener('click', async () => {

@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.3.4';
+  const APP_VER = 'v1.3.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -1303,6 +1303,18 @@
       <div><b id="sl-hero-prikazanih">0</b><span>prikazano na karti</span></div>
       <div><b id="sl-hero-elemenata">0</b><span>elemenata</span></div>
     </div>
+  </div>
+  <div class="p-kartica minirano-kartica" id="minirano-kartica">
+    <h3><span class="sloj-boja minirano-boja"></span>Minirana područja (BHMAC)</h3>
+    <p class="sitno">Minski sumnjiva područja za Bosansku Krupu, Bužim i Cazin, crveno na karti. Skida se u aplikaciji i poslije radi bez interneta; sama se provjerava jednom sedmično kad ima veze.</p>
+    <p id="minirano-stanje" class="sitno" role="status"></p>
+    <div class="red-dugmadi">
+      <label class="red-check"><input type="checkbox" id="minirano-vidljivo" checked disabled> Prikaži na karti</label>
+      <button id="btn-minirano-karta" class="dugme" type="button" disabled>Na karti</button>
+      <button id="btn-minirano-preuzmi" class="dugme glavno" type="button">Preuzmi / ažuriraj</button>
+    </div>
+    <p id="minirano-status" class="status" role="status"></p>
+    <p id="minirano-napomena" class="sitno"></p>
   </div>
   <p class="sitno">Granice lovišta, revira i lovnih površina na karti. Uvezene i preuzete granice ostaju na telefonu i rade bez interneta.</p>
   <div class="p-kartica sl-izvori">
