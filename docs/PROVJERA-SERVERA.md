@@ -5,6 +5,13 @@ Provjera je urađena sa javnim (anon) ključem iz aplikacije. Ništa nije čitan
 - kolone su provjerene istim upitom samo sa tom kolonom;
 - funkcije su pozvane sa nepostojećim id-em. Server tada samo javi da funkcija postoji ("permission denied") ili da je nema.
 
+## 0a. Poslije pokretanja svih migracija — 25. 11. 2026. (v1.3.4)
+
+Vlasnik je pokrenuo sve migracije. Provjera sa javnim ključem: sve tabele, kolone i funkcije iz 026–039 POSTOJE
+(odgovor 42501 "permission denied" = postoji, a anon je ne smije čitati; prije je bilo PGRST205/PGRST202/42703 = nema).
+`probni_sati()` vraća 24, `javne_sekcije()` radi bez prijave (spisak za registraciju). Registracija, dijeljenje sa
+izabranim lovcima, dojave, slike lovcima, brisanje lova i trag lova sada imaju sve na serveru.
+
 ## 0. Dopuna — provjera 25. 11. 2026. (v1.3.3)
 
 | Provjera | Rezultat |
