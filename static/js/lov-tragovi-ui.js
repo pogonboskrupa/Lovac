@@ -149,6 +149,13 @@ export function initLovTragovi(L, map) {
     if (e.detail.on) toast('Trag kretanja lovaca je na karti');
   });
   // iz arhive: prikaži trag tog lova na karti i zumiraj
+  // Arhiva: trag završenog lova se preuzima i kešira bez crtanja (za zbir "Kretanje lovaca" u detalju lova).
+  document.addEventListener('lovtrag:preuzmi', async (e) => {
+    const lovId = e.detail?.lovId;
+    if (!lovId) return;
+    await rowsFor(lovId, true);
+    document.dispatchEvent(new CustomEvent('lovtrag:preuzet', { detail: { lovId } }));
+  });
   document.addEventListener('lovtrag:arhiva', (e) => show(e.detail.lovId, { isLive: false, fit: e.detail.fit !== false }));
   // bočna kontrola lova iz arhive: sakrij tragove tog lova
   document.addEventListener('lovtrag:sakrij', (e) => { if (activeId && activeId === e.detail?.lovId) clear(); });

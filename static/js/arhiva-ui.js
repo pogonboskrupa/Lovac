@@ -12,7 +12,7 @@ import { downloadHunts } from './lov-ui.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { makeThumbnail, resizeToDataUrl } from './foto.js';
 import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
-import { archiveHunts, huntDate, huntTimeRange, huntedText, canAddMedia, matchesArchive, MAX_PHOTOS_PER_HUNT, archiveOverview } from './arhiva.js';
+import { archiveHunts, huntDate, huntTimeRange, huntedText, canAddMedia, matchesArchive, MAX_PHOTOS_PER_HUNT, archiveOverview, shotsOnMap, shotLine, huntMovement, formatKmM, formatMinutes } from './arhiva.js';
 import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { monthGrid, huntsByDate, initialMonth, shiftMonth, monthLabel, monthStats, DANI } from './arhiva-kalendar.js';
@@ -196,10 +196,66 @@ export function initArhiva() {
       ...pending.map((p) => `<figure class="ad-slika ad-slika-ceka"><img src="${p.mala}" alt="Slika čeka slanje"><figcaption>čeka slanje</figcaption></figure>`)].join('')
       || '<p class="sitno">Još nema slika.</p>';
     $('ad-slika-dodaj').hidden = !canAddMedia(z, me()?.id, isManager(z), d.slike.length + pending.length);
+    renderShots(z, d);
+    renderMovement(z);
     $('btn-ad-trag').hidden = z.lov.status === 'planiran';
     // briše admin ili grupovođa sekcije lova (server: obrisi_lov, migracija 032)
     $('ad-brisanje').hidden = !(me()?.is_admin || (z.sekcija?.grupovodja_id && z.sekcija.grupovodja_id === me()?.id));
   };
+
+  // ---------- pogoci i kretanje ----------
+  const shotsFor = (d) => shotsOnMap(d.odstrel || [], memberName, speciesName);
+
+  const renderShots = (z, d) => {
+    const { sa, bez } = shotsFor(d);
+    $('ad-pogoci').innerHTML = sa.map((s) => `<li class="clan-red" data-id="${escapeHtml(s.id)}"><span class="clan-tekst"><b>${escapeHtml(s.naziv)}</b>
+      <span class="sitno">${escapeHtml(shotLine(s).split(' · ').slice(1).join(' · '))}</span></span>
+      <button type="button" class="dugme" data-akcija="pogodak">Na karti</button></li>`).join('')
+      + (bez ? `<li class="sitno">Za ${bez} ${bez === 1 ? 'komad' : 'komada'} lokacija nije zabilježena (upisano prije ove opcije ili bez GPS-a).</li>` : '')
+      || '<li class="sitno">Nema upisanog ulova za ovaj lov.</li>';
+  };
+
+  let movementSeq = 0;
+  const renderMovement = async (z) => {
+    const seq = ++movementSeq;
+    const cache = await idbGet('arhiva', `trag:${z.id}`).catch(() => null);
+    if (seq !== movementSeq) return;
+    const m = huntMovement(cache?.rows || [], memberName);
+    $('ad-kretanje').innerHTML = m.map((x) => `<li class="clan-red"><span class="clan-tekst"><b>${escapeHtml(x.ime)}</b>
+      <span class="sitno">${formatKmM(x.metara)} · ${formatMinutes(x.minuta)} · ${x.tacaka} tačaka</span></span></li>`).join('');
+    $('ad-kretanje-napomena').textContent = m.length
+      ? 'Pređeni put je iz tačaka koje su lovci slali dok je lov trajao (samo dok je dijeljenje lokacije bilo uključeno). Na karti se vidi i kuda su se kretali.'
+      : (online() ? 'Trag kretanja se preuzima…' : 'Trag kretanja nije na telefonu — otvori ovaj lov kad imaš internet.');
+    // završen lov bez traga (ili sa tragom preuzetim prije kraja lova): preuzmi jednom, pa ponovo prikaži
+    const stale = !cache || (z.lov.kraj && (cache.preuzeto || 0) < Date.parse(z.lov.kraj));
+    if (stale && z.lov.status === 'zavrsen' && online() && !tragZatrazen.has(z.id)) {
+      tragZatrazen.add(z.id);
+      document.dispatchEvent(new CustomEvent('lovtrag:preuzmi', { detail: { lovId: z.id } }));
+    } else if (!m.length && !online()) {
+      $('ad-kretanje').innerHTML = '<li class="sitno">Nema snimljenog traga kretanja.</li>';
+    } else if (!m.length && cache) {
+      $('ad-kretanje').innerHTML = '<li class="sitno">Za ovaj lov nema snimljenog traga kretanja.</li>';
+      $('ad-kretanje-napomena').textContent = '';
+    }
+  };
+  const tragZatrazen = new Set();
+  document.addEventListener('lovtrag:preuzet', (e) => {
+    const z = hunts.find((x) => x.id === currentId);
+    if (z && z.id === e.detail?.lovId && !detail.hidden) renderMovement(z);
+  });
+
+  // dodir na "Na karti" kod pogotka: lov na karti sa fokusom na taj pogodak
+  const showOnMap = (z, fokus = null) => {
+    const d = details.get(z.id) || { odstrel: [], slike: [] };
+    detail.hidden = true;
+    list.hidden = true;
+    document.dispatchEvent(new CustomEvent('arhiva:na-karti', { detail: { lovId: z.id, naziv: z.lov.naziv, datum: z.lov.datum, slike: d.slike || [], pogoci: shotsFor(d).sa, fokus } }));
+  };
+  $('ad-pogoci').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="pogodak"]');
+    const z = hunts.find((x) => x.id === currentId);
+    if (b && z) showOnMap(z, b.closest('[data-id]').dataset.id);
+  });
 
   const openDetail = async (id) => {
     currentId = id;
@@ -413,10 +469,7 @@ export function initArhiva() {
   // Lov na karti: tragovi i slike sa bočnom kontrolom prikaži/sakrij (arhiva-karta-ui).
   $('btn-ad-trag').addEventListener('click', () => {
     const z = hunts.find((x) => x.id === currentId);
-    if (!z) return;
-    detail.hidden = true;
-    list.hidden = true;
-    document.dispatchEvent(new CustomEvent('arhiva:na-karti', { detail: { lovId: z.id, naziv: z.lov.naziv, datum: z.lov.datum, slike: details.get(z.id)?.slike || [] } }));
+    if (z) showOnMap(z);
   });
 
   // ---------- događaji ----------

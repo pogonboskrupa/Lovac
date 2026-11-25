@@ -43,3 +43,24 @@ test('arhiva u fajl: tragovi po lovcu po vremenu, isti okvir za sve', () => {
   assert.equal((svg.match(/<polyline/g) || []).length, 2);
   assert.equal(trailsSvg(new Map()), '');
 });
+
+test('arhiva u fajl: pogoci su na crtežu (crveni X sa brojem) i u popisu sa koordinatama; komad bez lokacije se navodi', () => {
+  const od = [
+    { id: 'o1', vrsta: 'divlja_svinja', tezina: 82.5, korisnik_id: 'b', vrijeme: '2026-11-22T08:30:00Z', lat: 44.8765, lon: 16.1612, stan_broj: 2 },
+    { id: 'o2', vrsta: 'zec', korisnik_id: 'a', vrijeme: '2026-11-22T09:00:00Z' },
+  ];
+  const html = archiveHtml({ z, d: { odstrel: od, slike: [] }, trag, nameOf: (id) => names[id], speciesName: (k) => (k === 'zec' ? 'Zec <obični>' : 'Divlja svinja'), now: Date.parse('2026-11-24T10:00:00Z') });
+  assert.match(html, /Gdje je divljač ustrijeljena/);
+  assert.match(html, /stroke="#b91c1c"/); // X na crtežu
+  assert.match(html, />1<\/text>/);
+  assert.ok(html.includes('44.876500, 16.161200'));
+  assert.match(html, /Za 1 komad lokacija nije zabilježena/);
+  assert.ok(!html.includes('<obični>'), 'naziv vrste escape');
+  // bez pogodaka nema odjeljka sa popisom
+  const bez = archiveHtml({ z, d: { odstrel: [], slike: [] }, trag, nameOf: (id) => names[id] });
+  assert.ok(!bez.includes('Gdje je divljač ustrijeljena</h2>'));
+  // crtež postoji i kad nema traga, samo pogoci (dva pogotka)
+  const svg = trailsSvg(new Map(), 640, 420, 16, [{ lat: 44.87, lon: 16.15 }, { lat: 44.88, lon: 16.16 }]);
+  assert.match(svg, /<svg/);
+  assert.equal((svg.match(/<text/g) || []).length, 2);
+});

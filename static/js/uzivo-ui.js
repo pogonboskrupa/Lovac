@@ -33,9 +33,12 @@ const $ = (id) => document.getElementById(id);
 
 async function qUzivo(p) {
   const { data, error } = await p;
-  if (error) throw new Error(error.message);
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
   return data;
 }
+
+// Server bez migracije 043 nema kolone lat/lon u lov_odstrel (PGRST204 / 42703): odstrel se ipak šalje, bez lokacije.
+const missingLocationColumn = (err) => ['PGRST204', '42703'].includes(err?.code) || /column .*(lat|lon)|(lat|lon).* column/i.test(err?.message || '');
 
 export function initUzivo(L, map) {
   const others = L.layerGroup().addTo(map);
@@ -84,7 +87,13 @@ export function initUzivo(L, map) {
     if (!pending.length || !online()) return;
     const left = [];
     for (const row of pending) {
-      try { await qUzivo(getClient().from('lov_odstrel').upsert(row, { onConflict: 'id' })); } catch { left.push(row); }
+      try {
+        await qUzivo(getClient().from('lov_odstrel').upsert(row, { onConflict: 'id' }));
+      } catch (err) {
+        if (!missingLocationColumn(err) || row.lat == null) { left.push(row); continue; }
+        const { lat, lon, ...bezLokacije } = row;
+        try { await qUzivo(getClient().from('lov_odstrel').upsert(bezLokacije, { onConflict: 'id' })); } catch { left.push(row); }
+      }
     }
     saveSoft(ODSTREL_RED, left);
   };
@@ -326,7 +335,8 @@ export function initUzivo(L, map) {
     if (!lov || !rec.uLov) return;
     const stan = lov.stanovi.find((s) => s.korisnik_id === me()?.id);
     const pending = loadJSON(ODSTREL_RED, []);
-    pending.push({ id: rec.id, lov_id: lov.id, korisnik_id: me().id, vrsta: rec.vrsta, kategorija: rec.kategorija, vrijeme: new Date(rec.vrijeme).toISOString(), tezina: rec.tezina, stan_broj: stan?.broj ?? null });
+    pending.push({ id: rec.id, lov_id: lov.id, korisnik_id: me().id, vrsta: rec.vrsta, kategorija: rec.kategorija, vrijeme: new Date(rec.vrijeme).toISOString(), tezina: rec.tezina, stan_broj: stan?.broj ?? null,
+      ...(Number.isFinite(rec.lat) && Number.isFinite(rec.lon) ? { lat: rec.lat, lon: rec.lon } : {}) });
     saveSoft(ODSTREL_RED, pending);
     flushHarvest();
   });

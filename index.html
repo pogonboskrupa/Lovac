@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.6.1';
+  const APP_VER = 'v1.6.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -173,6 +173,7 @@
   <div id="arh-karta" class="arh-karta" role="group" aria-label="Lov iz arhive na karti" hidden>
     <span id="arh-karta-naziv" class="arh-karta-naziv"></span>
     <button id="btn-arh-tragovi" class="arh-karta-dugme" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#ic-route"/></svg><span>Tragovi</span></button>
+    <button id="btn-arh-pogoci" class="arh-karta-dugme" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg><span id="arh-karta-pogoci">Pogoci</span></button>
     <button id="btn-arh-slike" class="arh-karta-dugme" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#ic-camera"/></svg><span id="arh-karta-slike">Slike</span></button>
     <button id="btn-arh-karta-zatvori" class="arh-karta-dugme" type="button" aria-label="Sakrij lov sa karte"><svg class="ic" aria-hidden="true"><use href="#ic-close"/></svg><span>Sakrij</span></button>
   </div>
@@ -1920,10 +1921,18 @@
       <div data-stat="slika"><b id="ad-stat-slika">0</b><span>slika</span></div>
     </div>
   </div>
-  <button id="btn-ad-trag" class="dugme glavno" type="button">Prikaži lov na karti (tragovi i slike)</button>
+  <button id="btn-ad-trag" class="dugme glavno" type="button">Prikaži lov na karti (tragovi, pogoci i slike)</button>
   <button id="btn-ad-preuzmi" class="dugme" type="button">Preuzmi lov na telefon (fajl)</button>
   <p id="ad-status" class="status" role="status"></p>
   <section class="sk-kartica"><h3>Šta se lovilo</h3><ul id="ad-ulov" class="spisak"></ul></section>
+  <section id="ad-kretanje-kartica" class="sk-kartica">
+    <h3>Kretanje i pogoci</h3>
+    <h4 class="ad-mali-naslov">Gdje je divljač ustrijeljena</h4>
+    <ul id="ad-pogoci" class="spisak"></ul>
+    <h4 class="ad-mali-naslov">Kretanje lovaca</h4>
+    <ul id="ad-kretanje" class="spisak"></ul>
+    <p id="ad-kretanje-napomena" class="sitno"></p>
+  </section>
   <section class="sk-kartica">
     <h3>Rezultat lova</h3>
     <p id="ad-rezultat-tekst"></p>

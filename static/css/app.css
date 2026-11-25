@@ -1845,3 +1845,9 @@ svg[hidden] { display: none; }
 .kor-vise > summary::-webkit-details-marker { display: none; }
 .kor-vise > summary::after { content: '▾'; font-size: 1.1rem; }
 .kor-vise[open] > summary::after { content: '▴'; }
+
+/* Arhiva lova: pogoci na karti i podnaslovi u detalju */
+.arh-pogodak { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; box-sizing: border-box;
+  background: #b91c1c; color: #ffffff; border: 3px solid #ffffff; box-shadow: var(--sjena); }
+.arh-pogodak .ic { width: 20px; height: 20px; }
+.ad-mali-naslov { margin: 12px 0 6px; font-size: 0.95rem; color: var(--naglasak); }

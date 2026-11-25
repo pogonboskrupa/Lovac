@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.6.1';
+  const APP_VER = 'v1.6.2';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -173,6 +173,7 @@
   <div id="arh-karta" class="arh-karta" role="group" aria-label="Lov iz arhive na karti" hidden>
     <span id="arh-karta-naziv" class="arh-karta-naziv"></span>
     <button id="btn-arh-tragovi" class="arh-karta-dugme" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#ic-route"/></svg><span>Tragovi</span></button>
+    <button id="btn-arh-pogoci" class="arh-karta-dugme" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg><span id="arh-karta-pogoci">Pogoci</span></button>
     <button id="btn-arh-slike" class="arh-karta-dugme" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#ic-camera"/></svg><span id="arh-karta-slike">Slike</span></button>
     <button id="btn-arh-karta-zatvori" class="arh-karta-dugme" type="button" aria-label="Sakrij lov sa karte"><svg class="ic" aria-hidden="true"><use href="#ic-close"/></svg><span>Sakrij</span></button>
   </div>

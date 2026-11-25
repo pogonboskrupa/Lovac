@@ -394,3 +394,58 @@ test('preuzimanje lova na telefon: jedan HTML fajl sa ulovom, učesnicima, velik
   expect((f.content.match(/<polyline/g) || []).length).toBe(2);
   expect(f.content).toContain('Ne zamjenjuje službeni lovački dnevnik');
 });
+
+test('završen lov: "Kretanje i pogoci" — pređeno po lovcu, popis pogodaka (sa i bez lokacije) i pogoci na karti sa kontrolom', async ({ page }) => {
+  const server = makeServer();
+  finished(server);
+  server.db.lov_odstrel[0] = { ...server.db.lov_odstrel[0], vrijeme: T(60), lat: 44.8851, lon: 16.1543, stan_broj: 2 };
+  await setup(page, server, LOVAC);
+  await openArhiva(page);
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await expect(page.locator('#ad-kretanje-kartica')).toBeVisible();
+  // pogoci: jedan sa lokacijom (Na karti), jedan bez (samo napomena)
+  await expect(page.locator('#ad-pogoci li[data-id]')).toHaveCount(1);
+  await expect(page.locator('#ad-pogoci li[data-id]')).toContainText('Divlja svinja');
+  await expect(page.locator('#ad-pogoci li[data-id]')).toContainText('stan 2');
+  await expect(page.locator('#ad-pogoci')).toContainText('Za 1 komad lokacija nije zabilježena');
+  // kretanje: trag se preuzme i pokaže pređeni put i trajanje po lovcu
+  await expect(page.locator('#ad-kretanje li')).toHaveCount(2);
+  await expect(page.locator('#ad-kretanje')).toContainText('Goran');
+  await expect(page.locator('#ad-kretanje')).toContainText('Lovro');
+  await expect(page.locator('#ad-kretanje li').first()).toContainText(/\d+ m|\d,\d\d km/);
+  await expect(page.locator('#ad-kretanje li').first()).toContainText('min');
+  // Na karti: detalj se zatvara, pogodak je na karti sa otvorenom karticom, kontrola ga prikazuje i sakriva
+  await page.locator('#ad-pogoci [data-akcija="pogodak"]').click();
+  await expect(page.locator('#arhiva-detalj')).toBeHidden();
+  await expect(page.locator('.arh-pogodak')).toHaveCount(1);
+  await expect(page.locator('#arh-karta-pogoci')).toHaveText('Pogoci 1');
+  await expect(page.locator('.leaflet-popup')).toContainText('Divlja svinja');
+  await expect(page.locator('.leaflet-popup')).toContainText('Lovro Lovac');
+  expect(await page.evaluate(() => window.__karta.getZoom())).toBeGreaterThanOrEqual(17);
+  await page.locator('#btn-arh-pogoci').click();
+  await expect(page.locator('.arh-pogodak')).toHaveCount(0);
+  await page.locator('#btn-arh-pogoci').click();
+  await expect(page.locator('.arh-pogodak')).toHaveCount(1);
+  await page.locator('#btn-arh-karta-zatvori').click();
+  await expect(page.locator('.arh-pogodak')).toHaveCount(0);
+});
+
+test('lov na karti iz arhive (dugme): pogoci i tragovi zajedno; lov bez lokacija pogodaka ima dugme Pogoci onemogućeno', async ({ page }) => {
+  const server = makeServer();
+  finished(server);
+  server.db.lov_odstrel[0] = { ...server.db.lov_odstrel[0], vrijeme: T(60), lat: 44.8851, lon: 16.1543 };
+  await setup(page, server, LOVAC);
+  await openArhiva(page);
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await page.locator('#btn-ad-trag').click();
+  await expect(page.locator('.arh-pogodak')).toHaveCount(1);
+  await expect(page.locator('#lov-trag-legenda .clan-chip')).toHaveCount(2);
+  await page.locator('#btn-arh-karta-zatvori').click();
+  // bez lokacija: dugme je onemogućeno
+  server.db.lov_odstrel.forEach((o) => { delete o.lat; delete o.lon; });
+  await page.reload();
+  await openArhiva(page);
+  await page.locator('#arhiva-spisak [data-akcija="otvori"]').click();
+  await page.locator('#btn-ad-trag').click();
+  await expect(page.locator('#btn-arh-pogoci')).toBeDisabled();
+});
