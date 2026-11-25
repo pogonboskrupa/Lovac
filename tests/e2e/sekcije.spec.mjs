@@ -33,6 +33,7 @@ function makeServer() {
       const url = new URL(req.url());
       const table = url.pathname.split('/').pop();
       const json = (status, body) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+      if (url.pathname.includes('/rpc/')) return json(404, { code: 'PGRST202', message: `Could not find the function ${table}` });
       const rows = db[table] || (db[table] = []);
       if (req.method() === 'GET') return json(200, rows.filter((r) => match(r, url.searchParams)));
       if (req.method() === 'POST') {
@@ -117,7 +118,11 @@ test('grupovođa odobrava i odbija zahtjeve, dodaje lovce sa spiska i preimenuje
   await settled(page);
   // Panel ostaje otvoren poslije radnje.
   await expect(card.locator('details.uprava')).toHaveAttribute('open', '');
+  // Odbijanje: prvi dodir otvara razlog, potvrda šalje (server bez 040 → stari put: direktno brisanje).
   await card.locator('[data-uid="' + LOVAC2.id + '"] [data-akcija="odbij"]').click();
+  await expect(card.locator('[data-uid="' + LOVAC2.id + '"] [data-razlog]')).toBeVisible();
+  expect(server.db.sekcija_clanovi.some((c) => c.korisnik_id === LOVAC2.id)).toBe(true);
+  await card.locator('[data-uid="' + LOVAC2.id + '"] [data-akcija="odbij-potvrdi"]').click();
   await expect.poll(() => server.db.sekcija_clanovi.some((c) => c.korisnik_id === LOVAC2.id)).toBe(false);
   await settled(page);
 
@@ -298,4 +303,83 @@ test('pregled (v1.3.9): uputa po ulozi, filteri sa brojem, skok sa brojeva u her
   // filteri u jednom redu (ne lome se)
   const ys = await page.locator('#sekcije-filter button').evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().y)));
   expect(new Set(ys).size).toBe(1);
+});
+
+test('dio 2 (migracija 040): odbijanje sa razlogom, imena podnosilaca, historija odluka, opis i okupljanje, Odobri sve, CSV', async ({ page }) => {
+  const server = makeServer();
+  const NOVI = { id: ID(77), ime: 'Novi', prezime: 'Probni', nadimak: '33' };
+  server.db.sekcija_clanovi.push(
+    { sekcija_id: ID(200), korisnik_id: NOVI.id, status: 'ceka' },
+    { sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'ceka' },
+    { sekcija_id: ID(200), korisnik_id: LOVAC2.id, status: 'ceka' },
+  );
+  server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: ADMIN.id, status: 'odobren' });
+  server.db.sekcija_odluke = [{ id: ID(901), sekcija_id: ID(200), korisnik_id: ID(78), odluka: 'odbijen', razlog: 'Nepoznat', odlucio: GV.id, created_at: new Date().toISOString() }];
+  await setup(page, server, GV);
+  const rpc = [];
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/(imena_podnosilaca|odbij_zahtjev_razlog)/, (r) => {
+    const fn = r.request().url().split('/rpc/')[1];
+    const body = r.request().postDataJSON() || {};
+    rpc.push({ fn, body });
+    if (fn === 'imena_podnosilaca') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ korisnik_id: NOVI.id, ime: NOVI.ime, prezime: NOVI.prezime, nadimak: NOVI.nadimak }]) });
+    server.db.sekcija_clanovi = server.db.sekcija_clanovi.filter((c) => !(c.sekcija_id === body.p_sekcija && c.korisnik_id === body.p_korisnik));
+    return r.fulfill({ status: 204, body: '' });
+  });
+  await openSekcije(page);
+  // ime probnog podnosioca stiže sa servera (prije "drugi lovac")
+  const novi = page.locator('#sekcije-zahtjevi [data-uid="' + NOVI.id + '"]');
+  await expect(novi).toContainText('Novi Probni (33)');
+  await novi.locator('[data-akcija="odbij"]').click();
+  await novi.locator('[data-razlog]').fill('Nisi član društva');
+  await novi.locator('[data-akcija="odbij-potvrdi"]').click();
+  await expect.poll(() => rpc.find((x) => x.fn === 'odbij_zahtjev_razlog')?.body).toEqual({ p_sekcija: ID(200), p_korisnik: NOVI.id, p_razlog: 'Nisi član društva' });
+  await settled(page);
+  // historija i Odobri sve (drugi dodir) u Upravljanju
+  const card = page.locator('.sekcija-kartica').first();
+  await card.locator('details.uprava > summary').click();
+  await expect(card.locator('.sk-historija')).toContainText('odbijen (Goran Grupovođa): Nepoznat');
+  const sve = card.locator('[data-akcija="odobri-sve"]');
+  await expect(sve).toHaveText('Odobri sve (2)');
+  await sve.click();
+  await expect(sve).toContainText('Dodirni ponovo');
+  expect(server.db.sekcija_clanovi.filter((c) => c.status === 'ceka').length).toBe(2);
+  await sve.click();
+  await expect.poll(() => server.db.sekcija_clanovi.filter((c) => c.status === 'ceka').length).toBe(0);
+  await settled(page);
+  // opis i okupljanje: sačuvaj, pa vidi na kartici
+  await card.locator('[data-opis]').fill('Sekcija uz rijeku Unu');
+  await card.locator('[data-okupljanje]').fill('Lovačka kuća Bara, 7:00');
+  await card.locator('[data-akcija="opis"]').click();
+  await expect.poll(() => server.db.sekcije[0].okupljanje).toBe('Lovačka kuća Bara, 7:00');
+  await expect(card.locator('.sk2-okupljanje')).toHaveText('Okupljanje: Lovačka kuća Bara, 7:00');
+  await expect(card.locator('.sk2-opis')).toHaveText('Sekcija uz rijeku Unu');
+  // CSV spisak članova
+  const [dl] = await Promise.all([page.waitForEvent('download'), card.locator('[data-akcija="csv"]').click()]);
+  expect(dl.suggestedFilename()).toMatch(/^clanovi-krupa-1-\d{4}-\d{2}-\d{2}\.csv$/);
+});
+
+test('podnosilac dobije odluku (odbijen sa razlogom): obavijest, poruka u Sekcijama i tačka na Meniju dok je ne potvrdi', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'ceka' });
+  server.db.sekcija_odluke = [];
+  await setup(page, server, LOVAC);
+  await page.addInitScript(() => { window.__notif = []; window.AndroidNotif = { prikazi: (n, t) => window.__notif.push({ n, t }), vibriraj: () => {} }; });
+  await openSekcije(page);
+  await page.locator('#btn-sekcije-zatvori').click();
+  // grupovođa odbija: server upisuje odluku, zahtjev nestaje
+  server.db.sekcija_clanovi = server.db.sekcija_clanovi.filter((c) => c.korisnik_id !== LOVAC.id);
+  server.db.sekcija_odluke.push({ id: ID(902), sekcija_id: ID(200), korisnik_id: LOVAC.id, odluka: 'odbijen', razlog: 'Popunjeno', odlucio: GV.id, created_at: new Date().toISOString() });
+  await page.evaluate(() => window.__odluke.check());
+  await expect.poll(() => page.evaluate(() => window.__notif.map((n) => n.t).join(' '))).toContain('Zahtjev za Krupa 1 je odbijen. Razlog: Popunjeno');
+  await expect(page.locator('#btn-sekcije')).toHaveAttribute('data-novo', 'true');
+  await page.locator('#btn-spiskovi').click();
+  await page.locator('#btn-sekcije').click();
+  await expect(page.locator('#sekcije-odluke')).toContainText('Razlog: Popunjeno');
+  await page.locator('#sekcije-odluke [data-akcija="odluka-ok"]').click();
+  await expect(page.locator('#sekcije-odluke')).toBeHidden();
+  await expect(page.locator('#btn-sekcije')).toHaveAttribute('data-novo', 'false');
+  // ista odluka se ne javlja ponovo
+  await page.evaluate(() => window.__odluke.check());
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__notif.length)).toBe(1);
 });

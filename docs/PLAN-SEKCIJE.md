@@ -14,7 +14,7 @@ zahtjeva "bježi" iz kartice u gornji desni ugao ekrana (preko ×); kartica sekc
    članovi kao traka lica (+N) koja se rastvara u spisak imena; glavna radnja jedna, sporedne manje.
 5. Revir kao naslov sa brojem sekcija; značka broja zahtjeva ostaje u kartici (ispravka položaja).
 
-## Dio 2 — funkcionalnost (sljedeći korak)
+## Dio 2 — funkcionalnost (migracija 040, v1.4.0 — urađeno)
 1. Imena podnosilaca zahtjeva za grupovođu/lovočuvara (server funkcija koja daje ime i nadimak samo za zahtjeve u sekcijama kojima
    upravljaš; probni nalozi nisu u spisku članova društva, pa se danas vide kao "drugi lovac").
 2. Obavijest podnosiocu kad je zahtjev odobren / odbijen / prebačen (u aplikaciji, uz značku na Meniju).

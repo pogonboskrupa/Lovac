@@ -26,6 +26,7 @@ import { initKarte, runKarteAutotest } from './karte-ui.js';
 import { initLov } from './lov-ui.js';
 import { initNav } from './nav.js';
 import { initSekcije } from './sekcije-ui.js';
+import { initOdluke } from './odluke-ui.js';
 import { initSekcijaEkran } from './sekcija-ui.js';
 import { initProfilLovca } from './profil-ui.js';
 import { initFotoSync } from './fotosync.js';
@@ -121,6 +122,7 @@ function enter(screen) {
       ['karte', () => initKarte(globalThis.L, map, registerTeren, GITHUB_REPO)],
       ['lov', () => initLov(globalThis.L, map)],
       ['sekcije', () => initSekcije()],
+      ['odluke', () => { globalThis.__odluke = initOdluke(); }],
       ['sekcija-ekran', () => initSekcijaEkran(globalThis.L, map)],
       ['tok', () => initTok()],
       ['stan', () => initStan()],

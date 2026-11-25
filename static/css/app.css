@@ -1768,3 +1768,17 @@ svg[hidden] { display: none; }
 .sk2-dugmad[data-glavno="false"] { flex-direction: row; flex-wrap: wrap; }
 .sk2-dugmad[data-glavno="false"] .dugme { width: auto; flex: 1 1 140px; }
 .sks-revir::after { content: ' ' attr(data-broj); font-size: 14px; font-weight: 600; color: var(--tekst-2); }
+
+/* Sekcije, dio 2: odluke, razlog odbijanja, historija, opis */
+.sk-odluke { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.sk-odluka { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-radius: 12px; background: var(--povrsina); border: 2px solid var(--gps-dobro); }
+.sk-odluka[data-odluka="odbijen"] { border-color: #e41e3f; }
+.sk-odluka[data-odluka="prebacen"] { border-color: #b45309; }
+.sk-odluka > span { flex: 1 1 200px; }
+.sk-odbij-forma { margin-top: 8px; padding: 8px; border-radius: 10px; border: 2px solid #e41e3f; }
+.sk-odbij-forma label { display: block; }
+.sk-historija { list-style: none; padding: 0; margin: 4px 0 10px; display: flex; flex-direction: column; gap: 4px; }
+.sk2-opis { margin: 8px 0 2px; }
+.sk2-okupljanje { margin: 0 0 4px; }
+.meni-plocica[data-novo="true"] { position: relative; }
+.meni-plocica[data-novo="true"]::after { content: ''; position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; border-radius: 50%; background: #e41e3f; box-shadow: 0 0 0 2px var(--povrsina); }

@@ -14,6 +14,9 @@ import { makeThumbnail } from './foto.js';
 import { logoStyle } from './sekcija-logo.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { initialsOf } from './lokacija.js';
+import { historyLine, bulkApprovable, memberRows, MEMBER_CSV_COLUMNS, memberCsvName, IMENA_ZAHTJEVA_KEY, RAZLOG_MAX, ODLUKE_NOVE_KEY, ODLUKE_CEKAM_KEY, decisionText } from './sekcije-odluke.js';
+import { toCsv } from './odstrel.js';
+import { saveFile } from './dijeljenje.js';
 
 const CACHE_ID = 'sekcije';
 export const MOJE_SEKCIJE_KEY = 'lovac.moje_sekcije';
@@ -21,9 +24,11 @@ const $ = (id) => document.getElementById(id);
 
 async function qSek(promise) {
   const { data, error } = await promise;
-  if (error) throw new Error(error.message);
+  if (error) { const e = new Error(error.message); e.code = error.code; throw e; }
   return data;
 }
+// Server bez migracije 040 (funkcija ili kolona ne postoji): radi se starim putem.
+const nemaNaServeru = (err) => ['PGRST202', 'PGRST204', 'PGRST205', '42703', '42883', '42P01'].includes(err?.code);
 
 export async function downloadSekcije() {
   const sb = getClient();
@@ -95,16 +100,29 @@ export function initSekcije() {
     return `<details class="sk-prebaci-vise"><summary>Prebaci u drugu sekciju</summary><div class="red-dugmadi sk-prebaci"><select data-prebaci aria-label="Prebaci zahtjev u sekciju"><option value="">Izaberi sekciju…</option>${others.map((x) => opt(x.id, `${data.reviri.find((r) => r.id === x.revir_id)?.naziv || ''} · ${x.naziv}`, false)).join('')}</select>
       <button type="button" class="dugme" data-akcija="prebaci">Prebaci</button></div></details>`;
   };
+  // Otvorene forme "Odbij sa razlogom" i upisani razlozi (lista se ponovo crta kad stignu podaci sa servera).
+  const odbijanje = new Map(); // `${sid}|${uid}` -> razlog
+  let historija = []; // sekcija_odluke za sekcije kojima upravljam (migracija 040)
   const avatar = (id, cls = '') => `<span class="sk-avatar ${cls}" aria-hidden="true">${escapeHtml(initialsOf(memberName(id)))}</span>`;
   // Kompaktan red zahtjeva: lice, ime, kuda i od kada; Odobri/Odbij u jednom redu, prebacivanje sklopljeno.
   const requestRow = (sekcija, z, withSection) => `<li class="sk-zahtjev" data-id="${escapeHtml(sekcija.id)}" data-uid="${escapeHtml(z.korisnik_id)}">
       <div class="sk-zahtjev-glava">${avatar(z.korisnik_id)}<div class="sk-zahtjev-tekst"><b>${escapeHtml(memberName(z.korisnik_id))}</b>
         <span class="sitno">${withSection ? `→ ${escapeHtml(sekcija.naziv)}` : 'traži pristup'}${requestAgeText(z.created_at) ? ` · ${requestAgeText(z.created_at)}` : ''}${z.pozvao_id ? ` · predložio ${escapeHtml(memberName(z.pozvao_id))} (novi nalog)` : ''}</span></div></div>
-      <div class="sk-zahtjev-dugmad"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>
+      <div class="sk-zahtjev-dugmad"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij" aria-expanded="${odbijanje.has(`${sekcija.id}|${z.korisnik_id}`)}">Odbij</button></div>
+      ${odbijanje.has(`${sekcija.id}|${z.korisnik_id}`) && !z.pozvao_id ? `<div class="sk-odbij-forma"><label>Razlog (neobavezno, vidi ga podnosilac)<input data-razlog maxlength="${RAZLOG_MAX}" value="${escapeHtml(odbijanje.get(`${sekcija.id}|${z.korisnik_id}`) || '')}"></label>
+        <div class="red-dugmadi"><button type="button" class="dugme" data-akcija="odbij-potvrdi">Potvrdi odbijanje</button><button type="button" class="dugme" data-akcija="odbij-odustani">Odustani</button></div></div>` : ''}
       ${z.pozvao_id ? '' : moveHtml(sekcija.id)}</li>`;
+  const historyHtml = (s) => {
+    const rows = historija.filter((o) => o.sekcija_id === s.id).slice(0, 10);
+    return rows.length ? `<h4>Zadnje odluke</h4><ul class="sk-historija">${rows.map((o) => `<li><span class="sitno">${escapeHtml(new Date(o.created_at).toLocaleDateString('bs-BA'))}</span> ${escapeHtml(historyLine(o, memberName, data.sekcije))}</li>`).join('')}</ul>` : '';
+  };
+  const bulkHtml = (s) => {
+    const n = bulkApprovable(s.id, data.clanovi).length;
+    return n > 1 ? `<button type="button" class="dugme" data-akcija="odobri-sve" data-broj="${n}">Odobri sve (${n})</button>` : '';
+  };
   const pendingHtml = (s) => {
     const pending = pendingRequests(s.id, data.clanovi).filter((c) => !c.pozvao_id);
-    return pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>` : '';
+    return `${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>${bulkHtml(s)}` : ''}${historyHtml(s)}`;
   };
   const revirHtml = (s) => `<details class="uprava sk-revir-uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Grupovođa sekcije (lovočuvar revira)</summary>
       ${pendingHtml(s)}
@@ -117,7 +135,8 @@ export function initSekcije() {
     const candidates = candidatesToAdd(s, data.clanovi, users());
     const isAdmin = Boolean(me()?.is_admin);
     return `<details class="uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Upravljanje sekcijom${pending.length ? ` · zahtjeva: ${pending.length}` : ''}</summary>
-      ${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
+      ${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>${bulkHtml(s)}` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
+      ${historyHtml(s)}
       <h4>Članovi (${members.length})</h4>
       <ul class="spisak">${members.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}"><b>${escapeHtml(memberName(c.korisnik_id))}</b>
         <button type="button" class="dugme" data-akcija="ukloni">Ukloni</button></li>`).join('') || '<li class="sitno">Nema članova.</li>'}</ul>
@@ -131,6 +150,12 @@ export function initSekcije() {
         <button type="button" class="dugme" data-akcija="logo-reset">Automatski logo</button></div></div>
       <label>Naziv sekcije<input data-naziv value="${escapeHtml(s.naziv)}" maxlength="60"></label>
       <button type="button" class="dugme" data-akcija="naziv">Sačuvaj naziv</button>
+      <h4>Opis i okupljanje</h4>
+      <label>Opis sekcije<textarea data-opis maxlength="500" rows="3">${escapeHtml(s.opis || '')}</textarea></label>
+      <label>Mjesto okupljanja<input data-okupljanje maxlength="200" value="${escapeHtml(s.okupljanje || '')}" placeholder="npr. Lovačka kuća Bara"></label>
+      <button type="button" class="dugme" data-akcija="opis">Sačuvaj opis</button>
+      <h4>Spisak članova</h4>
+      <button type="button" class="dugme" data-akcija="csv">Izvezi spisak članova (CSV)</button>
       ${isAdmin ? `${gvPicker(s)}${revirPicker(s)}` : ''}
       <button type="button" class="dugme" data-akcija="sakrij">Sakrij sekciju</button>
     </details>`;
@@ -159,6 +184,8 @@ export function initSekcije() {
           <span class="pristup-status" data-status="${st}">${escapeHtml(pristupText(st))}</span></div>
         ${pendingN && approver ? `<span class="znacka-broj sk2-znacka" title="Zahtjevi na čekanju" aria-label="Zahtjeva na čekanju: ${pendingN}">${pendingN}</span>` : ''}
       </div>
+      ${s.opis ? `<p class="sk2-opis">${escapeHtml(s.opis)}</p>` : ''}
+      ${s.okupljanje ? `<p class="sitno sk2-okupljanje">Okupljanje: ${escapeHtml(s.okupljanje)}</p>` : ''}
       <div class="sk2-brojke">
         <span><b>${members.length}</b> ${members.length === 1 ? 'član' : 'članova'}</span>
         ${approver ? `<span data-ima="${pendingN > 0}"><b>${pendingN}</b> ${pendingN === 1 ? 'zahtjev' : 'zahtjeva'}</span>` : ''}
@@ -197,6 +224,12 @@ export function initSekcije() {
     }
     $('uloge-detalji').hidden = !lcRevirs.length;
 
+    // odluke o MOJIM zahtjevima (odobren / odbijen sa razlogom / prebačen) dok ih ne potvrdim
+    const nove = loadJSON(ODLUKE_NOVE_KEY, []);
+    $('sekcije-odluke').hidden = !nove.length;
+    $('sekcije-odluke').innerHTML = nove.map((o) => `<div class="sk-odluka" data-odluka="${escapeHtml(o.odluka)}" data-oid="${escapeHtml(o.id)}">
+      <span>${escapeHtml(decisionText(o, data.sekcije))}</span><button type="button" class="dugme" data-akcija="odluka-ok">U redu</button></div>`).join('');
+
     // pregled: brojevi, filter, pretraga i zahtjevi koje mogu odmah odobriti
     const user = me();
     const ov = sectionsOverview(data, user);
@@ -224,9 +257,9 @@ export function initSekcije() {
         - Number(isMine(a, data.clanovi, user?.id, Boolean(user?.is_admin), data.lovocuvari))),
     })).filter((g) => g.sekcije.length || activeFilter === 'sve');
     // izbori u karticama (grupovođa, revir, naziv) preživljavaju ponovno crtanje dok lovac bira
-    const kept = [...$('sekcije-spisak').querySelectorAll('[data-id] [data-gv], [data-id] [data-revir], [data-id] [data-naziv]')]
+    const kept = [...$('sekcije-spisak').querySelectorAll('[data-id] [data-gv], [data-id] [data-revir], [data-id] [data-naziv], [data-id] [data-opis], [data-id] [data-okupljanje]')]
       .filter((el) => el === document.activeElement || el.dataset.dirnuto)
-      .map((el) => [el.closest('[data-id]').dataset.id, Object.keys(el.dataset).find((k) => ['gv', 'revir', 'naziv'].includes(k)), el.value]);
+      .map((el) => [el.closest('[data-id]').dataset.id, Object.keys(el.dataset).find((k) => ['gv', 'revir', 'naziv', 'opis', 'okupljanje'].includes(k)), el.value]);
     const keptMove = [...$('sekcije-spisak').querySelectorAll('[data-prebaci]')].filter((el) => el.value)
       .map((el) => [el.closest('[data-id]')?.dataset.id, el.closest('[data-uid]')?.dataset.uid, el.value]);
     $('sekcije-spisak').innerHTML = approvalsHtml + (groups.map(({ revir, sekcije }) => `
@@ -244,6 +277,20 @@ export function initSekcije() {
   };
 
   // Pri otvaranju ekrana odmah se crta keš; poslije radnje samo jednom, sa svježim podacima servera.
+  // Imena podnosilaca i historija odluka (migracija 040): samo kad imam šta odobravati, i samo pri otvaranju ekrana
+  // (ne u pozadini — budžet zahtjeva besplatnog servera).
+  const loadDecisionData = async () => {
+    const user = me();
+    const mine = data.sekcije.filter((x) => canApprove(x, user, data.lovocuvari));
+    if (!mine.length) return;
+    const sb = getClient();
+    try {
+      if (approvalsForMe(data, user).length) saveSoft(IMENA_ZAHTJEVA_KEY, (await qSek(sb.rpc('imena_podnosilaca'))) || []);
+      historija = (await qSek(sb.from('sekcija_odluke').select('*').in('sekcija_id', mine.map((x) => x.id)).order('created_at', { ascending: false }).limit(100))) || [];
+    } catch (err) {
+      if (!nemaNaServeru(err)) console.warn('odluke sekcija', err.message);
+    }
+  };
   const load = async (showCache = true) => {
     if (showCache) {
       data = await cachedSekcije();
@@ -253,6 +300,7 @@ export function initSekcije() {
       await refreshMembers().catch(() => {});
       data = await downloadSekcije();
       $('sekcije-status').textContent = '';
+      await loadDecisionData();
     } catch (err) {
       $('sekcije-status').textContent = `Nema veze sa serverom — prikazan je keš (${err.message})`;
     }
@@ -269,8 +317,21 @@ export function initSekcije() {
     if (e.target.matches('[data-gv], [data-revir]')) e.target.dataset.dirnuto = '1';
   });
   $('sekcije-spisak').addEventListener('input', (e) => {
-    if (e.target.matches('[data-naziv]')) e.target.dataset.dirnuto = '1';
+    if (e.target.matches('[data-naziv], [data-opis], [data-okupljanje]')) e.target.dataset.dirnuto = '1';
+    if (e.target.matches('[data-razlog]')) {
+      const li = e.target.closest('[data-uid]');
+      odbijanje.set(`${li.closest('[data-id]').dataset.id}|${li.dataset.uid}`, e.target.value);
+    }
   });
+  $('sekcije-odluke').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="odluka-ok"]');
+    if (!b) return;
+    const id = b.closest('[data-oid]').dataset.oid;
+    saveSoft(ODLUKE_NOVE_KEY, loadJSON(ODLUKE_NOVE_KEY, []).filter((o) => o.id !== id));
+    document.dispatchEvent(new CustomEvent('sekcije:odluke'));
+    render();
+  });
+  document.addEventListener('sekcije:odluke', () => { if (!screen.hidden) render(); });
   document.querySelector('#sekcije .sks-hero')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-filter-skok]');
     if (b) { filterMode = b.dataset.filterSkok; render(); }
@@ -292,7 +353,8 @@ export function initSekcije() {
     const sb = () => getClient();
     switch (b.dataset.akcija) {
       case 'zatrazi':
-        run(() => qSek(sb().from('sekcija_clanovi').insert({ sekcija_id: sid, korisnik_id: me().id })), 'Zahtjev poslan grupovođi');
+        saveSoft(ODLUKE_CEKAM_KEY, true); // provjeravaj odluku u pozadini dok ne stigne
+        run(() => qSek(sb().from('sekcija_clanovi').insert({ sekcija_id: sid, korisnik_id: me().id })), 'Zahtjev poslan — javićemo ti odluku');
         break;
       case 'povuci':
       case 'napusti':
@@ -314,9 +376,68 @@ export function initSekcije() {
       }
       case 'odbij':
         if (invitedBy(sid, uid)) { run(() => qSek(sb().rpc('odbij_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Predlog odbijen, nalog obrisan'); break; }
-        if (!canManageSek(sid)) { run(() => qSek(sb().rpc('odbij_zahtjev', { p_sekcija: sid, p_korisnik: uid })), 'Gotovo'); break; }
-        run(() => qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Gotovo');
+        // Prvi dodir otvara razlog (neobavezan), drugi potvrđuje — odbijanje se ne dešava slučajno.
+        if (odbijanje.has(`${sid}|${uid}`)) odbijanje.delete(`${sid}|${uid}`); else odbijanje.set(`${sid}|${uid}`, '');
+        render();
+        $('sekcije-spisak').querySelector(`[data-id="${CSS.escape(sid)}"][data-uid="${CSS.escape(uid)}"] [data-razlog], [data-id="${CSS.escape(sid)}"] [data-uid="${CSS.escape(uid)}"] [data-razlog]`)?.focus();
         break;
+      case 'odbij-odustani':
+        odbijanje.delete(`${sid}|${uid}`);
+        render();
+        break;
+      case 'odbij-potvrdi': {
+        const razlog = (b.closest('[data-uid]').querySelector('[data-razlog]')?.value || '').trim().slice(0, RAZLOG_MAX);
+        odbijanje.delete(`${sid}|${uid}`);
+        run(async () => {
+          try {
+            await qSek(sb().rpc('odbij_zahtjev_razlog', { p_sekcija: sid, p_korisnik: uid, p_razlog: razlog }));
+          } catch (err) {
+            if (!nemaNaServeru(err)) throw err;
+            // server bez 040: stari put (bez razloga)
+            if (!canManageSek(sid)) await qSek(sb().rpc('odbij_zahtjev', { p_sekcija: sid, p_korisnik: uid }));
+            else await qSek(sb().from('sekcija_clanovi').delete().eq('sekcija_id', sid).eq('korisnik_id', uid));
+          }
+        }, 'Zahtjev odbijen');
+        break;
+      }
+      case 'odobri-sve': {
+        if (!b.dataset.naoruzano) {
+          b.dataset.naoruzano = '1';
+          b.textContent = `Dodirni ponovo: odobri ${b.dataset.broj}`;
+          setTimeout(() => { delete b.dataset.naoruzano; b.textContent = `Odobri sve (${b.dataset.broj})`; }, 4000);
+          break;
+        }
+        const list = bulkApprovable(sid, data.clanovi);
+        run(async () => {
+          for (const c of list) {
+            if (canManageSek(sid)) await qSek(sb().from('sekcija_clanovi').update({ status: 'odobren' }).eq('sekcija_id', sid).eq('korisnik_id', c.korisnik_id));
+            else await qSek(sb().rpc('odobri_zahtjev', { p_sekcija: sid, p_korisnik: c.korisnik_id }));
+          }
+        }, `Odobreno: ${list.length}`);
+        break;
+      }
+      case 'opis': {
+        const opis = card.querySelector('[data-opis]').value.trim().slice(0, 500);
+        const okupljanje = card.querySelector('[data-okupljanje]').value.trim().slice(0, 200);
+        run(async () => {
+          try {
+            await qSek(sb().from('sekcije').update({ opis: opis || null, okupljanje: okupljanje || null }).eq('id', sid));
+          } catch (err) {
+            if (nemaNaServeru(err)) throw new Error('server još nema opis sekcije (administrator treba nadograditi server)');
+            throw err;
+          }
+        }, 'Opis sačuvan');
+        break;
+      }
+      case 'csv': {
+        const sek = data.sekcije.find((x) => x.id === sid);
+        const users = loadJSON('lovac.clanovi', []);
+        const rows = memberRows(sek, data.clanovi, users);
+        if (!rows.length) { toast('Sekcija nema članova za izvoz'); break; }
+        const kako = saveFile(memberCsvName(sek), 'text/csv;charset=utf-8', toCsv(rows, MEMBER_CSV_COLUMNS));
+        toast(kako === 'preuzimanja' ? 'Spisak je sačuvan u Preuzimanja/Lovac' : 'Spisak članova je spreman');
+        break;
+      }
       case 'logo-ucitaj':
         logoSid = sid;
         $('sekcija-logo-ulaz').click();

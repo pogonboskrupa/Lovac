@@ -19,7 +19,8 @@ export const VIDLJIVOST_OPIS = {
 };
 
 export function memberName(id) {
-  const m = loadJSON(MEMBERS_KEY, []).find((x) => x.id === id);
+  // Rezerva: imena podnosilaca zahtjeva (probni nalozi nisu u spisku članova; daje ih server samo onome ko odobrava, 040).
+  const m = loadJSON(MEMBERS_KEY, []).find((x) => x.id === id) || loadJSON('lovac.imena_zahtjeva', []).find((x) => x.korisnik_id === id || x.id === id);
   if (!m) return 'drugi lovac';
   return `${m.ime} ${m.prezime}${m.nadimak ? ` (${m.nadimak})` : ''}`;
 }

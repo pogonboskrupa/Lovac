@@ -86,7 +86,9 @@ export const UPUTE = [
     id: 'sekcija', naslov: 'Sekcije i pristup',
     uvod: 'Društvo ima revire, a revir sekcije. Svaka sekcija ima grupovođu, a revir lovočuvara.',
     stavke: [
-      ['Pristup sekciji', 'Meni → Sekcije i pristup: zatraži pristup. Bez odobrenja grupovođe nema ulaza u sekciju.'],
+      ['Pristup sekciji', 'Meni → Sekcije i pristup: zatraži pristup. Bez odobrenja grupovođe, lovočuvara revira ili administratora nema ulaza u sekciju. Kad odluka stigne (primljen, odbijen uz razlog ili prebačen u drugu sekciju), dobiješ obavijest dok je aplikacija otvorena, a na Meniju se uz Sekcije i pristup pojavi crvena tačka dok poruku ne potvrdiš sa U redu.'],
+      ['Odobravanje zahtjeva', 'Grupovođa, lovočuvar revira i administrator vide ime podnosioca, odobravaju ili odbijaju (Odbij otvara polje za razlog koji podnosilac vidi; odbijanje se potvrđuje drugim dugmetom), a pogrešno prijavljenog prebace u drugu sekciju. Kad čeka više zahtjeva, Upravljanje → Odobri sve (drugi dodir). Ispod je historija zadnjih odluka: ko je koga primio ili odbio i zašto.'],
+      ['Opis i spisak sekcije', 'Grupovođa u Upravljanju upisuje opis sekcije i mjesto okupljanja (vide se na kartici sekcije) i izvozi spisak članova kao CSV za Excel (prezime, ime, nadimak, uloga, član od).'],
       ['Tab sekcije', 'Dugme u donjoj navigaciji nosi ime tvoje sekcije. Pokazuje lovce (ko je aktivan), tekući lov, poruke, rukovodstvo (samo grupovođe i lovočuvari) i podatke sekcije.'],
       ['Poruke', 'Poruke vide članovi sekcije, grupovođa, lovočuvar i administrator. Obavijest stiže samo dok je aplikacija otvorena.'],
       ['Gdje si?', 'Dugme uz lovca pita gdje se nalazi. On odgovara sa Da ili Ne; Da pokreće dijeljenje lokacije sa sekcijom na sat vremena.'],
