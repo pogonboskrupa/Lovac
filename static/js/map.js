@@ -51,6 +51,7 @@ export function initMap(L, elementId) {
       activeLayer = target === 'teren' ? terenLayer : layers.get(target);
       activeLayer.addTo(map);
       activeId = target;
+      document.dispatchEvent(new CustomEvent('podloga:promjena', { detail: { id: target } }));
     }
     if (persist && target === id) saveSoft(LAYER_KEY, id);
     document.querySelectorAll('[data-podloga]').forEach((b) => {

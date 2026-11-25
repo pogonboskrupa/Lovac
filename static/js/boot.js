@@ -33,6 +33,7 @@ import { initFotoSync } from './fotosync.js';
 import { initArhiva } from './arhiva-ui.js';
 import { initLovTragovi } from './lov-tragovi-ui.js';
 import { initKamere } from './kamere-ui.js';
+import { initTerenTacke } from './teren-tacke-ui.js';
 import { initSlike } from './slike-ui.js';
 import { initDojave } from './dojave-ui.js';
 import { initSlikeLovcima } from './slike-lovcima-ui.js';
@@ -142,6 +143,7 @@ function enter(screen) {
       ['dojave', () => initDojave(globalThis.L, map)],
       ['slike-lovcima', () => initSlikeLovcima(globalThis.L, map)],
       ['kamere', () => initKamere(globalThis.L, map)],
+      ['teren-tacke', () => { globalThis.__terenTacke = initTerenTacke(globalThis.L, map, activeBase); }],
       ['lov-tragovi', () => initLovTragovi(globalThis.L, map)],
       ['arhiva', () => initArhiva()],
       ['arhiva-karta', () => initArhivaKarta(globalThis.L, map)],

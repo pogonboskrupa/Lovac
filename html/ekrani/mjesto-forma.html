@@ -1,0 +1,16 @@
+<section id="mjesto-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="mjesto-naslov" hidden>
+  <form id="forma-mjesto" novalidate>
+    <header class="postavke-glava"><h2 id="mjesto-naslov">Ime mjesta</h2></header>
+    <p class="sitno">Ime se vidi svim lovcima, ali samo kad je podloga Teren. Unosi i mijenja ga samo administrator.</p>
+    <p id="mjesto-pozicija" class="sitno"></p>
+    <label>Naziv<input name="naziv" maxlength="60" autocomplete="off" placeholder="npr. Pjanić, Veliki vrh, Izvor Bunar"></label>
+    <fieldset class="mjesto-vrste"><legend>Vrsta</legend><div id="mjesto-vrste" class="red-dugmadi" role="radiogroup" aria-label="Vrsta mjesta"></div></fieldset>
+    <p id="mjesto-status" class="status" role="status"></p>
+    <div class="red-dugmadi">
+      <button id="btn-mjesto-sacuvaj" type="submit" class="dugme glavno">Sačuvaj</button>
+      <button id="btn-mjesto-pomjeri" type="button" class="dugme">Promijeni položaj</button>
+      <button id="btn-mjesto-skini" type="button" class="dugme" hidden>Skini sa karte</button>
+      <button id="btn-mjesto-zatvori" type="button" class="dugme">Odustani</button>
+    </div>
+  </form>
+</section>

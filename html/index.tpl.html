@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.4.2';
+  const APP_VER = 'v1.5.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -141,6 +141,16 @@
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
   </div>
   <button id="btn-ist-izlaz" type="button" class="istrazivac-izlaz" hidden>Izađi iz 3D</button>
+  <div id="mjesto-nisan" class="mjesto-nisan" aria-hidden="true" hidden></div>
+  <div id="mjesto-traka" class="mjesto-traka" role="dialog" aria-labelledby="mjesto-traka-naslov" hidden>
+    <b id="mjesto-traka-naslov">Pomjeri kartu: križ je na mjestu koje imenuješ</b>
+    <p id="mjesto-traka-koord" class="sitno"></p>
+    <div class="red-dugmadi">
+      <button type="button" id="btn-mjesto-dalje" class="dugme glavno">Dalje</button>
+      <button type="button" id="btn-mjesto-ja" class="dugme">Moja pozicija</button>
+      <button type="button" id="btn-mjesto-odustani" class="dugme">Odustani</button>
+    </div>
+  </div>
   <div id="istrazivac-detalj" class="istrazivac-detalj" role="status" hidden>
     <div class="ist-detalj-glava">
       <b id="ist-detalj-ime"></b>
@@ -298,6 +308,7 @@
     <div class="dodaj-mreza">
       <button type="button" id="btn-dodaj-potragu" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-paw"/></svg><span><b>Potraga</b><small>Ranjena divljač</small></span></button>
       <button type="button" id="btn-mjerenje" class="dodaj-plocica"><svg class="ic" aria-hidden="true"><use href="#ic-route"/></svg><span><b>Mjerenje</b><small>Udaljenost, površina</small></span></button>
+      <button type="button" id="btn-dodaj-mjesto" class="dodaj-plocica" hidden><svg class="ic" aria-hidden="true"><use href="#ic-mountain"/></svg><span><b>Ime mjesta na Terenu</b><small>Samo administrator</small></span></button>
       <button type="button" id="btn-dodaj-kameru" class="dodaj-plocica" hidden><svg class="ic" aria-hidden="true"><use href="#ic-obj-kamera"/></svg><span><b>Kamera</b><small>Samo lovočuvari</small></span></button>
     </div>
   </div>
@@ -509,6 +520,8 @@
 <!--@ekran:slika-forma-->
 
 <!--@ekran:kamera-forma-->
+
+<!--@ekran:mjesto-forma-->
 
 <!--@ekran:arhiva-->
 
