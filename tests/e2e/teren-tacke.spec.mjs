@@ -180,3 +180,48 @@ test.describe('sa serverom', () => {
     await expect.poll(() => (world.teren_tacke ?? []).filter((t) => t.naziv === 'Bez veze').length).toBe(1);
   });
 });
+
+test.describe('veličina i raspored oznaka', () => {
+  test.beforeEach(async ({ page }) => {
+    await fakeServerConfigUnset(page);
+    await serveTiles(page);
+    await pogledBlizu(page, 14);
+    await setup(page, { profil: LOVAC });
+  });
+
+  const seed = (rows) => async (page) => {
+    await page.evaluate(async (r) => {
+      const { idbPut } = await import('/static/js/db.js');
+      await idbPut('spiskovi', { id: 'teren_tacke', kursor: null, rows: r.map((x) => ({ aktivno: true, updated_at: new Date().toISOString(), sinhronizovano: true, ...x })) });
+    }, rows);
+    await page.reload();
+  };
+
+  test('slovo je 40 % manje nego prije, manje na manjoj razmjeri, a preklopljene oznake se ne crtaju', async ({ page }) => {
+    await page.goto('/');
+    await seed([
+      { id: 'a', naziv: 'Pjanić', vrsta: 'naselje', lat: 44.9, lon: 16.2 },
+      { id: 'b', naziv: 'Dolina mira', vrsta: 'dolina', lat: 44.9, lon: 16.203 }, // blizu naselja na zoomu 14 (oko 35 px): prekriva se
+      { id: 'c', naziv: 'Veliki vrh', vrsta: 'vrh', lat: 44.89, lon: 16.21 },
+    ])(page);
+    await page.evaluate(() => globalThis.__karta.setView([44.895, 16.205], 14, { animate: false }));
+    const px = (sel) => page.locator(sel).first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+    await expect(page.locator('.tt-naziv', { hasText: 'Veliki vrh' })).toBeVisible();
+    // radni zoom 14: 13 px * 0,6 = 7,8 px (prije 13 px), naselje 15 * 0,6 = 9 px
+    expect(await px('.tt[data-vrsta="vrh"] .tt-naziv')).toBeCloseTo(7.8, 1);
+    expect(await px('.tt[data-vrsta="naselje"] .tt-naziv')).toBeCloseTo(9, 1);
+    // preklopljeno ime se ne crta, važnije (naselje) ostaje
+    await expect(page.locator('.tt-naziv', { hasText: 'Dolina mira' })).toHaveCount(0);
+    await expect(page.locator('.tt-naziv', { hasText: 'Pjanić' })).toBeVisible();
+    // veća razmjera (manje uvećanja) = manje slovo; veće uvećanje = veće slovo
+    await page.evaluate(() => globalThis.__karta.setZoom(13, { animate: false }));
+    const manji = await px('.tt[data-vrsta="vrh"] .tt-naziv');
+    expect(manji).toBeLessThan(7.8);
+    expect(manji).toBeGreaterThanOrEqual(7);
+    await page.evaluate(() => globalThis.__karta.setZoom(16, { animate: false }));
+    expect(await px('.tt[data-vrsta="vrh"] .tt-naziv')).toBeGreaterThan(7.8);
+    // uvećanjem se preklopljeno ime pojavi
+    await page.evaluate(() => globalThis.__karta.setView([44.9, 16.2015], 16, { animate: false }));
+    await expect(page.locator('.tt-naziv', { hasText: 'Dolina mira' })).toBeVisible();
+  });
+});

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  labelScale, labelFontPx, placeLabels, LABEL_MIN_PX,
   TACKA_VRSTE, validateTacka, newTacka, editTacka, mergeTacke, visibleTacke, nextTackeCursor, missingTable, vrstaNaziv,
 } from '../../static/js/teren-tacke.js';
 
@@ -71,4 +72,28 @@ test('sve vrste imaju naziv i zoom u rasponu Terena (12–16)', () => {
   for (const v of TACKA_VRSTE) { assert.ok(v.naziv); assert.ok(v.minZoom >= 12 && v.minZoom <= 16); }
   assert.equal(vrstaNaziv('vrh'), 'Vrh / brdo');
   assert.equal(vrstaNaziv('nešto'), 'Ostalo');
+});
+
+test('veličina oznake: 60 % na radnom zoomu 14, srazmjerno manja kad je karta manje uvećana, uvećava se sa zoomom', () => {
+  assert.equal(labelScale(14), 0.6);
+  assert.ok(labelScale(12) < labelScale(13) && labelScale(13) < labelScale(14) && labelScale(14) < labelScale(15) && labelScale(15) < labelScale(16));
+  assert.ok(labelScale(16) <= 1 && labelScale(0) >= 0.35);
+  // ranije je slovo bilo 13 px (naselje 15 px): sada 40 % manje
+  assert.ok(Math.abs(labelFontPx('vrh', 14) - 13 * 0.6) < 1e-9 || labelFontPx('vrh', 14) === LABEL_MIN_PX);
+  assert.ok(labelFontPx('naselje', 14) <= 15 * 0.6 + 1e-9);
+  // nikad nečitljivo sitno
+  for (let z = 8; z <= 16; z++) assert.ok(labelFontPx('ostalo', z) >= LABEL_MIN_PX);
+});
+
+test('preklapanje: važnija oznaka ostaje, ona koja bi je prekrila se ne crta; udaljene se crtaju sve', () => {
+  const t = (id, naziv, vrsta) => ({ id, naziv, vrsta });
+  const items = [t('a', 'Pjanić', 'naselje'), t('b', 'Veliki vrh', 'vrh'), t('c', 'Izvor', 'voda')];
+  const blizu = { a: { x: 100, y: 100 }, b: { x: 110, y: 102 }, c: { x: 400, y: 400 } };
+  const out = placeLabels(items, (i) => blizu[i.id], 14);
+  assert.deepEqual(out.map((x) => x.id), ['a', 'c']);
+  const daleko = { a: { x: 100, y: 100 }, b: { x: 100, y: 200 }, c: { x: 300, y: 100 } };
+  assert.equal(placeLabels(items, (i) => daleko[i.id], 14).length, 3);
+  // manja oznaka (dalji zoom) = manje preklapanja
+  const gust = { a: { x: 100, y: 100 }, b: { x: 140, y: 100 }, c: { x: 400, y: 400 } };
+  assert.ok(placeLabels(items, (i) => gust[i.id], 12).length >= placeLabels(items, (i) => gust[i.id], 16).length);
 });

@@ -11,7 +11,7 @@ import { formatCoordMode } from './geo.js';
 import { getCoordMode } from './map.js';
 import { toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import {
-  TACKA_VRSTE, validateTacka, newTacka, editTacka, mergeTacke, visibleTacke, nextTackeCursor, missingTable, vrstaNaziv,
+  TACKA_VRSTE, validateTacka, newTacka, editTacka, mergeTacke, visibleTacke, nextTackeCursor, missingTable, vrstaNaziv, labelScale, placeLabels,
 } from './teren-tacke.js';
 
 const $ = (id) => document.getElementById(id);
@@ -58,7 +58,11 @@ export function initTerenTacke(L, map, activeBase) {
     if (!terenActive() && !placing) { map.removeLayer(layer); return; }
     layer.addTo(map);
     const admin = isAdmin();
-    for (const t of visibleTacke(doc.rows, map.getZoom())) {
+    const zoom = map.getZoom();
+    // veličina slova prati razmjeru (CSS promjenljiva), a oznake koje bi se prekrile ne crtaju se (važnije imaju prednost)
+    map.getContainer().style.setProperty('--tt-k', String(labelScale(zoom)));
+    const project = (t) => map.latLngToContainerPoint([t.lat, t.lon]);
+    for (const t of placeLabels(visibleTacke(doc.rows, zoom), project, zoom)) {
       const m = L.marker([t.lat, t.lon], { icon: iconFor(t), keyboard: false, interactive: admin && !placing, riseOnHover: false });
       if (admin) m.on('click', () => openForm(t));
       m.addTo(layer);

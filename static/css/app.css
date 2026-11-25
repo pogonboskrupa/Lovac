@@ -1783,20 +1783,26 @@ svg[hidden] { display: none; }
 .meni-plocica[data-novo="true"] { position: relative; }
 .meni-plocica[data-novo="true"]::after { content: ''; position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; border-radius: 50%; background: #e41e3f; box-shadow: 0 0 0 2px var(--povrsina); }
 
-/* Imena mjesta na Terenu: tamno slovo sa bijelim obrubom (čitljivo na papirnoj podlozi Terena) */
+/* Imena mjesta na Terenu: veličina prati razmjeru (--tt-k postavlja teren-tacke-ui, 0,6 na zoomu 14), tamno slovo sa bijelim obrubom
+   (čitljivo na papirnoj podlozi Terena), znak po vrsti: naselje krug, vrh trougao, voda kap, dolina prsten, šuma kvadrat */
 .tt-ikona { background: none; border: 0; }
-.tt { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 5px; transform: translate(-5px, -50%); white-space: nowrap; pointer-events: none; }
-.leaflet-interactive .tt, .tt-ikona.leaflet-interactive .tt { pointer-events: auto; }
-.tt::before { content: ''; position: absolute; inset: -16px -10px; }
-.tt-tacka { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #7f1d1d; border: 2px solid #ffffff; box-shadow: 0 0 2px rgba(0, 0, 0, 0.6); }
-.tt-naziv { font-size: 0.8125rem; font-weight: 700; color: #1f2937; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff, 0 0 5px #fff; }
-.tt[data-vrsta="naselje"] .tt-naziv { font-size: 0.9375rem; color: #7f1d1d; }
-.tt[data-vrsta="vrh"] .tt-tacka { background: #4c1d95; border-radius: 2px; transform: rotate(45deg); }
+.tt { --k: var(--tt-k, 0.6); position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: max(3px, calc(5px * var(--k))); transform: translate(calc(max(6px, 10px * var(--k)) / -2), -50%); white-space: nowrap; pointer-events: none; line-height: 1; }
+.tt-ikona.leaflet-interactive .tt { pointer-events: auto; }
+.tt::before { content: ''; position: absolute; inset: -20px -14px; }
+.tt-tacka { flex: none; width: max(6px, calc(10px * var(--k))); height: max(6px, calc(10px * var(--k))); border-radius: 50%; background: #7f1d1d; border: max(1px, calc(2px * var(--k))) solid #ffffff; box-shadow: 0 0 2px rgba(0, 0, 0, 0.55); box-sizing: border-box; }
+.tt-naziv { font-size: max(7px, calc(13px * var(--k))); font-weight: 700; color: #1f2937; letter-spacing: 0.01em;
+  text-shadow: 0 0 2px #fff, 0 0 2px #fff, 1px 0 1px #fff, -1px 0 1px #fff, 0 1px 1px #fff, 0 -1px 1px #fff, 0 0 4px #fff; }
+.tt[data-vrsta="naselje"] .tt-naziv { font-size: max(7px, calc(15px * var(--k))); font-weight: 800; color: #7f1d1d; letter-spacing: 0.07em; text-transform: uppercase; }
+.tt[data-vrsta="naselje"] .tt-tacka { width: max(7px, calc(12px * var(--k))); height: max(7px, calc(12px * var(--k))); }
+.tt[data-vrsta="vrh"] .tt-tacka { width: max(8px, calc(13px * var(--k))); height: max(7px, calc(11px * var(--k))); border: 0; border-radius: 0; background: #4c1d95; clip-path: polygon(50% 0, 100% 100%, 0 100%); box-shadow: none; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
 .tt[data-vrsta="vrh"] .tt-naziv { color: #4c1d95; }
-.tt[data-vrsta="dolina"] .tt-tacka, .tt[data-vrsta="suma"] .tt-tacka { background: #14532d; }
-.tt[data-vrsta="dolina"] .tt-naziv, .tt[data-vrsta="suma"] .tt-naziv { color: #14532d; }
-.tt[data-vrsta="voda"] .tt-tacka { background: #1e3a8a; }
+.tt[data-vrsta="dolina"] .tt-tacka { background: #ffffff; border-color: #14532d; }
+.tt[data-vrsta="dolina"] .tt-naziv { color: #14532d; font-weight: 600; }
+.tt[data-vrsta="suma"] .tt-tacka { background: #14532d; border-radius: 2px; }
+.tt[data-vrsta="suma"] .tt-naziv { color: #14532d; }
+.tt[data-vrsta="voda"] .tt-tacka { background: #1e3a8a; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
 .tt[data-vrsta="voda"] .tt-naziv { color: #1e3a8a; font-style: italic; }
+.tt[data-vrsta="ostalo"] .tt-tacka { background: #374151; }
 
 /* Postavljanje imena: križ u sredini karte i traka iznad navigacije */
 .mjesto-nisan { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; z-index: 1200; pointer-events: none; }
