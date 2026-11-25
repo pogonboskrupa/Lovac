@@ -4,9 +4,13 @@
 import { inTrial, trialLeftText } from './probni.js';
 import { getClient, cachedProfile, validatePin } from './auth.js';
 import { registerBackHandler, wireTwoTap, escapeHtml, toast } from './ui.js';
-import { describeProfile } from './postavke.js';
+import { idbGet } from './db.js';
+import { saveSoft } from './storage.js';
+import { initialsOf } from './lokacija.js';
+import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText } from './korisnici-pregled.js';
 
 const $ = (id) => document.getElementById(id);
+export const CEKA_KEY = 'lovac.korisnici.cekaju';
 
 // Neodobreni prvi (njih admin traži), zatim po prezimenu.
 export function sortUsers(users) {
@@ -30,29 +34,74 @@ async function loadUsers() {
   return sortUsers(data || []);
 }
 
-function userRow(u, meId) {
+// Otvoreni paneli "Više radnji" ostaju otvoreni poslije ponovnog crtanja (poslije svake radnje lista se osvježi).
+const otvoreno = new Set();
+
+function userRow(u, meId, data, now = Date.now()) {
   const ja = u.id === meId;
-  const odobri = ja ? '' : `<button type="button" class="dugme${u.odobren ? '' : ' glavno'}" data-akcija="odobri">${u.odobren ? 'Opozovi' : 'Odobri'}</button>`;
+  const state = userState(u, now);
+  const odobri = ja ? '' : `<button type="button" class="dugme${u.odobren ? '' : ' glavno'}" data-akcija="odobri">${u.odobren ? 'Opozovi pristup' : 'Odobri'}</button>`;
   const obrisi = ja ? '' : '<button type="button" class="dugme" data-akcija="obrisi">Obriši</button>';
+  const sek = sectionLines(u.id, data);
+  const lines = [];
+  if (state === 'probni') lines.push(`Probni period: još ${trialLeftText(u, now)}`);
+  if (sek.traze.length) lines.push(`Traži ulaz: ${sek.traze.join(', ')}`);
+  if (sek.clan.length) lines.push(`Član: ${sek.clan.join(', ')}`);
+  if (!lines.length && state !== 'odobren' && state !== 'admin') lines.push('Nije tražio nijednu sekciju');
+  const name = `${u.ime} ${u.prezime}${u.nadimak ? ` (${u.nadimak})` : ''}`;
   return `
-    <li class="trag-red" data-id="${escapeHtml(u.id)}">
-      <div class="trag-naslov"><b>${escapeHtml(describeProfile(u))}</b>${ja ? '<span class="sitno">(ti)</span>' : ''}${!u.odobren && inTrial(u) ? `<span class="sitno">Probni period: još ${trialLeftText(u)}</span>` : ''}</div>
-      <div class="red-dugmadi">
-        ${odobri}
-        <button type="button" class="dugme" data-akcija="admin">${u.is_admin ? 'Ukloni admina' : 'Postavi za admina'}</button>
-        ${obrisi}
+    <li class="trag-red tr-kartica kor-kartica" data-id="${escapeHtml(u.id)}" data-stanje="${state}">
+      <div class="kor-glava">
+        <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(`${u.ime} ${u.prezime}`))}</span>
+        <div class="kor-tekst">
+          <b>${escapeHtml(name)}</b>${ja ? ' <span class="sitno">(ti)</span>' : ''}
+          <span class="kor-cip" data-stanje="${state}">${STATE_LABELS[state]}</span>
+        </div>
       </div>
-      <div class="red-dugmadi">
-        <input name="novi-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Novi PIN" aria-label="Novi PIN za ${escapeHtml(u.ime)}">
-        <button type="button" class="dugme" data-akcija="pin">Postavi PIN</button>
-      </div>
+      ${lines.map((l) => `<p class="sitno kor-red">${escapeHtml(l)}</p>`).join('')}
+      <div class="red-dugmadi">${odobri}</div>
+      <details class="kor-vise"${otvoreno.has(u.id) ? ' open' : ''}>
+        <summary>Više radnji</summary>
+        <div class="red-dugmadi">
+          <button type="button" class="dugme" data-akcija="admin">${u.is_admin ? 'Ukloni admina' : 'Postavi za admina'}</button>
+          ${obrisi}
+        </div>
+        <div class="red-dugmadi">
+          <input name="novi-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Novi PIN" aria-label="Novi PIN za ${escapeHtml(u.ime)}">
+          <button type="button" class="dugme" data-akcija="pin">Postavi PIN</button>
+        </div>
+      </details>
     </li>`;
 }
 
 export function initAdmin() {
+  document.addEventListener('korisnici:promjena', renderPendingBadge);
   const panel = $('korisnici');
   const status = $('korisnici-status');
   let users = [];
+
+  let filter = 'svi';
+  let query = '';
+  let sekData = { reviri: [], sekcije: [], clanovi: [] };
+  const draw = () => {
+    const me = cachedProfile()?.id;
+    const now = Date.now();
+    const o = usersOverview(users, now);
+    $('korisnici-ceka').textContent = String(o.ceka);
+    $('kor-hero-probni').textContent = String(o.probni);
+    $('kor-hero-odobreni').textContent = String(o.odobreni);
+    $('kor-hero-admini').textContent = String(o.admini);
+    const counts = filterCounts(users, now);
+    $('kor-filter').innerHTML = USER_FILTERS.map(([k, naziv]) => `<button type="button" data-filter="${k}" aria-pressed="${k === filter}">${naziv} (${counts[k]})</button>`).join('');
+    const shown = reviewOrder(filterUsers(users, { filter, q: query, now, extra: (u) => { const s = sectionLines(u.id, sekData); return [...s.traze, ...s.clan].join(' '); } }), now);
+    $('korisnici-spisak').innerHTML = shown.map((u) => userRow(u, me, sekData, now)).join('');
+    $('korisnici-prazno').hidden = shown.length > 0 || !users.length;
+    $('korisnici-spisak').querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
+      wireTwoTap(b, 'Dodirni ponovo za brisanje', async () => {
+        await run(() => callRpc('admin_obrisi_korisnika', { p_korisnik: b.closest('[data-id]').dataset.id }), 'Korisnik obrisan');
+      });
+    });
+  };
 
   const render = async () => {
     status.textContent = 'Učitavam…';
@@ -63,15 +112,11 @@ export function initAdmin() {
       status.textContent = `Nema veze sa serverom (${err.message})`;
       return;
     }
-    const me = cachedProfile()?.id;
-    $('korisnici-ceka').textContent = `Čeka odobrenje: ${users.filter((u) => !u.odobren).length}`;
-    const ul = $('korisnici-spisak');
-    ul.innerHTML = users.map((u) => userRow(u, me)).join('');
-    ul.querySelectorAll('[data-akcija="obrisi"]').forEach((b) => {
-      wireTwoTap(b, 'Dodirni ponovo za brisanje', async () => {
-        await run(() => callRpc('admin_obrisi_korisnika', { p_korisnik: b.closest('[data-id]').dataset.id }), 'Korisnik obrisan');
-      });
-    });
+    // Sekcije iz keša (koga traži koju sekciju); bez keša se red jednostavno ne prikazuje.
+    try { sekData = { reviri: [], sekcije: [], clanovi: [], ...((await idbGet('spiskovi', 'sekcije'))?.rows || {}) }; } catch { /* keš nije obavezan */ }
+    saveSoft(CEKA_KEY, usersOverview(users).ceka + usersOverview(users).probni);
+    document.dispatchEvent(new CustomEvent('korisnici:promjena'));
+    draw();
   };
 
   const run = async (fn, okMsg) => {
@@ -104,6 +149,17 @@ export function initAdmin() {
     }
   });
 
+  $('korisnici-spisak').addEventListener('toggle', (e) => {
+    const id = e.target.closest?.('[data-id]')?.dataset.id;
+    if (!id || !e.target.matches('details.kor-vise')) return;
+    if (e.target.open) otvoreno.add(id); else otvoreno.delete(id);
+  }, true);
+  $('kor-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-filter]');
+    if (b) { filter = b.dataset.filter; draw(); }
+  });
+  $('kor-trazi').addEventListener('input', (e) => { query = e.target.value; draw(); });
+
   $('btn-korisnici').addEventListener('click', async () => {
     $('postavke').hidden = true;
     panel.hidden = false;
@@ -118,8 +174,19 @@ export function initAdmin() {
   });
 }
 
+// Značka na dugmetu "Korisnici i odobrenja": koliko ih čeka odluku (iz zadnjeg učitavanja, bez dodatnih zahtjeva).
+export function renderPendingBadge() {
+  const el = $('korisnici-znacka');
+  if (!el) return;
+  let n = 0;
+  try { n = Number(JSON.parse(localStorage.getItem(CEKA_KEY) || '0')) || 0; } catch { /* nije bitno */ }
+  el.textContent = pendingBadgeText(n);
+  el.hidden = n <= 0;
+}
+
 // Prikaz admin dijela postavki prema keširanom profilu (server svejedno provjerava).
 export function refreshAdminVisibility() {
   const sec = $('postavke-admin');
   if (sec) sec.hidden = !cachedProfile()?.is_admin;
+  renderPendingBadge();
 }

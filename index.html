@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.3.5';
+  const APP_VER = 'v1.3.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -587,6 +587,12 @@
   </div>
 
   <div id="p-opste">
+  <div id="postavke-admin" class="p-kartica p-admin" hidden>
+    <h3>Administracija</h3>
+    <button id="btn-korisnici" class="dugme glavno p-admin-dugme" type="button"><span>Korisnici i odobrenja</span><span id="korisnici-znacka" class="p-znacka" hidden></span></button>
+    <button id="btn-propisi" class="dugme" type="button">Propisi i spiskovi</button>
+  </div>
+
   <div class="p-kartica">
     <h3>Veličina teksta</h3>
     <p class="sitno">Veći tekst i veća dugmad u ekranima i meniju.</p>
@@ -679,12 +685,6 @@
   </div>
 
   <div id="p-nalog" hidden>
-  <div id="postavke-admin" class="p-kartica" hidden>
-    <h3>Administracija</h3>
-    <button id="btn-korisnici" class="dugme" type="button">Korisnici i odobrenja</button>
-    <button id="btn-propisi" class="dugme" type="button">Propisi i spiskovi</button>
-  </div>
-
   <div class="p-kartica">
     <h3>Nalog</h3>
     <p id="postavke-nalog" class="red-info"></p>
@@ -803,13 +803,25 @@
 
 <section id="korisnici" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="korisnici-naslov" hidden>
   <header class="postavke-glava">
-    <h2 id="korisnici-naslov">Korisnici</h2>
+    <h2 id="korisnici-naslov">Korisnici i odobrenja</h2>
     <button id="btn-korisnici-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
-  <p><b id="korisnici-ceka"></b></p>
-  <button id="btn-korisnici-osvjezi" class="dugme" type="button">Osvježi</button>
+  <div class="sk-hero tr-hero kor-hero" id="korisnici-hero">
+    <div class="sk-statovi sk-statovi-hero">
+      <div class="kor-stat-ceka"><b id="korisnici-ceka">0</b><span>čeka odobrenje</span></div>
+      <div><b id="kor-hero-probni">0</b><span>u probnom periodu</span></div>
+      <div><b id="kor-hero-odobreni">0</b><span>odobreno</span></div>
+      <div><b id="kor-hero-admini">0</b><span>administratora</span></div>
+    </div>
+  </div>
+  <div id="kor-filter" class="segment kor-filter" role="group" aria-label="Filter korisnika"></div>
+  <div class="kor-alati">
+    <input id="kor-trazi" type="search" class="kor-trazi" placeholder="Traži korisnika" autocomplete="off" aria-label="Traži po imenu, prezimenu ili nadimku">
+    <button id="btn-korisnici-osvjezi" class="dugme" type="button">Osvježi</button>
+  </div>
   <p id="korisnici-status" class="status" role="status"></p>
   <ul id="korisnici-spisak" class="spisak"></ul>
+  <p id="korisnici-prazno" class="sitno" hidden>Nema korisnika za ovaj prikaz.</p>
 </section>
 
 <section id="objekt-forma" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="objekt-forma-naslov" hidden>

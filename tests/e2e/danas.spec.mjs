@@ -111,7 +111,6 @@ test('admin unosi lovostaj: datum dd.mm. ide na server kao MM-DD', async ({ page
   const sent = await setup(page, { admin: true });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-propisi').click();
   await expect(page.locator('#propisi-spisak [data-id]')).toHaveCount(4);
   await page.locator('#btn-propisi-dodaj').click();

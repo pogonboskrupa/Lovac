@@ -1,10 +1,22 @@
 <section id="korisnici" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="korisnici-naslov" hidden>
   <header class="postavke-glava">
-    <h2 id="korisnici-naslov">Korisnici</h2>
+    <h2 id="korisnici-naslov">Korisnici i odobrenja</h2>
     <button id="btn-korisnici-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
   </header>
-  <p><b id="korisnici-ceka"></b></p>
-  <button id="btn-korisnici-osvjezi" class="dugme" type="button">Osvježi</button>
+  <div class="sk-hero tr-hero kor-hero" id="korisnici-hero">
+    <div class="sk-statovi sk-statovi-hero">
+      <div class="kor-stat-ceka"><b id="korisnici-ceka">0</b><span>čeka odobrenje</span></div>
+      <div><b id="kor-hero-probni">0</b><span>u probnom periodu</span></div>
+      <div><b id="kor-hero-odobreni">0</b><span>odobreno</span></div>
+      <div><b id="kor-hero-admini">0</b><span>administratora</span></div>
+    </div>
+  </div>
+  <div id="kor-filter" class="segment kor-filter" role="group" aria-label="Filter korisnika"></div>
+  <div class="kor-alati">
+    <input id="kor-trazi" type="search" class="kor-trazi" placeholder="Traži korisnika" autocomplete="off" aria-label="Traži po imenu, prezimenu ili nadimku">
+    <button id="btn-korisnici-osvjezi" class="dugme" type="button">Osvježi</button>
+  </div>
   <p id="korisnici-status" class="status" role="status"></p>
   <ul id="korisnici-spisak" class="spisak"></ul>
+  <p id="korisnici-prazno" class="sitno" hidden>Nema korisnika za ovaj prikaz.</p>
 </section>

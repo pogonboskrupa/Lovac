@@ -37,6 +37,7 @@ test('lovac koji nije admin ne vidi administraciju', async ({ page }) => {
   await setup(page, { admin: false });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
+  await expect(page.locator('#postavke-admin')).toBeHidden();
   await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await expect(page.locator('#postavke-admin')).toBeHidden();
 });
@@ -45,15 +46,16 @@ test('admin vidi korisnike (neodobreni prvi) i odobrava jednim dodirom', async (
   const rpc = await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
-  await page.locator('#btn-korisnici').click();
+  await page.locator('#btn-korisnici').click(); // administracija je prva kartica u Opšte
   await expect(page.locator('#korisnici')).toBeVisible();
   const rows = page.locator('#korisnici-spisak [data-id]');
   await expect(rows).toHaveCount(3);
   await expect(rows.first()).toHaveAttribute('data-id', 'b2');
   await expect(rows.first()).toContainText('Novo Lice (127)');
-  await expect(rows.first()).toContainText('čeka odobrenje');
-  await expect(page.locator('#korisnici-ceka')).toHaveText('Čeka odobrenje: 1');
+  await expect(rows.first()).toContainText('Čeka odobrenje');
+  await expect(page.locator('#korisnici-ceka')).toHaveText('1');
+  await expect(page.locator('#kor-hero-odobreni')).toHaveText('2');
+  await expect(page.locator('#kor-hero-admini')).toHaveText('1');
 
   await rows.first().locator('[data-akcija="odobri"]').click();
   await expect.poll(() => rpc.length).toBe(1);
@@ -64,9 +66,9 @@ test('admin: uloga, reset PIN-a (6-8 cifara) i brisanje drugim dodirom', async (
   const rpc = await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
-  await page.locator('#btn-korisnici').click();
+  await page.locator('#btn-korisnici').click(); // administracija je prva kartica u Opšte
   const lovac = page.locator('#korisnici-spisak [data-id="c3"]');
+  await lovac.locator('summary').click(); // "Više radnji"
   await lovac.locator('[data-akcija="admin"]').click();
   await expect.poll(() => rpc.length).toBe(1);
   expect(rpc[0]).toEqual({ fn: 'admin_postavi_ulogu', body: { p_korisnik: 'c3', p_admin: true } });
@@ -91,11 +93,39 @@ test('admin ne može opozvati ni obrisati sam sebe iz UI-ja', async ({ page }) =
   await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
-  await page.locator('#btn-korisnici').click();
+  await page.locator('#btn-korisnici').click(); // administracija je prva kartica u Opšte
   const ja = page.locator('#korisnici-spisak [data-id="a1"]');
   await expect(ja.locator('[data-akcija="odobri"]')).toHaveCount(0);
   await expect(ja.locator('[data-akcija="obrisi"]')).toHaveCount(0);
   expect(await page.evaluate(() => window.__nazad())).toBe(true);
   await expect(page.locator('#korisnici')).toBeHidden();
+});
+
+test('Korisnici i odobrenja: administracija je PRVA kartica u Opšte, značka pokazuje koliko čeka, filteri i pretraga', async ({ page }) => {
+  await setup(page);
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  const kartice = page.locator('#p-opste > .p-kartica');
+  await expect(kartice.first()).toHaveAttribute('id', 'postavke-admin');
+  await expect(page.locator('#korisnici-znacka')).toBeHidden(); // još nije učitano, nema izmišljenog broja
+  await page.locator('#btn-korisnici').click();
+  await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(3);
+  await expect(page.locator('#kor-filter [data-filter="cekaju"]')).toHaveText('Čekaju (1)');
+  await page.locator('#kor-filter [data-filter="cekaju"]').click();
+  await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(1);
+  await page.locator('#kor-filter [data-filter="svi"]').click();
+  await page.fill('#kor-trazi', 'lovro');
+  await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(1);
+  await expect(page.locator('#korisnici-spisak [data-id="c3"]')).toContainText('Odobren');
+  await page.fill('#kor-trazi', 'nema takvog');
+  await expect(page.locator('#korisnici-prazno')).toBeVisible();
+  await page.fill('#kor-trazi', '');
+  await page.screenshot({ path: process.env.SNIMCI_DIR ? `${process.env.SNIMCI_DIR}/korisnici.png` : '/tmp/korisnici.png' });
+  // značka na dugmetu u Postavkama poslije zatvaranja
+  await page.locator('#btn-korisnici-zatvori').click();
+  await page.locator('#btn-postavke').click();
+  await expect(page.locator('#korisnici-znacka')).toHaveText('1 čeka odluku');
+  // dodirna meta dugmeta ≥ 44 px
+  const b = await page.locator('#btn-korisnici').boundingBox();
+  expect(b.height).toBeGreaterThanOrEqual(44);
 });

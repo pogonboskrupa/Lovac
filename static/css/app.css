@@ -1681,3 +1681,31 @@ svg[hidden] { display: none; }
 /* Minirana područja (BHMAC): crveni znak u kartici i obrub kartice */
 .minirano-kartica { border-color: #d40000; }
 .minirano-boja { background: rgba(212, 0, 0, 0.6); border: 2px solid #d40000; }
+
+/* Korisnici i odobrenja: pregled, filter, kartice sa stanjem */
+.p-admin-dugme { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.p-znacka { padding: 2px 10px; border-radius: 999px; background: #e41e3f; color: #fff; font-size: 13px; font-weight: 800; }
+.kor-hero .kor-stat-ceka b { color: inherit; }
+.kor-filter { margin: 8px 0; }
+.kor-trazi { margin: 4px 0 8px; }
+.kor-kartica { border-left: 6px solid var(--okvir); }
+.kor-kartica[data-stanje="ceka"] { border-left-color: #c2410c; }
+.kor-kartica[data-stanje="probni"] { border-left-color: #b45309; }
+.kor-kartica[data-stanje="odobren"], .kor-kartica[data-stanje="admin"] { border-left-color: var(--gps-dobro); }
+.kor-glava { display: flex; align-items: center; gap: 12px; }
+.kor-tekst { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kor-cip { align-self: flex-start; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--dugme); color: var(--dugme-tekst); }
+.kor-cip[data-stanje="ceka"] { background: #c2410c; color: #fff; }
+.kor-cip[data-stanje="probni"] { background: #92400e; color: #fff; }
+.kor-cip[data-stanje="admin"] { background: #1d4ed8; color: #fff; }
+.kor-red { margin: 6px 0 0; }
+.kor-vise { margin-top: 8px; }
+.kor-vise summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.kor-filter { flex-wrap: nowrap; gap: 6px; }
+.kor-filter button { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 14px; white-space: nowrap; }
+.kor-alati { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; }
+.kor-alati .kor-trazi { flex: 1; margin: 0; min-width: 0; }
+.kor-alati .dugme { flex: none; }
+.kor-tekst b { display: inline; }
+.kor-glava .kor-tekst { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+#korisnici-status:empty { display: none; }
