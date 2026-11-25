@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  haversine, isPaused, acceptPoint, mergePoints, newTrack, pauseTrack, resumeTrack, stopTrack,
+  haversine, isPaused, acceptPoint, stepThreshold, resumeFrom, pauseRadius, mergePoints, newTrack, pauseTrack, resumeTrack, stopTrack,
   movingTime, trackDistance, autoPauseCheck, smoothPoints, segmentsByPauses, toGpx, toKml,
-  createSnapshotTimer, trackFileName,
+  createSnapshotTimer, trackFileName, isTrackTooShort,
 } from '../../static/js/trag.js';
 
 const T0 = Date.UTC(2026, 10, 19, 6, 0, 0);
@@ -20,7 +20,8 @@ test('tačka: loša tačnost se odbacuje, 5 s ili 5 m', () => {
   assert.equal(acceptPoint(null, pt(0, { acc: 31 })), false);
   const a = pt(0);
   assert.equal(acceptPoint(a, { ...a, t: a.t + 2000 }), false, 'stoji, 2 s');
-  assert.equal(acceptPoint(a, { ...a, t: a.t + 5000 }), true, 'stoji, 5 s');
+  assert.equal(acceptPoint(a, { ...a, t: a.t + 5000 }), false, 'stoji, 5 s (šum GPS-a nije tačka)');
+  assert.equal(acceptPoint(a, { ...a, t: a.t + 15000 }), true, 'stoji, 15 s (otkucaj)');
   assert.equal(acceptPoint(a, { ...a, t: a.t + 1000, lat: a.lat + 0.0001 }), true, 'pomak 11 m');
   assert.equal(acceptPoint(a, { ...a, t: a.t - 1 }), false, 'starija tačka');
 });
@@ -152,4 +153,62 @@ test('"Vodi me nazad": nastrijel, najbliža čeka i auto, početak traga', () =>
   assert.deepEqual(t.map((x) => x.vrsta), ['nastrijel', 'ceka', 'auto', 'pocetak']);
   assert.equal(t[1].naziv, 'Bliska čeka');
   assert.equal(t[2].naziv, 'Auto');
+});
+
+// ---- kretanje u malom prostoru (v1.2.7) ----
+const M = 1 / 111320; // stepen širine po metru
+
+test('korak pamćenja prati tačnost GPS-a: 3–10 m', () => {
+  assert.equal(stepThreshold({ acc: 4 }, { acc: 4 }), 3);
+  assert.equal(stepThreshold({ acc: 10 }, { acc: 4 }), 6);
+  assert.equal(stepThreshold({ acc: 30 }, { acc: 25 }), 10);
+  assert.equal(stepThreshold(null, { lat: 1 }), 3);
+});
+
+test('polagano kretanje u malom prostoru (3–4 m koraka) pamti se; šum od 2 m ne', () => {
+  const a = { t: T0, lat: 44.88, lon: 16.15, acc: 4 };
+  assert.equal(acceptPoint(a, { t: T0 + 3000, lat: 44.88 + 3.5 * M, lon: 16.15, acc: 4 }), true, '3,5 m za 3 s');
+  assert.equal(acceptPoint(a, { t: T0 + 3000, lat: 44.88 + 2 * M, lon: 16.15, acc: 4 }), false, '2 m je šum');
+  assert.equal(acceptPoint(a, { t: T0 + 3000, lat: 44.88 + 4 * M, lon: 16.15, acc: 12 }), false, '4 m uz lošu tačnost je šum');
+});
+
+test('stajanje ne pravi tačku svakih 5 s (trag nije duži od pređenog)', () => {
+  const jitter = Array.from({ length: 24 }, (_, i) => ({ t: T0 + i * 5000, lat: 44.88 + ((i * 7) % 3) * 0.7 * M, lon: 16.15, acc: 5 }));
+  const tr = newTrack({ id: 'j', start: T0, naziv: 'x' });
+  const pts = mergePoints([], jitter, tr);
+  assert.ok(pts.length <= 9, `tačaka: ${pts.length}`);
+  assert.ok(trackDistance(pts) < 15, `dužina: ${trackDistance(pts)}`);
+});
+
+test('auto-pauza se NE aktivira kad se krećeš u krugu od 15 m (hodaš oko stana)', () => {
+  const tr = newTrack({ id: 'k', start: T0, naziv: 'x' });
+  // 150 s kruženja poluprečnika 7 m: ukupni prostor ~15 m
+  const walk = Array.from({ length: 31 }, (_, i) => {
+    const ang = (i / 31) * Math.PI * 4;
+    return { t: T0 + i * 5000, lat: 44.88 + 7 * M * Math.sin(ang), lon: 16.15 + 7 * M * Math.cos(ang) / Math.cos(44.88 * Math.PI / 180), acc: 5 };
+  });
+  assert.equal(autoPauseCheck(tr, walk, T0 + 150000), null);
+});
+
+test('auto-nastavak već na 10 m pomaka, i to od trenutka kad je pokret počeo', () => {
+  let tr = newTrack({ id: 'n', start: T0, naziv: 'x' });
+  tr = pauseTrack(tr, T0 + 145000, true);
+  const still = Array.from({ length: 30 }, (_, i) => ({ t: T0 + i * 5000, lat: 44.88, lon: 16.15, acc: 5 }));
+  const move = [{ t: T0 + 150000, lat: 44.88 + 4 * M, lon: 16.15, acc: 5 }, { t: T0 + 155000, lat: 44.88 + 8 * M, lon: 16.15, acc: 5 }, { t: T0 + 160000, lat: 44.88 + 12 * M, lon: 16.15, acc: 5 }];
+  assert.equal(autoPauseCheck(tr, [...still, move[0]], T0 + 150000), null, '4 m je još stajanje');
+  assert.equal(autoPauseCheck(tr, [...still, ...move], T0 + 160000), 'nastavi');
+  assert.equal(resumeFrom(tr, [...still, ...move]), T0 + 155000, 'nastavlja od tačke prije prve udaljene');
+});
+
+test('radijus mirovanja je 4–6 m, ne 15 m', () => {
+  assert.equal(pauseRadius([{ acc: 2 }]), 4);
+  assert.equal(pauseRadius([{ acc: 4 }, { acc: 5 }, { acc: 6 }]), 6);
+  assert.equal(pauseRadius([{ acc: 25 }]), 6);
+});
+
+test('kratak trag sa tačkom usput ili znakom se čuva', () => {
+  const base = { vrsta: 'obilazak', tacke: [pt(0), pt(1)] };
+  assert.equal(isTrackTooShort(base), true);
+  assert.equal(isTrackTooShort({ ...base, tackeInteresa: [{ id: 'x' }] }), false);
+  assert.equal(isTrackTooShort({ ...base, krv: [{ t: 1 }] }), false);
 });

@@ -4,7 +4,7 @@
 
 import {
   newTrack, pauseTrack, resumeTrack, stopTrack, mergePoints, autoPauseCheck,
-  createSnapshotTimer, defaultTrackName, isTrackTooShort, trackDistance, MIN_TRACK_M,
+  createSnapshotTimer, defaultTrackName, isTrackTooShort, trackDistance, MIN_TRACK_M, resumeFrom,
 } from './trag.js';
 import { idbPut, idbGet, idbAll, idbDelete } from './db.js';
 import { alarm } from './ui.js';
@@ -77,7 +77,11 @@ function ingest(points) {
     let next = { ...tr, tacke: mergePoints(tr.tacke, points, tr) };
     const decision = autoPauseCheck(next, raw, now);
     if (decision === 'pauza') next = pauseTrack(next, now, true);
-    if (decision === 'nastavi') next = resumeTrack(next, now);
+    if (decision === 'nastavi') {
+      // nastavak od trenutka kad je pokret počeo (ne od "sada"), pa se tačke tog pokreta ne gube
+      next = resumeTrack(next, resumeFrom(next, raw) ?? now);
+      next = { ...next, tacke: mergePoints(next.tacke, raw, next) };
+    }
     active.set(id, next);
     if (decision) saveTrack(next).catch(() => {});
   }

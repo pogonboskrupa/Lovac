@@ -5,11 +5,18 @@ const EARTH_R = 6371008.8;
 const RAD = Math.PI / 180;
 
 export const MAX_ACC_M = 30;
-export const MIN_DT_MS = 5000;
-export const MIN_DIST_M = 5;
+// Tačka se pamti kad se pomjeri za "korak" (ovisi o tačnosti GPS-a: 3–10 m) ili kad prođe 15 s.
+// Prije je bilo "5 s ili 5 m": stajanje je pravilo tačku svakih 5 s od samog šuma GPS-a (trag "kuca" i duži je nego što je prešlo),
+// a polagano kretanje u malom prostoru se gubilo u tom šumu.
+export const MIN_DT_MS = 15000;
+export const MIN_DIST_M = 3;
+export const MAX_STEP_M = 10;
 export const AUTO_PAUSE_MS = 120000;
-export const AUTO_PAUSE_RADIUS_M = 15;
-export const AUTO_RESUME_M = 25;
+// Auto-pauza samo kad zaista stojiš: sve tačke 2 min unutar kruga koji prati tačnost GPS-a (4–6 m).
+// Raniji krug od 15 m je pauzirao i lovca koji se polako kreće oko stana/nalaza, a nastavak je tražio 25 m pomaka.
+export const AUTO_PAUSE_MIN_R_M = 4;
+export const AUTO_PAUSE_MAX_R_M = 6;
+export const AUTO_RESUME_MIN_M = 10;
 const AUTO_PAUSE_COVER_MS = 15000;
 
 export function haversine(a, b) {
@@ -27,13 +34,20 @@ function validPoint(p) {
   return p && Number.isFinite(p.t) && Number.isFinite(p.lat) && Number.isFinite(p.lon);
 }
 
-// "5 s ili 5 m, šta prije": stajanje ne pravi gomilu tačaka, a pokret se ne gubi.
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// Najmanji pomak koji se pamti: 0,6 × lošija tačnost dviju tačaka, 3–10 m (šum GPS-a nije kretanje).
+export function stepThreshold(prev, p) {
+  const acc = Math.max(Number.isFinite(prev?.acc) ? prev.acc : 0, Number.isFinite(p?.acc) ? p.acc : 0);
+  return clamp(0.6 * acc, MIN_DIST_M, MAX_STEP_M);
+}
+
 export function acceptPoint(prev, p) {
   if (!validPoint(p)) return false;
   if (Number.isFinite(p.acc) && p.acc > MAX_ACC_M) return false;
   if (!prev) return true;
   if (p.t <= prev.t) return false;
-  return p.t - prev.t >= MIN_DT_MS || haversine(prev, p) >= MIN_DIST_M;
+  return p.t - prev.t >= MIN_DT_MS || haversine(prev, p) >= stepThreshold(prev, p);
 }
 
 // Spaja nove tačke (i ponovno pročitan native bafer) bez duplikata, bez tačaka iz pauza
@@ -93,8 +107,10 @@ export function movingTime(trag, now = Date.now()) {
 // Trag kraći od ovoga se ne čuva u Moji tragovi (šetnja oko auta, slučajan start). Potraga je izuzeta: dokaz je i kratka.
 export const MIN_TRACK_M = 50;
 
+// Trag sa tačkom usput ili znakom nije slučajan start: i kratak se čuva.
 export function isTrackTooShort(tr) {
-  return tr.vrsta !== 'potraga' && trackDistance(tr.tacke) < MIN_TRACK_M;
+  if (tr.vrsta === 'potraga' || (tr.tackeInteresa || []).length || (tr.krv || []).length) return false;
+  return trackDistance(tr.tacke) < MIN_TRACK_M;
 }
 
 export function trackDistance(points) {
@@ -108,6 +124,36 @@ function centroid(points) {
   return { lat: points.reduce((s, p) => s + p.lat, 0) / n, lon: points.reduce((s, p) => s + p.lon, 0) / n };
 }
 
+function medianAcc(points) {
+  const a = points.map((p) => p.acc).filter(Number.isFinite).sort((x, y) => x - y);
+  return a.length ? a[Math.floor(a.length / 2)] : 5;
+}
+
+// Krug u kojem se tačke 2 min smatraju stajanjem: prati tačnost GPS-a, ali nikad preko 6 m.
+export function pauseRadius(points) {
+  return clamp(1.2 * medianAcc(points), AUTO_PAUSE_MIN_R_M, AUTO_PAUSE_MAX_R_M);
+}
+
+export function resumeDistance(points) {
+  return Math.max(AUTO_RESUME_MIN_M, 2 * medianAcc(points));
+}
+
+// Prva tačka poslije auto-pauze koja je dalje od sidra od praga (i tačka prije nje, da se trag nastavi bez rupe).
+// Vraća vrijeme od kojeg treba nastaviti trag, ili null kad pokreta nema.
+export function resumeFrom(trag, recent) {
+  const pause = openPause(trag);
+  if (!pause?.auto) return null;
+  const good = recent.filter((p) => validPoint(p) && !(p.acc > MAX_ACC_M)).sort((a, b) => a.t - b.t);
+  const before = good.filter((p) => p.t <= pause.od);
+  const anchor = before.length ? before[before.length - 1] : trag.tacke[trag.tacke.length - 1];
+  if (!anchor) return null;
+  const limit = resumeDistance(good.filter((p) => p.t > pause.od - 60000));
+  const after = good.filter((p) => p.t > pause.od);
+  const i = after.findIndex((p) => haversine(anchor, p) > limit);
+  if (i < 0) return null;
+  return i > 0 ? after[i - 1].t : Math.max(pause.od, after[i].t - 1);
+}
+
 // recent = sirove tačke posljednjih minuta (i iz pauze), jer se pokret otkriva i tokom pauze.
 export function autoPauseCheck(trag, recent, now) {
   if (!trag.autoPauza || trag.status === 'gotovo') return null;
@@ -117,15 +163,10 @@ export function autoPauseCheck(trag, recent, now) {
     const win = good.filter((p) => p.t >= now - AUTO_PAUSE_MS);
     if (win.length < 3 || win[0].t > now - AUTO_PAUSE_MS + AUTO_PAUSE_COVER_MS) return null;
     const c = centroid(win);
-    return win.every((p) => haversine(c, p) <= AUTO_PAUSE_RADIUS_M) ? 'pauza' : null;
+    const r = pauseRadius(win);
+    return win.every((p) => haversine(c, p) <= r) ? 'pauza' : null;
   }
-  const pause = openPause(trag);
-  if (!pause?.auto) return null;
-  const before = good.filter((p) => p.t <= pause.od);
-  const anchor = before.length ? before[before.length - 1] : trag.tacke[trag.tacke.length - 1];
-  const latest = good[good.length - 1];
-  if (!anchor || !latest || latest.t <= pause.od) return null;
-  return haversine(anchor, latest) > AUTO_RESUME_M ? 'nastavi' : null;
+  return resumeFrom(trag, recent) != null ? 'nastavi' : null;
 }
 
 // Pomični prosjek (centriran, do 2 tačke sa svake strane). Original se čuva u tragu.
