@@ -11,7 +11,7 @@ export const UPUTE = [
     uvod: 'Za rad su potrebni nalog i odobrenje administratora.',
     stavke: [
       ['Prijava', 'Upiši ime, prezime i PIN od 6 do 8 cifara. Ako u društvu ima dva lovca istog imena i prezimena, razlikuju se poljem nadimak / broj člana.'],
-      ['Odobrenje i probni period', 'Nalog koji napraviš sam (Novi nalog) odmah radi 24 sata: karta, GPS, tvoji zapisi i zahtjev za sekciju. Za stalni pristup zatraži sekciju (Meni → Sekcije i pristup) — kad te grupovođa ili lovočuvar revira primi ili administrator odobri, nalog radi trajno. Dok traje probni period ne vidiš zapise drugih lovaca ni spisak članova. Grupovođa može i sam napraviti nalog i odmah te dodati u svoju sekciju.'],
+      ['Odobrenje i probni period', 'Nalog koji napraviš sam (Novi nalog) odmah radi 24 sata; pri registraciji možeš izabrati revir i sekciju, a ako pogriješiš, administrator ili grupovođa te prebaci u drugu: karta, GPS, tvoji zapisi i zahtjev za sekciju. Za stalni pristup zatraži sekciju (Meni → Sekcije i pristup) — kad te grupovođa ili lovočuvar revira primi ili administrator odobri, nalog radi trajno. Dok traje probni period ne vidiš zapise drugih lovaca ni spisak članova. Grupovođa može i sam napraviti nalog i odmah te dodati u svoju sekciju.'],
       ['Drugi lovac pravi nalog', 'Administrator, lovočuvar i grupovođa naprave nalog za lovca i odmah ga dodaju u sekciju. Običan član može samo predložiti lovca, a odobrava grupovođa.'],
       ['Zaboravljen PIN', 'Administrator može postaviti novi PIN. PIN možeš promijeniti u Postavke → Nalog.'],
       ['Pokretanje bez interneta', 'Kad si jednom prijavljen, aplikacija se otvara odmah, i bez signala.'],

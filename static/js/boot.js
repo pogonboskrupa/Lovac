@@ -5,7 +5,8 @@ import {
   cachedProfile, decideStartScreen, refreshProfileInBackground, register, login, logout, warmServer } from './auth.js';
 import { setStorageReporter } from './storage.js';
 import { onQualityChange, connectionDetail } from './net.js';
-import { showScreen, toast, alarm, initTheme, handleBack, wireMenu } from './ui.js';
+import { showScreen, toast, alarm, initTheme, handleBack, wireMenu, escapeHtml } from './ui.js';
+import { cachedPublicSections, fetchPublicSections } from './sekcije-javno.js';
 import { initMap } from './map.js';
 import { initGps } from './gps.js';
 import { initPostavke } from './postavke.js';
@@ -201,7 +202,7 @@ function renderTrial(profile) {
 
 function readForm(form) {
   const fd = new FormData(form);
-  return { ime: fd.get('ime'), prezime: fd.get('prezime'), nadimak: fd.get('nadimak'), pin: fd.get('pin') };
+  return { ime: fd.get('ime'), prezime: fd.get('prezime'), nadimak: fd.get('nadimak'), pin: fd.get('pin'), sekcija: fd.get('sekcija') || '' };
 }
 
 // Zadnje ime i prezime (bez PIN-a) se pamte da lovac poslije odjave ne kuca sve iznova.
@@ -222,8 +223,35 @@ function wireAuthForms() {
     document.getElementById('pr-mod-naslov').textContent = MODOVI[m].naslov;
     document.getElementById('btn-prijava-tekst').textContent = MODOVI[m].dugme;
     document.getElementById('pr-reg-napomena').hidden = m !== 'registracija';
+    document.getElementById('pr-sekcija-blok').hidden = m !== 'registracija';
+    if (m === 'registracija') loadSectionChoices();
     submitBtn.value = m;
     status.textContent = '';
+  };
+  // Revir i sekcija pri registraciji: izbor je neobavezan zahtjev, a odobrava ga grupovođa/lovočuvar/administrator.
+  let sectionsLoaded = false;
+  const fillSections = (groups) => {
+    const revirSel = document.getElementById('pr-revir');
+    const sekSel = document.getElementById('pr-sekcija');
+    const prevRevir = revirSel.value;
+    revirSel.innerHTML = '<option value="">— izaberi revir —</option>' + groups.map((g) => `<option value="${escapeHtml(g.revir_id)}">${escapeHtml(g.revir)}</option>`).join('');
+    revirSel.value = groups.some((g) => g.revir_id === prevRevir) ? prevRevir : '';
+    const fillSek = () => {
+      const g = groups.find((x) => x.revir_id === revirSel.value);
+      const prev = sekSel.value;
+      sekSel.innerHTML = '<option value="">— izaberi sekciju —</option>' + (g?.sekcije || []).map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.naziv)}</option>`).join('');
+      sekSel.value = g?.sekcije.some((s) => s.id === prev) ? prev : '';
+      sekSel.disabled = !g;
+    };
+    revirSel.onchange = fillSek;
+    fillSek();
+    document.getElementById('pr-sekcija-prazno').hidden = groups.length > 0;
+  };
+  const loadSectionChoices = async () => {
+    fillSections(cachedPublicSections());
+    if (sectionsLoaded) return;
+    sectionsLoaded = true;
+    fillSections(await fetchPublicSections());
   };
   document.getElementById('pr-mod')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-mod]');

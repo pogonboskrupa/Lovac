@@ -13,3 +13,13 @@ test('Teren: centar van granica fajla vodi na područje karte', () => {
   const v = terenView(INFO, 14, { lat: 43.85, lng: 18.4 });
   assert.deepEqual(v.fit, [[44.74, 15.78], [45.14, 16.5]]);
 });
+
+test('ponuda Terena: samo u aplikaciji, dok Teren nije na telefonu, ne traje preuzimanje i nije odbijena', async () => {
+  const { shouldOfferTeren } = await import('../../static/js/karte-ui.js');
+  const base = { hasBridge: true, terenInfo: null, busy: false, dismissed: false };
+  assert.equal(shouldOfferTeren(base), true);
+  assert.equal(shouldOfferTeren({ ...base, hasBridge: false }), false);
+  assert.equal(shouldOfferTeren({ ...base, terenInfo: { id: 'teren.mbtiles' } }), false);
+  assert.equal(shouldOfferTeren({ ...base, busy: true }), false);
+  assert.equal(shouldOfferTeren({ ...base, dismissed: true }), false);
+});

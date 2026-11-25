@@ -99,6 +99,11 @@ async function renderHero(state) {
   } catch (err) { console.warn('hero karte', err); }
 }
 
+// Ponuda "Skini terensku kartu" pri pokretanju: samo u aplikaciji, dok Teren nije na telefonu i ne traje preuzimanje.
+export function shouldOfferTeren({ hasBridge, terenInfo, busy, dismissed }) {
+  return Boolean(hasBridge && !terenInfo && !busy && !dismissed);
+}
+
 export function initKarte(L, map, registerTeren, repo) {
   const bridge = globalThis.AndroidKarte;
   const layers = new Map();
@@ -143,12 +148,33 @@ export function initKarte(L, map, registerTeren, repo) {
   registerTeren?.(provider);
   renderTeren();
 
-  // Izbor "Teren" na mapi bez preuzetog fajla: objasni i vodi na preuzimanje.
+  // Izbor "Teren" na mapi bez preuzetog fajla odmah pokreće preuzimanje (napredak je u Karte i offline).
   document.addEventListener('teren:trazen', () => {
     if (!bridge) { toast('Teren radi u aplikaciji na telefonu'); return; }
-    toast('Teren još nije preuzet — preuzmi ga u Karte i offline');
+    if (transfer === 'teren') { toast('Teren se već preuzima…'); return; }
+    startTerenDownload();
+    toast('Preuzimam Teren — kad završi, karta se sama prebaci na njega');
+  });
+
+  // Prvo pokretanje: ponuda za skidanje terenske karte (vraća se pri svakom pokretanju dok Teren nije na telefonu).
+  let ponudaOdbijena = false;
+  const ponuda = () => document.getElementById('teren-ponuda');
+  const closeOffer = () => { const d = ponuda(); if (d) d.hidden = true; };
+  const maybeOffer = () => {
+    const d = ponuda();
+    if (!d || !d.hidden) return;
+    if (shouldOfferTeren({ hasBridge: Boolean(bridge), terenInfo, busy: transfer === 'teren', dismissed: ponudaOdbijena })) d.hidden = false;
+  };
+  document.getElementById('btn-teren-ponuda-da')?.addEventListener('click', () => {
+    closeOffer();
+    ponudaOdbijena = true;
+    if (transfer !== 'teren' && !terenInfo) startTerenDownload();
     document.dispatchEvent(new CustomEvent('karte:otvori'));
   });
+  document.getElementById('btn-teren-ponuda-kasnije')?.addEventListener('click', () => { ponudaOdbijena = true; closeOffer(); });
+  document.addEventListener('ekran:mapa', () => setTimeout(maybeOffer, 1500));
+  // Karta je možda već prikazana prije nego što je ovaj modul počeo slušati (keširan profil ulazi odmah).
+  setTimeout(() => { if (document.getElementById('ekran-mapa') && !document.getElementById('ekran-mapa').hidden) maybeOffer(); }, 2000);
 
   let maps = [];
   const hero = () => renderHero({ terenInfo, maps, hasBridge: Boolean(bridge) });
@@ -241,6 +267,13 @@ export function initKarte(L, map, registerTeren, repo) {
   });
 
   // Veliki fajl: prvi dodir upozori na veličinu (mobilni podaci), drugi pokreće preuzimanje.
+  const startTerenDownload = () => {
+    clearTimeout(armedDownload);
+    armedDownload = null;
+    setBusy('teren');
+    $('teren-preuzimanje').textContent = 'Preuzimam teren… 0 %';
+    bridge.preuzmi(terenUrl(repo), TEREN_FILE);
+  };
   $('btn-teren-preuzmi').addEventListener('click', () => {
     if (transfer === 'teren') return;
     const b = $('btn-teren-preuzmi');
@@ -249,11 +282,7 @@ export function initKarte(L, map, registerTeren, repo) {
       armedDownload = setTimeout(() => { armedDownload = null; renderTeren(); }, 4000);
       return;
     }
-    clearTimeout(armedDownload);
-    armedDownload = null;
-    setBusy('teren');
-    $('teren-preuzimanje').textContent = 'Preuzimam teren… 0 %';
-    bridge.preuzmi(terenUrl(repo), TEREN_FILE);
+    startTerenDownload();
   });
   wireTwoTap($('btn-teren-ukloni'), 'Dodirni ponovo za uklanjanje', () => {
     bridge.ukloni(TEREN_FILE);

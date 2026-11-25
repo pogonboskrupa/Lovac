@@ -170,3 +170,17 @@ test('lovočuvar revira odobrava zahtjeve u sekcijama svog revira, ne tuđeg', a
   assert.equal(canApprove(data.sekcije[1], lc, data.lovocuvari), false);
   assert.deepEqual(approvalsForMe(data, lc).map((a) => a.sekcija.id), ['s1']);
 });
+
+test('javne sekcije za registraciju: grupisanje po reviru, bez duplikata i praznih redova', async () => {
+  const { groupPublicSections } = await import('../../static/js/sekcije-javno.js');
+  const rows = [
+    { sekcija_id: 'a', naziv: 'A', revir_id: 'r1', revir: 'Krupa' },
+    { sekcija_id: 'b', naziv: 'B', revir_id: 'r2', revir: 'Otoka' },
+    { sekcija_id: 'c', naziv: 'C', revir_id: 'r1', revir: 'Krupa' },
+    { sekcija_id: 'a', naziv: 'A', revir_id: 'r1', revir: 'Krupa' },
+    { naziv: 'bez id-a' },
+  ];
+  const g = groupPublicSections(rows);
+  assert.deepEqual(g.map((x) => [x.revir, x.sekcije.map((s) => s.id)]), [['Krupa', ['a', 'c']], ['Otoka', ['b']]]);
+  assert.deepEqual(groupPublicSections(null), []);
+});

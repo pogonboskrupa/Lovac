@@ -238,3 +238,27 @@ test('grupovođa organizuje lov svoje sekcije (sekcija je obavezna), lov nosi se
   await expect.poll(() => server.db.lovovi.length).toBe(1);
   expect(server.db.lovovi[0]).toMatchObject({ naziv: 'Pogon sekcije', revir_id: R.krupa, sekcija_id: ID(200), organizator_id: GV.id });
 });
+
+test('admin prebacuje zahtjev lovca u drugu sekciju (lovac se greškom prijavio u pogrešnu)', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcije.push({ id: ID(201), revir_id: R.otoka, naziv: 'Otoka 1', grupovodja_id: null, lovocuvar_id: null, aktivno: true });
+  server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'ceka' });
+  await setup(page, server, ADMIN);
+  let poziv = null;
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/premjesti_zahtjev/, (r) => {
+    poziv = r.request().postDataJSON();
+    const c = server.db.sekcija_clanovi.find((x) => x.korisnik_id === poziv.p_korisnik && x.sekcija_id === poziv.p_iz);
+    if (c) c.sekcija_id = poziv.p_u;
+    return r.fulfill({ status: 204, body: '' });
+  });
+  await openSekcije(page);
+  const zahtjev = page.locator('#sekcije-zahtjevi [data-uid="' + LOVAC.id + '"]');
+  await expect(zahtjev).toBeVisible();
+  // bez izabrane sekcije ništa se ne šalje
+  await zahtjev.locator('[data-akcija="prebaci"]').click();
+  expect(poziv).toBeNull();
+  await zahtjev.locator('[data-prebaci]').selectOption({ label: 'Otoka · Otoka 1' });
+  await zahtjev.locator('[data-akcija="prebaci"]').click();
+  await expect.poll(() => poziv).toEqual({ p_iz: ID(200), p_u: ID(201), p_korisnik: LOVAC.id });
+  await expect.poll(() => server.db.sekcija_clanovi[0].sekcija_id).toBe(ID(201));
+});

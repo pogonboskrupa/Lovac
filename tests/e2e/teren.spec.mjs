@@ -45,19 +45,17 @@ test('Teren nije preuzet: izbor vodi na preuzimanje sa Release-a, napredak, pa s
   await page.locator('#btn-podloga').click();
   await expect(page.locator('#podloga-teren-stanje')).toHaveText('Nije preuzet — dodirni za preuzimanje');
   await page.locator('#meni-podloga [data-podloga="teren"]').click();
-  await expect(page.locator('#karte')).toBeVisible();
-  await expect(page.locator('#teren-status')).toContainText('nije preuzet');
-  await expect(page.locator('#btn-teren-ukloni')).toBeHidden();
-  // Veliki fajl: prvi dodir samo upozorava, drugi pokreće preuzimanje.
-  await page.locator('#btn-teren-preuzmi').click();
-  await expect(page.locator('#btn-teren-preuzmi')).toContainText('dodirni ponovo');
-  expect(await page.evaluate(() => window.__poziv)).toEqual([]);
-  await page.locator('#btn-teren-preuzmi').click();
-  // Dok preuzimanje traje dugme je zaključano (dvostruko preuzimanje bi pokvarilo fajl).
-  await expect(page.locator('#btn-teren-preuzmi')).toBeDisabled();
-  await page.locator('#btn-teren-preuzmi').click({ force: true });
+  // Klik na Teren bez preuzetog fajla odmah pokreće preuzimanje (bez drugog dodira).
   const poziv = await page.evaluate(() => window.__poziv);
   expect(poziv).toEqual([{ url: expect.stringMatching(/^https:\/\/github\.com\/[^/]+\/[^/]+\/releases\/download\/karte\/teren\.mbtiles$/), naziv: 'teren.mbtiles' }]);
+  await expect(page.locator('#poruka')).toContainText('Preuzimam Teren');
+  // Drugi klik dok traje preuzimanje ne pokreće novo (dva preuzimanja bi pisala u isti fajl).
+  await page.locator('#btn-podloga').click();
+  await page.locator('#meni-podloga [data-podloga="teren"]').click();
+  expect(await page.evaluate(() => window.__poziv.length)).toBe(1);
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('karte:otvori')));
+  await expect(page.locator('#karte')).toBeVisible();
+  await expect(page.locator('#btn-teren-preuzmi')).toBeDisabled();
   await page.evaluate(() => window.__karteNapredak('37'));
   await expect(page.locator('#teren-preuzimanje')).toHaveText('Preuzimam teren… 37 %');
   await expect(page.locator('#teren-napredak')).toHaveJSProperty('value', 37);
@@ -132,4 +130,37 @@ test('Teren: pločice se učitavaju i u pojasu oko ekrana (rubovi pri pomjeranju
   await page.locator('#btn-podloga').click();
   await page.locator('#meni-podloga [data-podloga="topo"]').click();
   await expect(page.locator('#karta')).not.toHaveClass(/podloga-teren/);
+});
+
+test('prvo pokretanje: ponuda "Skini terensku kartu" vodi na preuzimanje; "Kasnije" je zatvara; bez aplikacije i sa preuzetim Terenom nema ponude', async ({ page }) => {
+  await bridge(page);
+  await page.goto('/');
+  await expect(page.locator('#teren-ponuda')).toBeVisible({ timeout: 6000 });
+  await expect(page.locator('#teren-ponuda')).toContainText('Skini terensku kartu');
+  await page.locator('#btn-teren-ponuda-kasnije').click();
+  await expect(page.locator('#teren-ponuda')).toBeHidden();
+  expect(await page.evaluate(() => window.__poziv)).toEqual([]);
+});
+
+test('ponuda Terena: "Skini terensku kartu" pokreće preuzimanje i otvara napredak', async ({ page }) => {
+  await bridge(page);
+  await page.goto('/');
+  await expect(page.locator('#teren-ponuda')).toBeVisible({ timeout: 6000 });
+  await page.locator('#btn-teren-ponuda-da').click();
+  expect((await page.evaluate(() => window.__poziv)).length).toBe(1);
+  await expect(page.locator('#teren-ponuda')).toBeHidden();
+  await expect(page.locator('#karte')).toBeVisible();
+});
+
+test('ponuda Terena se ne pojavljuje kad je Teren već na telefonu ni u pregledniku', async ({ page }) => {
+  await bridge(page, { teren: TEREN });
+  await page.goto('/');
+  await page.waitForTimeout(2500);
+  await expect(page.locator('#teren-ponuda')).toBeHidden();
+  const p2 = await page.context().newPage();
+  await fakeServerConfigUnset(p2);
+  await serveTiles(p2);
+  await p2.goto('/');
+  await p2.waitForTimeout(2500);
+  await expect(p2.locator('#teren-ponuda')).toBeHidden();
 });

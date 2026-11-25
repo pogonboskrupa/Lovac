@@ -124,7 +124,7 @@ function validateCredentials({ ime, prezime, nadimak, pin }) {
   if (err) throw new Error(err);
 }
 
-export async function register({ ime, prezime, nadimak, pin }) {
+export async function register({ ime, prezime, nadimak, pin, sekcija }) {
   validateCredentials({ ime, prezime, nadimak, pin });
   const sb = getClient();
   const nad = String(nadimak ?? '').trim();
@@ -132,7 +132,7 @@ export async function register({ ime, prezime, nadimak, pin }) {
     email: syntheticEmail(ime, prezime, nad),
     password: String(pin),
     // probni: server daje 24 sata rada dok grupovođa, lovočuvar ili administrator ne odobri nalog (rok bira server).
-    options: { data: { ime: ime.trim(), prezime: prezime.trim(), nadimak: nad, probni: true } },
+    options: { data: { ime: ime.trim(), prezime: prezime.trim(), nadimak: nad, probni: true, ...(sekcija ? { sekcija: String(sekcija) } : {}) } },
   });
   if (error) throw new Error(friendlyAuthError(error));
   const user = data.user;

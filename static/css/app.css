@@ -1648,6 +1648,7 @@ svg[hidden] { display: none; }
 .odaziv-dugmad { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .odaziv-dugmad #btn-odaziv-kasnije { grid-column: 1 / -1; }
 .odaziv-odgovori { margin: 6px 0; }
+.teren-ponuda .odaziv-dugmad { grid-template-columns: 1fr; }
 
 /* Oznaka opažanja na karti (v1.2.5): emblem vrste 30 px u meti od 44 px, broj grla u uglu, starije = blijeđe. */
 .op-ikona { background: none; border: 0; display: grid; place-items: center; }

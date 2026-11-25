@@ -85,12 +85,19 @@ export function initSekcije() {
   const revirPicker = (s) => `<label>Revir sekcije<select data-revir>${data.reviri.map((r) => opt(r.id, r.naziv, r.id === s.revir_id)).join('')}</select></label>
         <button type="button" class="dugme" data-akcija="revir">Premjesti u revir</button>`;
   // Lovočuvar revira koji nije grupovođa sekcije: samo grupovođa (ne članovi — njih vodi grupovođa).
+  // Prebacivanje zahtjeva u drugu sekciju (lovac se greškom prijavio u pogrešnu): izbor + dugme.
+  const moveHtml = (sid) => {
+    const others = data.sekcije.filter((x) => x.aktivno !== false && x.id !== sid);
+    if (!others.length) return '';
+    return `<div class="red-dugmadi sk-prebaci"><select data-prebaci aria-label="Prebaci zahtjev u sekciju"><option value="">Prebaci u…</option>${others.map((x) => opt(x.id, `${data.reviri.find((r) => r.id === x.revir_id)?.naziv || ''} · ${x.naziv}`, false)).join('')}</select>
+      <button type="button" class="dugme" data-akcija="prebaci">Prebaci</button></div>`;
+  };
   const pendingHtml = (s) => {
     const pending = pendingRequests(s.id, data.clanovi).filter((c) => !c.pozvao_id);
     return pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak">${pending.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}">
         <b>${escapeHtml(memberName(c.korisnik_id))}</b>
         <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button>
-        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div></li>`).join('')}</ul>` : '';
+        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>${moveHtml(s.id)}</li>`).join('')}</ul>` : '';
   };
   const revirHtml = (s) => `<details class="uprava sk-revir-uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Grupovođa sekcije (lovočuvar revira)</summary>
       ${pendingHtml(s)}
@@ -106,7 +113,7 @@ export function initSekcije() {
       ${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak">${pending.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}">
         <b>${escapeHtml(memberName(c.korisnik_id))}</b>${c.pozvao_id ? `<span class="sitno"> · predložio: ${escapeHtml(memberName(c.pozvao_id))} (novi nalog)</span>` : ''}
         <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button>
-        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div></li>`).join('')}</ul>` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
+        <button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>${c.pozvao_id ? '' : moveHtml(s.id)}</li>`).join('')}</ul>` : '<p class="sitno">Nema zahtjeva na čekanju.</p>'}
       <h4>Članovi (${members.length})</h4>
       <ul class="spisak">${members.map((c) => `<li class="trag-red" data-uid="${escapeHtml(c.korisnik_id)}"><b>${escapeHtml(memberName(c.korisnik_id))}</b>
         <button type="button" class="dugme" data-akcija="ukloni">Ukloni</button></li>`).join('') || '<li class="sitno">Nema članova.</li>'}</ul>
@@ -199,7 +206,7 @@ export function initSekcije() {
       <ul class="spisak">${approvals.map(({ sekcija, zahtjev }) => `<li class="tr-kartica ev-kartica" data-id="${escapeHtml(sekcija.id)}" data-uid="${escapeHtml(zahtjev.korisnik_id)}">
         <b>${escapeHtml(memberName(zahtjev.korisnik_id))}</b>
         <span class="sitno">traži ulaz u: ${escapeHtml(sekcija.naziv)}${zahtjev.pozvao_id ? ` · predložio: ${escapeHtml(memberName(zahtjev.pozvao_id))} (novi nalog)` : ''}</span>
-        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij">Odbij</button></div></li>`).join('')}</ul></section>` : '';
+        <div class="red-dugmadi"><button type="button" class="dugme glavno" data-akcija="odobri">Odobri</button><button type="button" class="dugme" data-akcija="odbij">Odbij</button></div>${zahtjev.pozvao_id ? '' : moveHtml(sekcija.id)}</li>`).join('')}</ul></section>` : '';
 
     const groups = groupByRevir(data.reviri, data.sekcije).map(({ revir, sekcije }) => ({
       revir,
@@ -211,10 +218,16 @@ export function initSekcije() {
     const kept = [...$('sekcije-spisak').querySelectorAll('[data-id] [data-gv], [data-id] [data-revir], [data-id] [data-naziv]')]
       .filter((el) => el === document.activeElement || el.dataset.dirnuto)
       .map((el) => [el.closest('[data-id]').dataset.id, Object.keys(el.dataset).find((k) => ['gv', 'revir', 'naziv'].includes(k)), el.value]);
+    const keptMove = [...$('sekcije-spisak').querySelectorAll('[data-prebaci]')].filter((el) => el.value)
+      .map((el) => [el.closest('[data-id]')?.dataset.id, el.closest('[data-uid]')?.dataset.uid, el.value]);
     $('sekcije-spisak').innerHTML = approvalsHtml + (groups.map(({ revir, sekcije }) => `
       <h3>Revir ${escapeHtml(revir.naziv)}</h3>
       <ul class="spisak">${sekcije.map(cardHtml).join('') || '<li class="sitno">Nema sekcija u ovom reviru.</li>'}</ul>`).join('')
       || '<p class="sitno" id="sekcije-prazno">Nema sekcija za ovaj prikaz. Probaj "Sve".</p>');
+    for (const [id, uid, value] of keptMove) {
+      const el = $('sekcije-spisak').querySelector(`[data-id="${CSS.escape(id)}"][data-uid="${CSS.escape(uid)}"] [data-prebaci], [data-id="${CSS.escape(id)}"] [data-uid="${CSS.escape(uid)}"] [data-prebaci]`);
+      if (el) el.value = value;
+    }
     for (const [id, key, value] of kept) {
       const el = $('sekcije-spisak').querySelector(`[data-id="${CSS.escape(id)}"] [data-${key}]`);
       if (el) { el.value = value; el.dataset.dirnuto = '1'; }
@@ -280,6 +293,12 @@ export function initSekcije() {
         else if (!canManageSek(sid)) run(() => qSek(sb().rpc('odobri_zahtjev', { p_sekcija: sid, p_korisnik: uid })), 'Pristup odobren');
         else run(() => qSek(sb().from('sekcija_clanovi').update({ status: 'odobren' }).eq('sekcija_id', sid).eq('korisnik_id', uid)), 'Pristup odobren');
         break;
+      case 'prebaci': {
+        const target = b.closest('li')?.querySelector('[data-prebaci]')?.value;
+        if (!target) { toast('Izaberi sekciju u koju se prebacuje'); break; }
+        run(() => qSek(sb().rpc('premjesti_zahtjev', { p_iz: sid, p_u: target, p_korisnik: uid })), 'Zahtjev prebačen u drugu sekciju');
+        break;
+      }
       case 'odbij':
         if (invitedBy(sid, uid)) { run(() => qSek(sb().rpc('odbij_pozvanog', { p_sekcija: sid, p_korisnik: uid })), 'Predlog odbijen, nalog obrisan'); break; }
         if (!canManageSek(sid)) { run(() => qSek(sb().rpc('odbij_zahtjev', { p_sekcija: sid, p_korisnik: uid })), 'Gotovo'); break; }

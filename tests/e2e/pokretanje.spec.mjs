@@ -131,3 +131,40 @@ test('probni period: neodobren lovac radi 24 sata uz traku, a poslije isteka vid
   await expect(page.locator('#ekran-cekanje')).toBeVisible();
   await expect(page.locator('#cekanje-tekst')).toContainText('Probni period od 24 sata je istekao');
 });
+
+test('registracija: revir i sekcija se biraju sa servera (javne_sekcije), šalju u nalog', async ({ page }) => {
+  await fakeServerConfigHanging(page);
+  await page.addInitScript(() => { window.__signup = null; });
+  await page.route(/lazni\.supabase\.test/, async (r) => {
+    const url = r.request().url();
+    if (url.includes('/rpc/javne_sekcije')) {
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        { sekcija_id: '55555555-0000-4000-8000-000000000001', naziv: 'Sekcija A', revir_id: '66666666-0000-4000-8000-000000000001', revir: 'Krupa' },
+        { sekcija_id: '55555555-0000-4000-8000-000000000002', naziv: 'Sekcija B', revir_id: '66666666-0000-4000-8000-000000000002', revir: 'Otoka' },
+      ]) });
+    }
+    if (url.includes('/auth/v1/signup')) {
+      const body = JSON.parse(r.request().postData() || '{}');
+      await page.evaluate((b) => { window.__signup = b; }, body);
+      return r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ msg: 'test' }) });
+    }
+    return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/');
+  await expect(page.locator('#pr-sekcija-blok')).toBeHidden();
+  await page.locator('#pr-mod [data-mod="registracija"]').click();
+  await expect(page.locator('#pr-sekcija-blok')).toBeVisible();
+  await expect(page.locator('#pr-revir option')).toHaveCount(3);
+  await expect(page.locator('#pr-sekcija')).toBeDisabled();
+  await page.selectOption('#pr-revir', { label: 'Otoka' });
+  await expect(page.locator('#pr-sekcija option')).toHaveCount(2);
+  await page.selectOption('#pr-sekcija', { label: 'Sekcija B' });
+  await page.fill('#forma-prijava input[name=ime]', 'Novi');
+  await page.fill('#forma-prijava input[name=prezime]', 'Lovac');
+  await page.fill('#forma-prijava input[name=pin]', '123456');
+  await page.locator('#btn-prijava').click();
+  await expect.poll(() => page.evaluate(() => window.__signup)).not.toBeNull();
+  const body = await page.evaluate(() => window.__signup);
+  expect(body.data.sekcija).toBe('55555555-0000-4000-8000-000000000002');
+  expect(body.data.probni).toBe(true);
+});
