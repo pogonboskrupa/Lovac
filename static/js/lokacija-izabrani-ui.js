@@ -15,12 +15,13 @@ import { shareIntervalMs, initialsOf } from './lokacija.js';
 import { SHARE_DURATIONS, shareUntil, untilText } from './lokacija-sekcija.js';
 import {
   IZABRANI_KEY, IZABRANI_UKLANJANJE_KEY, MAX_PRIMALACA, searchHunters, displayName, activeSelectedShare, addRecipient, removeRecipient,
-  shareRows, receivedShares, validRecipients,
+  shareRows, receivedShares, validRecipients, sendStateText,
 } from './lokacija-izabrani.js';
 import { toast, escapeHtml } from './ui.js';
 
 const MEMBERS_KEY = 'lovac.clanovi';
 const DRAFT_KEY = 'lovac.izabrani_nacrt';
+const NEMA_NA_SERVERU = 'Dijeljenje sa izabranim lovcima još nije uključeno na serveru — administrator treba nadograditi server.';
 const POLL_OPEN_MS = 30000;
 const POLL_BG_MS = 120000; // pozadina rjeđe: besplatni server (budžet zahtjeva u opterecenje.spec.mjs)
 const $ = (id) => document.getElementById(id);
@@ -37,6 +38,8 @@ export function initLokacijaIzabrani(L, map) {
   let duration = '1';
   let sendTimer = null;
   let tableMissing = false;
+  // Stanje zadnjeg slanja za prikaz: lovac mora vidjeti kad lokacija NE odlazi (bez GPS-a, bez veze, server odbija).
+  let sendState = { stanje: 'ceka', t: 0, poruka: '' };
   let draft = loadJSON(DRAFT_KEY, []).filter((x) => typeof x === 'string');
 
   const isOpen = () => !panel.hidden;
@@ -68,26 +71,30 @@ export function initLokacijaIzabrani(L, map) {
   const sendNow = async () => {
     const sh = sharing();
     if (!sh) { stopSending(); render(); return; }
+    const setState = (stanje, poruka = '') => { sendState = { stanje, t: stanje === 'ok' ? Date.now() : sendState.t, poruka }; if (isOpen()) renderShare(); };
     const fix = currentFix();
-    if (!fix || !online() || !me()) return;
+    if (!fix) { setState('gps'); return; }
+    if (!online() || !me()) { setState('veza'); return; }
     const good = validRecipients(sh.ids, members());
-    if (!good.length) return;
+    if (!good.length) { setState('greska', 'Izabrani lovci nisu u spisku članova društva.'); return; }
     const sb = getClient();
     try {
       const { error } = await sb.from('lokacije_izabranih').upsert(shareRows(good, fix, sh.do, me().id), { onConflict: 'vlasnik_id,primalac_id' });
-      if (!error) return;
+      if (!error) { setState('ok'); return; }
       if (['PGRST205', '42P01'].includes(error.code)) {
-        if (!tableMissing) toast('Dijeljenje sa izabranim lovcima server još ne podržava (treba nadogradnja servera)', 6000);
+        if (!tableMissing) toast(NEMA_NA_SERVERU, 7000);
         tableMissing = true;
+        setState('server');
         return;
       }
-      if (error.code === '54000') { toast('Server dozvoljava najviše 30 primalaca', 5000); return; }
+      if (error.code === '54000') { setState('greska', 'Server dozvoljava najviše 30 primalaca.'); return; }
       // jedan neprihvaćen primalac (npr. nije član društva) ne smije zaustaviti ostale
       const bad = [];
       for (const row of shareRows(good, fix, sh.do, me().id)) {
         const r = await sb.from('lokacije_izabranih').upsert(row, { onConflict: 'vlasnik_id,primalac_id' });
         if (r.error) bad.push(row.primalac_id);
       }
+      setState(bad.length < good.length ? 'ok' : 'greska', bad.length === good.length ? `Server nije prihvatio slanje: ${error.message}` : '');
       if (bad.length) {
         setIds(sh.ids.filter((x) => !bad.includes(x)));
         toast(`Server nije prihvatio: ${bad.map((x) => memberName(x)).join(', ')}`, 6000);
@@ -95,6 +102,7 @@ export function initLokacijaIzabrani(L, map) {
       }
     } catch (err) {
       console.warn('dijeljenje sa izabranima', err.message);
+      setState('veza');
     }
   };
   const armSending = () => {
@@ -121,7 +129,7 @@ export function initLokacijaIzabrani(L, map) {
     try {
       const { data, error } = await getClient().from('lokacije_izabranih').select('*').eq('primalac_id', me().id);
       if (error) {
-        if (['PGRST205', '42P01'].includes(error.code)) tableMissing = true;
+        if (['PGRST205', '42P01'].includes(error.code)) { tableMissing = true; if (isOpen()) renderShare(); }
         return;
       }
       received = data || [];
@@ -156,11 +164,15 @@ export function initLokacijaIzabrani(L, map) {
     $('lok-iz-trajanje').hidden = Boolean(sh);
     const btn = $('lok-iz-prekidac');
     btn.setAttribute('aria-pressed', String(Boolean(sh)));
-    btn.disabled = !sh && !ids().length;
+    btn.disabled = !sh && (!ids().length || tableMissing);
     btn.textContent = sh ? 'Prekini dijeljenje' : `Počni dijeliti sa izabranima${ids().length ? ` (${ids().length})` : ''}`;
-    $('lok-iz-stanje').textContent = sh
-      ? `Dijeliš lokaciju sa ${sh.ids.length === 1 ? memberName(sh.ids[0]) : `${sh.ids.length} lovaca`} do ${untilText(sh.do)}. Vide je samo oni.`
-      : 'Lokaciju vide samo izabrani lovci, i samo dok dijeljenje traje (najviše 24 h).';
+    const el = $('lok-iz-stanje');
+    el.dataset.stanje = tableMissing ? 'server' : sh ? sendState.stanje : '';
+    el.textContent = tableMissing
+      ? NEMA_NA_SERVERU
+      : sh
+        ? `Dijeliš lokaciju sa ${sh.ids.length === 1 ? memberName(sh.ids[0]) : `${sh.ids.length} lovaca`} do ${untilText(sh.do)}. ${sendStateText(sendState)}`
+        : 'Lokaciju vide samo izabrani lovci, i samo dok dijeljenje traje (najviše 24 h).';
   };
   const renderReceived = () => {
     const list = receivedShares(received, me()?.id, memberName, currentFix());
@@ -229,6 +241,7 @@ export function initLokacijaIzabrani(L, map) {
   // pri otvaranju ploče: osvježi spisak lovaca (ako ima veze) i primljene pozicije; sve ostalo radi iz keša
   new MutationObserver(() => {
     if (!isOpen()) return;
+    tableMissing = false;
     render();
     if (online()) { refreshMembers().then(() => render()).catch(() => {}); pull(true); flushRemovals(); }
   }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });

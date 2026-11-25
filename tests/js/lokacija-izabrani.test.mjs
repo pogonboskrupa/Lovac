@@ -62,3 +62,14 @@ test('primljene pozicije: samo one gdje sam primalac, istekle i bez signala se n
 test('primalac koji više nije član se ne šalje', () => {
   assert.deepEqual(validRecipients(['a', 'x'], members), ['a']);
 });
+
+test('stanje slanja izabranima: lovac vidi kad lokacija NE odlazi (GPS, veza, server)', async () => {
+  const { sendStateText } = await import('../../static/js/lokacija-izabrani.js');
+  const now = 1_000_000;
+  assert.match(sendStateText({ stanje: 'ok', t: now - 2000 }, now), /Poslano upravo/);
+  assert.match(sendStateText({ stanje: 'ok', t: now - 40000 }, now), /prije 40 s/);
+  assert.match(sendStateText({ stanje: 'ok', t: now - 300000 }, now), /prije 5 min/);
+  assert.match(sendStateText({ stanje: 'gps' }, now), /Čekam GPS/);
+  assert.match(sendStateText({ stanje: 'veza' }, now), /Nema veze/);
+  assert.equal(sendStateText({ stanje: 'greska', poruka: 'X' }, now), 'X');
+});

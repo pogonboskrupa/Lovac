@@ -5,6 +5,18 @@ Provjera je urađena sa javnim (anon) ključem iz aplikacije. Ništa nije čitan
 - kolone su provjerene istim upitom samo sa tom kolonom;
 - funkcije su pozvane sa nepostojećim id-em. Server tada samo javi da funkcija postoji ("permission denied") ili da je nema.
 
+## 0. Dopuna — provjera 25. 11. 2026. (v1.3.3)
+
+| Provjera | Rezultat |
+|---|---|
+| `lokacije_izabranih` (037) | **NE postoji** → "Dijeli lokaciju sa lovcima" ne može raditi dok se 037 ne pokrene |
+| `korisnici.probni_do` (026) | **NE postoji** |
+| `probni_sati()` (038) | **postoji** → 038 je pokrenuta BEZ 026: stara 038 je tražila kolonu `probni_do`, pa je **registracija novih lovaca padala**. Ispravljena 038/039 same dodaju kolonu — pokrenuti ispravljenu 038 (ili 026 pa 038) |
+| `lov_odazivi` (034) | postoji |
+| `dojave` (031), `slike_lovcima` (033), `je_stvarni_clan()` (033), `javne_sekcije()` (039) | **NE postoje** |
+
+Preporuka: pokrenuti redom 025, 026, 027, 028, 029, 030, 031, 032, 033, 035, 036 (samo test, nije migracija — preskočiti), 037, 038, 039. Sve su idempotentne, pa ponovno pokretanje ne smeta.
+
 ## 1. Server radi
 
 | Provjera | Rezultat |

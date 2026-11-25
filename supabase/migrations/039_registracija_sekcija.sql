@@ -2,6 +2,13 @@
 -- Izbor je samo ZAHTJEV (sekcija_clanovi.status = 'ceka'): bez odobrenja nema ulaza u sekciju.
 -- Idempotentno.
 
+-- Kolona iz 026: novi_korisnik je upisuje, pa bez nje registracija pada ("column probni_do does not exist")
+-- kad je ova migracija pokrenuta prije 026.
+alter table public.korisnici add column if not exists probni_do timestamptz;
+
+create or replace function public.probni_sati()
+returns int language sql immutable as $$ select 24 $$;
+
 -- Spisak za ekran registracije (prije prijave): samo nazivi aktivnih sekcija i revira, bez ikakvih podataka o ljudima.
 create or replace function public.javne_sekcije()
 returns table (sekcija_id uuid, naziv text, revir_id uuid, revir text)

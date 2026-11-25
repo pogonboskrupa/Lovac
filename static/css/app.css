@@ -1674,3 +1674,7 @@ svg[hidden] { display: none; }
 .lok-iz-cipovi { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .lok-iz-cip { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 4px 0 12px; border-radius: 999px; background: var(--teren, #0f766e); color: var(--teren-tekst, #ffffff); font-weight: 600; font-size: 14px; }
 .lok-iz-cip button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 20px; line-height: 1; }
+/* Dijeljenje sa izabranim: stanje slanja mora biti uočljivo kad lokacija NE odlazi */
+#lok-iz-stanje:is([data-stanje="server"], [data-stanje="greska"], [data-stanje="gps"], [data-stanje="veza"]) {
+  padding: 8px 10px; border-radius: 8px; background: var(--upozorenje); color: var(--upozorenje-tekst); font-weight: 600;
+}

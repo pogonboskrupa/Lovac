@@ -2,6 +2,10 @@
 -- Probni period traje dok grupovođa, lovočuvar revira ili administrator ne prihvate lovca; poslije isteka
 -- aplikacija traži odobrenje. Idempotentno.
 
+-- Kolona iz 026: novi_korisnik je upisuje, pa bez nje registracija pada ("column probni_do does not exist")
+-- kad je ova migracija pokrenuta prije 026.
+alter table public.korisnici add column if not exists probni_do timestamptz;
+
 create or replace function public.probni_sati()
 returns int language sql immutable as $$ select 24 $$;
 

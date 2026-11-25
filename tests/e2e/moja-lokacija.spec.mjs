@@ -229,6 +229,8 @@ test('dijeljenje sa izabranim lovcima: samo pretraga (bez spiska), izbor više l
   expect(mine.do_).toBeTruthy();
   await expect(page.locator('#btn-moja-lokacija')).toHaveClass(/dijeli-lokaciju/);
   await expect(page.locator('#lok-iz-stanje')).toContainText('Dijeliš lokaciju sa 2 lovaca');
+  // lovac vidi da je lokacija stvarno otišla
+  await expect(page.locator('#lok-iz-stanje')).toContainText('Poslano');
   // primljeno: Goran dijeli samo sa mnom
   await expect(page.locator('#lok-iz-lista')).toContainText('Goran Grupovođa');
   // ukloni jednog dok dijeliš → red za njega nestaje sa servera
@@ -239,4 +241,18 @@ test('dijeljenje sa izabranim lovcima: samo pretraga (bez spiska), izbor više l
   await expect.poll(() => server.db.lokacije_izabranih.filter((r) => r.vlasnik_id === LOVAC.id).length).toBe(0);
   expect(server.db.lokacije_izabranih.some((r) => r.vlasnik_id === GV.id)).toBe(true);
   await expect(page.locator('#btn-moja-lokacija')).not.toHaveClass(/dijeli-lokaciju/);
+});
+
+test('dijeljenje sa izabranim: server bez tabele (migracija 037 nije pokrenuta) — ploča to kaže i ne glumi da dijeli', async ({ page }) => {
+  const server = makeServer();
+  await setup(page, server, LOVAC);
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/lokacije_izabranih/, (r) => r.fulfill({ status: 404, contentType: 'application/json',
+    body: JSON.stringify({ code: 'PGRST205', message: "Could not find the table 'public.lokacije_izabranih' in the schema cache" }) }));
+  await openLok(page);
+  await page.locator('#lok-izabrani').scrollIntoViewIfNeeded();
+  await expect(page.locator('#lok-iz-stanje')).toContainText('nije uključeno na serveru');
+  await expect(page.locator('#lok-iz-stanje')).toHaveAttribute('data-stanje', 'server');
+  await page.fill('#lok-iz-trazi', 'pogonic');
+  await page.locator('#lok-iz-rezultati [data-akcija="dodaj"]').click();
+  await expect(page.locator('#lok-iz-prekidac')).toBeDisabled();
 });

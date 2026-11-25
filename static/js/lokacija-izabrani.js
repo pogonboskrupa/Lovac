@@ -50,3 +50,15 @@ export function receivedShares(rows = [], myId, nameOf, me, now = Date.now()) {
 
 // Primalac koji je u međuvremenu nestao iz spiska članova se ne šalje (server bi odbio cijeli paket).
 export const validRecipients = (ids, members) => ids.filter((id) => members.some((m) => m.id === id));
+
+// Tekst stanja slanja (čista funkcija, testira se u Node-u).
+export function sendStateText(st, now = Date.now()) {
+  if (st.stanje === 'ok') {
+    const sec = Math.max(0, Math.round((now - st.t) / 1000));
+    return `Vide je samo oni. Poslano ${sec < 5 ? 'upravo' : sec < 120 ? `prije ${sec} s` : `prije ${Math.round(sec / 60)} min`}.`;
+  }
+  if (st.stanje === 'gps') return 'Čekam GPS poziciju — lokacija još nije poslana.';
+  if (st.stanje === 'veza') return 'Nema veze sa serverom — lokacija se šalje čim se veza vrati.';
+  if (st.stanje === 'greska') return st.poruka || 'Slanje nije uspjelo.';
+  return 'Šaljem…';
+}
