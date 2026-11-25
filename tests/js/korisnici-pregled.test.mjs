@@ -39,3 +39,25 @@ test('sekcije korisnika iz keša: traži / član; sekcija koje nema u kešu se p
   assert.equal(pendingBadgeText(0), '');
   assert.equal(pendingBadgeText(3), '3 čeka odluku');
 });
+
+test('"Odobri i primi u sekciju": zahtjevi koje admin može odobriti, natpis dugmeta i datum registracije', async () => {
+  const { approvableRequests, approveLabel, registeredText } = await import('../../static/js/korisnici-pregled.js');
+  const data = {
+    sekcije: [{ id: 's1', naziv: 'Krupa 1' }, { id: 's2', naziv: 'Otoka 1' }],
+    clanovi: [
+      { sekcija_id: 's1', korisnik_id: 'c', status: 'ceka' },
+      { sekcija_id: 's2', korisnik_id: 'c', status: 'ceka', pozvao_id: 'x' }, // predloženi nalog: ide kroz odobri_pozvanog
+      { sekcija_id: 's2', korisnik_id: 'c', status: 'odobren' },
+    ],
+  };
+  const r = approvableRequests('c', data);
+  assert.deepEqual(r, [{ sekcija_id: 's1', naziv: 'Krupa 1' }]);
+  assert.equal(approveLabel(r), 'Odobri i primi u Krupa 1');
+  assert.equal(approveLabel([]), 'Odobri');
+  assert.equal(approveLabel([r[0], r[0]]), 'Odobri i primi u sekcije (2)');
+  const now = Date.parse('2026-11-25T12:00:00Z');
+  assert.equal(registeredText({ created_at: '2026-11-25T08:00:00Z' }, now), 'Registrovan danas');
+  assert.equal(registeredText({ created_at: '2026-11-24T08:00:00Z' }, now), 'Registrovan jučer');
+  assert.equal(registeredText({ created_at: '2026-11-20T08:00:00Z' }, now), 'Registrovan prije 5 dana');
+  assert.equal(registeredText({}, now), '');
+});

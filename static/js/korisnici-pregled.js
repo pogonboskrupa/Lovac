@@ -69,3 +69,22 @@ export function sectionLines(userId, data) {
 export function pendingBadgeText(n) {
   return n > 0 ? `${n} čeka odluku` : '';
 }
+
+// Zahtjevi za sekciju koje admin može odobriti zajedno sa nalogom (bez predloženih naloga: njih vodi odobri_pozvanog).
+export function approvableRequests(userId, data) {
+  return (data.clanovi || []).filter((c) => c.korisnik_id === userId && c.status === 'ceka' && !c.pozvao_id)
+    .map((c) => ({ sekcija_id: c.sekcija_id, naziv: (data.sekcije || []).find((x) => x.id === c.sekcija_id)?.naziv || 'sekciju' }));
+}
+
+export function approveLabel(requests) {
+  if (!requests.length) return 'Odobri';
+  return requests.length === 1 ? `Odobri i primi u ${requests[0].naziv}` : `Odobri i primi u sekcije (${requests.length})`;
+}
+
+// "Registrovan danas / jučer / prije N dana" iz created_at; bez datuma prazan tekst.
+export function registeredText(u, now = Date.now()) {
+  const t = Date.parse(u?.created_at || '');
+  if (!Number.isFinite(t)) return '';
+  const days = Math.floor((now - t) / 86400000);
+  return `Registrovan ${days <= 0 ? 'danas' : days === 1 ? 'jučer' : `prije ${days} dana`}`;
+}

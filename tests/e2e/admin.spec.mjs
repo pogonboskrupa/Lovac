@@ -129,3 +129,36 @@ test('Korisnici i odobrenja: administracija je PRVA kartica u Opšte, značka po
   const b = await page.locator('#btn-korisnici').boundingBox();
   expect(b.height).toBeGreaterThanOrEqual(44);
 });
+
+test('Korisnici: "Odobri i primi u sekciju" odobri nalog I prijem u traženu sekciju; grupovođa dobije čip uloge', async ({ page }) => {
+  const rpc = await setup(page);
+  const patchovi = [];
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/sekcija_clanovi/, (r) => {
+    patchovi.push({ metoda: r.request().method(), url: decodeURIComponent(r.request().url()), body: r.request().postData() });
+    return r.fulfill({ status: 204, body: '' });
+  });
+  await page.goto('/');
+  await page.evaluate(() => new Promise((resolve) => {
+    const open = indexedDB.open('lovac');
+    open.onsuccess = () => {
+      const tx = open.result.transaction('spiskovi', 'readwrite');
+      tx.objectStore('spiskovi').put({ id: 'sekcije', rows: {
+        reviri: [{ id: 'r1', naziv: 'Krupa' }],
+        sekcije: [{ id: 's1', naziv: 'Krupa 1', revir_id: 'r1', grupovodja_id: 'c3' }],
+        clanovi: [{ sekcija_id: 's1', korisnik_id: 'b2', status: 'ceka' }],
+        grupovodje: [{ korisnik_id: 'c3', revir_id: 'r1' }], lovocuvari: [],
+      } });
+      tx.oncomplete = () => resolve();
+    };
+  }));
+  await page.locator('#btn-postavke').click();
+  await page.locator('#btn-korisnici').click();
+  const novi = page.locator('#korisnici-spisak [data-id="b2"]');
+  await expect(novi).toContainText('Traži ulaz: Krupa 1 (Krupa)');
+  await expect(novi.locator('[data-akcija="odobri"]')).toHaveText('Odobri i primi u Krupa 1');
+  await expect(page.locator('#korisnici-spisak [data-id="c3"]')).toContainText('Grupovođa · Krupa');
+  await novi.locator('[data-akcija="odobri"]').click();
+  await expect.poll(() => rpc.length).toBe(1);
+  expect(rpc[0]).toEqual({ fn: 'admin_odobri', body: { p_korisnik: 'b2', p_odobren: true } });
+  await expect.poll(() => patchovi.some((p) => p.metoda === 'PATCH' && /sekcija_id=eq\.s1/.test(p.url) && /korisnik_id=eq\.b2/.test(p.url) && /odobren/.test(p.body || ''))).toBe(true);
+});

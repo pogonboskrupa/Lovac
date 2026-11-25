@@ -7,7 +7,8 @@ import { registerBackHandler, wireTwoTap, escapeHtml, toast } from './ui.js';
 import { idbGet } from './db.js';
 import { saveSoft } from './storage.js';
 import { initialsOf } from './lokacija.js';
-import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText } from './korisnici-pregled.js';
+import { profileRoles } from './profil.js';
+import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText, approvableRequests, approveLabel, registeredText } from './korisnici-pregled.js';
 
 const $ = (id) => document.getElementById(id);
 export const CEKA_KEY = 'lovac.korisnici.cekaju';
@@ -40,7 +41,8 @@ const otvoreno = new Set();
 function userRow(u, meId, data, now = Date.now()) {
   const ja = u.id === meId;
   const state = userState(u, now);
-  const odobri = ja ? '' : `<button type="button" class="dugme${u.odobren ? '' : ' glavno'}" data-akcija="odobri">${u.odobren ? 'Opozovi pristup' : 'Odobri'}</button>`;
+  const reqs = approvableRequests(u.id, data);
+  const odobri = ja ? '' : `<button type="button" class="dugme${u.odobren ? '' : ' glavno'}" data-akcija="odobri">${u.odobren ? 'Opozovi pristup' : approveLabel(reqs)}</button>`;
   const obrisi = ja ? '' : '<button type="button" class="dugme" data-akcija="obrisi">Obriši</button>';
   const sek = sectionLines(u.id, data);
   const lines = [];
@@ -48,6 +50,9 @@ function userRow(u, meId, data, now = Date.now()) {
   if (sek.traze.length) lines.push(`Traži ulaz: ${sek.traze.join(', ')}`);
   if (sek.clan.length) lines.push(`Član: ${sek.clan.join(', ')}`);
   if (!lines.length && state !== 'odobren' && state !== 'admin') lines.push('Nije tražio nijednu sekciju');
+  const reg = registeredText(u, now);
+  if (reg) lines.push(reg);
+  const roles = u.odobren ? profileRoles(u, data).filter((r) => !['lovac', 'admin'].includes(r.kod)) : [];
   const name = `${u.ime} ${u.prezime}${u.nadimak ? ` (${u.nadimak})` : ''}`;
   return `
     <li class="trag-red tr-kartica kor-kartica" data-id="${escapeHtml(u.id)}" data-stanje="${state}">
@@ -58,6 +63,7 @@ function userRow(u, meId, data, now = Date.now()) {
           <span class="kor-cip" data-stanje="${state}">${STATE_LABELS[state]}</span>
         </div>
       </div>
+      ${roles.length ? `<div class="kor-uloge">${roles.map((r) => `<span class="kor-cip kor-uloga" data-uloga="${r.kod}">${escapeHtml(r.tekst)}</span>`).join('')}</div>` : ''}
       ${lines.map((l) => `<p class="sitno kor-red">${escapeHtml(l)}</p>`).join('')}
       <div class="red-dugmadi">${odobri}</div>
       <details class="kor-vise"${otvoreno.has(u.id) ? ' open' : ''}>
@@ -138,7 +144,15 @@ export function initAdmin() {
     const u = users.find((x) => x.id === row.dataset.id);
     if (!u) return;
     if (btn.dataset.akcija === 'odobri') {
-      await run(() => callRpc('admin_odobri', { p_korisnik: u.id, p_odobren: !u.odobren }), u.odobren ? 'Pristup opozvan' : 'Korisnik odobren');
+      const reqs = u.odobren ? [] : approvableRequests(u.id, sekData);
+      await run(async () => {
+        await callRpc('admin_odobri', { p_korisnik: u.id, p_odobren: !u.odobren });
+        // Odobren nalog sa zahtjevom za sekciju: odmah ga primi u traženu sekciju (admin smije; inače bi čekao u drugom ekranu).
+        for (const r of reqs) {
+          const { error } = await getClient().from('sekcija_clanovi').update({ status: 'odobren' }).eq('sekcija_id', r.sekcija_id).eq('korisnik_id', u.id);
+          if (error) throw new Error(`Nalog je odobren, ali prijem u sekciju nije uspio: ${error.message}`);
+        }
+      }, u.odobren ? 'Pristup opozvan' : reqs.length ? 'Korisnik odobren i primljen u sekciju' : 'Korisnik odobren');
     } else if (btn.dataset.akcija === 'admin') {
       await run(() => callRpc('admin_postavi_ulogu', { p_korisnik: u.id, p_admin: !u.is_admin }), 'Uloga promijenjena');
     } else if (btn.dataset.akcija === 'pin') {

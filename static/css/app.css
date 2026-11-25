@@ -1718,3 +1718,6 @@ svg[hidden] { display: none; }
 .lok-ponuda-tekst { flex: 1 1 160px; min-width: 0; }
 .lok-ponuda-dugmad { display: flex; gap: 8px; flex: 1 1 100%; }
 .lok-ponuda-dugmad .dugme { flex: 1; }
+.kor-uloge { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.kor-uloga { background: transparent; border: 2px solid var(--naglasak); color: var(--tekst); }
+.kor-kartica .red-dugmadi .dugme.glavno { flex: 1 1 100%; }
