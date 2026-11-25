@@ -72,6 +72,25 @@ test('provjera veze radi samo dok je veza prekinuta ili preslaba i vraća ocjenu
   assert.equal(calls, 1, 'kad veza nije više preslaba, provjera miruje');
 });
 
+test('poslije slabog signala JEDNA uspješna provjera vraća vezu (ne čeka 2 min da istisne stare neuspjehe)', async () => {
+  for (let i = 0; i < 6; i++) recordSample(false, 8000);
+  assert.equal(connectionQuality(), 'nema');
+  let tick = null;
+  const probe = async () => { recordSample(true, 300); return true; };
+  startConnectionProbe('http://x', { probe, setTimer: (fn) => { tick = fn; return 1; }, clearTimer: () => {} });
+  await tick();
+  assert.notEqual(connectionQuality(), 'nema', 'veza je proradila — app ne smije i dalje misliti da je offline');
+});
+
+test('neuspjela provjera ne briše neuspjehe', async () => {
+  for (let i = 0; i < 6; i++) recordSample(false, 8000);
+  let tick = null;
+  const probe = async () => { recordSample(false, 8000); return false; };
+  startConnectionProbe('http://x', { probe, setTimer: (fn) => { tick = fn; return 1; }, clearTimer: () => {} });
+  await tick();
+  assert.equal(connectionQuality(), 'nema');
+});
+
 test('prijava i registracija imaju duži rok (server se budi, bcrypt), ostali pozivi 12 s', async () => {
   const { timeoutFor, AUTH_TIMEOUT_MS, DEFAULT_TIMEOUT_MS } = await import('../../static/js/net.js');
   const base = 'https://x.supabase.co';

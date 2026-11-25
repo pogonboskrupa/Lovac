@@ -80,6 +80,10 @@ export function classifyQuality(list) {
 export function recordSample(ok, ms) {
   samples.push({ ok, ms });
   if (samples.length > WINDOW) samples.shift();
+  reclassify();
+}
+
+function reclassify() {
   const q = classifyQuality(samples);
   if (q !== lastQuality) {
     lastQuality = q;
@@ -112,10 +116,19 @@ export async function probeConnection(url, timeoutMs = 8000) {
   }
 }
 
+// Provjera je prošla dok je app mislila da je offline: stari neuspjesi (iz prozora od WINDOW uzoraka)
+// bi inače držali ocjenu "nema"/"preslaba" još nekoliko provjera (~2 min), pa lovac ne bi mogao
+// napraviti lov ni poslati zapis iako signal postoji. Ocjena kreće od zadnjeg (uspješnog) uzorka.
+function forgetOldFailures() {
+  if (samples.length < 2 || !samples.at(-1).ok) return;
+  samples.splice(0, samples.length - 1);
+  reclassify();
+}
+
 export function startConnectionProbe(url, { intervalMs = 30000, probe = probeConnection, setTimer = setInterval, clearTimer = clearInterval } = {}) {
   const run = async () => {
     if (lastQuality !== 'nema' && lastQuality !== 'preslaba') return;
-    await probe(url);
+    if (await probe(url)) forgetOldFailures();
   };
   const id = setTimer(run, intervalMs);
   return () => clearTimer(id);
