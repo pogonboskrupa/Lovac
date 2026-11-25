@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.2.7';
+  const APP_VER = 'v1.2.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -189,23 +189,7 @@
       <h2>Moja lokacija</h2>
       <button id="btn-lok-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button>
     </header>
-    <div class="lok-info">
-      <div class="lok-info-red">
-        <div id="gps-status" class="gps-status" hidden>
-          <span id="gps-tacnost" class="tacnost">GPS…</span>
-          <span class="sitno">fiks <span id="gps-starost">—</span></span>
-        </div>
-        <span id="lok-sek-znacka" class="lok-sek-znacka" hidden></span>
-      </div>
-      <div class="lok-koord-red">
-        <div class="lok-koord-blok">
-          <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
-          <p class="lok-koord2"><span id="lok-oznaka2" class="pill-oznaka"></span> <span id="lok-koord2"></span></p>
-          <p id="lok-nv" class="lok-nv" hidden></p>
-        </div>
-        <button id="btn-lok-kopiraj" class="dugme lok-kopiraj" type="button" aria-label="Kopiraj koordinate">Kopiraj</button>
-      </div>
-    </div>
+    <span id="lok-sek-znacka" class="lok-sek-znacka" hidden></span>
     <div class="lok-mreza" id="lok-akcije">
       <button id="btn-centriraj" class="lok-dugme" type="button" data-zatvori><svg class="ic"><use href="#ic-locate"/></svg><span>Centriraj</span></button>
       <button id="btn-prati" class="lok-dugme" type="button" aria-pressed="false" data-zatvori><svg class="ic"><use href="#ic-follow"/></svg><span>Prati me</span></button>
@@ -256,6 +240,22 @@
       <ul id="lok-sek-lista" class="spisak"></ul>
       <p class="sitno">Lokaciju vide samo članovi, grupovođa i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
     </section>
+    <div class="lok-info">
+      <div class="lok-info-red">
+        <div id="gps-status" class="gps-status" hidden>
+          <span id="gps-tacnost" class="tacnost">GPS…</span>
+          <span class="sitno">fiks <span id="gps-starost">—</span></span>
+        </div>
+      </div>
+      <div class="lok-koord-red">
+        <div class="lok-koord-blok">
+          <p class="lok-koord"><span id="lok-oznaka" class="pill-oznaka"></span> <b id="lok-koord">Čekam GPS…</b></p>
+          <p class="lok-koord2"><span id="lok-oznaka2" class="pill-oznaka"></span> <span id="lok-koord2"></span></p>
+          <p id="lok-nv" class="lok-nv" hidden></p>
+        </div>
+        <button id="btn-lok-kopiraj" class="dugme lok-kopiraj" type="button" aria-label="Kopiraj koordinate">Kopiraj</button>
+      </div>
+    </div>
   </div>
   <div id="meni-dodaj" class="meni meni-dodaj" hidden role="dialog" aria-labelledby="dodaj-naslov">
     <div class="dodaj-glava">
