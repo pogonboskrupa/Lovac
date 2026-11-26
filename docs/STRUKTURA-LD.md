@@ -45,7 +45,7 @@ Dodaju administrator, lovovođa te sekcije, lovovođa revira i lovovođa udruže
 
 ## Registracija i izbor grupe
 
-Lovci se sami registruju i traže sekciju. Poslije prijave u Sekcije i pristup dodirnu **Izaberi grupu** i izaberu grupovođu čijoj grupi žele pripadati. Kad im članstvo odobri administrator, lovovođa sekcije (ili revira/udruženja), automatski ulaze u izabranu grupu; član bez grupe čeka odobrenje u kartici Grupe.
+Lovci se sami registruju i traže sekciju. Čim uđu u aplikaciju, iskoči dijalog **Izaberi grupu** (ili to naprave kasnije u Sekcije i pristup, dugme **Izaberi grupu**) i izaberu grupovođu čijoj grupi žele pripadati. Kad im članstvo odobri administrator, lovovođa sekcije (ili revira/udruženja), automatski ulaze u izabranu grupu; član bez grupe čeka odobrenje u kartici Grupe.
 
 ## Korisnici i odobrenja
 

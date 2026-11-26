@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.7.5';
+  const APP_VER = 'v1.7.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -1521,6 +1521,17 @@
     <button id="btn-odaziv-kasnije" class="dugme" type="button">Kasnije</button>
   </div>
   <p class="sitno">Odgovor vidi lovovođa sekcije. Bez interneta odgovor čeka na telefonu i šalje se kad se pojavi veza.</p>
+</section>
+<section id="grupa-dijalog" class="dijalog dijalog-gore" role="alertdialog" aria-labelledby="grupa-naslov" hidden>
+  <span id="grupa-sekcija" class="nav-oznaka"></span>
+  <h3 id="grupa-naslov">Izaberi grupu</h3>
+  <p class="sitno">U kojoj grupi želiš biti? Kad ti članstvo u sekciji odobre, ulaziš u izabranu grupu.</p>
+  <label>Grupa<select id="grupa-izbor"></select></label>
+  <div class="odaziv-dugmad">
+    <button id="btn-grupa-potvrdi" class="dugme glavno" type="button">Potvrdi grupu</button>
+    <button id="btn-grupa-nemam" class="dugme" type="button">Nemam preferenciju</button>
+    <button id="btn-grupa-kasnije" class="dugme" type="button">Kasnije</button>
+  </div>
 </section>
 <section id="teren-ponuda" class="dijalog dijalog-gore teren-ponuda" role="alertdialog" aria-labelledby="teren-ponuda-naslov" hidden>
   <h3 id="teren-ponuda-naslov">Skini terensku kartu</h3>

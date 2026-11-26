@@ -56,9 +56,11 @@ function makeServer({ pozicije = true } = {}) {
       const table = url.pathname.split('/').pop();
       const json = (status, body) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
       const rows = db[table] || (db[table] = []);
+      if (table === 'javne_grupe') { db.javneZatrazene = (db.javneZatrazene || 0) + 1; return json(200, db.javneGrupe || []); }
       if (req.method() === 'GET') return json(200, rows.filter((r) => match(r, url.searchParams)));
       if (req.method() === 'POST') {
         if (this.failPost) return json(503, { message: 'server nedostupan' });
+        if (table === 'zeljena_grupa') { const b = req.postDataJSON(); db.zelja = b; return json(200, null); }
         if (table === 'dodijeli_grupu') {
           const b = req.postDataJSON();
           const c = db.sekcija_clanovi.find((x) => x.sekcija_id === b.p_sekcija && x.korisnik_id === b.p_korisnik);
@@ -384,3 +386,36 @@ for (const [dozvola, opcija] of [[false, 1], [true, 2]]) {
     else await expect(page.locator('#slf-grupa-izbor option')).toHaveCount(2);
   });
 }
+
+test('izbor grupe poslije registracije: čekalac sa sekcijom dobije dijalog, izbor ide kao želja i ne pita ponovo', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: VAN.id, status: 'ceka' });
+  server.db.javneGrupe = [{ id: ID(700), grupovodja: 'Lovro Lovac' }, { id: ID(701), grupovodja: 'Luka Pogonič' }];
+  await setup(page, server, VAN);
+  await page.goto('/');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => document.dispatchEvent(new Event('sekcije:promjena')));
+  await expect(page.locator('#grupa-dijalog')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#grupa-izbor option')).toHaveCount(2);
+  await page.selectOption('#grupa-izbor', ID(701));
+  await page.locator('#btn-grupa-potvrdi').click();
+  await expect.poll(() => server.db.zelja).toEqual({ p_sekcija: ID(200), p_grupa: ID(701) });
+  await expect(page.locator('#grupa-dijalog')).toBeHidden();
+  // ne pita ponovo
+  await page.evaluate(() => document.dispatchEvent(new Event('sekcije:promjena')));
+  await page.waitForTimeout(1500);
+  await expect(page.locator('#grupa-dijalog')).toBeHidden();
+});
+
+test('izbor grupe: sekcija bez grupa se ne pita; "Kasnije" zatvara bez pamćenja', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: VAN.id, status: 'ceka' });
+  server.db.javneGrupe = [];
+  await setup(page, server, VAN);
+  await page.goto('/');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => document.dispatchEvent(new Event('sekcije:promjena')));
+  await expect.poll(() => server.db.javneZatrazene || 0, { timeout: 15000 }).toBeGreaterThan(0);
+  await expect(page.locator('#grupa-dijalog')).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem('lovac.grupa.pitano.00000000-0000-4000-8000-000000000200'))).toBe('true');
+});
