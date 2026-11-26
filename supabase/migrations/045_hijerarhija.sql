@@ -289,3 +289,65 @@ create policy odobrenje on public.sekcija_clanovi for update to authenticated
 drop policy if exists brisanje on public.sekcija_clanovi;
 create policy brisanje on public.sekcija_clanovi for delete to authenticated
   using (korisnik_id = auth.uid() or public.moze_primati_clanove(sekcija_id));
+
+-- ---------------------------------------------------------------------------
+-- Lovac sam bira grupu: želja (`zeljena_grupa_id`), a upravljač/grupovođa odobrava (dodijeli_grupu).
+-- Kad se članstvo u sekciji odobri, lovac odmah ulazi u grupu koju je izabrao.
+-- ---------------------------------------------------------------------------
+alter table public.sekcija_clanovi add column if not exists zeljena_grupa_id uuid references public.grupe (id) on delete set null;
+
+-- Grupe jedne sekcije za onoga ko traži ulaz (čekanje ili član): samo ko vodi grupu, bez ičega drugog.
+create or replace function public.javne_grupe(p_sekcija uuid)
+returns table (id uuid, grupovodja text) language sql stable security definer set search_path = public as $$
+  select g.id, trim(coalesce(k.ime, '') || ' ' || coalesce(k.prezime, ''))
+    from public.grupe g join public.korisnici k on k.id = g.grupovodja_id
+   where g.sekcija_id = p_sekcija and public.je_odobren()
+     and exists (select 1 from public.sekcija_clanovi c where c.sekcija_id = p_sekcija and c.korisnik_id = auth.uid());
+$$;
+
+-- Lovac bira (ili povlači, p_grupa = null) SVOJU željenu grupu; grupa mora biti iz te sekcije.
+create or replace function public.zeljena_grupa(p_sekcija uuid, p_grupa uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.je_odobren() then raise exception 'Nema pristupa' using errcode = '42501'; end if;
+  if p_grupa is not null and not exists (select 1 from public.grupe g where g.id = p_grupa and g.sekcija_id = p_sekcija) then
+    raise exception 'Grupa nije iz te sekcije' using errcode = '23514';
+  end if;
+  update public.sekcija_clanovi set zeljena_grupa_id = p_grupa where sekcija_id = p_sekcija and korisnik_id = auth.uid();
+  if not found then raise exception 'Nisi član ni podnosilac zahtjeva u toj sekciji' using errcode = '42501'; end if;
+end;
+$$;
+revoke execute on function public.javne_grupe(uuid), public.zeljena_grupa(uuid, uuid) from public, anon;
+grant execute on function public.javne_grupe(uuid), public.zeljena_grupa(uuid, uuid) to authenticated;
+
+-- Odobrenje članstva ubacuje lovca u željenu grupu (ako je izabrao, a još nije ni u jednoj).
+create or replace function public.ubaci_u_zeljenu_grupu()
+returns trigger language plpgsql as $$
+begin
+  if new.status = 'odobren' and old.status is distinct from 'odobren' and new.grupa_id is null and new.zeljena_grupa_id is not null then
+    new.grupa_id := new.zeljena_grupa_id;
+    new.zeljena_grupa_id := null;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists zeljena_grupa on public.sekcija_clanovi;
+create trigger zeljena_grupa before update on public.sekcija_clanovi
+  for each row execute function public.ubaci_u_zeljenu_grupu();
+
+-- Dodjela grupe briše želju (odobreno ili preusmjereno).
+create or replace function public.dodijeli_grupu(p_sekcija uuid, p_korisnik uuid, p_grupa uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_stara uuid; v_zelja uuid;
+begin
+  if not public.je_odobren() then raise exception 'Nema pristupa' using errcode = '42501'; end if;
+  select c.grupa_id, c.zeljena_grupa_id into v_stara, v_zelja from public.sekcija_clanovi c
+   where c.sekcija_id = p_sekcija and c.korisnik_id = p_korisnik and c.status = 'odobren';
+  if not found then raise exception 'Lovac nije odobren član sekcije' using errcode = '23514'; end if;
+  if not (public.moze_upravljati_grupama(p_sekcija)
+          or exists (select 1 from public.grupe g where g.grupovodja_id = auth.uid() and g.id in (coalesce(p_grupa, v_stara), coalesce(v_stara, p_grupa)))) then
+    raise exception 'Nemaš pravo raspoređivati u grupe' using errcode = '42501';
+  end if;
+  update public.sekcija_clanovi set grupa_id = p_grupa, zeljena_grupa_id = null where sekcija_id = p_sekcija and korisnik_id = p_korisnik;
+end;
+$$;

@@ -2,6 +2,8 @@
 // pravljenje sekcije sa spiskom lovaca i (admin) određivanje lovovođa sekcije. Server provodi sva prava.
 
 import { getClient, cachedProfile } from './auth.js';
+import { connectionQuality } from './net.js';
+import { isServerConfigured } from './config.js';
 import { idbGet, idbPut } from './db.js';
 import { loadJSON, saveSoft } from './storage.js';
 import { refreshMembers, memberName } from './dijeljenje-ui.js';
@@ -181,6 +183,13 @@ export function initSekcije() {
     const buttons = st === 'nema' ? '<button type="button" class="dugme glavno" data-akcija="zatrazi">Zatraži pristup</button>'
       : st === 'ceka' ? '<button type="button" class="dugme" data-akcija="povuci">Povuci zahtjev</button>'
         : st === 'clan' ? '<button type="button" class="dugme" data-akcija="napusti">Napusti sekciju</button>' : '';
+    const moj = data.clanovi.find((c) => c.sekcija_id === s.id && c.korisnik_id === me()?.id);
+    const imeGrupe = (id) => { const g = (data.grupe || []).find((x) => x.id === id); return g ? memberName(g.grupovodja_id) : loadJSON(`lovac.grupa.izbor.${s.id}`, ''); };
+    const grupaTekst = !moj || !['ceka', 'clan'].includes(st) ? ''
+      : moj.grupa_id ? `Tvoja grupa: grupovođa ${imeGrupe(moj.grupa_id) || '—'}`
+        : moj.zeljena_grupa_id ? `Izabrana grupa: grupovođa ${imeGrupe(moj.zeljena_grupa_id) || '—'} (${st === 'ceka' ? 'ulaziš u nju kad ti odobre članstvo' : 'čeka odobrenje'})` : '';
+    const grupaBtn = moj && ['ceka', 'clan'].includes(st) && !moj.grupa_id
+      ? `<button type="button" class="dugme" data-akcija="moja-grupa">${moj.zeljena_grupa_id ? 'Promijeni grupu' : 'Izaberi grupu'}</button>` : '';
     const mode = creationMode(st);
     const newBtn = mode ? `<button type="button" class="dugme" data-akcija="novi-lovac">${mode === 'direct' ? 'Dodaj novog lovca' : 'Predloži lovca'}</button>` : '';
     const pendingN = pendingRequests(s.id, data.clanovi).length;
@@ -210,7 +219,9 @@ export function initSekcije() {
       </div>
       ${showMembers ? `<details class="sk2-clanovi"><summary><span class="sk2-lica">${faces.lica.map((f) => avatar(f.id, 'mali')).join('')}${faces.ostalo ? `<span class="sk2-vise">+${faces.ostalo}</span>` : ''}</span><span>Članovi (${faces.ukupno})</span></summary>
         <ul class="sk2-spisak">${data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren').map((c) => `<li>${avatar(c.korisnik_id, 'mali')}${escapeHtml(memberName(c.korisnik_id))}${c.korisnik_id === s.grupovodja_id ? ' <span class="sitno">· lovovođa sekcije</span>' : ''}</li>`).join('')}</ul></details>` : ''}
-      <div class="sk2-dugmad" data-glavno="${st === 'nema'}">${buttons}${newBtn}</div>
+      ${grupaTekst ? `<p class="sitno sk-moja-grupa-tekst">${escapeHtml(grupaTekst)}</p>` : ''}
+      <div class="sk-moja-grupa" hidden></div>
+      <div class="sk2-dugmad" data-glavno="${st === 'nema'}">${buttons}${grupaBtn}${newBtn}</div>
       ${canManage(s, me()) ? manageHtml(s) : editsRevir(me(), s.revir_id, data.lovocuvari) ? revirHtml(s) : ''}
     </li>`;
   };
@@ -357,6 +368,28 @@ export function initSekcije() {
   $('sekcije-trazi').addEventListener('input', (e) => { searchText = e.target.value; render(); });
 
   let armedRemove = null;
+  // Lovac sam bira grupu (želja): grupe i grupovođe daje `javne_grupe`, izbor ide kroz `zeljena_grupa`; odobrava upravljač.
+  const chooseGroup = async (card, sid) => {
+    if (!isServerConfigured() || connectionQuality() === 'nema' || !getClient()) { toast('Za izbor grupe potreban je internet'); return; }
+    const box = card.querySelector('.sk-moja-grupa');
+    const { data: lista, error } = await getClient().rpc('javne_grupe', { p_sekcija: sid });
+    if (error) { toast(error.code === 'PGRST202' ? 'Server još ne podržava izbor grupe' : error.message); return; }
+    if (!lista?.length) { toast('Ova sekcija još nema grupa'); return; }
+    box.hidden = false;
+    box.innerHTML = `<select aria-label="Grupa (grupovođa)">${lista.map((g) => `<option value="${escapeHtml(g.id)}">Grupovođa ${escapeHtml(g.grupovodja)}</option>`).join('')}</select>
+      <button type="button" class="dugme glavno" data-grupa-potvrdi>Potvrdi grupu</button>`;
+    box.querySelector('[data-grupa-potvrdi]').addEventListener('click', async () => {
+      const id = box.querySelector('select').value;
+      const { error: e2 } = await getClient().rpc('zeljena_grupa', { p_sekcija: sid, p_grupa: id });
+      if (e2) { toast(e2.message); return; }
+      saveSoft(`lovac.grupa.izbor.${sid}`, lista.find((g) => g.id === id)?.grupovodja || '');
+      toast('Grupa je izabrana — čeka odobrenje');
+      box.hidden = true;
+      data = { ...data, ...(await downloadSekcije({ grupe: true }).catch(() => ({}))) };
+      render();
+    });
+  };
+
   // ---- akcije nad karticama ----
   $('sekcije-spisak').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-akcija]');
@@ -366,6 +399,9 @@ export function initSekcije() {
     const uid = b.closest('[data-uid]')?.dataset.uid;
     const sb = () => getClient();
     switch (b.dataset.akcija) {
+      case 'moja-grupa':
+        chooseGroup(card, sid).catch((err) => toast(err.message));
+        break;
       case 'zatrazi':
         saveSoft(ODLUKE_CEKAM_KEY, true); // provjeravaj odluku u pozadini dok ne stigne
         run(() => qSek(sb().from('sekcija_clanovi').insert({ sekcija_id: sid, korisnik_id: me().id })), 'Zahtjev poslan — javićemo ti odluku');

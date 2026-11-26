@@ -122,8 +122,15 @@ export function groupsHtml(m) {
         : `<p class="sitno">Lov za grupu organizuje grupovođa; lovovođa sekcije i viši samo uz njegovo dopuštenje (${g.dozvola ? 'dato' : 'nije dato'}).</p>`}
       <ul class="sk-grupa-clanovi">${g.clanovi.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === g.grupovodja_id ? ' <span class="sitno">(grupovođa)</span>' : ''}${manage || g.grupovodja_id === myId ? ` <button type="button" class="dugme" data-akcija="grupa-izbaci" data-uid="${escapeHtml(c.id)}">Izvadi iz grupe</button>` : ''}</li>`).join('') || '<li class="sitno">Nema lovaca u grupi.</li>'}</ul>
     </li>`;
+  // Lovac je sam izabrao grupu (želja): upravljač ili grupovođa te grupe je odobrava jednim dodirom.
+  const zelja = (c) => {
+    const g = c.zeljena && groups.find((x) => x.id === c.zeljena);
+    if (!g) return '';
+    const smije = manage || g.grupovodja_id === myId;
+    return `<span class="sk-zelja sitno">želi u grupu: grupovođa ${escapeHtml(g.grupovodja)}</span>${smije ? ` <button type="button" class="dugme glavno" data-akcija="grupa-odobri" data-uid="${escapeHtml(c.id)}" data-grupa="${escapeHtml(g.id)}">Odobri</button>` : ''}`;
+  };
   const bez = ungrouped.length
-    ? `<h4>Bez grupe (${ungrouped.length})</h4><ul class="sk-bez-grupe">${ungrouped.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === myId ? ' (ti)' : ''} ${assign(c.id)}</li>`).join('')}</ul>`
+    ? `<h4>Bez grupe (${ungrouped.length})</h4><ul class="sk-bez-grupe">${ungrouped.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === myId ? ' (ti)' : ''} ${zelja(c)} ${assign(c.id)}</li>`).join('')}</ul>`
     : '';
   const nova = manage
     ? `<div class="sk-grupa-nova"><select id="sk-grupa-gv" aria-label="Grupovođa nove grupe">${candidates.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.ime)}</option>`).join('')}</select>

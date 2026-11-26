@@ -275,3 +275,32 @@ test('LD Grmeč: obični lovac nema tab', async ({ page }) => {
   await page.locator('#btn-postavke').click();
   await expect(page.locator('#p-tabovi [data-ptab="ld"]')).toBeHidden();
 });
+
+test('LD Grmeč (admin): na jednom mjestu dodijeli postojećeg, skini ulogu i napravi nalog za prazno mjesto', async ({ page }) => {
+  const { db, zahtjevi } = await setup(page);
+  await page.addInitScript(() => localStorage.setItem('lovac.clanovi', JSON.stringify([
+    { id: 'g1', ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true }, { id: 'l1', ime: 'Lovro', prezime: 'Lovac', odobren: true },
+    { id: 'l2', ime: 'Luka', prezime: 'Zahtjev', odobren: true }])));
+  await page.reload();
+  await page.locator('#btn-postavke').click();
+  await page.locator('#p-tabovi [data-ptab="ld"]').click();
+  const ld = page.locator('#ldg-sadrzaj');
+  const pred = ld.locator('[data-nivo="predsjednik"] > .ld-kartica-cvora');
+  await expect(pred).toContainText('Nije postavljen');
+  // dodijeli postojećeg
+  await pred.locator('.ld-izbor').selectOption({ label: 'Lovro Lovac' });
+  await pred.locator('[data-ld-akcija="dodijeli"]').click();
+  await expect.poll(() => zahtjevi.some((z) => z.metoda === 'POST' && z.table === 'drustvo_uloge' && z.body.uloga === 'predsjednik' && z.body.korisnik_id === 'l1')).toBe(true);
+  expect(db.drustvo_uloge.some((u) => u.uloga === 'predsjednik')).toBe(true);
+  // skini (drugi dodir)
+  await expect(pred).toContainText('Lovro Lovac');
+  await pred.locator('[data-ld-akcija="skini"]').click();
+  expect(db.drustvo_uloge.some((u) => u.uloga === 'predsjednik')).toBe(true);
+  await pred.locator('[data-ld-akcija="skini"]').click();
+  await expect.poll(() => db.drustvo_uloge.some((u) => u.uloga === 'predsjednik')).toBe(false);
+  // prazan revir: Napravi nalog otvara formu sa uloga lovovođe revira
+  const revir = ld.locator('[data-nivo="revir"] > .ld-kartica-cvora').first();
+  await revir.locator('[data-ld-akcija="nalog"]').click();
+  await expect(page.locator('#lovac-novi')).toBeVisible();
+  await expect(page.locator('#ln-uloga')).toHaveValue('lovovodja_revira');
+});

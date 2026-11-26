@@ -223,4 +223,27 @@ do $$ begin
   reset role;
 end $$;
 
+-- Lovac sam bira grupu: želja, javne_grupe, automatski ulazak pri odobrenju, odobravanje želje
+insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000045f4', 'zeli@t', '{"ime":"Zeli","prezime":"Grupu"}');
+update public.korisnici set odobren = true where id = '00000000-0000-0000-0000-0000000045f4';
+insert into public.sekcija_clanovi (sekcija_id, korisnik_id, status) values ('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045f4', 'ceka');
+do $$ begin
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045f4', true);
+  set local role authenticated;
+  assert (select count(*) from public.javne_grupe('55555555-0000-4000-8000-000000000451')) = 1, 'podnosilac vidi grupe sekcije (samo ime vođe)';
+  assert (select count(*) from public.javne_grupe('55555555-0000-4000-8000-000000000452')) = 0, 'ne vidi grupe sekcije u kojoj nije';
+  perform public.zeljena_grupa('55555555-0000-4000-8000-000000000451', '77777777-0000-4000-8000-000000000451');
+  begin
+    perform public.zeljena_grupa('55555555-0000-4000-8000-000000000452', null);
+    raise exception 'FAIL: želja u tuđoj sekciji';
+  exception when insufficient_privilege then null; end;
+  reset role;
+  assert (select zeljena_grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045f4') is not null, 'želja upisana';
+  assert (select grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045f4') is null, 'još nije u grupi dok ga niko ne odobri';
+  -- odobrenje članstva ga ubacuje u željenu grupu
+  update public.sekcija_clanovi set status = 'odobren' where korisnik_id = '00000000-0000-0000-0000-0000000045f4';
+  assert (select grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045f4') = '77777777-0000-4000-8000-000000000451', 'odobren: ušao u željenu grupu';
+  assert (select zeljena_grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045f4') is null, 'želja potrošena';
+end $$;
+
 rollback;

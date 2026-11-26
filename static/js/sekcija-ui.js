@@ -480,6 +480,9 @@ export function initSekcijaEkran(L, map) {
       } else if (akcija === 'grupa-dozvola') {
         await qSk(sb.rpc('dozvoli_visim', { p_grupa: b.dataset.grupa, p_dozvola: b.dataset.nova === 'true' }));
         toast(b.dataset.nova === 'true' ? 'Viši smiju organizovati lov za tvoju grupu' : 'Lov za tvoju grupu organizuješ samo ti');
+      } else if (akcija === 'grupa-odobri') {
+        await qSk(sb.rpc('dodijeli_grupu', { p_sekcija: s.id, p_korisnik: uid, p_grupa: b.dataset.grupa }));
+        toast('Lovac je dodan u grupu');
       } else if (akcija === 'grupa-dodijeli') {
         const g = b.closest('li').querySelector('[data-grupa-izbor]').value;
         await qSk(sb.rpc('dodijeli_grupu', { p_sekcija: s.id, p_korisnik: uid, p_grupa: g }));

@@ -53,3 +53,30 @@ test('LD Grmeč: HTML stablo je ugniježđeno, prazna mjesta se kažu, a ime se 
   const html = ldHtml(ldTree({ ...ctx, drustvoUloge: [{ korisnik_id: 'p', uloga: 'predsjednik' }] }, () => '<img src=x>'));
   assert.ok(!html.includes('<img'));
 });
+
+import { ldCandidates } from '../../static/js/ld-grmec.js';
+
+test('LD Grmeč: kandidati — ne nude one koji ulogu već imaju; nova grupa samo iz članova sekcije bez grupe', () => {
+  const users = [{ id: 'p' }, { id: 'l1' }, { id: 'x' }, { id: 'g1' }, { id: 'n', odobren: false }];
+  const imena = { ...names, n: 'Neodobren' };
+  const nm = (id) => imena[id] || '';
+  assert.deepEqual(ldCandidates({ uloga: 'predsjednik', korisnikId: 'p' }, ctx, users, nm).map((c) => c.id).sort(), ['g1', 'l1', 'x']);
+  // drugi lovočuvar: prvi (l1) se ne nudi ponovo
+  assert.ok(!ldCandidates({ uloga: 'lovocuvar', korisnikId: null }, ctx, users, nm).some((c) => c.id === 'l1'));
+  // nova grupa u s1: g1 već vodi grupu, x je član bez grupe vođe
+  const g = ldCandidates({ sekcijaId: 's1' }, ctx, users, nm, 'grupa').map((c) => c.id);
+  assert.deepEqual(g, ['x']);
+});
+
+test('LD Grmeč: uređivanje je samo za admina; prazno mjesto nudi "Napravi nalog", zauzeto "Skini"', () => {
+  const tree = ldTree(ctx, nameOf);
+  const cand = () => [{ id: 'x', ime: 'Obični Lovac' }];
+  const pregled = ldHtml(tree);
+  assert.ok(!pregled.includes('data-ld-akcija'), 'bez uređivanja nema dugmadi');
+  const edit = ldHtml(tree, { edit: true, candidates: cand });
+  assert.match(edit, /data-ld-akcija="dodijeli"/); assert.match(edit, /data-ld-akcija="nalog"/); assert.match(edit, /data-ld-akcija="skini"/);
+  assert.match(edit, /data-ld-akcija="grupa-nova"/); assert.match(edit, /Ukloni grupu/);
+  // slobodan lovočuvar nudi nalog, zauzeti skidanje
+  const lc = tree.korijen.djeca.filter((d) => d.nivo === 'lovocuvar');
+  assert.ok(lc[0].meta.korisnikId && !lc[1].meta.korisnikId);
+});

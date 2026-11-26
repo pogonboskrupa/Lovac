@@ -38,3 +38,16 @@ test('uloga pri pravljenju korisnika: svaka uloga piše tačno ono što treba', 
   await assert.rejects(() => assignRole(fakeSb('sekcije'), 'lovovodja_sekcije', { userId: 'u', sekcija }), /odbijeno/);
   assert.ok(ULOGE_NOVOG.some((r) => r.id === 'lovovodja_drustva'));
 });
+
+import { removeRole } from '../../static/js/uloge-dodjela.js';
+test('skidanje uloge: svaka uloga briše tačno svoj red', async () => {
+  const sek = { id: 's1', revir_id: 'r1' };
+  let sb = fakeSb(); await removeRole(sb, 'predsjednik', { userId: 'u', sekcija: sek });
+  assert.deepEqual(sb.calls.map((c) => `${c.op} ${c.t}`), ['delete drustvo_uloge']); assert.deepEqual(sb.calls[0].eq, [['korisnik_id', 'u'], ['uloga', 'predsjednik']]);
+  sb = fakeSb(); await removeRole(sb, 'lovovodja_sekcije', { userId: 'u', sekcija: sek });
+  assert.deepEqual(sb.calls[0].v, { grupovodja_id: null }); assert.deepEqual(sb.calls[0].eq, [['id', 's1'], ['grupovodja_id', 'u']]); // skida SAMO tog korisnika
+  sb = fakeSb(); await removeRole(sb, 'lovovodja_revira', { userId: 'u', sekcija: sek });
+  assert.deepEqual(sb.calls[0].eq, [['revir_id', 'r1'], ['korisnik_id', 'u']]);
+  sb = fakeSb(); await removeRole(sb, 'grupovodja_grupe', { userId: 'u', sekcija: sek, grupaId: 'g9' });
+  assert.deepEqual(sb.calls[0].eq, [['id', 'g9']]);
+});

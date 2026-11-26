@@ -52,3 +52,17 @@ test('grupe: HTML — upravljač vidi nova/ukloni, običan član samo spisak; XS
   assert.ok(!cl.includes('grupa-nova') && !cl.includes('grupa-ukloni') && !cl.includes('grupa-dodijeli'));
   assert.match(groupsHtml({ ...base, groups: [], ungrouped: [], manage: false, assignable: [] }), /Još nema grupa/);
 });
+
+test('grupe: želja lovca — upravljač i grupovođa te grupe je odobravaju, običan član ne', () => {
+  const kl = [...clanovi.slice(0, 3), { sekcija_id: 's1', korisnik_id: 'c', status: 'odobren', grupa_id: null, zeljena_grupa_id: 'g1' }].filter((c, i, a) => a.findIndex((x) => x.korisnik_id === c.korisnik_id) === i);
+  const withWish = [{ sekcija_id: 's1', korisnik_id: 'c', status: 'odobren', grupa_id: null, zeljena_grupa_id: 'g1' }];
+  const groups = groupsOfSection('s1', grupe, clanovi, nameOf);
+  const bez = ungroupedMembers('s1', grupe, withWish, nameOf);
+  assert.equal(bez[0].zeljena, 'g1');
+  const model = { groups, ungrouped: bez, candidates: [], assignable: [] };
+  assert.match(groupsHtml({ ...model, manage: true, myId: 'x' }), /data-akcija="grupa-odobri"[^>]*data-grupa="g1"/);
+  assert.match(groupsHtml({ ...model, manage: false, myId: 'b' }), /grupa-odobri/, 'grupovođa grupe (b) odobrava');
+  const clan = groupsHtml({ ...model, manage: false, myId: 'q' });
+  assert.match(clan, /želi u grupu/); assert.ok(!clan.includes('grupa-odobri'));
+  void kl;
+});

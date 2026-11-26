@@ -22,7 +22,7 @@ export function groupsOfSection(sekcijaId, grupe = [], clanovi = [], nameOf = ()
 export function ungroupedMembers(sekcijaId, grupe = [], clanovi = [], nameOf = () => '') {
   const ids = new Set(grupe.filter((g) => g.sekcija_id === sekcijaId).map((g) => g.id));
   return clanovi.filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id))
-    .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) }))
+    .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id), zeljena: c.zeljena_grupa_id || null }))
     .sort((a, b) => a.ime.localeCompare(b.ime, 'bs'));
 }
 

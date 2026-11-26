@@ -16,7 +16,7 @@ export function initNoviLovac() {
 
   const me = () => cachedProfile();
 
-  const open = async (sekcijaId) => {
+  const open = async (sekcijaId, uloga) => {
     const ctx = await cachedSekcije();
     allowed = ctx.sekcije
       .filter((s) => s.aktivno !== false)
@@ -28,6 +28,7 @@ export function initNoviLovac() {
     const admin = Boolean(me()?.is_admin);
     $('ln-uloga-blok').hidden = !admin;
     $('ln-uloga').innerHTML = ULOGE_NOVOG.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.tekst)}</option>`).join('');
+    if (uloga && [...$('ln-uloga').options].some((x) => x.value === uloga)) $('ln-uloga').value = uloga;
     $('ln-gotovo').hidden = true;
     form.hidden = false;
     $('ln-status').textContent = '';
@@ -47,7 +48,7 @@ export function initNoviLovac() {
   $('btn-ln-zatvori').addEventListener('click', close);
   $('ln-sekcija').addEventListener('change', syncHint);
   registerBackHandler(() => { if (screen.hidden) return false; close(); return true; });
-  document.addEventListener('lovac:novi', (e) => open(e.detail?.sekcijaId));
+  document.addEventListener('lovac:novi', (e) => open(e.detail?.sekcijaId, e.detail?.uloga));
   $('btn-ln-jos').addEventListener('click', () => { $('ln-gotovo').hidden = true; form.hidden = false; form.reset(); syncHint(); });
 
   form.addEventListener('submit', async (e) => {

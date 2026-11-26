@@ -40,3 +40,24 @@ export async function assignRole(sb, uloga, { userId, sekcija }) {
     default: throw new Error('Nepoznata uloga');
   }
 }
+
+// Skidanje uloge (admin). grupaId samo za grupovođu grupe (grupa se uklanja, lovci ostaju bez grupe).
+export async function removeRole(sb, uloga, { userId, sekcija, grupaId }) {
+  switch (uloga) {
+    case 'grupovodja_grupe':
+      must(await sb.from('grupe').delete().eq('id', grupaId));
+      return;
+    case 'lovovodja_sekcije':
+      must(await sb.from('sekcije').update({ grupovodja_id: null }).eq('id', sekcija.id).eq('grupovodja_id', userId));
+      return;
+    case 'lovovodja_revira':
+      must(await sb.from('revir_vodje').delete().eq('revir_id', sekcija.revir_id).eq('korisnik_id', userId));
+      return;
+    case ULOGA_PREDSJEDNIK:
+    case ULOGA_LOVOCUVAR:
+    case ULOGA_LOVOVODJA_DRUSTVA:
+      must(await sb.from('drustvo_uloge').delete().eq('korisnik_id', userId).eq('uloga', uloga));
+      return;
+    default: throw new Error('Nepoznata uloga');
+  }
+}

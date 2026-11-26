@@ -1903,3 +1903,9 @@ svg[hidden] { display: none; }
 .ld-cvor[data-nivo="predsjednik"] > .ld-kartica-cvora { border-color: var(--naglasak, var(--okvir)); border-width: 2px; }
 .ld-cvor[data-nivo="lovovodja"] > .ld-kartica-cvora, .ld-cvor[data-nivo="revir"] > .ld-kartica-cvora { border-width: 2px; }
 .ld-cvor[data-nivo="grupa"] > .ld-kartica-cvora { background: transparent; }
+.ld-uredi { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.ld-uredi select { flex: 1 1 100%; min-height: 48px; font-size: 16px; }
+.ld-uredi .dugme { flex: 1 1 auto; min-height: 44px; }
+.sk-moja-grupa { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.sk-moja-grupa select { flex: 1 1 100%; min-height: 48px; font-size: 16px; }
+.sk-zelja { display: block; }
