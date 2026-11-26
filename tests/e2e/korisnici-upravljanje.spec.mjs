@@ -247,3 +247,31 @@ test('Novi korisnik iz ekrana Korisnici: nalog u sekciju + odmah uloga lovovođe
   await expect.poll(() => poslano(zahtjevi, (z) => z.table === 'grupe' && z.metoda === 'POST').length).toBe(1);
   await expect.poll(() => poslano(zahtjevi, (z) => z.rpc === 'dodijeli_grupu').length).toBe(1);
 });
+
+test('LD Grmeč: tab u Postavkama za rukovodioce prikazuje predsjednika, lovočuvare, lovovođe i grupovođe; predsjednika postavlja admin', async ({ page }) => {
+  const { db, zahtjevi } = await setup(page);
+  db.drustvo_uloge = [{ korisnik_id: 'g1', uloga: 'predsjednik' }, { korisnik_id: 'l1', uloga: 'lovocuvar' }];
+  db.revir_vodje = [{ revir_id: 'r1', korisnik_id: 'l2' }];
+  db.grupe = [{ id: 'gr1', sekcija_id: 's1', grupovodja_id: 'l1' }];
+  await page.locator('#btn-korisnici-zatvori').click();
+  await page.locator('#btn-postavke').click();
+  const tab = page.locator('#p-tabovi [data-ptab="ld"]');
+  await expect(tab).toBeVisible();
+  await tab.click();
+  const ld = page.locator('#ldg-sadrzaj');
+  await expect(ld.locator('[data-nivo="predsjednik"] > .ld-kartica-cvora')).toContainText('Goran'); // g1 je predsjednik
+  await expect(ld.locator('[data-nivo="lovocuvar"]')).toHaveCount(2);
+  await expect(ld.locator('[data-nivo="lovocuvar"]').nth(1)).toContainText('Slobodno mjesto'); // drugi lovočuvar
+  await expect(ld.locator('[data-nivo="revir"]')).toHaveCount(2); // koliko revira ima u svijetu testa
+  await expect(ld.locator('[data-nivo="lovovodja"] [data-nivo="revir"]').first()).toBeVisible(); // reviri su ISPOD lovovođe udruženja
+  await expect(ld.locator('[data-nivo="sekcija"] [data-nivo="grupa"]')).toContainText('Grupovođa'); // grupa je ispod sekcije
+  await page.locator('#btn-postavke-zatvori').click();
+});
+
+test('LD Grmeč: obični lovac nema tab', async ({ page }) => {
+  await serveTiles(page);
+  await page.addInitScript(() => localStorage.setItem('lovac.profil', JSON.stringify({ id: 'x9', ime: 'Obi', prezime: 'Lovac', odobren: true, is_admin: false })));
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  await expect(page.locator('#p-tabovi [data-ptab="ld"]')).toBeHidden();
+});

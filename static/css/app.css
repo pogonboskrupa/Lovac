@@ -1889,3 +1889,17 @@ svg[hidden] { display: none; }
 .dojava-popup { min-width: 200px; }
 .dojava-popup .sitno { margin: 6px 0; color: #475569; }
 .dojava-popup .dugme { width: 100%; margin-top: 6px; }
+
+/* Tab "LD Grmeč" u Postavkama: hijerarhijsko stablo (linije spajaju čvor sa roditeljem) */
+.ld-sazetak { margin: 0 0 8px; }
+.ld-stablo, .ld-stablo ul { list-style: none; margin: 0; padding: 0; }
+.ld-stablo ul { margin-left: 14px; padding-left: 14px; border-left: 2px solid var(--okvir); }
+.ld-cvor { position: relative; padding-top: 8px; }
+.ld-stablo ul > .ld-cvor::before { content: ''; position: absolute; left: -14px; top: 30px; width: 14px; border-top: 2px solid var(--okvir); }
+.ld-kartica-cvora { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; min-height: 44px; border: 1.5px solid var(--okvir); border-radius: 12px; background: var(--kartica, transparent); }
+.ld-uloga { color: var(--tekst-2); font-size: 13px; }
+.ld-kartica-cvora b { overflow-wrap: anywhere; }
+.ld-kartica-cvora b.ld-prazno { font-weight: 400; opacity: 0.75; font-style: italic; }
+.ld-cvor[data-nivo="predsjednik"] > .ld-kartica-cvora { border-color: var(--naglasak, var(--okvir)); border-width: 2px; }
+.ld-cvor[data-nivo="lovovodja"] > .ld-kartica-cvora, .ld-cvor[data-nivo="revir"] > .ld-kartica-cvora { border-width: 2px; }
+.ld-cvor[data-nivo="grupa"] > .ld-kartica-cvora { background: transparent; }

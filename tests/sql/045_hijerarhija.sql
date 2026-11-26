@@ -203,4 +203,24 @@ begin
   exception when check_violation then null; end;
 end $$;
 
+-- Predsjednik: jedan, rukovodstvo, vidi sve grupe; lovočuvar društva vidi grupe svih sekcija
+insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000045f2', 'pred@t', '{"ime":"Pre","prezime":"Sjednik"}'), ('00000000-0000-0000-0000-0000000045f3', 'pred2@t', '{"ime":"Pre","prezime":"Drugi"}');
+update public.korisnici set odobren = true where id in ('00000000-0000-0000-0000-0000000045f2', '00000000-0000-0000-0000-0000000045f3');
+do $$ begin
+  insert into public.drustvo_uloge values ('00000000-0000-0000-0000-0000000045f2', 'predsjednik');
+  begin
+    insert into public.drustvo_uloge values ('00000000-0000-0000-0000-0000000045f3', 'predsjednik');
+    raise exception 'FAIL: drugi predsjednik';
+  exception when check_violation then null; end;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045f2', true);
+  set local role authenticated;
+  assert public.je_rukovodstvo(), 'predsjednik je rukovodstvo';
+  assert (select count(*) from public.grupe) >= 1, 'predsjednik vidi grupe';
+  reset role;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045b1', true);
+  set local role authenticated;
+  assert (select count(*) from public.grupe) >= 1, 'lovočuvar društva vidi grupe svih sekcija';
+  reset role;
+end $$;
+
 rollback;

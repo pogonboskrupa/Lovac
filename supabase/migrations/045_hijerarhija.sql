@@ -6,9 +6,12 @@
 -- ---------- uloge na nivou društva ----------
 create table if not exists public.drustvo_uloge (
   korisnik_id uuid not null references public.korisnici (id) on delete cascade,
-  uloga text not null check (uloga in ('lovocuvar', 'lovovodja_drustva')),
+  uloga text not null check (uloga in ('lovocuvar', 'lovovodja_drustva', 'predsjednik')),
   primary key (korisnik_id, uloga)
 );
+-- Starija verzija ove migracije nije imala 'predsjednik': ograničenje se zamjenjuje (idempotentno).
+alter table public.drustvo_uloge drop constraint if exists drustvo_uloge_uloga_check;
+alter table public.drustvo_uloge add constraint drustvo_uloge_uloga_check check (uloga in ('lovocuvar', 'lovovodja_drustva', 'predsjednik'));
 
 -- Najviše 2 lovočuvara i 1 lovovođa društva (isti korisnik ne broji dvaput).
 create or replace function public.ogranici_drustvo_uloge()
@@ -19,6 +22,9 @@ begin
   end if;
   if new.uloga = 'lovovodja_drustva' and (select count(*) from public.drustvo_uloge u where u.uloga = 'lovovodja_drustva' and u.korisnik_id <> new.korisnik_id) >= 1 then
     raise exception 'Društvo ima samo jednog lovovođu' using errcode = '23514';
+  end if;
+  if new.uloga = 'predsjednik' and (select count(*) from public.drustvo_uloge u where u.uloga = 'predsjednik' and u.korisnik_id <> new.korisnik_id) >= 1 then
+    raise exception 'Društvo ima samo jednog predsjednika' using errcode = '23514';
   end if;
   return new;
 end;
@@ -74,6 +80,7 @@ returns boolean language sql stable security definer set search_path = public as
     public.je_admin()
     or public.je_lovocuvar_drustva()
     or public.je_lovovodja_drustva()
+    or exists (select 1 from public.drustvo_uloge d where d.korisnik_id = auth.uid() and d.uloga = 'predsjednik')
     or exists (select 1 from public.revir_vodje v where v.korisnik_id = auth.uid())
     or exists (select 1 from public.grupovodje g where g.korisnik_id = auth.uid())
     or exists (select 1 from public.sekcije s where s.aktivno and (s.grupovodja_id = auth.uid() or s.lovocuvar_id = auth.uid()))
@@ -136,7 +143,7 @@ create policy admin_pise on public.drustvo_uloge for all to authenticated using 
 
 -- Grupe vide članovi sekcije (i rukovodstvo iznad); prave ih i mijenjaju oni koji upravljaju grupama.
 drop policy if exists citanje on public.grupe;
-create policy citanje on public.grupe for select to authenticated using (public.je_clan_sekcije(sekcija_id) or public.moze_upravljati_grupama(sekcija_id));
+create policy citanje on public.grupe for select to authenticated using (public.je_clan_sekcije(sekcija_id) or public.moze_upravljati_grupama(sekcija_id) or public.je_rukovodstvo());
 drop policy if exists upravljanje on public.grupe;
 create policy upravljanje on public.grupe for all to authenticated
   using (public.moze_upravljati_grupama(sekcija_id)) with check (public.moze_upravljati_grupama(sekcija_id));

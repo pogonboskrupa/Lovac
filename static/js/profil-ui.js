@@ -189,8 +189,10 @@ export function initProfilLovca() {
 
   // ---------- tabovi ----------
   const setTab = (tab) => {
-    if (!['opste', 'podaci', 'nalog', 'profil'].includes(tab)) tab = 'opste';
-    for (const t of ['opste', 'podaci', 'nalog', 'profil']) $(`p-${t}`).hidden = tab !== t;
+    if (tab === 'ld' && $('p-tabovi').querySelector('[data-ptab="ld"]').hidden) tab = 'opste';
+    if (!['opste', 'podaci', 'nalog', 'profil', 'ld'].includes(tab)) tab = 'opste';
+    for (const t of ['opste', 'podaci', 'nalog', 'profil', 'ld']) $(`p-${t}`).hidden = tab !== t;
+    if (tab === 'ld') document.dispatchEvent(new CustomEvent('postavke:ld'));
     if (tab === 'podaci') document.dispatchEvent(new CustomEvent('postavke:podaci'));
     $('p-tabovi').querySelectorAll('[data-ptab]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ptab === tab)));
     saveSoft(TAB_KEY, tab);

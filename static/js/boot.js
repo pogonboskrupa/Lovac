@@ -50,6 +50,7 @@ import { initPrijave } from './prijave-ui.js';
 import { initPing } from './ping-ui.js';
 import { initOdaziv } from './odaziv-ui.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
+import { initLdGrmec } from './ld-grmec-ui.js';
 import { initMeni } from './meni-ui.js';
 import { initStan } from './stan-ui.js';
 import { initOdstrelStat } from './odstrel-stat-ui.js';
@@ -129,6 +130,7 @@ function enter(screen) {
       ['stan', () => initStan()],
       ['meni', () => initMeni()],
       ['novi-lovac', () => initNoviLovac()],
+      ['ld-grmec', () => initLdGrmec()],
       ['pas', () => initPas(globalThis.L, map)],
       ['moja-lokacija', () => initMojaLokacija(globalThis.L, map)],
       ['lokacija-izabrani', () => initLokacijaIzabrani(globalThis.L, map)],

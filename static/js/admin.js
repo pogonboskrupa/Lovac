@@ -11,7 +11,7 @@ import { profileRoles } from './profil.js';
 import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText, approvableRequests, approveLabel, registeredText, roleInfo, sectionTargets, leaderTargets, rolesOverview, rolesText } from './korisnici-pregled.js';
 import { downloadSekcije } from './sekcije-ui.js';
 import { assignRole } from './uloge-dodjela.js';
-import { drustvoSlot, revirVodjaTargets, ULOGA_LOVOCUVAR, ULOGA_LOVOVODJA_DRUSTVA } from './hijerarhija.js';
+import { drustvoSlot, revirVodjaTargets, ULOGA_LOVOCUVAR, ULOGA_LOVOVODJA_DRUSTVA, ULOGA_PREDSJEDNIK } from './hijerarhija.js';
 
 const $ = (id) => document.getElementById(id);
 export const CEKA_KEY = 'lovac.korisnici.cekaju';
@@ -124,6 +124,7 @@ function rolesBlock(u, info, data, users) {
       ${gv.length ? `<div class="kor-sek-akcije">${select(u.id, 'gv', 'Izaberi sekciju…', gv, `Postavi ${u.ime} za lovovođu sekcije`)}
         <button type="button" class="dugme" data-akcija="gv-postavi">Postavi za lovovođu sekcije</button></div>` : ''}</div>
     ${grupaGrupa(u, data)}
+    ${drustvoGrupa(u, data, 'pred', ULOGA_PREDSJEDNIK, 'Predsjednik', 'Predsjednik udruženja; samo jedan.', users)}
     ${drustvoGrupa(u, data, 'lcd', ULOGA_LOVOCUVAR, 'Lovočuvar društva', 'Radi na cijelom području; društvo ima najviše 2 lovočuvara.', users)}
     ${drustvoGrupa(u, data, 'ldd', ULOGA_LOVOVODJA_DRUSTVA, 'Lovovođa društva', 'Glavni lovovođa; društvo ima samo jednog.', users)}
     ${revirVodjaGrupa(u, data, users)}
@@ -341,6 +342,12 @@ export function initAdmin() {
         await run(() => q(sb().from('grupe').delete().eq('id', gid)), 'Grupa je uklonjena');
         break;
       }
+      case 'pred-postavi':
+        await run(() => q(sb().from('drustvo_uloge').insert({ korisnik_id: u.id, uloga: ULOGA_PREDSJEDNIK })), `${u.ime} ${u.prezime} je predsjednik`);
+        break;
+      case 'pred-skini':
+        await run(() => q(sb().from('drustvo_uloge').delete().eq('korisnik_id', u.id).eq('uloga', ULOGA_PREDSJEDNIK)), 'Predsjednik skinut');
+        break;
       case 'lcd-postavi':
         await run(() => q(sb().from('drustvo_uloge').insert({ korisnik_id: u.id, uloga: ULOGA_LOVOCUVAR })), `${u.ime} ${u.prezime} je lovočuvar društva`);
         break;

@@ -14,7 +14,7 @@ const tab = (page, t) => page.locator(`#p-tabovi [data-ptab="${t}"]`).click();
 test('postavke imaju četiri taba i svaki pokazuje samo svoje kartice', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await expect(page.locator('#p-tabovi [data-ptab]')).toHaveCount(4);
+  await expect(page.locator('#p-tabovi [data-ptab]:not([hidden])')).toHaveCount(4); // peti tab (LD Grmeč) je samo za rukovodioce
   await expect(page.locator('#p-velicina')).toBeVisible();
   await expect(page.locator('#btn-rezerva-izvoz')).toBeHidden();
   await tab(page, 'podaci');

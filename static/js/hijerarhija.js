@@ -6,6 +6,7 @@ export const MAX_LOVOCUVARA = 2;
 export const MAX_LOVOVODJA_DRUSTVA = 1;
 export const ULOGA_LOVOCUVAR = 'lovocuvar';
 export const ULOGA_LOVOVODJA_DRUSTVA = 'lovovodja_drustva';
+export const ULOGA_PREDSJEDNIK = 'predsjednik';
 
 // Lovočuvari društva važe za SVAKI revir (isti oblik kao stari revir_lovocuvari, pa ostali kod radi nepromijenjen).
 export function expandKeepers(revirKeepers = [], drustvoUloge = [], reviri = []) {
@@ -22,7 +23,7 @@ export const rolesOf = (userId, drustvoUloge = []) => drustvoUloge.filter((u) =>
 
 // Može li korisnik postati lovočuvar / lovovođa društva (i ko mu zauzima mjesto).
 export function drustvoSlot(userId, uloga, drustvoUloge = [], nameOf = () => '') {
-  const limit = uloga === ULOGA_LOVOCUVAR ? MAX_LOVOCUVARA : MAX_LOVOVODJA_DRUSTVA;
+  const limit = uloga === ULOGA_LOVOCUVAR ? MAX_LOVOCUVARA : 1;
   const rows = drustvoUloge.filter((u) => u.uloga === uloga);
   const ima = rows.some((u) => u.korisnik_id === userId);
   const drugi = rows.filter((u) => u.korisnik_id !== userId);
@@ -39,6 +40,7 @@ export function revirVodjaTargets(userId, reviri = [], revirVodje = [], nameOf =
 }
 
 export const NAZIVI_ULOGA = {
+  [ULOGA_PREDSJEDNIK]: 'Predsjednik',
   [ULOGA_LOVOCUVAR]: 'Lovočuvar društva',
   [ULOGA_LOVOVODJA_DRUSTVA]: 'Lovovođa društva',
   vodja_revira: 'Lovovođa revira',
