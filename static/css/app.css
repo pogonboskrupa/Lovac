@@ -228,6 +228,8 @@ html[data-velicina="najvece"] .dodaj-mreza { grid-template-columns: 1fr; }
 .dijalog {
   position: fixed; left: 12px; right: 12px; bottom: calc(var(--nav-h) + 12px); z-index: 3500;
   padding: 16px; border-radius: 12px; background: var(--povrsina); color: var(--tekst); box-shadow: var(--sjena);
+  /* Dugačka forma uz tastaturu: dijalog se lista umjesto da izađe iznad ekrana (polja se više ne vide) */
+  max-height: calc(100dvh - var(--gore-2) - var(--nav-h) - 24px); overflow-y: auto; overscroll-behavior: contain;
 }
 
 /* Lovački objekti */

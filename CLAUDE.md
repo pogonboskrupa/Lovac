@@ -749,3 +749,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Brisanje planiranih lovova iz spiska sekcije (v1.6.4, bez migracije)**
 - Spisak "Lovovi sekcije" u tabu sekcije (`sk-podaci`) ima "Obriši lov" uz SVAKI lov (i planirani) za grupovođu i admina (`st`); lovac/član i lovočuvar ga ne vide. Akcija `lov-obrisi` koristi `data-lov` sa dugmeta (ne tekući lov), drugi dodir je vezan za id lova (`armedRemove = lov:<id>`).
 - Uređivač lova (Zajednički lov): dodavanje učesnika je lista sa kvačicama (`#lov-dodaj-clan`, više lovaca odjednom, jedna uloga) poredana po aktivnosti (`lov.js rankByActivity`: broj lovova iz keša u kojima je član učestvovao, isti broj po imenu); uz ime piše broj lovova.
+
+**Dijalog uz tastaturu (v1.6.5)**
+- Uzrok: `.dijalog` je `position: fixed` zalijepljen uz dno bez ograničenja visine, pa je dugačka forma ("Novi zajednički lov") uz tastaturu izlazila iznad ekrana i polje u fokusu se nije vidjelo ni moglo skrolati. Sada `.dijalog` ima `max-height` do gornje trake i `overflow-y: auto`, a `boot.js` (`fokus`) na `focusin` dovodi polje (`input/select/textarea`) na sredinu vidljivog dijela. Svaki novi dijalog/ploča sa poljima mora imati ograničenu visinu i listanje. Test `dijalog-tastatura.spec.mjs`.

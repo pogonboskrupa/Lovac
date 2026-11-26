@@ -426,6 +426,12 @@ onDomReady(() => {
     ['sw', registerServiceWorker],
     ['azuriranje-most', () => initUpdateBridge()],
     ['azuriranje', updateCheck],
+    // tastatura smanji vidljivi dio: polje u fokusu se dovodi na vidno mjesto (poslije promjene veličine prozora)
+    ['fokus', () => document.addEventListener('focusin', (e) => {
+      const el = e.target;
+      if (!el?.matches?.('input, select, textarea')) return;
+      setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* bez toga radi i dalje */ } }, 350);
+    })],
     ['autotest', () => {
       const at = new URLSearchParams(globalThis.location.search).get('autotest');
       if (at === 'trag') return runRecordingAutotest();
