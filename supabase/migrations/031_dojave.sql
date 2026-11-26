@@ -19,6 +19,8 @@ create table if not exists public.dojave (
   odgovor text check (odgovor is null or char_length(odgovor) <= 1000),
   rijesio uuid references public.korisnici (id) on delete set null
 );
+-- Uklanjanje (mekano, da stigne i na tuđe telefone kroz `primljeno`): autor svoju dojavu, lovočuvar revira i admin bilo koju u reviru.
+alter table public.dojave add column if not exists uklonjena boolean not null default false;
 create index if not exists dojave_revir_primljeno on public.dojave (revir_id, primljeno);
 create index if not exists dojave_autor_primljeno on public.dojave (autor_id, primljeno);
 
@@ -41,9 +43,16 @@ begin
     new.lon := old.lon;
     new.slika := old.slika;
     new.created_at := old.created_at;
-    if new.status is distinct from old.status or new.odgovor is distinct from old.odgovor then
-      new.rijesio := auth.uid();
+    if public.je_lovocuvar_revira(old.revir_id) or public.je_admin() then
+      if new.status is distinct from old.status or new.odgovor is distinct from old.odgovor then
+        new.rijesio := auth.uid();
+      else
+        new.rijesio := old.rijesio;
+      end if;
     else
+      -- autor smije samo da ukloni svoju dojavu; status i odgovor su lovočuvarevi
+      new.status := old.status;
+      new.odgovor := old.odgovor;
       new.rijesio := old.rijesio;
     end if;
   end if;
@@ -73,3 +82,6 @@ drop policy if exists obrada on public.dojave;
 create policy obrada on public.dojave for update to authenticated
   using (public.je_lovocuvar_revira(revir_id) or public.je_admin())
   with check (public.je_lovocuvar_revira(revir_id) or public.je_admin());
+drop policy if exists uklanjanje on public.dojave;
+create policy uklanjanje on public.dojave for update to authenticated
+  using (autor_id = auth.uid()) with check (autor_id = auth.uid());

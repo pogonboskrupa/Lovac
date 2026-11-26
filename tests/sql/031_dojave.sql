@@ -28,6 +28,13 @@ do $$ begin
   assert (select opis = 'Pucnji noću kod potoka' and status = 'nova' from public.dojave where id = '99999999-0000-4000-8000-000000000311'), 'autor ne mijenja';
 end $$;
 
+-- autor uklanja svoju dojavu (mekano), ali ni tada ne dira status/odgovor
+update public.dojave set uklonjena = true, status = 'rijesena', odgovor = 'hak' where id = '99999999-0000-4000-8000-000000000311';
+do $$ begin
+  assert (select uklonjena and status = 'nova' and odgovor is null from public.dojave where id = '99999999-0000-4000-8000-000000000311'), 'autor uklanja';
+end $$;
+update public.dojave set uklonjena = false where id = '99999999-0000-4000-8000-000000000311';
+
 -- drugi lovac i lovočuvar drugog revira ne vide
 do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000031d2', true); end $$;
 do $$ begin assert (select count(*) from public.dojave) = 0, 'drugi lovac ne vidi'; end $$;
@@ -46,6 +53,12 @@ do $$ begin
   exception when insufficient_privilege then null;
   end;
 end $$;
+
+-- lovočuvar revira uklanja tuđu dojavu; lovac koji nije autor ne može
+do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000031c1', true); end $$;
+update public.dojave set uklonjena = true where id = '99999999-0000-4000-8000-000000000311';
+do $$ begin assert (select uklonjena from public.dojave where id = '99999999-0000-4000-8000-000000000311'), 'lovočuvar uklanja'; end $$;
+update public.dojave set uklonjena = false where id = '99999999-0000-4000-8000-000000000311';
 
 -- admin vidi; autor vidi odgovor
 do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000031a1', true); end $$;

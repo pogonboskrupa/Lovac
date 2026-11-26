@@ -14,7 +14,7 @@ import { openImageViewer } from './slika-pregled.js';
 import { rangeLabel } from './istrazivac.js';
 import { formatMessageTime } from './poruke.js';
 import {
-  DOJAVA_VRSTE, DOJAVA_STATUS, vrstaNaziv, validateDojava, newDojava, defaultRevir, keeperRevirs, sortForKeeper, mergeDojave, dojavaAlerts,
+  DOJAVA_VRSTE, DOJAVA_STATUS, vrstaNaziv, validateDojava, newDojava, defaultRevir, keeperRevirs, sortForKeeper, mergeDojave, dojavaAlerts, canRemoveDojava, liveDojave,
 } from './dojave.js';
 import { toast, escapeHtml, registerBackHandler } from './ui.js';
 
@@ -159,11 +159,11 @@ export function initDojave(L, map) {
     if (!online()) return;
     try {
       const fresh = await fetchNew(() => getClient().from('dojave').select('*'), kursor, { initial: 200 });
-      const prev = rows;
+      const prev = liveDojave(rows);
       rows = mergeDojave(rows, fresh);
       kursor = nextCursor(fresh, kursor);
       await saveLocal();
-      if (prev.length || kursor) notify(dojavaAlerts(prev, rows, { myId: me()?.id, revirs: revirs() }));
+      if (prev.length || kursor) notify(dojavaAlerts(prev, liveDojave(rows), { myId: me()?.id, revirs: revirs() }));
     } catch (err) {
       console.warn('dojave', err.message);
     }
@@ -193,10 +193,10 @@ export function initDojave(L, map) {
 
   // ---------- ekran ----------
   const visibleRows = () => {
-    const mine = rows.filter((d) => d.autor_id === me()?.id);
+    const mine = liveDojave(rows).filter((d) => d.autor_id === me()?.id);
     if (!isKeeper()) return { list: mine.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))), mode: 'moje' };
     const f = filter || 'otvorene';
-    const revir = rows.filter((d) => revirs().includes(d.revir_id));
+    const revir = liveDojave(rows).filter((d) => revirs().includes(d.revir_id));
     const list = f === 'otvorene' ? revir.filter((d) => d.status !== 'rijesena') : f === 'moje' ? mine : revir;
     return { list: sortForKeeper(list), mode: f };
   };
@@ -216,6 +216,7 @@ export function initDojave(L, map) {
         <button type="button" class="dugme" data-akcija="karta">Na karti</button>
         ${keeper && d.status === 'nova' ? '<button type="button" class="dugme glavno" data-akcija="preuzmi">Preuzimam</button>' : ''}
         ${keeper && d.status !== 'rijesena' ? '<button type="button" class="dugme" data-akcija="rijesi">Riješeno</button>' : ''}
+        ${canRemoveDojava(d, me()?.id, revirs(), Boolean(me()?.is_admin)) ? `<button type="button" class="dugme" data-akcija="ukloni">${armed === d.id ? 'Dodirni ponovo — briše prijavu' : 'Obriši prijavu'}</button>` : ''}
       </div>
       ${keeper ? `<div class="dojava-odgovor-forma"><input type="text" maxlength="1000" data-odgovor placeholder="Odgovor lovcu (neobavezno)" value="${escapeHtml(odgovori.get(d.id) ?? d.odgovor ?? '')}" aria-label="Odgovor lovcu">
         <button type="button" class="dugme" data-akcija="odgovor">Sačuvaj</button></div>` : ''}
@@ -223,7 +224,7 @@ export function initDojave(L, map) {
   };
   function render() {
     const keeper = isKeeper();
-    const revirRows = rows.filter((d) => keeper ? revirs().includes(d.revir_id) : d.autor_id === me()?.id);
+    const revirRows = liveDojave(rows).filter((d) => keeper ? revirs().includes(d.revir_id) : d.autor_id === me()?.id);
     $('dojh-nove').textContent = String(revirRows.filter((d) => d.status === 'nova').length);
     $('dojh-preuzete').textContent = String(revirRows.filter((d) => d.status === 'preuzeta').length);
     $('dojh-rijesene').textContent = String(revirRows.filter((d) => d.status === 'rijesena').length);
@@ -247,13 +248,48 @@ export function initDojave(L, map) {
   function drawMarkers() {
     layer.clearLayers();
     if (!isKeeper()) return;
-    for (const d of rows.filter((x) => revirs().includes(x.revir_id) && x.status !== 'rijesena' && Number.isFinite(x.lat))) {
+    for (const d of liveDojave(rows).filter((x) => revirs().includes(x.revir_id) && x.status !== 'rijesena' && Number.isFinite(x.lat))) {
       const icon = L.divIcon({ className: 'dojava-marker-wrap', html: `<span class="dojava-marker" data-status="${escapeHtml(d.status)}"><svg class="ic"><use href="#ic-stit"/></svg></span>`, iconSize: [36, 36], iconAnchor: [18, 18] });
       L.marker([d.lat, d.lon], { icon, keyboard: false })
-        .bindPopup(`<b>${escapeHtml(vrstaNaziv(d.vrsta))}</b><br>${escapeHtml(DOJAVA_STATUS[d.status])} · ${escapeHtml(memberName(d.autor_id))}${d.opis ? `<br>${escapeHtml(d.opis)}` : ''}`)
+        .bindPopup(() => popupFor(d))
         .addTo(layer);
     }
   }
+  // Kartica na karti: šta je prijava i dugme za brisanje (drugi dodir), da crveni štit ne ostane bez objašnjenja
+  function popupFor(d) {
+    const el = document.createElement('div');
+    el.className = 'dojava-popup';
+    el.innerHTML = `<b>${escapeHtml(vrstaNaziv(d.vrsta))}</b><br>${escapeHtml(DOJAVA_STATUS[d.status])} · ${escapeHtml(memberName(d.autor_id))}${d.opis ? `<br>${escapeHtml(d.opis)}` : ''}
+      <div class="sitno">Prijava lovočuvaru — vidi je samo prijavitelj, lovočuvar revira i administrator.</div>`;
+    if (canRemoveDojava(d, me()?.id, revirs(), Boolean(me()?.is_admin))) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'dugme';
+      b.dataset.akcija = 'ukloni';
+      b.textContent = 'Obriši prijavu';
+      let armedHere = false;
+      b.addEventListener('click', async () => {
+        if (!armedHere) { armedHere = true; b.textContent = 'Dodirni ponovo — briše prijavu'; setTimeout(() => { armedHere = false; b.textContent = 'Obriši prijavu'; }, 4000); return; }
+        map.closePopup();
+        await removeDojava(d.id);
+      });
+      el.append(b);
+    }
+    return el;
+  }
+  let armed = null;
+  const removeDojava = async (id) => {
+    if (!online()) { toast('Za brisanje prijave potreban je internet'); return false; }
+    const { error } = await getClient().from('dojave').update({ uklonjena: true }).eq('id', id);
+    // server bez nadogradnje 031 (nema kolone): prijava se skriva samo na ovom telefonu
+    const staro = error && ['42703', 'PGRST204'].includes(error.code);
+    if (error && !staro) { toast(`Nije obrisano: ${error.message}`); return false; }
+    rows = rows.map((d) => (d.id === id ? { ...d, uklonjena: true } : d));
+    await saveLocal().catch(() => {});
+    toast(staro ? 'Prijava je skrivena na ovom telefonu (server još nema nadogradnju)' : 'Prijava je obrisana');
+    render();
+    return true;
+  };
 
   const update = async (id, patch, ok) => {
     if (!online()) { toast('Za obradu dojave potreban je internet'); return false; }
@@ -272,6 +308,12 @@ export function initDojave(L, map) {
     const d = rows.find((x) => x.id === card.dataset.id);
     if (!d) return;
     const a = b.dataset.akcija;
+    if (a === 'ukloni') {
+      if (armed !== d.id) { armed = d.id; setTimeout(() => { if (armed === d.id) { armed = null; render(); } }, 4000); render(); return; }
+      armed = null;
+      await removeDojava(d.id);
+      return;
+    }
     if (a === 'slika') { openImageViewer({ src: d.slika, caption: `${vrstaNaziv(d.vrsta)} · ${formatMessageTime(d.created_at)}` }); return; }
     if (a === 'karta') {
       closeDojave();

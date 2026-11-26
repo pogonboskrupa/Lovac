@@ -65,3 +65,12 @@ export function dojavaAlerts(prev = [], next = [], { myId, revirs = [] } = {}) {
     return false;
   });
 }
+
+// Ko smije ukloniti dojavu: autor svoju, lovočuvar revira i admin (server provodi isto kroz RLS).
+export function canRemoveDojava(d, myId, keeperRevirIds = [], isAdmin = false) {
+  if (!d || !myId) return false;
+  return d.autor_id === myId || isAdmin || keeperRevirIds.includes(d.revir_id);
+}
+
+// Uklonjene (mekano) se ne prikazuju nigdje.
+export const liveDojave = (list = []) => list.filter((d) => !d.uklonjena);

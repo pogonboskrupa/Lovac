@@ -107,3 +107,30 @@ test('lovočuvar revira: nova dojava stiže uz obavijest i marker na karti; Preu
   await expect(page.locator(`#dojave-spisak [data-id="${ID(880001)}"] .dojava-status`)).toHaveText('Riješena');
   await expect(page.locator('.dojava-marker')).toHaveCount(0);
 });
+
+test('crveni štit na karti: kartica objašnjava šta je i lovočuvar je briše drugim dodirom (server dobija uklonjena=true)', async ({ page }) => {
+  test.setTimeout(120000);
+  await notifCapture(page);
+  const world = makeWorld({ uToku: false });
+  world.revir_lovocuvari = [{ korisnik_id: world.korisnici[0].id, revir_id: ID(100) }];
+  for (const s of world.sekcije) s.grupovodja_id = ID(999);
+  world.dojave = [];
+  const sim = await startSim(page, world, { rpc: true, recv: true });
+  await sim.run(20000);
+  await seedSekcije(page, sim.db);
+  const t = new Date(sim.now).toISOString();
+  sim.db.dojave.push({ id: ID(880002), autor_id: world.korisnici[12].id, revir_id: ID(100), vrsta: 'ostalo', opis: 'Probna prijava',
+    lat: 44.87, lon: 16.14, slika: null, created_at: t, primljeno: t, status: 'nova', odgovor: null, rijesio: null });
+  await sim.run(70000);
+  await expect(page.locator('.dojava-marker')).toHaveCount(1);
+  await page.locator('.dojava-marker').evaluate((e) => e.click());
+  const popup = page.locator('.dojava-popup');
+  await expect(popup).toContainText('Prijava lovočuvaru');
+  const dugme = popup.locator('[data-akcija="ukloni"]');
+  await dugme.click();
+  await expect(dugme).toContainText('Dodirni ponovo');
+  expect(sim.db.dojave[0].uklonjena).toBeFalsy();
+  await dugme.click();
+  await expect.poll(() => sim.db.dojave[0].uklonjena, { timeout: 10000 }).toBe(true);
+  await expect(page.locator('.dojava-marker')).toHaveCount(0);
+});

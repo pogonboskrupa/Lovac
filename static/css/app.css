@@ -1884,3 +1884,8 @@ svg[hidden] { display: none; }
 .sl-stanje[data-stanje="telefon"] { color: var(--teren); font-weight: 600; }
 .sl-napomena { padding: 8px 12px; border-left: 4px solid var(--naglasak); border-radius: 8px; background: var(--povrsina); }
 .sl-mala { border-radius: 12px; }
+
+/* Kartica prijave lovočuvaru na karti: objašnjenje i dugme za brisanje */
+.dojava-popup { min-width: 200px; }
+.dojava-popup .sitno { margin: 6px 0; color: #475569; }
+.dojava-popup .dugme { width: 100%; margin-top: 6px; }

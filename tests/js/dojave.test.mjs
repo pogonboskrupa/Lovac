@@ -37,3 +37,14 @@ test('lovočuvar vidi nove prve; spajanje; obavijest za novu tuđu i promjenu mo
     { id: 'z', autor_id: 'drugi', status: 'nova', revir_id: 'X' }];
   assert.deepEqual(dojavaAlerts(prev, next, { myId: 'ja', revirs: ['R'] }).map((d) => d.id), ['m', 't']);
 });
+
+test('brisanje dojave: autor, lovočuvar revira i admin smiju; drugi lovac ne; uklonjene se ne prikazuju', async () => {
+  const { canRemoveDojava, liveDojave } = await import('../../static/js/dojave.js');
+  const d = { id: 'd', autor_id: 'a', revir_id: 'R' };
+  assert.equal(canRemoveDojava(d, 'a'), true);
+  assert.equal(canRemoveDojava(d, 'x', ['R']), true);
+  assert.equal(canRemoveDojava(d, 'x', ['Q']), false);
+  assert.equal(canRemoveDojava(d, 'x', [], true), true);
+  assert.equal(canRemoveDojava(d, null), false);
+  assert.deepEqual(liveDojave([d, { id: 'e', uklonjena: true }]).map((x) => x.id), ['d']);
+});
