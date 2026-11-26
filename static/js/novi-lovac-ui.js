@@ -17,7 +17,9 @@ export function initNoviLovac() {
   const me = () => cachedProfile();
 
   const open = async (sekcijaId, uloga) => {
-    const ctx = await cachedSekcije();
+    let ctx = await cachedSekcije();
+    // Prvi put (prazan keš) sekcije se čekaju sa servera: bez njih bi admin dobio "nemaš pravo" iako ga ima.
+    if (!ctx.sekcije.length) ctx = { ...ctx, ...(await downloadSekcije().catch(() => ({}))) };
     allowed = ctx.sekcije
       .filter((s) => s.aktivno !== false)
       .map((s) => ({ sekcija: s, mode: creationMode(myStatus(s, ctx.clanovi, me()?.id, Boolean(me()?.is_admin), ctx.lovocuvari)) }))
