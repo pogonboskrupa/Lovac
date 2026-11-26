@@ -9,7 +9,7 @@ import { listRecords } from './zapisi.js';
 import { makeThumbnail } from './foto.js';
 import { getSpisakAll, lookupNaziv } from './spiskovi.js';
 import { formatDecimalBs } from './odstrel.js';
-import { OPREMA_VRSTE, normalizeProfile, normalizeOprema, validatePasIme } from './profil-lovca.js';
+import { OPREMA_VRSTE, normalizeProfile, normalizeOprema, validatePasIme, validateDozvola } from './profil-lovca.js';
 import { hunterStats, statYears } from './statistika.js';
 import { toast, escapeHtml } from './ui.js';
 
@@ -61,6 +61,7 @@ export function initProfilLovca() {
     }
     imgStyle($('pf-pas-slika'), profile.pas_slika, 'P');
     if (document.activeElement !== $('pf-pas-ime')) $('pf-pas-ime').value = profile.pas_ime;
+    if (document.activeElement !== $('pf-dozvola')) $('pf-dozvola').value = profile.dozvola;
     $('pf-oprema').innerHTML = profile.oprema.map((x, i) => `<li class="clan-red" data-i="${i}"><span class="clan-tekst"><b>${escapeHtml(x.opis)}</b>
       <span class="sitno">${escapeHtml(OPREMA_VRSTE[x.vrsta])}</span></span><button type="button" class="dugme" data-akcija="ukloni">Ukloni</button></li>`).join('')
       || '<li class="sitno">Još nema unesene opreme.</li>';
@@ -81,7 +82,9 @@ export function initProfilLovca() {
         const sb = getClient();
         const a = await sb.from('profili').upsert({ korisnik_id: me().id, avatar: snap.avatar, pas_ime: snap.pas_ime || null, pas_slika: snap.pas_slika }, { onConflict: 'korisnik_id' });
         if (a.error) throw new Error(a.error.message);
-        const b = await sb.from('profili_oprema').upsert({ korisnik_id: me().id, oprema: snap.oprema }, { onConflict: 'korisnik_id' });
+        let b = await sb.from('profili_oprema').upsert({ korisnik_id: me().id, oprema: snap.oprema, dozvola: snap.dozvola || null }, { onConflict: 'korisnik_id' });
+        // server bez migracije 044 (nema kolone): oprema se šalje bez dozvole, dozvola ostaje na telefonu
+        if (b.error && ['42703', 'PGRST204'].includes(b.error.code)) b = await sb.from('profili_oprema').upsert({ korisnik_id: me().id, oprema: snap.oprema }, { onConflict: 'korisnik_id' });
         if (b.error) throw new Error(b.error.message);
         if (sent === rev) { profile = { ...profile, neposlano: false }; persist(); render(); pullAvatars(); }
       }
@@ -94,11 +97,11 @@ export function initProfilLovca() {
 
   // Novi telefon: ako lokalno nema ničega, uzmi svoj profil sa servera.
   const hydrate = async () => {
-    if (!online() || !me() || profile.avatar || profile.pas_ime || profile.pas_slika || profile.oprema.length || profile.neposlano) return;
+    if (!online() || !me() || profile.avatar || profile.pas_ime || profile.pas_slika || profile.dozvola || profile.oprema.length || profile.neposlano) return;
     const sb = getClient();
     const [p, o] = await Promise.all([sb.from('profili').select('*').eq('korisnik_id', me().id).maybeSingle(), sb.from('profili_oprema').select('*').eq('korisnik_id', me().id).maybeSingle()]);
     if (p.data || o.data) {
-      profile = normalizeProfile({ avatar: p.data?.avatar, pas_ime: p.data?.pas_ime, pas_slika: p.data?.pas_slika, oprema: o.data?.oprema });
+      profile = normalizeProfile({ avatar: p.data?.avatar, pas_ime: p.data?.pas_ime, pas_slika: p.data?.pas_slika, oprema: o.data?.oprema, dozvola: o.data?.dozvola });
       persist();
       render();
     }
@@ -147,10 +150,16 @@ export function initProfilLovca() {
     persist();
   });
 
+  $('pf-dozvola').addEventListener('input', (e) => {
+    rev += 1;
+    profile = { ...profile, dozvola: e.target.value.slice(0, 40), neposlano: true };
+    persist();
+  });
+
   $('btn-pf-sacuvaj').addEventListener('click', async () => {
-    const err = validatePasIme($('pf-pas-ime').value);
+    const err = validatePasIme($('pf-pas-ime').value) || validateDozvola($('pf-dozvola').value);
     if (err) { $('pf-status').textContent = err; return; }
-    change({ pas_ime: $('pf-pas-ime').value.trim() });
+    change({ pas_ime: $('pf-pas-ime').value.trim(), dozvola: $('pf-dozvola').value.trim() });
     await push();
     toast(profile.neposlano ? 'Profil sačuvan na telefonu' : 'Profil sačuvan');
   });

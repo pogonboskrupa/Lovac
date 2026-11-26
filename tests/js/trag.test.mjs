@@ -212,3 +212,39 @@ test('kratak trag sa tačkom usput ili znakom se čuva', () => {
   assert.equal(isTrackTooShort({ ...base, tackeInteresa: [{ id: 'x' }] }), false);
   assert.equal(isTrackTooShort({ ...base, krv: [{ t: 1 }] }), false);
 });
+
+test('filterFixes: stajanje sa šumom GPS-a ne pravi cik-cak (filtrirani put mnogo kraći od sirovog)', async () => {
+  const { filterFixes, trackDistance } = await import('../../static/js/trag.js');
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed / 2147483647 - 0.5) * 2; };
+  const pts = Array.from({ length: 60 }, (_, i) => ({ t: 1e12 + i * 1000, lat: 44.86 + rnd() * 6e-5, lon: 16.1 + rnd() * 8e-5, acc: 8 }));
+  const sirovo = trackDistance(pts);
+  const { points } = filterFixes(pts);
+  assert.ok(trackDistance(points) < sirovo * 0.35, `filtrirano ${trackDistance(points)} sirovo ${sirovo}`);
+});
+
+test('filterFixes: hod pravom linijom sa šumom ostaje blizu stvarnog puta i ne kasni', async () => {
+  const { filterFixes, haversine } = await import('../../static/js/trag.js');
+  let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed / 2147483647 - 0.5) * 2; };
+  const mLat = 1 / 111195; // stepen po metru
+  const truth = (i) => ({ lat: 44.86 + i * 1.4 * mLat, lon: 16.1 }); // 1,4 m/s prema sjeveru
+  const pts = Array.from({ length: 80 }, (_, i) => ({ t: 1e12 + i * 1000, lat: truth(i).lat + rnd() * 5 * mLat, lon: 16.1 + rnd() * 5 * mLat / 0.7, acc: 6 }));
+  const { points } = filterFixes(pts);
+  const greske = points.map((p, k) => haversine(p, truth(Math.round((p.t - 1e12) / 1000))));
+  const prosjek = greske.reduce((a, b) => a + b, 0) / greske.length;
+  const sirovaGreska = pts.map((p, i) => haversine(p, truth(i))).reduce((a, b) => a + b, 0) / pts.length;
+  assert.ok(prosjek < sirovaGreska, `filter ${prosjek} sirovo ${sirovaGreska}`);
+  assert.ok(prosjek < 5, `prosječna greška ${prosjek}`);
+  assert.ok(greske[greske.length - 1] < 8, `zadnja tačka kasni ${greske[greske.length - 1]}`);
+});
+
+test('filterFixes: skok GPS-a od 500 m se odbacuje, stvarno kretanje ne', async () => {
+  const { filterFixes } = await import('../../static/js/trag.js');
+  const a = { t: 1e12, lat: 44.86, lon: 16.1, acc: 5 };
+  const skok = { t: 1e12 + 1000, lat: 44.8645, lon: 16.1, acc: 5 };
+  const hod = { t: 1e12 + 2000, lat: 44.86003, lon: 16.1, acc: 5 };
+  const r = filterFixes([a, skok, hod]);
+  assert.equal(r.points.length, 2);
+  assert.ok(r.points[1].lat < 44.8601);
+});

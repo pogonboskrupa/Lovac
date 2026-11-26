@@ -163,3 +163,20 @@ test('traka lica: prvih n i ostatak', () => {
   assert.deepEqual(faceStrip(redovi, 3).ostalo, 1);
   assert.equal(faceStrip(redovi, 10).lica.length, 4);
 });
+
+test('najaktivniji prvi: broj lovova sekcije po članu, isti broj zadržava redoslijed', async () => {
+  const { huntCountsByMember, sortByActivity, huntsText } = await import('../../static/js/sekcija-podaci.js');
+  const lovovi = [
+    { lov: { sekcija_id: 'S' }, ucesnici: [{ korisnik_id: 'b' }, { korisnik_id: 'c' }] },
+    { lov: { sekcija_id: 'S' }, ucesnici: [{ korisnik_id: 'b' }] },
+    { lov: { sekcija_id: 'DRUGA' }, ucesnici: [{ korisnik_id: 'a' }, { korisnik_id: 'a' }] },
+  ];
+  const n = huntCountsByMember(lovovi, 'S');
+  assert.equal(n.get('b'), 2);
+  assert.equal(n.get('a'), undefined);
+  const rows = [{ id: 'a' }, { id: 'c' }, { id: 'b' }, { id: 'd' }];
+  assert.deepEqual(sortByActivity(rows, n).map((r) => r.id), ['b', 'c', 'a', 'd']);
+  assert.equal(huntsText(0), 'bez lovova');
+  assert.equal(huntsText(1), '1 lov');
+  assert.equal(huntsText(5), '5 lovova');
+});

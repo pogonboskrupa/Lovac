@@ -26,7 +26,7 @@ import androidx.core.app.ServiceCompat;
 public class GpsService extends Service implements LocationListener {
     static final String CHANNEL = "snimanje";
     private static final int NOTIF_ID = 7;
-    private static final long MIN_TIME_MS = 2000;
+    private static final long MIN_TIME_MS = 1000;
     static volatile boolean running = false;
 
     private LocationManager lm;

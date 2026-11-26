@@ -79,3 +79,13 @@ test('slike lovcima: 54000 (najviše 30 slika čeka) je privremeno — slika ost
   assert.equal(retryLater({ code: '54000' }), true);
   assert.equal(retryLater({ code: '42501' }), false);
 });
+
+test('dayTitle: Danas, Jučer, datum; senderInitials: dva slova', async () => {
+  const { dayTitle, senderInitials } = await import('../../static/js/slike-lovcima.js');
+  const now = new Date(2026, 10, 26, 12, 0).getTime();
+  assert.equal(dayTitle(new Date(2026, 10, 26, 8).toISOString(), now), 'Danas');
+  assert.equal(dayTitle(new Date(2026, 10, 25, 20).toISOString(), now), 'Jučer');
+  assert.equal(dayTitle(new Date(2026, 9, 5, 9).toISOString(), now), '5.10.2026.');
+  assert.equal(senderInitials('Nedim Ćehić'), 'NĆ');
+  assert.equal(senderInitials(''), '?');
+});

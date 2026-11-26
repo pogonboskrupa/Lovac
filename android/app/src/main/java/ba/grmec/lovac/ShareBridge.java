@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.widget.Toast;
@@ -92,6 +93,41 @@ public class ShareBridge {
         }
         shareFile(name, mime, content);
         return "dijeljenje";
+    }
+
+    /**
+     * Sačuva sliku (base64, bez dataURL zaglavlja) u Preuzimanja/Lovac. Vraća "preuzimanja" ili "greska";
+     * na starijem Androidu (< 10) vraća "greska", pa JS ponudi dijeljenje.
+     */
+    @JavascriptInterface
+    public String sacuvajSliku(String name, String mime, String base64) {
+        if (Build.VERSION.SDK_INT < 29) return "greska";
+        ContentResolver resolver = activity.getContentResolver();
+        Uri uri = null;
+        try {
+            byte[] data = Base64.decode(base64, Base64.DEFAULT);
+            ContentValues v = new ContentValues();
+            v.put(MediaStore.Downloads.DISPLAY_NAME, safeName(name));
+            v.put(MediaStore.Downloads.MIME_TYPE, mime);
+            v.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Lovac");
+            v.put(MediaStore.Downloads.IS_PENDING, 1);
+            uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+            if (uri == null) throw new IOException("Preuzimanja nisu dostupna");
+            try (OutputStream out = resolver.openOutputStream(uri)) {
+                if (out == null) throw new IOException("Fajl se ne može otvoriti");
+                out.write(data);
+            }
+            ContentValues done = new ContentValues();
+            done.put(MediaStore.Downloads.IS_PENDING, 0);
+            resolver.update(uri, done, null, null);
+            return "preuzimanja";
+        } catch (Exception e) {
+            Log.e("Lovac", "Čuvanje slike", e);
+            if (uri != null) {
+                try { resolver.delete(uri, null, null); } catch (Exception ignored) { /* nedovršen fajl */ }
+            }
+            return "greska";
+        }
     }
 
     @JavascriptInterface

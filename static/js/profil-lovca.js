@@ -25,7 +25,7 @@ export function validatePasIme(s) {
 }
 
 export function emptyProfile() {
-  return { avatar: null, pas_ime: '', pas_slika: null, oprema: [], neposlano: false };
+  return { avatar: null, pas_ime: '', pas_slika: null, oprema: [], dozvola: '', neposlano: false };
 }
 
 export function normalizeProfile(raw) {
@@ -33,6 +33,11 @@ export function normalizeProfile(raw) {
     ...emptyProfile(),
     ...(raw || {}),
     pas_ime: String(raw?.pas_ime ?? '').trim().slice(0, 40),
+    dozvola: String(raw?.dozvola ?? '').trim().slice(0, 40),
     oprema: normalizeOprema(raw?.oprema),
   };
+}
+
+export function validateDozvola(s) {
+  return String(s ?? '').trim().length > 40 ? 'Broj dozvole je predugačak (najviše 40 znakova)' : null;
 }

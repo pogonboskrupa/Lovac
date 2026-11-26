@@ -12,10 +12,7 @@ test('veličina teksta: veliko i najveće povećavaju sadržaj, meni ide u jednu
   await page.goto('/');
   await page.locator('#btn-postavke').click();
   const h = async (sel) => {
-    await page.locator('#p-tabovi [data-ptab="nalog"]').click();
-    const v = (await page.locator(sel).boundingBox()).height;
-    await page.locator('#p-tabovi [data-ptab="opste"]').click();
-    return v;
+    return (await page.locator(sel).boundingBox()).height;
   };
   const normal = await h('#btn-provjeri-azuriranje');
   await page.locator(`#p-velicina [data-velicina="veliko"]`).click();

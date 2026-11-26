@@ -50,6 +50,52 @@ export function acceptPoint(prev, p) {
   return p.t - prev.t >= MIN_DT_MS || haversine(prev, p) >= stepThreshold(prev, p);
 }
 
+// Filter GPS šuma pri snimanju (Kalman sa varijansom iz tačnosti fiksa): mjerenje sa lošom tačnošću slabo povlači položaj,
+// pa se trag u malom prostoru ne cik-cakira od šuma, a pri hodu prati stvarni put. Pozicija se računa u metrima
+// oko prve tačke (ravna aproksimacija je dovoljna na desetinama metara).
+export const FILTER_Q_MS = 2.5; // koliko m/s se pozicija smije "pomjeriti" između fiksova (hod lovca)
+export const FILTER_JUMP_MS = 30; // brže od ovoga (m/s) preko tačnosti je skok GPS-a, ne kretanje
+const FILTER_MIN_ACC = 3;
+
+export function newFilter() { return null; }
+
+// Vraća { state, point }; point je null kad se fiks odbacuje (skok). Čista funkcija: stanje se vraća, ne mijenja.
+// Brzina kretanja (v, m/s) se procjenjuje iz filtriranih pomaka i povećava dozvoljeno pomjeranje (q), pa filter
+// ne kasni kad se kreće brže (auto, trčanje), a stoji čvrsto kad se ne kreće.
+export function filterStep(state, p) {
+  if (!validPoint(p)) return { state, point: null };
+  const acc = clamp(Number.isFinite(p.acc) ? p.acc : 10, FILTER_MIN_ACC, MAX_ACC_M);
+  if (!state) {
+    const st = { t: p.t, lat: p.lat, lon: p.lon, v2: acc * acc, v: 0 };
+    return { state: st, point: { ...p, acc } };
+  }
+  if (p.t <= state.t) return { state, point: null };
+  const dt = Math.max(1, (p.t - state.t) / 1000); // fiksevi su najčešće na 1 s; razmaci kraći od toga se računaju kao 1 s
+  if (haversine(state, p) > 4 * acc + 20 + dt * FILTER_JUMP_MS) return { state, point: null };
+  const q = Math.max(FILTER_Q_MS, 2 * state.v);
+  const v2 = state.v2 + dt * q * q;
+  const k = v2 / (v2 + acc * acc);
+  const lat = state.lat + k * (p.lat - state.lat);
+  const lon = state.lon + k * (p.lon - state.lon);
+  const v = 0.7 * state.v + 0.3 * Math.min(FILTER_JUMP_MS, haversine(state, { lat, lon }) / dt);
+  const st = { t: p.t, lat, lon, v2: (1 - k) * v2, v };
+  const out = { t: p.t, lat, lon, acc: Math.max(FILTER_MIN_ACC, Math.sqrt(st.v2)) };
+  if (Number.isFinite(p.alt)) out.alt = p.alt;
+  return { state: st, point: out };
+}
+
+// Cijeli niz (sortiran po vremenu) kroz filter; vraća { points, state }.
+export function filterFixes(points, state = null) {
+  let st = state;
+  const out = [];
+  for (const p of [...points].sort((a, b) => a.t - b.t)) {
+    const r = filterStep(st, p);
+    st = r.state;
+    if (r.point) out.push(r.point);
+  }
+  return { points: out, state: st };
+}
+
 // Spaja nove tačke (i ponovno pročitan native bafer) bez duplikata, bez tačaka iz pauza
 // i bez tačaka prije starta ili poslije kraja traga.
 export function mergePoints(existing, incoming, trag) {

@@ -21,6 +21,19 @@
   </div>
 
   <div id="p-opste">
+  <div class="p-kartica p-azuriranje" id="p-azuriranje">
+    <h3>Ažuriranje aplikacije</h3>
+    <p class="p-verzija">Instalirana verzija <b id="postavke-verzija"></b></p>
+    <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
+    <p id="postavke-azur-status" class="red-info" role="status"></p>
+    <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
+    <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
+    <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
+    <progress id="azur-napredak" max="100" value="0" hidden></progress>
+    <button id="btn-instaliraj-preuzeto" class="dugme" type="button" hidden>Instaliraj preuzeto</button>
+    <p id="azur-preuzimanje" class="red-info" role="status"></p>
+  </div>
+
   <div id="postavke-admin" class="p-kartica p-admin" hidden>
     <h3>Administracija</h3>
     <button id="btn-korisnici" class="dugme glavno p-admin-dugme" type="button"><span>Korisnici i odobrenja</span><span id="korisnici-znacka" class="p-znacka" hidden></span></button>
@@ -133,16 +146,8 @@
 
   <div class="p-kartica">
     <h3>O aplikaciji</h3>
-    <p class="red-info">Lovačko društvo "Grmeč" <b id="postavke-verzija"></b></p>
+    <p class="red-info">Lovačko društvo "Grmeč"</p>
     <button id="btn-upute" class="dugme glavno" type="button">Upute za korištenje</button>
-    <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
-    <p id="postavke-azur-status" class="red-info" role="status"></p>
-    <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
-    <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
-    <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
-    <progress id="azur-napredak" max="100" value="0" hidden></progress>
-    <button id="btn-instaliraj-preuzeto" class="dugme" type="button" hidden>Instaliraj preuzeto</button>
-    <p id="azur-preuzimanje" class="red-info" role="status"></p>
   </div>
   </div>
 
@@ -174,6 +179,12 @@
           </div>
         </div>
         <label>Ime psa<input id="pf-pas-ime" maxlength="40" autocomplete="off" placeholder="npr. Rex"></label>
+      </div>
+
+      <div class="p-kartica">
+        <h3>Lovačka dozvola</h3>
+        <label>Broj lovačke dozvole<input id="pf-dozvola" maxlength="40" autocomplete="off" placeholder="npr. LD-12345/2026"></label>
+        <p class="sitno">Broj vidiš samo ti (ne vide ga ni drugi lovci ni administrator). Aplikacija ga ne provjerava i ne zamjenjuje samu dozvolu.</p>
       </div>
 
       <div class="p-kartica">

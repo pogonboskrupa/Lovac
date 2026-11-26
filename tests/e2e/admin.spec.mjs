@@ -101,12 +101,12 @@ test('admin ne može opozvati ni obrisati sam sebe iz UI-ja', async ({ page }) =
   await expect(page.locator('#korisnici')).toBeHidden();
 });
 
-test('Korisnici i odobrenja: administracija je PRVA kartica u Opšte, značka pokazuje koliko čeka, filteri i pretraga', async ({ page }) => {
+test('Korisnici i odobrenja: administracija je kartica odmah poslije ažuriranja u Opšte, značka pokazuje koliko čeka, filteri i pretraga', async ({ page }) => {
   await setup(page);
   await page.goto('/');
   await page.locator('#btn-postavke').click();
   const kartice = page.locator('#p-opste > .p-kartica');
-  await expect(kartice.first()).toHaveAttribute('id', 'postavke-admin');
+  await expect(kartice.nth(1)).toHaveAttribute('id', 'postavke-admin');
   await expect(page.locator('#korisnici-znacka')).toBeHidden(); // još nije učitano, nema izmišljenog broja
   await page.locator('#btn-korisnici').click();
   await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(3);

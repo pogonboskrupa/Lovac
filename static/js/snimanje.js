@@ -4,7 +4,7 @@
 
 import {
   newTrack, pauseTrack, resumeTrack, stopTrack, mergePoints, autoPauseCheck,
-  createSnapshotTimer, defaultTrackName, isTrackTooShort, trackDistance, MIN_TRACK_M, resumeFrom,
+  createSnapshotTimer, filterFixes, defaultTrackName, isTrackTooShort, trackDistance, MIN_TRACK_M, resumeFrom,
 } from './trag.js';
 import { idbPut, idbGet, idbAll, idbDelete } from './db.js';
 import { alarm } from './ui.js';
@@ -16,6 +16,7 @@ const RAW_WINDOW_MS = 4 * 60 * 1000;
 const SNAPSHOT_MS = 30000;
 
 const active = new Map();
+const filters = new Map(); // id traga → stanje filtera GPS šuma (trag.js filterFixes)
 const listeners = new Set();
 let raw = [];
 let nativeOffset = 0;
@@ -74,13 +75,16 @@ function ingest(points) {
   const now = Date.now();
   raw = raw.concat(points).filter((p) => p.t >= now - RAW_WINDOW_MS).sort((a, b) => a.t - b.t);
   for (const [id, tr] of active) {
-    let next = { ...tr, tacke: mergePoints(tr.tacke, points, tr) };
+    // sirovi fiksevi prolaze kroz filter šuma (tačnost određuje koliko mjerenje povlači položaj), pa tek onda u trag
+    const fl = filterFixes(points, filters.get(id));
+    filters.set(id, fl.state);
+    let next = { ...tr, tacke: mergePoints(tr.tacke, fl.points, tr) };
     const decision = autoPauseCheck(next, raw, now);
     if (decision === 'pauza') next = pauseTrack(next, now, true);
     if (decision === 'nastavi') {
       // nastavak od trenutka kad je pokret počeo (ne od "sada"), pa se tačke tog pokreta ne gube
       next = resumeTrack(next, resumeFrom(next, raw) ?? now);
-      next = { ...next, tacke: mergePoints(next.tacke, raw, next) };
+      next = { ...next, tacke: mergePoints(next.tacke, filterFixes(raw).points, next) };
     }
     active.set(id, next);
     if (decision) saveTrack(next).catch(() => {});

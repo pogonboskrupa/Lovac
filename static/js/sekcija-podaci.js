@@ -143,3 +143,20 @@ export function filterHunters(rows, actOf, filter, query, match) {
 export function faceStrip(rows, n = 7) {
   return { lica: rows.slice(0, n), ostalo: Math.max(0, rows.length - n) };
 }
+
+// Broj lovova ove sekcije u kojima je član bio učesnik (iz keširanih lovova) — mjera aktivnosti za poredak.
+export function huntCountsByMember(lovovi, sekcijaId) {
+  const n = new Map();
+  for (const z of lovovi || []) {
+    if (z?.lov?.sekcija_id !== sekcijaId) continue;
+    for (const u of z.ucesnici || []) n.set(u.korisnik_id, (n.get(u.korisnik_id) || 0) + 1);
+  }
+  return n;
+}
+
+// "Najaktivniji prvi": više lovova prvo, isti broj zadržava postojeći redoslijed (vodstvo pa prezime).
+export function sortByActivity(rows, counts) {
+  return rows.map((r, i) => ({ r, i })).sort((a, b) => (counts.get(b.r.id) || 0) - (counts.get(a.r.id) || 0) || a.i - b.i).map((x) => x.r);
+}
+
+export const huntsText = (n) => (n ? `${n} ${n === 1 ? 'lov' : 'lovova'}` : 'bez lovova');

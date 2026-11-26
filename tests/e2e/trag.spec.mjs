@@ -83,9 +83,10 @@ test('browser: snimanje preko watchPosition i spisak tragova sa dužinom', async
   await context.setGeolocation({ latitude: 44.88, longitude: 16.15, accuracy: 5 });
   await page.goto('/');
   await lok(page, '#btn-snimaj');
-  for (let i = 1; i <= 3; i++) {
-    await page.waitForTimeout(300);
-    await context.setGeolocation({ latitude: 44.88 + i * 0.0005, longitude: 16.15, accuracy: 5 });
+  // fiksevi na ~1 s (kao pravi GPS); filter šuma ne smije progutati kretanje od ~45 m po sekundi
+  for (let i = 1; i <= 4; i++) {
+    await page.waitForTimeout(1100);
+    await context.setGeolocation({ latitude: 44.88 + i * 0.0004, longitude: 16.15, accuracy: 5 });
   }
   await expect.poll(async () => Number(await page.locator('#snim-tacke').innerText())).toBeGreaterThanOrEqual(3);
   await page.locator('#btn-snim-stop').click();

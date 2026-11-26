@@ -127,3 +127,22 @@ export function inboxSummary(primljene = []) {
   if (nove) return `${nove} ${nove === 1 ? 'nova slika' : nove < 5 ? 'nove slike' : 'novih slika'}`;
   return primljene.length ? `Primljeno: ${primljene.length}` : 'Pošalji slike i trofeje lovcima';
 }
+
+// Naslov dana za grupisanje kartica: "Danas", "Jučer" ili "5.12.2026." (po satu telefona).
+export function dayTitle(iso, now = Date.now()) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const n = new Date(now);
+  const sameDay = (a, b) => a.toDateString() === b.toDateString();
+  const jucer = new Date(n);
+  jucer.setDate(n.getDate() - 1);
+  if (sameDay(d, n)) return 'Danas';
+  if (sameDay(d, jucer)) return 'Jučer';
+  return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}.`;
+}
+
+// Inicijali pošiljaoca za krug na kartici (dvije riječi → dva slova).
+export function senderInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || '?') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}

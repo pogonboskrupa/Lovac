@@ -39,3 +39,19 @@ export function shareText(text) {
   }
   return 'nema';
 }
+
+// Čuvanje SLIKE (dataURL) na telefon: Preuzimanja/Lovac (Android 10+, native), u pregledniku običan download.
+// Vraća 'preuzimanja' | 'download' | 'greska' (stariji Android / stara aplikacija: pozivalac nudi dijeljenje).
+export function saveImage(name, dataUrl) {
+  const m = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i.exec(dataUrl || '');
+  if (!m) return 'greska';
+  const bridge = globalThis.AndroidShare;
+  if (bridge) return bridge.sacuvajSliku ? (bridge.sacuvajSliku(name, m[1], m[2]) === 'preuzimanja' ? 'preuzimanja' : 'greska') : 'greska';
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return 'download';
+}

@@ -10,7 +10,7 @@ import { isServerConfigured } from './config.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { mySections, currentHunt, memberActivity, activityText, sectionMembers, huntCreatePlan, huntPresence, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip } from './sekcija-podaci.js';
+import { mySections, currentHunt, memberActivity, activityText, sectionMembers, huntCreatePlan, huntPresence, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip, huntCountsByMember, sortByActivity, huntsText } from './sekcija-podaci.js';
 import { matchesQuery } from './pretraga.js';
 import { uuid } from './zapisi.js';
 import { trailEnabled } from './lov-tragovi-ui.js';
@@ -81,6 +81,7 @@ export function initSekcijaEkran(L, map) {
   let porukeSeq = 0;
   let memFilter = 'svi';
   let memQuery = '';
+  let memOrder = 'redom'; // 'redom' | 'aktivnost'
   const reloadPoruke = async () => {
     const t = ++porukeSeq;
     const rows = await idbAll('poruke');
@@ -360,14 +361,17 @@ export function initSekcijaEkran(L, map) {
     $('sk-k-clanovi').classList.toggle('sklopljeno', !otvoreno);
     $('btn-sk-lovci').setAttribute('aria-expanded', String(otvoreno));
     $('btn-sk-lovci').disabled = !sklopivo;
-    const shown = filterHunters(rows, actOf, memFilter, memQuery, matchesQuery);
+    const lovCounts = huntCountsByMember(lovovi, s.id);
+    $('sk-poredak').querySelectorAll('[data-por]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.por === memOrder)));
+    const filtered = filterHunters(rows, actOf, memFilter, memQuery, matchesQuery);
+    const shown = memOrder === 'aktivnost' ? sortByActivity(filtered, lovCounts) : filtered;
     $('sk-clanovi').innerHTML = shown.map((r) => {
       const a = actOf(r.id);
       const ja = r.id === me()?.id;
       return `<li class="clan-red" data-uid="${escapeHtml(r.id)}" data-stanje="${a.stanje}" data-uloga="${r.uloga}">
         <span class="sk-avatar${avatarOf(r.id) ? ' ima-sliku' : ''}" aria-hidden="true"${avatarOf(r.id) ? ` style="background-image:url('${avatarOf(r.id)}')"` : ''}>${avatarOf(r.id) ? '' : escapeHtml(initialsOf(r.ime))}</span>
         <div class="clan-tekst"><b>${escapeHtml(r.ime)}${ja ? ' (ti)' : ''}</b>
-          <span class="sitno"><span class="sk-znacka" data-uloga="${r.uloga}">${escapeHtml(ULOGE[r.uloga])}</span>${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''}</span>
+          <span class="sitno"><span class="sk-znacka" data-uloga="${r.uloga}">${escapeHtml(ULOGE[r.uloga])}</span>${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''} · <span class="sk-lovova">${escapeHtml(huntsText(lovCounts.get(r.id) || 0))}</span></span>
           <span class="sitno aktivnost">${escapeHtml(activityText(a))}</span></div>
         <div class="clan-akcije">
           ${a.zadnje && Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="na-karti">Na karti</button>' : ''}
@@ -456,6 +460,10 @@ export function initSekcijaEkran(L, map) {
   $('sk-filter').addEventListener('click', (e) => {
     const b = e.target.closest('[data-mf]');
     if (b) { memFilter = b.dataset.mf; render(); }
+  });
+  $('sk-poredak').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-por]');
+    if (b) { memOrder = b.dataset.por; render(); }
   });
   $('sk-pretraga').addEventListener('input', (e) => { memQuery = e.target.value; render(); });
   $('sk-nav').addEventListener('click', (e) => {

@@ -88,9 +88,12 @@ test('dodirne mete u postavkama su ≥ 44 px', async ({ page }) => {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }
+  for (const sel of ['#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju']) {
+    const b = await page.locator(sel).boundingBox();
+    expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
+  }
   await page.locator('#p-tabovi [data-ptab="nalog"]').click();
-  for (const sel of [
-    '#btn-provjeri-azuriranje', '#btn-preuzmi-zadnju', '#btn-postavke-odjava']) {
+  for (const sel of ['#btn-postavke-odjava']) {
     const b = await page.locator(sel).boundingBox();
     expect(Math.min(b.width, b.height), sel).toBeGreaterThanOrEqual(44);
   }
@@ -104,7 +107,6 @@ test('provjera ažuriranja koristi version.json i nudi instalaciju', async ({ pa
   await expect(page.locator('#nova-verzija')).toBeVisible();
   await expect(page.locator('#nova-verzija .nv-tekst')).toHaveText('Nova verzija v9.9.9');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-provjeri-azuriranje').click();
   await expect(page.locator('#postavke-azur-status')).toHaveText('Nova verzija v9.9.9');
   await expect(page.locator('#btn-instaliraj-azuriranje')).toBeVisible();
@@ -113,7 +115,6 @@ test('provjera ažuriranja koristi version.json i nudi instalaciju', async ({ pa
 test('kad server za verzije ne odgovara, postavke to kažu (ne lažno "najnovija")', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-provjeri-azuriranje').click();
   await expect(page.locator('#postavke-azur-status')).toHaveText(/Provjera nije uspjela/);
 });
@@ -125,7 +126,6 @@ test('"Preuzmi zadnju verziju" je uvijek dostupno i u APK-u zove AndroidUpdate m
   });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-preuzmi-zadnju').click();
   expect(await page.evaluate(() => window.__pozvano)).toEqual([expect.stringMatching(/\/releases\/latest\/download\/app-debug\.apk$/)]);
 });
@@ -137,7 +137,6 @@ test('"Preuzmi zadnju verziju" u novoj aplikaciji preuzima APK na uređaj, pokaz
   });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-preuzmi-zadnju').click();
   expect(await page.evaluate(() => window.__pozvano)).toEqual([expect.stringMatching(/\/releases\/latest\/download\/app-debug\.apk$/)]);
   await expect(page.locator('#azur-napredak')).toBeVisible();
@@ -165,7 +164,6 @@ test('"Preuzmi zadnju verziju" u pregledniku preuzima APK fajl, ne osvježava st
   await page.route(/releases\/latest\/download\/app-debug\.apk/, (r) => { apk++; return r.fulfill({ status: 200, contentType: 'application/vnd.android.package-archive', body: 'APK' }); });
   await page.goto('/');
   await page.locator('#btn-postavke').click();
-  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
   await page.locator('#btn-preuzmi-zadnju').click().catch(() => {});
   await expect.poll(() => apk).toBe(1);
 });
@@ -195,4 +193,14 @@ test('traka "Nova verzija" na mapi sama pokreće preuzimanje, pokazuje napredak 
   await page.evaluate(() => window.__updateGreska('Preuzimanje nije uspjelo: timeout'));
   await expect(traka.locator('.nv-tekst')).toContainText('timeout');
   await expect(traka.locator('button')).toHaveText('Ponovo');
+});
+
+test('ažuriranje aplikacije je PRVA kartica u Postavkama i za običnog lovca (ne samo za admina)', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u2', ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false })));
+  await page.goto('/');
+  await page.locator('#btn-postavke').click();
+  const prva = await page.evaluate(() => document.querySelector('#p-opste > .p-kartica:not([hidden])')?.id);
+  expect(prva).toBe('p-azuriranje');
+  await expect(page.locator('#p-azuriranje #btn-provjeri-azuriranje')).toBeVisible();
+  await expect(page.locator('#p-azuriranje #postavke-verzija')).toHaveText(/^v\d+\.\d+\.\d+$/);
 });

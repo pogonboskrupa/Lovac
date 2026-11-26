@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.6.5';
+  const APP_VER = 'v1.6.7';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -601,6 +601,19 @@
   </div>
 
   <div id="p-opste">
+  <div class="p-kartica p-azuriranje" id="p-azuriranje">
+    <h3>Ažuriranje aplikacije</h3>
+    <p class="p-verzija">Instalirana verzija <b id="postavke-verzija"></b></p>
+    <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
+    <p id="postavke-azur-status" class="red-info" role="status"></p>
+    <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
+    <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
+    <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
+    <progress id="azur-napredak" max="100" value="0" hidden></progress>
+    <button id="btn-instaliraj-preuzeto" class="dugme" type="button" hidden>Instaliraj preuzeto</button>
+    <p id="azur-preuzimanje" class="red-info" role="status"></p>
+  </div>
+
   <div id="postavke-admin" class="p-kartica p-admin" hidden>
     <h3>Administracija</h3>
     <button id="btn-korisnici" class="dugme glavno p-admin-dugme" type="button"><span>Korisnici i odobrenja</span><span id="korisnici-znacka" class="p-znacka" hidden></span></button>
@@ -713,16 +726,8 @@
 
   <div class="p-kartica">
     <h3>O aplikaciji</h3>
-    <p class="red-info">Lovačko društvo "Grmeč" <b id="postavke-verzija"></b></p>
+    <p class="red-info">Lovačko društvo "Grmeč"</p>
     <button id="btn-upute" class="dugme glavno" type="button">Upute za korištenje</button>
-    <button id="btn-provjeri-azuriranje" class="dugme" type="button">Provjeri ažuriranje</button>
-    <p id="postavke-azur-status" class="red-info" role="status"></p>
-    <button id="btn-instaliraj-azuriranje" class="dugme glavno" type="button" hidden>Instaliraj novu verziju</button>
-    <p class="sitno">Ako provjera ne radi, ovo uvijek preuzima i instalira zadnju objavljenu verziju:</p>
-    <button id="btn-preuzmi-zadnju" class="dugme" type="button">Preuzmi zadnju verziju</button>
-    <progress id="azur-napredak" max="100" value="0" hidden></progress>
-    <button id="btn-instaliraj-preuzeto" class="dugme" type="button" hidden>Instaliraj preuzeto</button>
-    <p id="azur-preuzimanje" class="red-info" role="status"></p>
   </div>
   </div>
 
@@ -754,6 +759,12 @@
           </div>
         </div>
         <label>Ime psa<input id="pf-pas-ime" maxlength="40" autocomplete="off" placeholder="npr. Rex"></label>
+      </div>
+
+      <div class="p-kartica">
+        <h3>Lovačka dozvola</h3>
+        <label>Broj lovačke dozvole<input id="pf-dozvola" maxlength="40" autocomplete="off" placeholder="npr. LD-12345/2026"></label>
+        <p class="sitno">Broj vidiš samo ti (ne vide ga ni drugi lovci ni administrator). Aplikacija ga ne provjerava i ne zamjenjuje samu dozvolu.</p>
       </div>
 
       <div class="p-kartica">
@@ -1058,7 +1069,7 @@
     <button type="button" data-sltab="poslane" aria-pressed="false">Poslane</button>
   </div>
   <div id="sl-filter" class="segment sl-filter" role="group" aria-label="Vrsta slika"></div>
-  <p class="sitno">Server čuva sliku najviše 12 sati. Primljene i poslane slike ostaju na ovom telefonu dok ih ne obrišeš.</p>
+  <p class="sitno sl-napomena">Čim slika stigne na tvoj telefon, briše se sa servera (najduže se tamo čuva 12 sati). Primljene i poslane slike ostaju u aplikaciji dok ih ne obrišeš; "Sačuvaj na telefon" ih stavlja i u Preuzimanja.</p>
   <ul id="sl-spisak" class="spisak sl-spisak"></ul>
 </section>
 <section id="slika-lovcu" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="slika-lovcu-naslov" hidden>
@@ -1610,6 +1621,10 @@
         <button type="button" data-mf="svi" aria-pressed="true">Svi</button>
         <button type="button" data-mf="aktivni" aria-pressed="false">Aktivni</button>
         <button type="button" data-mf="vodstvo" aria-pressed="false">Vodstvo</button>
+      </div>
+      <div id="sk-poredak" class="segment" role="group" aria-label="Poredak lovaca">
+        <button type="button" data-por="redom" aria-pressed="true">Vodstvo pa prezime</button>
+        <button type="button" data-por="aktivnost" aria-pressed="false">Najaktivniji prvi</button>
       </div>
       <input id="sk-pretraga" type="search" placeholder="Traži lovca" aria-label="Traži lovca" autocomplete="off">
       <ul id="sk-clanovi" class="spisak"></ul>

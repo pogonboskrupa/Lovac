@@ -251,3 +251,14 @@ test('"Podaci o sekciji i lovu": član sekcije nema "Obriši lov" ni u spisku lo
   await expect(page.locator('#sk-podaci [data-lov]').first()).toBeVisible();
   await expect(page.locator('#sk-podaci [data-akcija="lov-obrisi"]')).toHaveCount(0);
 });
+
+test('tab sekcije: uz lovca piše broj lovova, a "Najaktivniji prvi" mijenja poredak', async ({ page }) => {
+  const server = makeServer();
+  planned(server);
+  await setup(page, server, GV);
+  await openTab(page);
+  await expect(page.locator('#sk-clanovi .sk-lovova').first()).toContainText(/lov/);
+  await page.locator('#sk-poredak [data-por="aktivnost"]').click();
+  await expect(page.locator('#sk-poredak [data-por="aktivnost"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#sk-clanovi [data-uid]').first()).toBeVisible();
+});

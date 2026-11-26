@@ -72,3 +72,12 @@ test('logo sekcije: inicijali, isti naziv daje isti logo, učitana slika ima pre
   assert.equal(logoOf({ naziv: 'X', logo: 'data:image/jpeg;base64,AA' }), 'data:image/jpeg;base64,AA');
   assert.equal(logoOf({ naziv: 'Krupa 1' }), autoLogoDataUrl('Krupa 1'));
 });
+
+test('broj lovačke dozvole: čisti se, ograničava na 40 znakova i validira', async () => {
+  const { normalizeProfile, validateDozvola, emptyProfile } = await import('../../static/js/profil-lovca.js');
+  assert.equal(emptyProfile().dozvola, '');
+  assert.equal(normalizeProfile({ dozvola: '  LD-123/2026 ' }).dozvola, 'LD-123/2026');
+  assert.equal(normalizeProfile({ dozvola: 'x'.repeat(60) }).dozvola.length, 40);
+  assert.ok(validateDozvola('x'.repeat(41)));
+  assert.equal(validateDozvola('LD-1'), null);
+});

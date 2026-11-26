@@ -621,7 +621,9 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .slika-popup .dugme { margin-top: 4px; min-height: 44px; }
 .slika-velika { position: fixed; inset: 0; z-index: 7000; background: rgba(0,0,0,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; }
 .slika-velika[hidden] { display: none; }
-.slika-velika img { max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 8px; cursor: zoom-in; }
+.slika-velika img { max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 8px; cursor: zoom-in; touch-action: none; user-select: none; -webkit-user-drag: none; transform-origin: 50% 50%; will-change: transform; }
+.slika-velika { touch-action: none; }
+.slika-velika.uvecana img { cursor: grab; }
 .slika-velika p { margin: 0; color: #ffffff; text-align: center; }
 .slika-x, .slika-pun {
   position: absolute; top: calc(12px + env(safe-area-inset-top)); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%;
@@ -1568,10 +1570,11 @@ svg[hidden] { display: none; }
 .sl-kat[data-kat="trofej"] { background: var(--naglasak); color: var(--naglasak-tekst); }
 .sl-kartica[data-kategorija="trofej"] { border-color: var(--naglasak); border-width: 2px; }
 .sl-mreza { display: grid; gap: 4px; margin-top: 8px; grid-template-columns: repeat(2, 1fr); }
-.sl-mreza[data-broj="3"], .sl-mreza[data-broj="4"] { grid-template-columns: repeat(4, 1fr); }
+.sl-mreza[data-broj="3"] { grid-template-columns: repeat(3, 1fr); }
+.sl-mreza[data-broj="4"] { grid-template-columns: repeat(2, 1fr); }
 .sl-mreza > * { min-width: 0; }
 .sl-mreza[data-broj="1"] { grid-template-columns: 1fr; }
-.sl-mreza[data-broj="1"] .sl-mala { aspect-ratio: 4 / 3; max-height: 240px; }
+.sl-mreza[data-broj="1"] .sl-mala { aspect-ratio: 4 / 3; max-height: 320px; }
 .sl-mreza .sl-mala { position: relative; width: 100%; height: auto; aspect-ratio: 1; }
 .sl-jos { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .55); color: #ffffff; font-size: 24px; font-weight: 700; }
 .sl-opis { margin: 6px 0 0; }
@@ -1859,3 +1862,25 @@ svg[hidden] { display: none; }
 .lov-dodaj-red { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px; border: 1px solid var(--okvir); border-radius: 10px; }
 .lov-dodaj-red input { width: 24px; height: 24px; flex: none; }
 .lov-dodaj-red span:nth-of-type(1) { flex: 1; }
+
+/* Postavke: ažuriranje je prva kartica, tabovi ostaju vidljivi pri listanju, naslovi kartica sa naglaskom */
+#postavke .p-azuriranje { border-left-width: 6px; border-left-color: var(--naglasak); }
+#postavke .p-verzija { margin: 0 0 8px; font-size: 17px; }
+#postavke .p-verzija b { font-size: 20px; color: var(--naglasak); }
+#postavke .p-tabovi { position: sticky; top: 0; z-index: 5; margin: 0 -2px 12px; padding: 8px 2px 12px; background: var(--pozadina); }
+#postavke .p-tabovi button { font-weight: 700; }
+#postavke .p-kartica > h3 { display: flex; align-items: center; gap: 10px; }
+#postavke .p-kartica > h3::before { content: ""; flex: none; width: 5px; height: 20px; border-radius: 3px; background: var(--naglasak); }
+#postavke .p-profil { padding: 16px; border-left: 6px solid var(--naglasak); }
+#postavke .p-avatar { width: 64px; height: 64px; font-size: 22px; box-shadow: 0 0 0 3px var(--povrsina), 0 0 0 5px var(--naglasak); }
+#postavke .p-profil-tekst b { font-size: 20px; }
+#postavke .p-kartica .dugme + .dugme, #postavke .p-kartica .dugme + .red-info + .dugme { margin-top: 8px; }
+
+/* Slike lovcima: krug sa inicijalima, naslovi dana, oznaka da je slika na telefonu */
+.sl-lice { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--naglasak); color: var(--naglasak-tekst); font-weight: 800; }
+.sl-glava { align-items: center; }
+.sl-glava .sl-tekst { flex: 1; }
+.sl-dan { list-style: none; margin: 14px 0 4px; font-weight: 700; color: var(--tekst-2); }
+.sl-stanje[data-stanje="telefon"] { color: var(--teren); font-weight: 600; }
+.sl-napomena { padding: 8px 12px; border-left: 4px solid var(--naglasak); border-radius: 8px; background: var(--povrsina); }
+.sl-mala { border-radius: 12px; }

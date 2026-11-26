@@ -6,13 +6,14 @@ import { connectionQuality } from './net.js';
 import { uuid } from './zapisi.js';
 import { resizeToDataUrl, makeThumbnail } from './foto.js';
 import { dataUrlToBlob } from './fotosync.js';
+import { saveImage, shareFile } from './dijeljenje.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { loadJSON } from './storage.js';
 import { isPolicyRejection, isNetworkFailure } from './sync.js';
 import { openGallery } from './slika-pregled.js';
 import { formatMessageTime } from './poruke.js';
 import {
-  MAX_SLIKA, MAX_PRIMALACA, MAX_SLIKA_GRUPA, KATEGORIJE, kategorijaNaziv, groupAlbums, filterAlbums, albumsOverview, missingOnServer, retryLater, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, inboxSummary, memberLabel,
+  MAX_SLIKA, MAX_PRIMALACA, dayTitle, senderInitials, MAX_SLIKA_GRUPA, KATEGORIJE, kategorijaNaziv, groupAlbums, filterAlbums, albumsOverview, missingOnServer, retryLater, recipientsFrom, filterRecipients, validateSend, newSends, newInboxIds, sentStatus, inboxSummary, memberLabel,
 } from './slike-lovcima.js';
 import { toast, escapeHtml, registerBackHandler } from './ui.js';
 
@@ -281,13 +282,14 @@ export function initSlikeLovcima(L, map) {
     const n = a.slike.length;
     const prikaz = a.slike.slice(0, 4);
     return `<li class="tr-kartica ev-kartica sl-kartica" data-id="${escapeHtml(a.kljuc)}" data-kategorija="${escapeHtml(a.kategorija)}"${a.novo ? ' data-novo="true"' : ''}>
-      <div class="sl-glava"><span class="sl-kat" data-kat="${escapeHtml(a.kategorija)}">${escapeHtml(kategorijaNaziv(a.kategorija))}</span>
+      <div class="sl-glava"><span class="sl-lice" aria-hidden="true">${escapeHtml(senderInitials(primljena ? memberName(a.posiljalac_id) : memberName(a.primaoci[0])))}</span>
         <span class="sl-tekst"><b>${escapeHtml(ko)}</b>
-        <span class="sitno">${escapeHtml(formatMessageTime(a.created_at))}${n > 1 ? ` · ${n} slika` : ''}${a.novo ? ' · nova' : ''}</span></span></div>
+        <span class="sitno">${escapeHtml(formatMessageTime(a.created_at))}${n > 1 ? ` · ${n} slika` : ''}${a.novo ? ' · nova' : ''}</span></span>
+        <span class="sl-kat" data-kat="${escapeHtml(a.kategorija)}">${escapeHtml(kategorijaNaziv(a.kategorija))}</span></div>
       <div class="sl-mreza" data-broj="${Math.min(n, 4)}">${prikaz.map((x, i) => `<button type="button" class="sl-mala" data-akcija="otvori" data-redni="${i}" aria-label="Otvori sliku ${i + 1}">
         ${x.slicica ? `<img src="${escapeHtml(x.slicica)}" alt="">` : '<svg class="ic"><use href="#ic-camera"/></svg>'}${i === 3 && n > 4 ? `<span class="sl-jos">+${n - 4}</span>` : ''}</button>`).join('')}</div>
       ${a.opis ? `<p class="sl-opis">${escapeHtml(a.opis)}</p>` : ''}
-      ${st ? `<span class="sitno sl-stanje" data-stanje="${st.stanje}">${escapeHtml(st.tekst)}</span>` : ''}
+      ${st ? `<span class="sitno sl-stanje" data-stanje="${st.stanje}">${escapeHtml(st.tekst)}</span>` : '<span class="sitno sl-stanje" data-stanje="telefon">Sačuvano na ovom telefonu</span>'}
       <div class="red-dugmadi">
         ${Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="karta">Na karti</button>' : ''}
         <button type="button" class="dugme" data-akcija="obrisi">${obrisi}</button>
@@ -311,7 +313,13 @@ export function initSlikeLovcima(L, map) {
         return k !== 'sve' && !c && filter !== k ? '' : `<button type="button" data-filter="${k}" aria-pressed="${k === filter}">${escapeHtml(nm)} ${c}</button>`;
       }).join('');
     const list = filterAlbums(svi, filter);
-    $('sl-spisak').innerHTML = list.map((a) => cardHtml(a, tab === 'primljene')).join('')
+    let dan = '';
+    $('sl-spisak').innerHTML = list.map((a) => {
+      const t = dayTitle(a.created_at);
+      const head = t && t !== dan ? `<li class="tr-mjesec sl-dan">${escapeHtml(t)}</li>` : '';
+      dan = t || dan;
+      return head + cardHtml(a, tab === 'primljene');
+    }).join('')
       || `<li class="sitno">${tab === 'primljene' ? 'Još nema primljenih slika.' : 'Još nisi slao slike. Dodirni "Pošalji slike" ili u velikoj slici "Pošalji lovcu".'}</li>`;
   }
   $('sl-filter').addEventListener('click', (e) => {
@@ -341,7 +349,13 @@ export function initSlikeLovcima(L, map) {
       const items = [];
       for (const [i, x] of a.slike.entries()) {
         const src = (await idbGet('arhiva', imgKey(x)).catch(() => null))?.slika || x.slicica;
-        items.push({ src, caption: `${kategorijaNaziv(a.kategorija)} · ${ko} · ${formatMessageTime(a.created_at)}${a.opis ? ` · ${a.opis}` : ''}${a.slike.length > 1 ? ` (${i + 1}/${a.slike.length})` : ''}`,
+        const save = () => {
+          if (!src?.startsWith('data:image/')) { toast('Slika nije na telefonu u punoj veličini'); return; }
+          const ext = /^data:image\/(\w+)/.exec(src)?.[1]?.replace('jpeg', 'jpg') || 'jpg';
+          const r = saveImage(`lovac-${a.kategorija}-${(a.created_at || '').slice(0, 10)}-${i + 1}.${ext}`, src);
+          toast(r === 'preuzimanja' ? 'Sačuvano u Preuzimanja/Lovac' : r === 'download' ? 'Slika je preuzeta' : 'Čuvanje u Preuzimanja nije dostupno — slika je već sačuvana u aplikaciji');
+        };
+        items.push({ actions: [{ label: 'Sačuvaj na telefon', keepOpen: true, onClick: save }], src, caption: `${kategorijaNaziv(a.kategorija)} · ${ko} · ${formatMessageTime(a.created_at)}${a.opis ? ` · ${a.opis}` : ''}${a.slike.length > 1 ? ` (${i + 1}/${a.slike.length})` : ''}`,
           share: { lat: a.lat, lon: a.lon, opis: a.opis } });
       }
       if (!items.some((x) => x.src)) { toast('Slika nije na telefonu'); return; }
