@@ -18,7 +18,7 @@
     <button type="button" role="tab" data-ptab="podaci" aria-pressed="false">Podaci</button>
     <button type="button" role="tab" data-ptab="nalog" aria-pressed="false">Nalog</button>
     <button type="button" role="tab" data-ptab="profil" aria-pressed="false">Profil lovca</button>
-    <button type="button" role="tab" data-ptab="ld" aria-pressed="false" hidden>LD Grmeč</button>
+    <button type="button" role="tab" data-ptab="ld" aria-pressed="false" hidden>Struktura LD Grmeč</button>
   </div>
 
   <div id="p-opste">
@@ -155,6 +155,11 @@
   <div id="p-ld" hidden>
     <p id="ldg-uputa" class="sitno"></p>
     <div id="ldg-sadrzaj"></div>
+    <section id="ldg-korisnici" class="p-kartica ld-korisnici" hidden>
+      <h3>Korisnici i odobrenja</h3>
+      <div id="ldg-kor-brojke" class="ld-plocice"></div>
+      <button id="btn-ldg-korisnici" class="dugme glavno" type="button">Otvori Korisnici i odobrenja</button>
+    </section>
   </div>
 
   <div id="p-profil" hidden>

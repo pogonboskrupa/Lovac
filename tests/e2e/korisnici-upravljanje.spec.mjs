@@ -287,7 +287,8 @@ test('LD Grmeč (admin): na jednom mjestu dodijeli postojećeg, skini ulogu i na
   const ld = page.locator('#ldg-sadrzaj');
   const pred = ld.locator('[data-nivo="predsjednik"] > .ld-kartica-cvora');
   await expect(pred).toContainText('Nije postavljen');
-  // dodijeli postojećeg
+  // dodijeli postojećeg (uređivanje je u sklopivoj kartici "Uredi")
+  await pred.locator('.ld-uredi-okvir > summary').click();
   await pred.locator('.ld-izbor').selectOption({ label: 'Lovro Lovac' });
   await pred.locator('[data-ld-akcija="dodijeli"]').click();
   await expect.poll(() => zahtjevi.some((z) => z.metoda === 'POST' && z.table === 'drustvo_uloge' && z.body.uloga === 'predsjednik' && z.body.korisnik_id === 'l1')).toBe(true);
@@ -300,7 +301,43 @@ test('LD Grmeč (admin): na jednom mjestu dodijeli postojećeg, skini ulogu i na
   await expect.poll(() => db.drustvo_uloge.some((u) => u.uloga === 'predsjednik')).toBe(false);
   // prazan revir: Napravi nalog otvara formu sa uloga lovovođe revira
   const revir = ld.locator('[data-nivo="revir"] > .ld-kartica-cvora').first();
+  await revir.locator('.ld-uredi-okvir > summary').click();
   await revir.locator('[data-ld-akcija="nalog"]').click();
   await expect(page.locator('#lovac-novi')).toBeVisible();
   await expect(page.locator('#ln-uloga')).toHaveValue('lovovodja_revira');
+});
+
+test('Struktura LD Grmeč: lovac se pravi odmah u grupi (nalog + dodjela grupe), brojke i sklapanje', async ({ page }) => {
+  const { db, zahtjevi } = await setup(page);
+  db.grupe = [{ id: 'gr1', sekcija_id: 's1', grupovodja_id: 'l1' }];
+  await page.locator('#btn-korisnici-zatvori').click();
+  await page.locator('#btn-postavke').click();
+  const tab = page.locator('#p-tabovi [data-ptab="ld"]');
+  await expect(tab).toHaveText('Struktura LD Grmeč');
+  await tab.click();
+  const ld = page.locator('#ldg-sadrzaj');
+  await expect(ld.locator('[data-ld-p="popunjeno"]')).toBeVisible();
+  await expect(ld.locator('[data-ld-p="slobodno"] b')).not.toHaveText('0');
+  // Korisnici i odobrenja odmah ispod strukture
+  await expect(page.locator('#ldg-korisnici')).toBeVisible();
+  // sklapanje revira
+  const revir = ld.locator('[data-nivo="revir"]').first();
+  await expect(revir.locator('[data-nivo="sekcija"]').first()).toBeVisible();
+  await revir.locator('> .ld-kartica-cvora .ld-sklopi').click();
+  await expect(revir.locator('[data-nivo="sekcija"]')).toHaveCount(0);
+  await revir.locator('> .ld-kartica-cvora .ld-sklopi').click();
+  // lovac u grupi
+  const grupa = ld.locator('[data-nivo="grupa"] > .ld-kartica-cvora');
+  await grupa.locator('.ld-uredi-okvir > summary').click();
+  await grupa.locator('[data-ld-akcija="lovac-u-grupi"]').click();
+  await expect(page.locator('#lovac-novi')).toBeVisible();
+  await expect(page.locator('#ln-grupa-tekst')).toContainText('grupovođa Lovro Lovac');
+  await expect(page.locator('#ln-sekcija')).toHaveValue('s1');
+  await page.fill('#forma-lovac-novi [name=ime]', 'Novi');
+  await page.fill('#forma-lovac-novi [name=prezime]', 'Clan');
+  await page.fill('#forma-lovac-novi [name=pin]', '123456');
+  await page.locator('#btn-ln-posalji').click();
+  await expect(page.locator('#ln-gotovo')).toBeVisible();
+  await expect.poll(() => zahtjevi.filter((z) => z.rpc === 'dodijeli_grupu').length).toBe(1);
+  expect(zahtjevi.find((z) => z.rpc === 'dodijeli_grupu').body).toEqual({ p_sekcija: 's1', p_korisnik: 'novi1', p_grupa: 'gr1' });
 });

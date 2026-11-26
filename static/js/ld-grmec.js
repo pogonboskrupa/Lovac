@@ -33,12 +33,12 @@ export function ldTree(ctx = {}, nameOf = () => '') {
     const djeca = sekcije.filter((s) => s.revir_id === r.id).sort((a, b) => byName(a.naziv, b.naziv)).map((s) => {
       brojSekcija += 1;
       const grupe = (ctx.grupe || []).filter((g) => g.sekcija_id === s.id)
-        .map((g) => ({ nivo: 'grupa', meta: { uloga: 'grupovodja_grupe', korisnikId: g.grupovodja_id, grupaId: g.id, sekcijaId: s.id }, uloga: 'Grupovođa', ime: ime(g.grupovodja_id), napomena: `${odobreni(s.id).filter((c) => c.grupa_id === g.id).length} lovaca`, djeca: [] }))
+        .map((g) => ({ nivo: 'grupa', meta: { uloga: 'grupovodja_grupe', korisnikId: g.grupovodja_id, grupaId: g.id, sekcijaId: s.id }, grupaTekst: `grupovođa ${ime(g.grupovodja_id)}`, uloga: 'Grupovođa', ime: ime(g.grupovodja_id), napomena: `${odobreni(s.id).filter((c) => c.grupa_id === g.id).length} lovaca`, djeca: [] }))
         .sort((a, b) => byName(a.ime, b.ime));
       brojGrupa += grupe.length;
-      return { nivo: 'sekcija', meta: { uloga: 'lovovodja_sekcije', korisnikId: s.grupovodja_id || null, sekcijaId: s.id, revirId: r.id, dodajGrupu: true }, uloga: s.naziv, ulogaOznaka: 'Lovovođa sekcije', ime: s.grupovodja_id ? ime(s.grupovodja_id) : '', napomena: `${odobreni(s.id).length} članova`, djeca: grupe };
+      return { nivo: 'sekcija', kljuc: `s:${s.id}`, meta: { uloga: 'lovovodja_sekcije', korisnikId: s.grupovodja_id || null, sekcijaId: s.id, revirId: r.id, dodajGrupu: true }, uloga: s.naziv, ulogaOznaka: 'Lovovođa sekcije', ime: s.grupovodja_id ? ime(s.grupovodja_id) : '', napomena: `${odobreni(s.id).length} članova`, djeca: grupe };
     });
-    return { nivo: 'revir', meta: { uloga: 'lovovodja_revira', korisnikId: v?.korisnik_id || null, revirId: r.id }, uloga: `Revir ${r.naziv}`, ulogaOznaka: 'Lovovođa revira', ime: v ? ime(v.korisnik_id) : '', napomena: '', djeca };
+    return { nivo: 'revir', kljuc: `r:${r.id}`, meta: { uloga: 'lovovodja_revira', korisnikId: v?.korisnik_id || null, revirId: r.id }, uloga: `Revir ${r.naziv}`, ulogaOznaka: 'Lovovođa revira', ime: v ? ime(v.korisnik_id) : '', napomena: '', djeca };
   });
   const lc = sa('lovocuvar');
   const idsLc = ids('lovocuvar');
@@ -46,10 +46,13 @@ export function ldTree(ctx = {}, nameOf = () => '') {
     nivo: 'lovocuvar', meta: { uloga: 'lovocuvar', korisnikId: idsLc[i] || null }, uloga: `Lovočuvar udruženja ${i + 1}`, ime: lc[i] || '', napomena: '', prazno: 'Slobodno mjesto', djeca: [],
   }));
   const lovovodja = { nivo: 'lovovodja', meta: { uloga: 'lovovodja_drustva', korisnikId: ids('lovovodja_drustva')[0] || null }, uloga: 'Lovovođa udruženja', ime: sa('lovovodja_drustva')[0] || '', napomena: '', djeca: reviriCvorovi };
-  return {
-    korijen: { nivo: 'predsjednik', meta: { uloga: 'predsjednik', korisnikId: ids('predsjednik')[0] || null }, uloga: 'Predsjednik', ime: sa('predsjednik')[0] || '', napomena: '', djeca: [...lovocuvari, lovovodja] },
-    sazetak: { reviri: reviri.length, sekcija: brojSekcija, grupa: brojGrupa },
-  };
+  const korijen = { nivo: 'predsjednik', meta: { uloga: 'predsjednik', korisnikId: ids('predsjednik')[0] || null }, uloga: 'Predsjednik', ime: sa('predsjednik')[0] || '', napomena: '', djeca: [...lovocuvari, lovovodja] };
+  // Mjesta za popuniti: svako mjesto na stablu osim grupa (grupa postoji tek kad ima grupovođu).
+  let ukupno = 0;
+  let popunjeno = 0;
+  const brojMjesta = (c) => { if (c.nivo !== 'grupa') { ukupno += 1; if (c.ime) popunjeno += 1; } c.djeca.forEach(brojMjesta); };
+  brojMjesta(korijen);
+  return { korijen, sazetak: { reviri: reviri.length, sekcija: brojSekcija, grupa: brojGrupa, mjesta: ukupno, popunjeno, slobodno: ukupno - popunjeno } };
 }
 
 // Ko se može dodijeliti ulozi: odobreni korisnici bez onih koji je već imaju; za novu grupu samo članovi te sekcije bez grupe koju vode.
@@ -67,3 +70,23 @@ export function ldCandidates(meta, ctx = {}, users = [], nameOf = () => '', popu
   return [...new Set(ids)].filter((id) => ime(id)).map((id) => ({ id, ime: ime(id) })).sort(byName2);
 }
 const byName2 = (a, b) => String(a.ime).localeCompare(String(b.ime), 'bs');
+
+// Ko smije dodati lovca u grupu (novi nalog ili postojeći član): administrator, lovovođa te sekcije, lovovođa revira i lovovođa društva.
+// Grupa koja nema grupovođu ne postoji, pa je uslov "prvo grupovođa" ispunjen samim postojanjem grupe.
+export function canAddToGroup(me, ctx = {}, sekcijaId) {
+  if (!me?.id) return false;
+  if (me.is_admin) return true;
+  const s = (ctx.sekcije || []).find((x) => x.id === sekcijaId);
+  if (!s) return false;
+  return s.grupovodja_id === me.id
+    || (ctx.revirVodje || []).some((v) => v.korisnik_id === me.id && v.revir_id === s.revir_id)
+    || (ctx.drustvoUloge || []).some((u) => u.korisnik_id === me.id && u.uloga === 'lovovodja_drustva');
+}
+
+// Članovi sekcije koji još nisu ni u jednoj grupi (mogu se dodati u grupu).
+export function groupAddable(sekcijaId, ctx = {}, nameOf = () => '') {
+  const ids = new Set((ctx.grupe || []).filter((g) => g.sekcija_id === sekcijaId).map((g) => g.id));
+  return (ctx.clanovi || []).filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id))
+    .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) })).filter((x) => x.ime)
+    .sort((a, b) => String(a.ime).localeCompare(String(b.ime), 'bs'));
+}

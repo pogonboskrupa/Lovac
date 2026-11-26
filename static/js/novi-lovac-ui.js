@@ -16,7 +16,9 @@ export function initNoviLovac() {
 
   const me = () => cachedProfile();
 
-  const open = async (sekcijaId, uloga) => {
+  let grupaId = null; // lovac se pravi odmah u ovoj grupi (iz Struktura LD Grmeč)
+  const open = async (sekcijaId, uloga, grupa) => {
+    grupaId = grupa?.id || null;
     let ctx = await cachedSekcije();
     // Prvi put (prazan keš) sekcije se čekaju sa servera: bez njih bi admin dobio "nemaš pravo" iako ga ima.
     if (!ctx.sekcije.length) ctx = { ...ctx, ...(await downloadSekcije().catch(() => ({}))) };
@@ -31,6 +33,12 @@ export function initNoviLovac() {
     $('ln-uloga-blok').hidden = !admin;
     $('ln-uloga').innerHTML = ULOGE_NOVOG.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.tekst)}</option>`).join('');
     if (uloga && [...$('ln-uloga').options].some((x) => x.value === uloga)) $('ln-uloga').value = uloga;
+    $('ln-grupa-tekst').hidden = !grupaId;
+    if (grupaId) {
+      $('ln-grupa-tekst').textContent = `Novi lovac odmah ulazi u grupu: ${grupa.tekst || 'izabrana grupa'}.`;
+      $('ln-uloga-blok').hidden = true;
+      if ([...$('ln-sekcija').options].some((x) => x.value === sekcijaId)) $('ln-sekcija').value = sekcijaId;
+    }
     $('ln-gotovo').hidden = true;
     form.hidden = false;
     $('ln-status').textContent = '';
@@ -50,7 +58,7 @@ export function initNoviLovac() {
   $('btn-ln-zatvori').addEventListener('click', close);
   $('ln-sekcija').addEventListener('change', syncHint);
   registerBackHandler(() => { if (screen.hidden) return false; close(); return true; });
-  document.addEventListener('lovac:novi', (e) => open(e.detail?.sekcijaId, e.detail?.uloga));
+  document.addEventListener('lovac:novi', (e) => open(e.detail?.sekcijaId, e.detail?.uloga, e.detail?.grupaId ? { id: e.detail.grupaId, tekst: e.detail.grupaTekst } : null));
   $('btn-ln-jos').addEventListener('click', () => { $('ln-gotovo').hidden = true; form.hidden = false; form.reset(); syncHint(); });
 
   form.addEventListener('submit', async (e) => {
@@ -72,6 +80,10 @@ export function initNoviLovac() {
         try {
           await assignRole(getClient(), uloga, { userId: r.id, sekcija: allowed.find((x) => x.sekcija.id === sekcijaId).sekcija });
         } catch (err) { ulogaGreska = ` Uloga nije postavljena (${err.message}) — postavi je u Korisnici → Upravljanje → Uloge.`; }
+      }
+      if (direct && grupaId) {
+        const { error } = await getClient().rpc('dodijeli_grupu', { p_sekcija: sekcijaId, p_korisnik: r.id, p_grupa: grupaId });
+        if (error) ulogaGreska = ` Lovac nije dodan u grupu (${error.message}) — dodaj ga u kartici Grupe.`;
       }
       $('ln-gotovo-tekst').textContent = direct
         ? `${ime} je dodan u sekciju i može se prijaviti imenom, prezimenom i PIN-om.${ulogaGreska}`

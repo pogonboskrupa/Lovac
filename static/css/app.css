@@ -1893,9 +1893,9 @@ svg[hidden] { display: none; }
 /* Tab "LD Grmeč" u Postavkama: hijerarhijsko stablo (linije spajaju čvor sa roditeljem) */
 .ld-sazetak { margin: 0 0 8px; }
 .ld-stablo, .ld-stablo ul { list-style: none; margin: 0; padding: 0; }
-.ld-stablo ul { margin-left: 14px; padding-left: 14px; border-left: 2px solid var(--okvir); }
+.ld-stablo ul { margin-left: 8px; padding-left: 10px; border-left: 2px solid var(--okvir); }
 .ld-cvor { position: relative; padding-top: 8px; }
-.ld-stablo ul > .ld-cvor::before { content: ''; position: absolute; left: -14px; top: 30px; width: 14px; border-top: 2px solid var(--okvir); }
+.ld-stablo ul > .ld-cvor::before { content: ''; position: absolute; left: -10px; top: 30px; width: 10px; border-top: 2px solid var(--okvir); }
 .ld-kartica-cvora { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; min-height: 44px; border: 1.5px solid var(--okvir); border-radius: 12px; background: var(--kartica, transparent); }
 .ld-uloga { color: var(--tekst-2); font-size: 13px; }
 .ld-kartica-cvora b { overflow-wrap: anywhere; }
@@ -1909,3 +1909,23 @@ svg[hidden] { display: none; }
 .sk-moja-grupa { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .sk-moja-grupa select { flex: 1 1 100%; min-height: 48px; font-size: 16px; }
 .sk-zelja { display: block; }
+
+/* Struktura LD Grmeč: pločice, traka popunjenosti, čvorovi sa licem i sklapanjem */
+.ld-plocice { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin: 4px 0 8px; }
+.ld-ploca { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1.5px solid var(--okvir); border-radius: 12px; }
+.ld-ploca b { font-size: 20px; }
+.ld-ploca span { font-size: 13px; color: var(--tekst-2); }
+.ld-ploca[data-ima="true"] { border-color: #d9a441; }
+.ld-traka { height: 8px; border-radius: 6px; background: var(--dugme); overflow: hidden; margin-bottom: 10px; }
+.ld-traka span { display: block; height: 100%; background: var(--teren, #0f766e); }
+.ld-glava { display: flex; align-items: center; gap: 10px; }
+.ld-lice { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--dugme); border: 2px solid var(--okvir); }
+.ld-kartica-cvora[data-prazno="true"] .ld-lice { border-style: dashed; opacity: 0.8; }
+.ld-kartica-cvora[data-prazno="true"] { border-style: dashed; }
+.ld-tekst { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.ld-sklopi { flex: none; min-width: 44px; min-height: 44px; border: 1.5px solid var(--okvir); border-radius: 12px; background: transparent; color: inherit; font-size: 16px; }
+.ld-uredi-okvir { margin-top: 6px; }
+.ld-uredi-okvir > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--naglasak, inherit); font-weight: 600; }
+.ld-napomena { flex: 1 1 100%; margin: 0; }
+.ld-korisnici { margin-top: 12px; }
+.ln-grupa { padding: 8px 12px; border: 1.5px solid var(--okvir); border-radius: 12px; }

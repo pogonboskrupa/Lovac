@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.7.4';
+  const APP_VER = 'v1.7.5';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -598,7 +598,7 @@
     <button type="button" role="tab" data-ptab="podaci" aria-pressed="false">Podaci</button>
     <button type="button" role="tab" data-ptab="nalog" aria-pressed="false">Nalog</button>
     <button type="button" role="tab" data-ptab="profil" aria-pressed="false">Profil lovca</button>
-    <button type="button" role="tab" data-ptab="ld" aria-pressed="false" hidden>LD Grmeč</button>
+    <button type="button" role="tab" data-ptab="ld" aria-pressed="false" hidden>Struktura LD Grmeč</button>
   </div>
 
   <div id="p-opste">
@@ -735,6 +735,11 @@
   <div id="p-ld" hidden>
     <p id="ldg-uputa" class="sitno"></p>
     <div id="ldg-sadrzaj"></div>
+    <section id="ldg-korisnici" class="p-kartica ld-korisnici" hidden>
+      <h3>Korisnici i odobrenja</h3>
+      <div id="ldg-kor-brojke" class="ld-plocice"></div>
+      <button id="btn-ldg-korisnici" class="dugme glavno" type="button">Otvori Korisnici i odobrenja</button>
+    </section>
   </div>
 
   <div id="p-profil" hidden>
@@ -1996,6 +2001,7 @@
   <p id="ln-uputa" class="sitno"></p>
   <form id="forma-lovac-novi" novalidate>
     <label>Sekcija<select id="ln-sekcija" name="sekcija"></select></label>
+    <p id="ln-grupa-tekst" class="sitno ln-grupa" hidden></p>
     <label id="ln-uloga-blok" hidden>Uloga<select id="ln-uloga" name="uloga"></select></label>
     <label>Ime<input name="ime" maxlength="40" autocomplete="off" required></label>
     <label>Prezime<input name="prezime" maxlength="40" autocomplete="off" required></label>

@@ -248,6 +248,7 @@ export function initAdmin() {
     // Sekcije iz keša (ko je gdje i ko je šta); u pozadini se osvježe sa servera, bez keša se redovi jednostavno ne prikazuju.
     try { sekData = { ...sekData, ...((await idbGet('spiskovi', 'sekcije'))?.rows || {}) }; } catch { /* keš nije obavezan */ }
     saveSoft(CEKA_KEY, usersOverview(users).ceka + usersOverview(users).probni);
+    saveSoft('lovac.korisnici.sazetak', usersOverview(users)); // prikazuje ga tab Struktura LD Grmeč
     document.dispatchEvent(new CustomEvent('korisnici:promjena'));
     draw();
     if (refresh) downloadSekcije({ grupe: true }).then((d) => { sekData = { ...sekData, ...d }; draw(); }).catch(() => { /* ostaje keš */ });

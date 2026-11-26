@@ -40,7 +40,9 @@ test('LD Grmeč: stablo — predsjednik, 2 lovočuvara i lovovođa udruženja, i
   assert.equal(krupa.djeca[0].napomena, '2 članova'); // član na čekanju se ne broji
   assert.equal(krupa.djeca[0].djeca[0].ime, 'Goran Grupovođa');
   assert.equal(krupa.djeca[0].djeca[0].napomena, '2 lovaca');
-  assert.deepEqual(sazetak, { reviri: 3, sekcija: 2, grupa: 1 });
+  assert.equal(sazetak.reviri, 3); assert.equal(sazetak.sekcija, 2); assert.equal(sazetak.grupa, 1);
+  // mjesta: predsjednik, 2 lovočuvara, lovovođa udruženja, 3 revira, 2 sekcije = 9; popunjeno: predsjednik, lovočuvar 1, lovovođa, revir Krupa, sekcija Krupa 1
+  assert.equal(sazetak.mjesta, 9); assert.equal(sazetak.popunjeno, 5); assert.equal(sazetak.slobodno, 4);
 });
 
 test('LD Grmeč: HTML stablo je ugniježđeno, prazna mjesta se kažu, a ime se escapuje', () => {
@@ -79,4 +81,24 @@ test('LD Grmeč: uređivanje je samo za admina; prazno mjesto nudi "Napravi nalo
   // slobodan lovočuvar nudi nalog, zauzeti skidanje
   const lc = tree.korijen.djeca.filter((d) => d.nivo === 'lovocuvar');
   assert.ok(lc[0].meta.korisnikId && !lc[1].meta.korisnikId);
+});
+
+import { canAddToGroup, groupAddable } from '../../static/js/ld-grmec.js';
+test('LD Grmeč: ko dodaje lovce u grupu, ko se nudi, i dugmad u HTML-u', () => {
+  assert.ok(canAddToGroup({ id: 'a', is_admin: true }, ctx, 's1'));
+  assert.ok(canAddToGroup({ id: 's1' }, ctx, 's1'), 'lovovođa sekcije');
+  assert.ok(canAddToGroup({ id: 'rv' }, ctx, 's1'), 'lovovođa revira');
+  assert.ok(canAddToGroup({ id: 'ld' }, ctx, 's1'), 'lovovođa udruženja');
+  assert.ok(!canAddToGroup({ id: 'g1' }, ctx, 's1'), 'grupovođa grupe ne dodaje (uslov: lovovođe)');
+  assert.ok(!canAddToGroup({ id: 'x' }, ctx, 's1'));
+  assert.deepEqual(groupAddable('s1', ctx, nameOf).map((c) => c.id), []); // svi odobreni su već u grupi g
+  const tree = ldTree(ctx, nameOf);
+  const html = ldHtml(tree, { canAdd: () => true, addable: () => [{ id: 'x', ime: 'Obični Lovac' }] });
+  assert.match(html, /data-ld-akcija="lovac-u-grupi"/); assert.match(html, /data-ld-akcija="u-grupu"/);
+  assert.ok(!ldHtml(tree, { canAdd: () => false }).includes('lovac-u-grupi'));
+  assert.ok(!html.includes('data-ld-akcija="skini"'), 'uklanjanje grupe samo uz uređivanje');
+  // sklapanje: sklopljeni revir ne crta djecu
+  const rid = tree.korijen.djeca[2].djeca.find((r) => r.uloga === 'Revir Krupa').kljuc;
+  const sklopljen = ldHtml(tree, { sklopljeno: new Set([rid]) });
+  assert.ok(!sklopljen.includes('data-nivo="sekcija"'));
 });
