@@ -8,8 +8,9 @@ import { idbGet } from './db.js';
 import { saveSoft } from './storage.js';
 import { initialsOf } from './lokacija.js';
 import { profileRoles } from './profil.js';
-import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText, approvableRequests, approveLabel, registeredText, roleInfo, sectionTargets, leaderTargets, keeperTargets, rolesOverview, rolesText } from './korisnici-pregled.js';
+import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText, approvableRequests, approveLabel, registeredText, roleInfo, sectionTargets, leaderTargets, rolesOverview, rolesText } from './korisnici-pregled.js';
 import { downloadSekcije } from './sekcije-ui.js';
+import { drustvoSlot, revirVodjaTargets, ULOGA_LOVOCUVAR, ULOGA_LOVOVODJA_DRUSTVA } from './hijerarhija.js';
 
 const $ = (id) => document.getElementById(id);
 export const CEKA_KEY = 'lovac.korisnici.cekaju';
@@ -69,10 +70,36 @@ function sectionsBlock(u, info, data) {
   return `<h4 class="kor-podnaslov">Sekcije</h4>${list || '<p class="sitno">Nije član nijedne sekcije.</p>'}${add}`;
 }
 
+const imeKorisnika = (users, id) => { const x = users.find((u) => u.id === id); return x ? `${x.ime} ${x.prezime}` : ''; };
+
+// Lovočuvar društva / lovovođa društva: jedno dugme (postavi / skini); kad je mjesto puno kaže ko ga drži.
+function drustvoGrupa(u, data, grupa, uloga, naslov, napomena, users) {
+  const slot = drustvoSlot(u.id, uloga, data.drustvoUloge || [], (id) => imeKorisnika(users, id));
+  const tijelo = slot.ima
+    ? `<span class="kor-uloga-red"><span>${escapeHtml(naslov)}</span><button type="button" class="dugme" data-akcija="${grupa}-skini" data-dvaput="Dodirni ponovo — skida ulogu">Skini</button></span>`
+    : slot.slobodno
+      ? `<button type="button" class="dugme" data-akcija="${grupa}-postavi">Postavi za: ${escapeHtml(naslov)}</button>`
+      : `<span class="sitno">Mjesto je popunjeno (${escapeHtml(slot.zauzeli.join(', '))}). Prvo skini postojećeg.</span>`;
+  return `<div class="kor-uloga-grupa" data-grupa="${grupa}"><b>${escapeHtml(naslov)}</b><span class="sitno">${escapeHtml(napomena)}</span>${tijelo}</div>`;
+}
+
+// Lovovođa revira: jedan po reviru; imenovanje zamjenjuje sadašnjeg.
+function revirVodjaGrupa(u, data, users) {
+  const mine = (data.revirVodje || []).filter((v) => v.korisnik_id === u.id);
+  const naziv = (id) => (data.reviri || []).find((r) => r.id === id)?.naziv || 'revir';
+  const targets = revirVodjaTargets(u.id, data.reviri || [], data.revirVodje || [], (id) => imeKorisnika(users, id))
+    .map((t) => ({ id: t.id, tekst: t.trenutni ? `${t.tekst} — zamjenjuje: ${t.trenutni}` : t.tekst }));
+  const chips = mine.map((v) => `<span class="kor-uloga-red" data-revir="${escapeHtml(v.revir_id)}"><span>${escapeHtml(naziv(v.revir_id))}</span>
+    <button type="button" class="dugme" data-akcija="lvr-skini" data-dvaput="Dodirni ponovo — skida lovovođu revira">Skini</button></span>`).join('');
+  return `<div class="kor-uloga-grupa" data-grupa="lvr"><b>Lovovođa revira</b><span class="sitno">Jedan po reviru; organizuje lov u svom reviru.</span>
+    ${chips || '<span class="sitno">Nije lovovođa nijednog revira.</span>'}
+    ${targets.length ? `<div class="kor-sek-akcije">${select(u.id, 'lvr', 'Izaberi revir…', targets, `Postavi ${u.ime} za lovovođu revira`)}
+      <button type="button" class="dugme" data-akcija="lvr-postavi">Postavi za lovovođu revira</button></div>` : ''}</div>`;
+}
+
 function rolesBlock(u, info, data, users) {
   if (!u.odobren) return '<h4 class="kor-podnaslov">Uloge</h4><p class="sitno">Uloge se dodjeljuju tek kad je nalog odobren.</p>';
   const gv = leaderTargets(u.id, users, data).map((t) => ({ id: t.id, tekst: t.trenutni ? `${t.tekst} — zamjenjuje: ${t.trenutni}` : t.tekst }));
-  const lc = keeperTargets(u.id, data);
   const chips = (arr, akcija, kljuc, poruka) => arr.map((x) => `<span class="kor-uloga-red" data-${kljuc}="${escapeHtml(x.id)}"><span>${escapeHtml(x.tekst)}</span>
     <button type="button" class="dugme" data-akcija="${akcija}" data-dvaput="${escapeHtml(poruka)}">Skini</button></span>`).join('');
   return `<h4 class="kor-podnaslov">Uloge</h4>
@@ -80,10 +107,9 @@ function rolesBlock(u, info, data, users) {
       ${chips(info.vodi, 'gv-skini', 'sid', 'Dodirni ponovo — skida grupovođu') || '<span class="sitno">Nije grupovođa nijedne sekcije.</span>'}
       ${gv.length ? `<div class="kor-sek-akcije">${select(u.id, 'gv', 'Izaberi sekciju…', gv, `Postavi ${u.ime} za grupovođu sekcije`)}
         <button type="button" class="dugme" data-akcija="gv-postavi">Postavi za grupovođu</button></div>` : ''}</div>
-    <div class="kor-uloga-grupa" data-grupa="lc"><b>Lovočuvar revira</b>
-      ${chips(info.lovocuvar, 'lc-skini', 'revir', 'Dodirni ponovo — skida lovočuvara') || '<span class="sitno">Nije lovočuvar nijednog revira.</span>'}
-      ${lc.length ? `<div class="kor-sek-akcije">${select(u.id, 'lc', 'Izaberi revir…', lc, `Postavi ${u.ime} za lovočuvara revira`)}
-        <button type="button" class="dugme" data-akcija="lc-postavi">Postavi za lovočuvara</button></div>` : ''}</div>
+    ${drustvoGrupa(u, data, 'lcd', ULOGA_LOVOCUVAR, 'Lovočuvar društva', 'Radi na cijelom području; društvo ima najviše 2 lovočuvara.', users)}
+    ${drustvoGrupa(u, data, 'ldd', ULOGA_LOVOVODJA_DRUSTVA, 'Lovovođa društva', 'Glavni lovovođa; društvo ima samo jednog.', users)}
+    ${revirVodjaGrupa(u, data, users)}
     <div class="kor-uloga-grupa" data-grupa="admin"><b>Administrator</b>
       <button type="button" class="dugme" data-akcija="admin">${u.is_admin ? 'Ukloni admina' : 'Postavi za admina'}</button></div>`;
 }
@@ -146,7 +172,7 @@ export function initAdmin() {
   let filter = 'svi';
   let query = '';
   let sekcija = '';
-  let sekData = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [] };
+  let sekData = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [] };
   const sb = () => getClient();
 
   const sekcijaOpcije = () => {
@@ -286,15 +312,31 @@ export function initAdmin() {
         await run(() => q(sb().from('sekcije').update({ grupovodja_id: null }).eq('id', sid).eq('grupovodja_id', u.id)), 'Grupovođa skinut sa sekcije');
         break;
       }
-      case 'lc-postavi': {
-        const to = val('lc');
+      case 'lcd-postavi':
+        await run(() => q(sb().from('drustvo_uloge').insert({ korisnik_id: u.id, uloga: ULOGA_LOVOCUVAR })), `${u.ime} ${u.prezime} je lovočuvar društva`);
+        break;
+      case 'lcd-skini':
+        await run(() => q(sb().from('drustvo_uloge').delete().eq('korisnik_id', u.id).eq('uloga', ULOGA_LOVOCUVAR)), 'Lovočuvar društva skinut');
+        break;
+      case 'ldd-postavi':
+        await run(() => q(sb().from('drustvo_uloge').insert({ korisnik_id: u.id, uloga: ULOGA_LOVOVODJA_DRUSTVA })), `${u.ime} ${u.prezime} je lovovođa društva`);
+        break;
+      case 'ldd-skini':
+        await run(() => q(sb().from('drustvo_uloge').delete().eq('korisnik_id', u.id).eq('uloga', ULOGA_LOVOVODJA_DRUSTVA)), 'Lovovođa društva skinut');
+        break;
+      case 'lvr-postavi': {
+        const to = val('lvr');
         if (!need(to, 'Izaberi revir')) return;
-        await run(() => q(sb().from('revir_lovocuvari').insert({ korisnik_id: u.id, revir_id: to })), `${u.ime} ${u.prezime} je lovočuvar revira`);
+        await run(async () => {
+          // jedan lovovođa po reviru: sadašnji se prvo skida (server to traži), pa ide novi
+          await q(sb().from('revir_vodje').delete().eq('revir_id', to));
+          await q(sb().from('revir_vodje').insert({ revir_id: to, korisnik_id: u.id }));
+        }, `${u.ime} ${u.prezime} je lovovođa revira`);
         break;
       }
-      case 'lc-skini': {
+      case 'lvr-skini': {
         const rid = btn.closest('[data-revir]').dataset.revir;
-        await run(() => q(sb().from('revir_lovocuvari').delete().eq('korisnik_id', u.id).eq('revir_id', rid)), 'Lovočuvar skinut sa revira');
+        await run(() => q(sb().from('revir_vodje').delete().eq('korisnik_id', u.id).eq('revir_id', rid)), 'Lovovođa revira skinut');
         break;
       }
       default:

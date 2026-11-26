@@ -170,21 +170,35 @@ test('imenuj grupovođu sekcije (pokazuje koga zamjenjuje) i skini ga', async ({
   expect(db.sekcije.find((s) => s.id === 's2').grupovodja_id).toBeNull();
 });
 
-test('imenuj lovočuvara revira i skini ga; administrator se mijenja iz istog mjesta', async ({ page }) => {
+test('hijerarhija: lovočuvar društva (najviše 2), lovovođa društva i lovovođa revira se imenuju i skidaju; admin se mijenja iz istog mjesta', async ({ page }) => {
   const { zahtjevi, db } = await setup(page);
   const b = await otvori(page, 'b1');
-  await b.locator('select[data-izbor="lc"]').selectOption('r2');
-  await b.locator('[data-akcija="lc-postavi"]').click();
+  await b.locator('[data-akcija="lcd-postavi"]').click();
   await expect.poll(() => zahtjevi.length).toBe(1);
-  expect(zahtjevi[0]).toMatchObject({ metoda: 'POST', table: 'revir_lovocuvari', body: { korisnik_id: 'b1', revir_id: 'r2' } });
-  await expect(kartica(page, 'b1')).toContainText('Lovočuvar · Otoka');
-  // revir u kojem već jeste više nije ponuđen
-  const opcije = await kartica(page, 'b1').locator('select[data-izbor="lc"] option').allTextContents();
-  expect(opcije).toEqual(['Izaberi revir…', 'Krupa']);
-  await kartica(page, 'b1').locator('[data-grupa="lc"] [data-akcija="lc-skini"]').click();
-  await kartica(page, 'b1').locator('[data-grupa="lc"] [data-akcija="lc-skini"]').click();
-  await expect.poll(() => db.revir_lovocuvari.length).toBe(0);
-  expect(zahtjevi.at(-1)).toMatchObject({ metoda: 'DELETE', table: 'revir_lovocuvari', filter: { korisnik_id: 'b1', revir_id: 'r2' } });
+  expect(zahtjevi[0]).toMatchObject({ metoda: 'POST', table: 'drustvo_uloge', body: { korisnik_id: 'b1', uloga: 'lovocuvar' } });
+  await expect(kartica(page, 'b1')).toContainText('Lovočuvar društva');
+  await kartica(page, 'b1').locator('[data-grupa="lcd"] [data-akcija="lcd-skini"]').click();
+  await kartica(page, 'b1').locator('[data-grupa="lcd"] [data-akcija="lcd-skini"]').click();
+  await expect.poll(() => db.drustvo_uloge.length).toBe(0);
+  expect(zahtjevi.at(-1)).toMatchObject({ metoda: 'DELETE', table: 'drustvo_uloge', filter: { korisnik_id: 'b1', uloga: 'lovocuvar' } });
+
+  // lovovođa društva: jedan; kad je mjesto zauzeto, drugi korisnik vidi ko ga drži
+  await kartica(page, 'b1').locator('[data-akcija="ldd-postavi"]').click();
+  await expect.poll(() => db.drustvo_uloge.length).toBe(1);
+  expect(db.drustvo_uloge[0]).toMatchObject({ korisnik_id: 'b1', uloga: 'lovovodja_drustva' });
+  const l = await otvori(page, 'l1');
+  await expect(l.locator('[data-grupa="ldd"]')).toContainText('Mjesto je popunjeno (Bruno Bez)');
+  await expect(l.locator('[data-akcija="ldd-postavi"]')).toHaveCount(0);
+
+  // lovovođa revira: sadašnji se skida prije imenovanja novog (jedan po reviru)
+  await kartica(page, 'b1').locator('select[data-izbor="lvr"]').selectOption('r2');
+  await kartica(page, 'b1').locator('[data-akcija="lvr-postavi"]').click();
+  await expect.poll(() => db.revir_vodje.length).toBe(1);
+  expect(db.revir_vodje[0]).toMatchObject({ revir_id: 'r2', korisnik_id: 'b1' });
+  const z = zahtjevi.filter((x) => x.table === 'revir_vodje');
+  expect(z[0]).toMatchObject({ metoda: 'DELETE', filter: { revir_id: 'r2' } });
+  expect(z[1]).toMatchObject({ metoda: 'POST', body: { revir_id: 'r2', korisnik_id: 'b1' } });
+  await expect(kartica(page, 'b1')).toContainText('Lovovođa revira · Otoka');
   await expect(kartica(page, 'b1').locator('[data-grupa="admin"] [data-akcija="admin"]')).toHaveText('Postavi za admina');
 });
 

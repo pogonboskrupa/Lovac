@@ -17,6 +17,7 @@ import { initialsOf } from './lokacija.js';
 import { historyLine, bulkApprovable, memberRows, MEMBER_CSV_COLUMNS, memberCsvName, IMENA_ZAHTJEVA_KEY, RAZLOG_MAX, ODLUKE_NOVE_KEY, ODLUKE_CEKAM_KEY, decisionText } from './sekcije-odluke.js';
 import { toCsv } from './odstrel.js';
 import { saveFile } from './dijeljenje.js';
+import { expandKeepers } from './hijerarhija.js';
 
 const CACHE_ID = 'sekcije';
 export const MOJE_SEKCIJE_KEY = 'lovac.moje_sekcije';
@@ -30,14 +31,25 @@ async function qSek(promise) {
 // Server bez migracije 040 (funkcija ili kolona ne postoji): radi se starim putem.
 const nemaNaServeru = (err) => ['PGRST202', 'PGRST204', 'PGRST205', '42703', '42883', '42P01'].includes(err?.code);
 
+// Tabela koje server još nema (migracija 045) nije greška: prazno.
+const optional = async (promise) => {
+  const { data, error } = await promise;
+  return error ? [] : data || [];
+};
+
 export async function downloadSekcije() {
   const sb = getClient();
+  const reviri = await qSek(sb.from('reviri').select('*'));
+  const drustvoUloge = await optional(sb.from('drustvo_uloge').select('*'));
   const data = {
-    reviri: await qSek(sb.from('reviri').select('*')),
+    reviri,
     sekcije: await qSek(sb.from('sekcije').select('*')),
     clanovi: await qSek(sb.from('sekcija_clanovi').select('*')),
     grupovodje: await qSek(sb.from('grupovodje').select('*')),
-    lovocuvari: await qSek(sb.from('revir_lovocuvari').select('*')),
+    // Lovočuvari društva rade na cijelom području: svaki važi za svaki revir (ostali kod ne mora znati za novu ulogu)
+    lovocuvari: expandKeepers(await qSek(sb.from('revir_lovocuvari').select('*')), drustvoUloge, reviri),
+    drustvoUloge,
+    revirVodje: await optional(sb.from('revir_vodje').select('*')),
     preuzeto: Date.now(),
   };
   await idbPut('spiskovi', { id: CACHE_ID, rows: data });
@@ -49,7 +61,7 @@ export async function downloadSekcije() {
 
 export async function cachedSekcije() {
   const c = await idbGet('spiskovi', CACHE_ID);
-  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], ...(c?.rows || {}) };
+  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [], ...(c?.rows || {}) };
 }
 
 // Ponovno crtanje (podaci sa servera stignu dok lovac bira) ne smije vratiti izbor na prvu stavku.
