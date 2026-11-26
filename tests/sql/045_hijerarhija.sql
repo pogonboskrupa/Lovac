@@ -141,4 +141,66 @@ do $$ begin
   reset role;
 end $$;
 
+-- Faza 3: lov po grupi, dopuštenje grupovođe, prijem članova viših rukovodilaca
+insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000045f1', 'cekac@t', '{"ime":"Cekac","prezime":"Zahtjev"}');
+update public.korisnici set odobren = true where id = '00000000-0000-0000-0000-0000000045f1';
+insert into public.sekcija_clanovi (sekcija_id, korisnik_id, status) values ('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045f1', 'ceka');
+do $$
+declare krupa uuid := (select id from public.reviri where naziv = 'Krupa'); sek uuid := '55555555-0000-4000-8000-000000000451'; g uuid := '77777777-0000-4000-8000-000000000451';
+begin
+  -- grupovođa organizuje lov SVOJE grupe, ne cijele sekcije
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045d2', true);
+  set local role authenticated;
+  insert into public.lovovi (id, revir_id, sekcija_id, grupa_id, naziv, datum, organizator_id) values ('88888888-0000-4000-8000-000000000451', krupa, sek, g, 'Lov grupe', current_date, '00000000-0000-0000-0000-0000000045d2');
+  begin
+    insert into public.lovovi (revir_id, sekcija_id, naziv, datum, organizator_id) values (krupa, sek, 'Lov sekcije', current_date, '00000000-0000-0000-0000-0000000045d2');
+    raise exception 'FAIL: grupovođa organizovao lov cijele sekcije';
+  exception when insufficient_privilege then null; end;
+  reset role;
+  -- lovovođa sekcije: lov cijele sekcije da, lov grupe tek uz dopuštenje grupovođe
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045d1', true);
+  set local role authenticated;
+  insert into public.lovovi (id, revir_id, sekcija_id, naziv, datum, organizator_id) values ('88888888-0000-4000-8000-000000000452', krupa, sek, 'Lov sekcije', current_date, '00000000-0000-0000-0000-0000000045d1');
+  assert not public.moze_organizovati('88888888-0000-4000-8000-000000000451'), 'lovovođa sekcije bez dopuštenja ne vodi lov grupe';
+  begin
+    insert into public.lovovi (revir_id, sekcija_id, grupa_id, naziv, datum, organizator_id) values (krupa, sek, g, 'Tuđa grupa', current_date, '00000000-0000-0000-0000-0000000045d1');
+    raise exception 'FAIL: lov grupe bez dopuštenja';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform public.dozvoli_visim(g, true);
+    raise exception 'FAIL: viši sam sebi daje dopuštenje';
+  exception when insufficient_privilege then null; end;
+  update public.grupe set dozvola_visih = true where id = g; -- direktna izmjena se tiho vraća
+  assert not (select dozvola_visih from public.grupe where id = g), 'dopuštenje ne mijenja neko ko nije grupovođa';
+  reset role;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045d2', true);
+  set local role authenticated;
+  perform public.dozvoli_visim(g, true);
+  reset role;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045d1', true);
+  set local role authenticated;
+  assert public.moze_organizovati('88888888-0000-4000-8000-000000000451'), 'uz dopuštenje lovovođa sekcije vodi lov grupe';
+  insert into public.lovovi (revir_id, sekcija_id, grupa_id, naziv, datum, organizator_id) values (krupa, sek, g, 'Uz dozvolu', current_date, '00000000-0000-0000-0000-0000000045d1');
+  reset role;
+  -- lovovođa revira: lov grupe i bez dopuštenja; prima članove
+  update public.grupe set dozvola_visih = false where id = g;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045c2', true);
+  set local role authenticated;
+  assert public.moze_organizovati('88888888-0000-4000-8000-000000000451'), 'lovovođa revira vodi lov grupe bez dopuštenja';
+  update public.sekcija_clanovi set status = 'odobren' where korisnik_id = '00000000-0000-0000-0000-0000000045f1';
+  assert (select status from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045f1') = 'odobren', 'lovovođa revira prima člana';
+  reset role;
+  -- običan član ne organizuje ni ne prima
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045e1', true);
+  set local role authenticated;
+  assert not public.moze_organizovati('88888888-0000-4000-8000-000000000452'), 'član ne vodi lov';
+  assert not public.moze_primati_clanove(sek), 'član ne prima članove';
+  reset role;
+  -- grupa druge sekcije se odbija na lovu
+  begin
+    update public.lovovi set grupa_id = g, sekcija_id = '55555555-0000-4000-8000-000000000452' where id = '88888888-0000-4000-8000-000000000452';
+    raise exception 'FAIL: grupa iz druge sekcije';
+  exception when check_violation then null; end;
+end $$;
+
 rollback;

@@ -14,7 +14,7 @@ export function groupsOfSection(sekcijaId, grupe = [], clanovi = [], nameOf = ()
   return grupe.filter((g) => g.sekcija_id === sekcijaId).map((g) => {
     const clanoviGrupe = odobreni.filter((c) => c.grupa_id === g.id).map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) }));
     clanoviGrupe.sort((a, b) => Number(b.id === g.grupovodja_id) - Number(a.id === g.grupovodja_id) || a.ime.localeCompare(b.ime, 'bs'));
-    return { id: g.id, grupovodja_id: g.grupovodja_id, grupovodja: nameOf(g.grupovodja_id), clanovi: clanoviGrupe };
+    return { id: g.id, grupovodja_id: g.grupovodja_id, grupovodja: nameOf(g.grupovodja_id), dozvola: Boolean(g.dozvola_visih), clanovi: clanoviGrupe };
   }).sort((a, b) => a.grupovodja.localeCompare(b.grupovodja, 'bs'));
 }
 

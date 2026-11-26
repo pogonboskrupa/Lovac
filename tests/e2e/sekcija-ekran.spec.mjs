@@ -351,3 +351,36 @@ test('grupe: običan član vidi grupe ali ne može praviti ni uklanjati', async 
   await expect(page.locator('#sk-grupe [data-akcija="grupa-nova"]')).toHaveCount(0);
   await expect(page.locator('#sk-grupe [data-akcija="grupa-ukloni"]')).toHaveCount(0);
 });
+
+test('lov po grupi: grupovođa pravi lov SVOJE grupe (lovci grupe, bez ostalih), lov nosi grupu; dopuštenje višima', async ({ page }) => {
+  const server = makeServer();
+  server.db.lovovi = [];
+  server.db.grupe = [{ id: ID(700), sekcija_id: ID(200), grupovodja_id: LOVAC.id, dozvola_visih: false }];
+  server.db.sekcija_clanovi[0].grupa_id = ID(700); // LOVAC (grupovođa) u svojoj grupi; LOVAC2 bez grupe
+  await setup(page, server, LOVAC);
+  await openTab(page);
+  await page.locator('#sk-lov [data-akcija="lov-novi"]').click();
+  const forma = page.locator('#forma-sk-lov');
+  await expect(forma).toBeVisible();
+  await expect(page.locator('#slf-grupa-blok')).toBeHidden(); // jedina meta je njegova grupa: nema izbora
+  await expect(forma.locator('#slf-clanovi .slf-red')).toHaveCount(0); // u grupi nema drugih lovaca
+  await page.locator('#slf-sirenje').check();
+  await expect(forma.locator(`#slf-clanovi .slf-red[data-uid="${LOVAC2.id}"]`)).toHaveCount(1); // proširenje na sekciju
+  await forma.locator('button[type=submit]').click();
+  await expect.poll(() => server.db.lovovi.length).toBe(1);
+  expect(server.db.lovovi[0].grupa_id).toBe(ID(700));
+});
+
+for (const [dozvola, opcija] of [[false, 1], [true, 2]]) {
+  test(`lov po grupi: lovovođa sekcije ${dozvola ? 'uz' : 'bez'} dopuštenja grupovođe ima ${opcija} ${opcija === 1 ? 'metu (cijela sekcija)' : 'mete (sekcija i grupa)'}`, async ({ page }) => {
+    const server = makeServer();
+    server.db.lovovi = [];
+    server.db.grupe = [{ id: ID(700), sekcija_id: ID(200), grupovodja_id: LOVAC.id, dozvola_visih: dozvola }];
+    await setup(page, server, GV);
+    await openTab(page);
+    await page.locator('#sk-lov [data-akcija="lov-novi"]').click();
+    await expect(page.locator('#forma-sk-lov')).toBeVisible();
+    if (opcija === 1) await expect(page.locator('#slf-grupa-blok')).toBeHidden();
+    else await expect(page.locator('#slf-grupa-izbor option')).toHaveCount(2);
+  });
+}

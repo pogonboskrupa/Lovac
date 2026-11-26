@@ -25,7 +25,7 @@ import {
 import { getSpisakAll } from './spiskovi.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { canPing } from './ping.js';
-import { organizableSections, lastHuntPreset } from './lov-traje.js';
+import { organizableSections, lastHuntPreset, huntTargets, canManageHunt } from './lov-traje.js';
 import { deleteHunt } from './lov-brisanje.js';
 import { sendPing } from './ping-ui.js';
 import { createMessageSync } from './sekcija-poruke.js';
@@ -182,7 +182,11 @@ export function initSekcijaEkran(L, map) {
   // ---------- prikaz ----------
   // Crtanje je u sekcija-render.js (čiste funkcije); ovdje se samo skuplja stanje.
   const renderCtx = (s, cur, st) => ({ s, cur, st, myId: me()?.id, clanovi: ctx.clanovi, odazivi, nameOf: memberName, extra, vrste, traceOn: cur ? trailEnabled(cur.zapis.lov.id) : false });
-  const huntCard = (s, cur, users, st) => huntCardHtml(renderCtx(s, cur, st));
+  // Ko vodi baš OVAJ lov (grupovođa svoje grupe, lovovođa sekcije samo uz dopuštenje) određuje `canManageHunt`, ne uloga u sekciji.
+  const huntCard = (s, cur, users, st) => {
+    const eff = !cur ? (organizableSections(ctx, me()).some((x) => x.id === s.id) ? (me()?.is_admin ? 'admin' : 'grupovodja') : st) : canManageHunt(cur.zapis, ctx, me()) ? (me()?.is_admin ? 'admin' : 'grupovodja') : ['admin', 'grupovodja'].includes(st) ? 'clan' : st;
+    return huntCardHtml(renderCtx(s, cur, eff));
+  };
   const chatHtml = (list, showHunt) => conversationHtml(list, { showHunt, myId: me()?.id, nameOf: memberName });
 
   const render = () => {
@@ -473,6 +477,9 @@ export function initSekcijaEkran(L, map) {
         armedRemove = null;
         await qSk(sb.from('grupe').delete().eq('id', b.dataset.grupa));
         toast('Grupa je uklonjena');
+      } else if (akcija === 'grupa-dozvola') {
+        await qSk(sb.rpc('dozvoli_visim', { p_grupa: b.dataset.grupa, p_dozvola: b.dataset.nova === 'true' }));
+        toast(b.dataset.nova === 'true' ? 'Viši smiju organizovati lov za tvoju grupu' : 'Lov za tvoju grupu organizuješ samo ti');
       } else if (akcija === 'grupa-dodijeli') {
         const g = b.closest('li').querySelector('[data-grupa-izbor]').value;
         await qSk(sb.rpc('dodijeli_grupu', { p_sekcija: s.id, p_korisnik: uid, p_grupa: g }));
@@ -576,6 +583,7 @@ export function initSekcijaEkran(L, map) {
   let lnHuntId = null; // id lova koji se pravi (isti kroz ponovne pokušaje)
   let lnHuntSection = null;
   let lnPreset = null;
+  let lnGrupa = null; // grupa za koju se pravi lov (null = cijela sekcija)
   const lnSync = () => {
     for (const row of lnForm.querySelectorAll('#slf-clanovi .slf-red')) {
       const on = row.querySelector('input').checked;
@@ -596,7 +604,12 @@ export function initSekcijaEkran(L, map) {
     $('slf-sekcija-blok').hidden = choices.length < 2;
     $('slf-sekcija-izbor').innerHTML = choices.map((x) => `<option value="${escapeHtml(x.id)}" ${x.id === s.id ? 'selected' : ''}>${escapeHtml(x.naziv)}</option>`).join('');
   };
-  const openNewHunt = (s, { izbor = [], odmah = false } = {}) => {
+  const openNewHunt = (s, { izbor = [], odmah = false, grupa, siri = false } = {}) => {
+    const mete = huntTargets(s, ctx, me(), memberName);
+    if (!mete.length) { toast('Nemaš pravo praviti lov u ovoj sekciji'); return; }
+    if (lnSection?.id !== s.id) lnGrupa = null;
+    lnGrupa = grupa !== undefined ? grupa : lnGrupa;
+    if (!mete.some((m) => m.grupaId === lnGrupa)) lnGrupa = mete[0].grupaId;
     lnSection = s;
     const plan = huntCreatePlan(s, 'x', me()?.id, {});
     lnForm.reset();
@@ -604,7 +617,13 @@ export function initSekcijaEkran(L, map) {
     lnForm.datum.value = plan.lov.datum;
     $('slf-sekcija').textContent = s.naziv;
     $('slf-status').textContent = online() ? '' : 'Za pravljenje lova potreban je internet.';
-    const ids = addableMembers(s, ctx.clanovi, []).filter((id) => id !== me()?.id)
+    $('slf-grupa-blok').hidden = mete.length < 2;
+    $('slf-grupa-izbor').innerHTML = mete.map((m) => `<option value="${escapeHtml(m.grupaId || '')}"${m.grupaId === lnGrupa ? ' selected' : ''}>${escapeHtml(m.tekst)}</option>`).join('');
+    // Lov grupe: lovci grupe (grupovođa može proširiti izbor na cijelu sekciju)
+    $('slf-sirenje-blok').hidden = !lnGrupa;
+    $('slf-sirenje').checked = Boolean(lnGrupa) && siri;
+    const uGrupi = new Set(ctx.clanovi.filter((c) => c.sekcija_id === s.id && c.grupa_id === lnGrupa).map((c) => c.korisnik_id));
+    const ids = addableMembers(s, ctx.clanovi, []).filter((id) => id !== me()?.id && (!lnGrupa || siri || uGrupi.has(id)))
       .sort((a, b) => memberName(a).localeCompare(memberName(b), 'bs'));
     lnRoles = {};
     $('slf-clanovi').innerHTML = ids.map((id) => `<div class="slf-red" data-uid="${escapeHtml(id)}" data-ime="${escapeHtml(memberName(id))}">
@@ -621,6 +640,12 @@ export function initSekcijaEkran(L, map) {
     lnCount();
     lnSheet.hidden = false;
   };
+  $('slf-grupa-izbor').addEventListener('change', (e) => {
+    if (lnSection) openNewHunt(lnSection, { izbor: organizableSections(ctx, me()), odmah: lnForm.pokreni.checked, grupa: e.target.value || null });
+  });
+  $('slf-sirenje').addEventListener('change', () => {
+    if (lnSection) openNewHunt(lnSection, { izbor: organizableSections(ctx, me()), odmah: lnForm.pokreni.checked, siri: $('slf-sirenje').checked });
+  });
   $('slf-sekcija-izbor').addEventListener('change', (e) => {
     const s = ctx.sekcije.find((x) => x.id === e.target.value);
     const izbor = organizableSections(ctx, me());
@@ -707,6 +732,7 @@ export function initSekcijaEkran(L, map) {
       naziv: lnForm.naziv.value, datum: lnForm.datum.value, napomena: lnForm.napomena.value, okupljanje: lnForm.okupljanje.value,
       pokreni: lnForm.pokreni.checked, ucesnici: [...lnForm.querySelectorAll('#slf-clanovi input:checked')].map((b) => b.value), uloge: lnRoles,
     });
+    if (lnGrupa) plan.lov.grupa_id = lnGrupa;
     const sb = getClient();
     const btn = lnForm.querySelector('button[type=submit]');
     btn.disabled = true;

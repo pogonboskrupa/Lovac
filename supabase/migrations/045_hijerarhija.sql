@@ -182,3 +182,103 @@ end;
 $$;
 revoke execute on function public.dodijeli_grupu(uuid, uuid, uuid) from public, anon;
 grant execute on function public.dodijeli_grupu(uuid, uuid, uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Faza 3: lov po grupi, dopuštenje grupovođe višima, prijem članova viših rukovodilaca.
+-- ---------------------------------------------------------------------------
+-- Dopuštenje grupovođe: bez njega lov za grupu ne organizuju lovovođa sekcije, lovovođa društva ni admin.
+alter table public.grupe add column if not exists dozvola_visih boolean not null default false;
+alter table public.lovovi add column if not exists grupa_id uuid references public.grupe (id) on delete set null;
+
+-- Dopuštenje mijenja samo grupovođa te grupe (ne i oni koji grupu uređuju); nova grupa je uvijek bez dopuštenja.
+create or replace function public.zastiti_dozvolu_grupe()
+returns trigger language plpgsql as $$
+begin
+  if tg_op = 'INSERT' then
+    new.dozvola_visih := false;
+  elsif new.dozvola_visih is distinct from old.dozvola_visih and old.grupovodja_id is distinct from auth.uid() then
+    new.dozvola_visih := old.dozvola_visih;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists dozvola_grupe on public.grupe;
+create trigger dozvola_grupe before insert or update on public.grupe
+  for each row execute function public.zastiti_dozvolu_grupe();
+
+create or replace function public.dozvoli_visim(p_grupa uuid, p_dozvola boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.je_odobren() then raise exception 'Nema pristupa' using errcode = '42501'; end if;
+  update public.grupe set dozvola_visih = p_dozvola where id = p_grupa and grupovodja_id = auth.uid();
+  if not found then raise exception 'Samo grupovođa grupe daje dopuštenje' using errcode = '42501'; end if;
+end;
+$$;
+revoke execute on function public.dozvoli_visim(uuid, boolean) from public, anon;
+grant execute on function public.dozvoli_visim(uuid, boolean) to authenticated;
+
+create or replace function public.provjeri_grupu_lova()
+returns trigger language plpgsql as $$
+begin
+  if new.grupa_id is not null and not exists (select 1 from public.grupe g where g.id = new.grupa_id and g.sekcija_id = new.sekcija_id) then
+    raise exception 'Grupa nije iz sekcije lova' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists grupa_lova on public.lovovi;
+create trigger grupa_lova before insert or update of grupa_id, sekcija_id on public.lovovi
+  for each row execute function public.provjeri_grupu_lova();
+
+-- Ko smije praviti/voditi lov: lovovođa revira uvijek u svom reviru; lov cijele sekcije lovovođa sekcije, lovovođa društva i admin;
+-- lov grupe grupovođa te grupe, a viši (lovovođa sekcije, društva, admin) samo uz dopuštenje grupovođe.
+create or replace function public.moze_praviti_lov(p_revir uuid, p_sekcija uuid, p_grupa uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.je_odobren() and (
+    public.je_vodja_revira(p_revir)
+    or (p_grupa is null and (public.je_admin() or public.je_lovovodja_drustva()
+        or (p_sekcija is not null and public.moze_upravljati_sekcijom(p_sekcija)
+            and exists (select 1 from public.sekcije s where s.id = p_sekcija and s.revir_id = p_revir))))
+    or (p_grupa is not null and p_sekcija is not null
+        and exists (select 1 from public.grupe g join public.sekcije s on s.id = g.sekcija_id
+                     where g.id = p_grupa and g.sekcija_id = p_sekcija and s.revir_id = p_revir
+                       and (g.grupovodja_id = auth.uid() or (g.dozvola_visih and public.moze_upravljati_grupama(p_sekcija))))));
+$$;
+
+create or replace function public.moze_organizovati(p_lov uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.lovovi l where l.id = p_lov and public.moze_praviti_lov(l.revir_id, l.sekcija_id, l.grupa_id));
+$$;
+
+drop policy if exists unos on public.lovovi;
+create policy unos on public.lovovi for insert to authenticated
+  with check (organizator_id = auth.uid() and public.moze_praviti_lov(revir_id, sekcija_id, grupa_id));
+drop policy if exists izmjena on public.lovovi;
+create policy izmjena on public.lovovi for update to authenticated
+  using (public.moze_organizovati(id)) with check (public.moze_praviti_lov(revir_id, sekcija_id, grupa_id));
+
+-- Članove prima svaki rukovodilac: lovovođa sekcije, lovovođa revira, lovovođa društva i admin
+-- (raspoređivanje u grupu ide posebno, kroz dodijeli_grupu).
+create or replace function public.moze_primati_clanove(p_sek uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.moze_upravljati_sekcijom(p_sek) or (public.je_odobren() and exists (
+    select 1 from public.sekcije s where s.id = p_sek and (public.je_vodja_revira(s.revir_id) or public.je_lovovodja_drustva())));
+$$;
+revoke execute on function public.moze_praviti_lov(uuid, uuid, uuid), public.moze_primati_clanove(uuid) from public, anon;
+grant execute on function public.moze_praviti_lov(uuid, uuid, uuid), public.moze_primati_clanove(uuid) to authenticated;
+
+drop policy if exists citanje on public.sekcija_clanovi;
+create policy citanje on public.sekcija_clanovi for select to authenticated using (
+  korisnik_id = auth.uid()
+  or public.moze_primati_clanove(sekcija_id)
+  or public.je_lovocuvar_sekcije(sekcija_id)
+  or (status = 'odobren' and public.je_clan_sekcije(sekcija_id)));
+drop policy if exists unos on public.sekcija_clanovi;
+create policy unos on public.sekcija_clanovi for insert to authenticated with check (
+  (korisnik_id = auth.uid() and status = 'ceka') or public.moze_primati_clanove(sekcija_id));
+drop policy if exists odobrenje on public.sekcija_clanovi;
+create policy odobrenje on public.sekcija_clanovi for update to authenticated
+  using (public.moze_primati_clanove(sekcija_id)) with check (public.moze_primati_clanove(sekcija_id));
+drop policy if exists brisanje on public.sekcija_clanovi;
+create policy brisanje on public.sekcija_clanovi for delete to authenticated
+  using (korisnik_id = auth.uid() or public.moze_primati_clanove(sekcija_id));

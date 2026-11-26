@@ -48,6 +48,11 @@ async function setup(page) {
     if (rpc) {
       zahtjevi.push({ rpc: table, body: req.postDataJSON() });
       const b = req.postDataJSON();
+      if (table === 'kreiraj_korisnika') {
+        db.korisnici.push({ id: 'novi1', ime: b.p_ime, prezime: b.p_prezime, odobren: true, is_admin: false, created_at: '2026-11-10T08:00:00Z' });
+        db.sekcija_clanovi.push({ sekcija_id: b.p_sekcija, korisnik_id: 'novi1', status: 'odobren' });
+        return json(200, { id: 'novi1', odobren: true });
+      }
       if (table === 'premjesti_zahtjev') {
         const r = db.sekcija_clanovi.find((x) => x.sekcija_id === b.p_iz && x.korisnik_id === b.p_korisnik);
         if (r) r.sekcija_id = b.p_u;
@@ -57,7 +62,11 @@ async function setup(page) {
     const rows = db[table] || (db[table] = []);
     if (req.method() === 'GET') return json(200, rows);
     zahtjevi.push({ metoda: req.method(), table, filter: Object.fromEntries(eq), body: req.postData() ? req.postDataJSON() : null });
-    if (req.method() === 'POST') rows.push(...[].concat(req.postDataJSON()));
+    if (req.method() === 'POST') {
+      const made = [].concat(req.postDataJSON()).map((r) => (table === 'grupe' ? { id: 'gnova', ...r } : r));
+      rows.push(...made);
+      if (table === 'grupe') return json(201, made);
+    }
     if (req.method() === 'PATCH') rows.filter(match).forEach((r) => Object.assign(r, req.postDataJSON()));
     if (req.method() === 'DELETE') db[table] = rows.filter((r) => !match(r));
     return route.fulfill({ status: req.method() === 'POST' ? 201 : 204, body: '' });
@@ -213,4 +222,28 @@ test('neodobren nalog nema uloga; admin sebi ne mijenja uloge; izbor u listi ne 
   await l.locator('select[data-izbor="gv"]').selectOption('s3');
   await page.fill('#kor-trazi', 'lovro');
   await expect(kartica(page, 'l1').locator('select[data-izbor="gv"]')).toHaveValue('s3');
+});
+
+test('Novi korisnik iz ekrana Korisnici: nalog u sekciju + odmah uloga lovovođe sekcije; uloga Grupovođa grupe u Uloge', async ({ page }) => {
+  const { zahtjevi, db } = await setup(page);
+  await page.locator('#btn-korisnici-novi').click();
+  await expect(page.locator('#lovac-novi')).toBeVisible();
+  await expect(page.locator('#ln-uloga-blok')).toBeVisible();
+  await page.selectOption('#ln-sekcija', 's2');
+  await page.selectOption('#ln-uloga', 'lovovodja_sekcije');
+  await page.fill('#forma-lovac-novi [name=ime]', 'Nedim');
+  await page.fill('#forma-lovac-novi [name=prezime]', 'Novak');
+  await page.fill('#forma-lovac-novi [name=pin]', '123456');
+  await page.locator('#btn-ln-posalji').click();
+  await expect(page.locator('#ln-gotovo')).toBeVisible();
+  expect(poslano(zahtjevi, (z) => z.rpc === 'kreiraj_korisnika')).toHaveLength(1);
+  expect(poslano(zahtjevi, (z) => z.metoda === 'PATCH' && z.table === 'sekcije')[0].body).toEqual({ grupovodja_id: 'novi1' });
+  expect(db.sekcije.find((x) => x.id === 's2').grupovodja_id).toBe('novi1');
+  // grupovođa grupe iz Uloga: Lovro (član Krupa 1)
+  await page.locator('#btn-ln-zatvori').click();
+  const l = await otvori(page, 'l1');
+  await l.locator('select[data-izbor="gg"]').selectOption('s1');
+  await l.locator('[data-akcija="gg-postavi"]').click();
+  await expect.poll(() => poslano(zahtjevi, (z) => z.table === 'grupe' && z.metoda === 'POST').length).toBe(1);
+  await expect.poll(() => poslano(zahtjevi, (z) => z.rpc === 'dodijeli_grupu').length).toBe(1);
 });

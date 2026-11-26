@@ -118,6 +118,8 @@ export function groupsHtml(m) {
   const grupa = (g) => `<li class="sk-grupa" data-grupa="${escapeHtml(g.id)}">
       <div class="sk-grupa-glava"><b>Grupa — grupovođa ${escapeHtml(g.grupovodja)}</b><span class="sitno"> · ${g.clanovi.length} lovaca</span>
         ${manage ? `<button type="button" class="dugme" data-akcija="grupa-ukloni" data-grupa="${escapeHtml(g.id)}">Ukloni grupu</button>` : ''}</div>
+      ${g.grupovodja_id === myId ? `<button type="button" class="dugme sk-dozvola" data-akcija="grupa-dozvola" data-grupa="${escapeHtml(g.id)}" data-nova="${g.dozvola ? 'false' : 'true'}" aria-pressed="${g.dozvola}">Lovovođa sekcije i viši smiju organizovati lov za moju grupu: ${g.dozvola ? 'DA' : 'NE'}</button>`
+        : `<p class="sitno">Lov za grupu organizuje grupovođa; lovovođa sekcije i viši samo uz njegovo dopuštenje (${g.dozvola ? 'dato' : 'nije dato'}).</p>`}
       <ul class="sk-grupa-clanovi">${g.clanovi.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === g.grupovodja_id ? ' <span class="sitno">(grupovođa)</span>' : ''}${manage || g.grupovodja_id === myId ? ` <button type="button" class="dugme" data-akcija="grupa-izbaci" data-uid="${escapeHtml(c.id)}">Izvadi iz grupe</button>` : ''}</li>`).join('') || '<li class="sitno">Nema lovaca u grupi.</li>'}</ul>
     </li>`;
   const bez = ungrouped.length

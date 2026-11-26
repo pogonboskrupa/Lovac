@@ -10,6 +10,7 @@ import { initialsOf } from './lokacija.js';
 import { profileRoles } from './profil.js';
 import { userState, STATE_LABELS, usersOverview, filterUsers, filterCounts, reviewOrder, sectionLines, USER_FILTERS, pendingBadgeText, approvableRequests, approveLabel, registeredText, roleInfo, sectionTargets, leaderTargets, rolesOverview, rolesText } from './korisnici-pregled.js';
 import { downloadSekcije } from './sekcije-ui.js';
+import { assignRole } from './uloge-dodjela.js';
 import { drustvoSlot, revirVodjaTargets, ULOGA_LOVOCUVAR, ULOGA_LOVOVODJA_DRUSTVA } from './hijerarhija.js';
 
 const $ = (id) => document.getElementById(id);
@@ -83,6 +84,21 @@ function drustvoGrupa(u, data, grupa, uloga, naslov, napomena, users) {
   return `<div class="kor-uloga-grupa" data-grupa="${grupa}"><b>${escapeHtml(naslov)}</b><span class="sitno">${escapeHtml(napomena)}</span>${tijelo}</div>`;
 }
 
+// Grupovođa grupe: grupa nema naziv, pa su redovi sekcije u kojima korisnik vodi grupu; postavlja se u sekciji u kojoj je član.
+function grupaGrupa(u, data) {
+  const naziv = (id) => (data.sekcije || []).find((x) => x.id === id)?.naziv || 'sekcija';
+  const vodi = (data.grupe || []).filter((g) => g.grupovodja_id === u.id);
+  const mete = (data.sekcije || []).filter((sek) => sek.aktivno !== false
+    && (data.clanovi || []).some((c) => c.sekcija_id === sek.id && c.korisnik_id === u.id && c.status === 'odobren')
+    && !vodi.some((g) => g.sekcija_id === sek.id)).map((sek) => ({ id: sek.id, tekst: sek.naziv }));
+  const chips = vodi.map((g) => `<span class="kor-uloga-red" data-gid="${escapeHtml(g.id)}"><span>${escapeHtml(naziv(g.sekcija_id))}</span>
+    <button type="button" class="dugme" data-akcija="gg-skini" data-dvaput="Dodirni ponovo — uklanja grupu (lovci ostaju bez grupe)">Skini</button></span>`).join('');
+  return `<div class="kor-uloga-grupa" data-grupa="gg"><b>Grupovođa grupe</b><span class="sitno">Grupa nema naziv; vodi je grupovođa. Mora biti član sekcije.</span>
+    ${chips || '<span class="sitno">Ne vodi nijednu grupu.</span>'}
+    ${mete.length ? `<div class="kor-sek-akcije">${select(u.id, 'gg', 'Izaberi sekciju…', mete, `Postavi ${u.ime} za grupovođu grupe`)}
+      <button type="button" class="dugme" data-akcija="gg-postavi">Postavi za grupovođu grupe</button></div>` : ''}</div>`;
+}
+
 // Lovovođa revira: jedan po reviru; imenovanje zamjenjuje sadašnjeg.
 function revirVodjaGrupa(u, data, users) {
   const mine = (data.revirVodje || []).filter((v) => v.korisnik_id === u.id);
@@ -107,6 +123,7 @@ function rolesBlock(u, info, data, users) {
       ${chips(info.vodi, 'gv-skini', 'sid', 'Dodirni ponovo — skida lovovođu sekcije') || '<span class="sitno">Nije lovovođa sekcije nijedne sekcije.</span>'}
       ${gv.length ? `<div class="kor-sek-akcije">${select(u.id, 'gv', 'Izaberi sekciju…', gv, `Postavi ${u.ime} za lovovođu sekcije`)}
         <button type="button" class="dugme" data-akcija="gv-postavi">Postavi za lovovođu sekcije</button></div>` : ''}</div>
+    ${grupaGrupa(u, data)}
     ${drustvoGrupa(u, data, 'lcd', ULOGA_LOVOCUVAR, 'Lovočuvar društva', 'Radi na cijelom području; društvo ima najviše 2 lovočuvara.', users)}
     ${drustvoGrupa(u, data, 'ldd', ULOGA_LOVOVODJA_DRUSTVA, 'Lovovođa društva', 'Glavni lovovođa; društvo ima samo jednog.', users)}
     ${revirVodjaGrupa(u, data, users)}
@@ -172,7 +189,7 @@ export function initAdmin() {
   let filter = 'svi';
   let query = '';
   let sekcija = '';
-  let sekData = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [] };
+  let sekData = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [], grupe: [] };
   const sb = () => getClient();
 
   const sekcijaOpcije = () => {
@@ -211,7 +228,7 @@ export function initAdmin() {
       status.textContent = '';
       toast(okMsg);
       // sekcije i uloge su se promijenile: svježi podaci prije ponovnog crtanja
-      try { sekData = { ...sekData, ...(await downloadSekcije()) }; } catch { /* ostaje keš */ }
+      try { sekData = { ...sekData, ...(await downloadSekcije({ grupe: true })) }; } catch { /* ostaje keš */ }
       await render({ refresh: false });
     } catch (err) {
       status.textContent = err.message;
@@ -232,7 +249,7 @@ export function initAdmin() {
     saveSoft(CEKA_KEY, usersOverview(users).ceka + usersOverview(users).probni);
     document.dispatchEvent(new CustomEvent('korisnici:promjena'));
     draw();
-    if (refresh) downloadSekcije().then((d) => { sekData = { ...sekData, ...d }; draw(); }).catch(() => { /* ostaje keš */ });
+    if (refresh) downloadSekcije({ grupe: true }).then((d) => { sekData = { ...sekData, ...d }; draw(); }).catch(() => { /* ostaje keš */ });
   };
 
   // jedna radnja nad korisnikom; poziva je običan klik i drugi dodir
@@ -312,6 +329,18 @@ export function initAdmin() {
         await run(() => q(sb().from('sekcije').update({ grupovodja_id: null }).eq('id', sid).eq('grupovodja_id', u.id)), 'Lovovođa sekcije skinut sa sekcije');
         break;
       }
+      case 'gg-postavi': {
+        const to = val('gg');
+        if (!need(to, 'Izaberi sekciju')) return;
+        const sek = sekData.sekcije.find((x) => x.id === to);
+        await run(() => assignRole(sb(), 'grupovodja_grupe', { userId: u.id, sekcija: sek }), `${u.ime} ${u.prezime} je grupovođa grupe: ${sekcijaNaziv(to)}`);
+        break;
+      }
+      case 'gg-skini': {
+        const gid = btn.closest('[data-gid]').dataset.gid;
+        await run(() => q(sb().from('grupe').delete().eq('id', gid)), 'Grupa je uklonjena');
+        break;
+      }
       case 'lcd-postavi':
         await run(() => q(sb().from('drustvo_uloge').insert({ korisnik_id: u.id, uloga: ULOGA_LOVOCUVAR })), `${u.ime} ${u.prezime} je lovočuvar društva`);
         break;
@@ -374,6 +403,7 @@ export function initAdmin() {
   });
   $('btn-korisnici-zatvori').addEventListener('click', () => { panel.hidden = true; });
   $('btn-korisnici-osvjezi').addEventListener('click', render);
+  $('btn-korisnici-novi').addEventListener('click', () => document.dispatchEvent(new CustomEvent('lovac:novi', {})));
   registerBackHandler(() => {
     if (panel.hidden) return false;
     panel.hidden = true;

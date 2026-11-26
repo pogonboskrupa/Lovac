@@ -1,10 +1,11 @@
 // Ekran "Novi lovac": admin, lovočuvar i lovovođa sekcije prave nalog i odmah dodaju lovca u sekciju;
 // običan član sekcije samo PREDLAŽE — nalog ne radi dok ga lovovođa sekcije (ili admin) ne odobri.
 
-import { cachedProfile, provisionUser } from './auth.js';
+import { cachedProfile, provisionUser, getClient } from './auth.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { myStatus, creationMode } from './sekcije.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
+import { ULOGE_NOVOG, assignRole } from './uloge-dodjela.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,6 +24,10 @@ export function initNoviLovac() {
       .filter((x) => x.mode);
     if (!allowed.length) { toast('Nemaš pravo da praviš naloge'); return; }
     $('ln-sekcija').innerHTML = allowed.map((x) => `<option value="${escapeHtml(x.sekcija.id)}"${x.sekcija.id === sekcijaId ? ' selected' : ''}>${escapeHtml(x.sekcija.naziv)}</option>`).join('');
+    // Administrator pri pravljenju naloga odmah bira i ulogu (Korisnici i odobrenja → Novi korisnik)
+    const admin = Boolean(me()?.is_admin);
+    $('ln-uloga-blok').hidden = !admin;
+    $('ln-uloga').innerHTML = ULOGE_NOVOG.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.tekst)}</option>`).join('');
     $('ln-gotovo').hidden = true;
     form.hidden = false;
     $('ln-status').textContent = '';
@@ -58,12 +63,19 @@ export function initNoviLovac() {
       const ime = `${String(fd.get('ime')).trim()} ${String(fd.get('prezime')).trim()}`;
       const direct = r.odobren;
       status.textContent = '';
+      let ulogaGreska = '';
+      const uloga = $('ln-uloga-blok').hidden ? 'clan' : fd.get('uloga');
+      if (direct && uloga !== 'clan') {
+        try {
+          await assignRole(getClient(), uloga, { userId: r.id, sekcija: allowed.find((x) => x.sekcija.id === sekcijaId).sekcija });
+        } catch (err) { ulogaGreska = ` Uloga nije postavljena (${err.message}) — postavi je u Korisnici → Upravljanje → Uloge.`; }
+      }
       $('ln-gotovo-tekst').textContent = direct
-        ? `${ime} je dodan u sekciju i može se prijaviti imenom, prezimenom i PIN-om.`
+        ? `${ime} je dodan u sekciju i može se prijaviti imenom, prezimenom i PIN-om.${ulogaGreska}`
         : `${ime} je predložen. Može se prijaviti tek kad lovovođa sekcije odobri.`;
       form.hidden = true;
       $('ln-gotovo').hidden = false;
-      downloadSekcije().catch(() => {});
+      downloadSekcije().then(() => $('btn-korisnici-osvjezi')?.click()).catch(() => {});
     } catch (err) {
       status.textContent = /fetch|network|timeout/i.test(err.message) || err.name === 'TimeoutError'
         ? 'Potreban je internet za pravljenje naloga.' : err.message;

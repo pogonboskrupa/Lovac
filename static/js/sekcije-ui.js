@@ -188,7 +188,7 @@ export function initSekcije() {
     const faces = memberFaces(s, data.clanovi, memberName, 6);
     const showMembers = ['clan', 'grupovodja', 'lovocuvar', 'admin'].includes(st) && faces.ukupno > 0;
     const lcIds = data.lovocuvari.filter((l) => l.revir_id === s.revir_id).map((l) => l.korisnik_id);
-    const approver = canApprove(s, me(), data.lovocuvari);
+    const approver = canApprove(s, me(), data.lovocuvari, data);
     const person = (id, uloga) => `<span class="sk2-osoba">${avatar(id, 'mali')}<span><span class="sitno">${uloga}</span><b>${escapeHtml(memberName(id))}</b></span></span>`;
     return `<li class="trag-red sekcija-kartica sk2" data-id="${escapeHtml(s.id)}" data-pristup="${st}">
       <div class="sk2-glava">
@@ -295,7 +295,7 @@ export function initSekcije() {
   // (ne u pozadini — budžet zahtjeva besplatnog servera).
   const loadDecisionData = async () => {
     const user = me();
-    const mine = data.sekcije.filter((x) => canApprove(x, user, data.lovocuvari));
+    const mine = data.sekcije.filter((x) => canApprove(x, user, data.lovocuvari, data));
     if (!mine.length) return;
     const sb = getClient();
     try {

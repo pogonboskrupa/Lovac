@@ -3,11 +3,34 @@
 import { myStatus } from './sekcije.js';
 import { freshnessOf } from './istrazivac-pregled.js';
 
-// Lov dodaju lovovođa sekcije svoje sekcije i administrator (svaka sekcija); server to i provjerava (RLS).
+// Lovovođa revira (svog revira) i lovovođa društva (svakog) organizuju lov u cijelom reviru (migracija 045).
+export function leadsRevir(ctx = {}, me = null, revirId) {
+  if (!me?.id) return false;
+  return (ctx.drustvoUloge || []).some((u) => u.korisnik_id === me.id && u.uloga === 'lovovodja_drustva')
+    || (ctx.revirVodje || []).some((v) => v.korisnik_id === me.id && v.revir_id === revirId);
+}
+
+const sectionRank = (s, ctx, me) => myStatus(s, ctx.clanovi || [], me.id, Boolean(me.is_admin), ctx.lovocuvari || []);
+const ledGroups = (s, ctx, me) => (ctx.grupe || []).filter((g) => g.sekcija_id === s.id && g.grupovodja_id === me.id);
+
+// Za šta u sekciji smijem praviti lov: cijela sekcija (lovovođa sekcije, revira, društva, admin) i/ili grupe:
+// svoja (grupovođa), a tuđa samo uz dopuštenje grupovođe (lovovođa revira uvijek). Server to isto provjerava (RLS).
+export function huntTargets(s, ctx = {}, me = null, nameOf = (id) => id) {
+  if (!me?.id || !s) return [];
+  const st = sectionRank(s, ctx, me);
+  const lead = leadsRevir(ctx, me, s.revir_id);
+  const wide = ['grupovodja', 'admin'].includes(st) || lead;
+  const out = wide ? [{ grupaId: null, tekst: 'Cijela sekcija' }] : [];
+  for (const g of (ctx.grupe || []).filter((x) => x.sekcija_id === s.id)) {
+    if (g.grupovodja_id === me.id || lead || (wide && g.dozvola_visih)) out.push({ grupaId: g.id, tekst: `Grupa — grupovođa ${nameOf(g.grupovodja_id)}` });
+  }
+  return out;
+}
+
+// Lov dodaju lovovođa sekcije svoje sekcije, lovovođa revira/društva, grupovođa (za svoju grupu) i administrator.
 export function organizableSections(ctx = {}, me = null) {
   if (!me?.id) return [];
-  return (ctx.sekcije || []).filter((s) => s.aktivno !== false
-    && ['grupovodja', 'admin'].includes(myStatus(s, ctx.clanovi || [], me.id, Boolean(me.is_admin), ctx.lovocuvari || [])))
+  return (ctx.sekcije || []).filter((s) => s.aktivno !== false && huntTargets(s, ctx, me).length > 0)
     .sort((a, b) => String(a.naziv).localeCompare(String(b.naziv), 'bs'));
 }
 
@@ -26,11 +49,20 @@ export function todayPlannedHunt(lovovi = [], myId, today) {
     .sort((a, b) => String(b.lov.created_at || b.lov.promijenjeno || '').localeCompare(String(a.lov.created_at || a.lov.promijenjeno || '')))[0] || null;
 }
 
-// Upravlja lovom: administrator, organizator lova i lovovođa sekcije lova (server to provjerava kroz RLS).
+// Upravlja lovom: organizator lova i oni koje server pušta (`moze_praviti_lov`). Lov grupe: grupovođa, lovovođa revira,
+// a lovovođa sekcije/društva i admin samo uz dopuštenje grupovođe; lov cijele sekcije: i administrator.
 export function canManageHunt(rec, ctx = {}, me = null) {
   if (!rec?.lov || !me?.id) return false;
-  if (me.is_admin || rec.lov.organizator_id === me.id) return true;
-  return organizableSections(ctx, me).some((s) => s.id === rec.lov.sekcija_id);
+  const lov = rec.lov;
+  if (lov.grupa_id) {
+    const g = (ctx.grupe || []).find((x) => x.id === lov.grupa_id);
+    if (g?.grupovodja_id === me.id || leadsRevir(ctx, me, lov.revir_id)) return true;
+    const s = (ctx.sekcije || []).find((x) => x.id === lov.sekcija_id);
+    return Boolean(g?.dozvola_visih && s && (me.is_admin || sectionRank(s, ctx, me) === 'grupovodja'));
+  }
+  if (me.is_admin || lov.organizator_id === me.id || leadsRevir(ctx, me, lov.revir_id)) return true;
+  const s = (ctx.sekcije || []).find((x) => x.id === lov.sekcija_id);
+  return Boolean(s && sectionRank(s, ctx, me) === 'grupovodja');
 }
 
 // "Kao zadnji lov": lovci i uloge iz zadnjeg lova te sekcije (bez mene), za brže pravljenje novog.
