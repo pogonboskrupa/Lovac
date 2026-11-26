@@ -1,4 +1,4 @@
-// Brisanje lova: smiju administrator i grupovođa sekcije tog lova (server: `obrisi_lov`, migracija 032, provjerava isto).
+// Brisanje lova: smiju administrator i lovovođa sekcije tog lova (server: `obrisi_lov`, migracija 032, provjerava isto).
 // Brisanje je za SVE (raspored, učesnici, pozicije, trag, tok i slike nestaju sa servera) i traži internet.
 
 import { getClient } from './auth.js';

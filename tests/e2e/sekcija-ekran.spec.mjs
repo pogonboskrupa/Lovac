@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -59,8 +59,15 @@ function makeServer({ pozicije = true } = {}) {
       if (req.method() === 'GET') return json(200, rows.filter((r) => match(r, url.searchParams)));
       if (req.method() === 'POST') {
         if (this.failPost) return json(503, { message: 'server nedostupan' });
-        for (const r of [].concat(req.postDataJSON())) if (!rows.some((x) => x.id && x.id === r.id)) rows.push({ id: ID(++n), ...r });
-        return json(201, []);
+        if (table === 'dodijeli_grupu') {
+          const b = req.postDataJSON();
+          const c = db.sekcija_clanovi.find((x) => x.sekcija_id === b.p_sekcija && x.korisnik_id === b.p_korisnik);
+          if (c) c.grupa_id = b.p_grupa;
+          return json(200, null);
+        }
+        const made = [];
+        for (const r of [].concat(req.postDataJSON())) if (!rows.some((x) => x.id && x.id === r.id)) { const row = { id: ID(++n), ...r }; rows.push(row); made.push(row); }
+        return json(201, made);
       }
       return route.fulfill({ status: 204, body: '' });
     },
@@ -102,10 +109,10 @@ test('dugme u navigaciji nosi ime sekcije; ekran pokazuje članove i ko je aktiv
   await expect(page.locator('#btn-sekcija')).toHaveAttribute('aria-current', 'page');
   const rows = page.locator('#sk-clanovi [data-uid]');
   await expect(rows).toHaveCount(3);
-  // redoslijed: grupovođa prvi
-  await expect(rows.first()).toContainText('Goran Grupovođa');
+  // redoslijed: lovovođa sekcije prvi
+  await expect(rows.first()).toContainText('Goran Lovovođa sekcije');
   await expect(rows.first()).toHaveAttribute('data-stanje', 'aktivan');
-  await expect(rows.first()).toContainText('Grupovođa');
+  await expect(rows.first()).toContainText('Lovovođa sekcije');
   await expect(rows.first()).toContainText(/Aktivan u lovu · prije [01] min|Aktivan u lovu · upravo/);
   const pogonic = page.locator(`#sk-clanovi [data-uid="${LOVAC2.id}"]`);
   await expect(pogonic).toHaveAttribute('data-stanje', 'bez-signala');
@@ -130,7 +137,7 @@ test('dugme u navigaciji nosi ime sekcije; ekran pokazuje članove i ko je aktiv
   await expect(page.locator('#sk-lov')).toContainText('Moja uloga: Strijelac, stan 1');
   await expect(page.locator('#sk-lov')).toContainText('Divlja svinja: 1 kom., 85,5 kg');
   // svi podaci
-  await expect(page.locator('#sk-podaci')).toContainText('Grupovođa');
+  await expect(page.locator('#sk-podaci')).toContainText('Lovovođa sekcije');
   await expect(page.locator('#sk-podaci')).toContainText('Lovova sekcije');
   await expect(page.locator('#sk-podaci li[data-lov]')).toHaveCount(1);
 });
@@ -163,8 +170,8 @@ test('poruke: slanje, brza poruka, "Poruka" članu; offline ostaje u redu i sti�
 
   server.failPost = true;
   await page.locator(`#sk-clanovi [data-uid="${GV.id}"] [data-akcija="poruka"]`).click();
-  await expect(page.locator('#forma-poruka input[name=tekst]')).toHaveValue('Goran Grupovođa: ');
-  await page.fill('#forma-poruka input[name=tekst]', 'Goran Grupovođa: kasnim 10 min');
+  await expect(page.locator('#forma-poruka input[name=tekst]')).toHaveValue('Goran Lovovođa sekcije: ');
+  await page.fill('#forma-poruka input[name=tekst]', 'Goran Lovovođa sekcije: kasnim 10 min');
   await page.locator('#forma-poruka button[type=submit]').click();
   await expect(page.locator('#sk-poruke .poruka-red.moja').last()).toContainText('čeka slanje');
   expect(server.db.poruke).toHaveLength(2);
@@ -197,7 +204,7 @@ test('nova poruka: značka na dugmetu sekcije i obavijest dok je app otvorena; o
   await page.clock.runFor(61000);
   await expect(page.locator('#nav-sekcija-znacka')).toHaveText('1');
   const notif = await page.evaluate(() => window.__notif);
-  expect(notif.at(-1)).toEqual({ n: 'Krupa 1 — Goran Grupovođa', t: 'Okupljanje kod kuće' });
+  expect(notif.at(-1)).toEqual({ n: 'Krupa 1 — Goran Lovovođa sekcije', t: 'Okupljanje kod kuće' });
   await page.locator('#btn-sekcija').click();
   await expect(page.locator('#sk-poruke')).toContainText('Okupljanje kod kuće');
   await expect(page.locator('#nav-sekcija-znacka')).toBeHidden();
@@ -257,9 +264,9 @@ test('pregled sekcije: hero sa ulogom i brojevima, avatari sa inicijalima, navig
   await page.setViewportSize({ width: 360, height: 740 });
   await setup(page, makeServer(), GV);
   await openTab(page);
-  await expect(page.locator('#sk-uloga')).toHaveText('Grupovođa');
+  await expect(page.locator('#sk-uloga')).toHaveText('Lovovođa sekcije');
   await expect(page.locator('#sk-stat-lovova')).toHaveText('1');
-  await expect(page.locator(`#sk-clanovi [data-uid="${GV.id}"] .sk-avatar`)).toHaveText('GG');
+  await expect(page.locator(`#sk-clanovi [data-uid="${GV.id}"] .sk-avatar`)).toHaveText('GS');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
   for (const b of await page.locator('#sk-nav button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await page.locator('#sk-nav [data-cilj="sk-k-poruke"]').click();
@@ -279,12 +286,12 @@ test('lovci sekcije su istaknuti: traka lica, brojevi, filter Aktivni/Vodstvo i 
   const rows = page.locator('#sk-clanovi [data-uid]');
   await page.locator('#sk-filter [data-mf="aktivni"]').click();
   await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText('Goran Grupovođa');
+  await expect(rows.first()).toContainText('Goran Lovovođa sekcije');
   await page.locator('#sk-filter [data-mf="vodstvo"]').click();
   await expect(rows.first()).toHaveAttribute('data-uloga', 'grupovodja');
   await page.locator('#sk-filter [data-mf="svi"]').click();
   await expect(rows).toHaveCount(3);
-  await page.locator('#sk-pretraga').fill('grupovoda');
+  await page.locator('#sk-pretraga').fill('lovovoda');
   await expect(rows).toHaveCount(1);
   await page.locator('#sk-pretraga').fill('xyz');
   await expect(rows).toHaveCount(0);
@@ -309,4 +316,38 @@ test('admin: tab se zove "Sekcije", unutra je spisak svih sekcija i izbor; obič
   expect(await page.locator('#sk-lista [data-sid]').count()).toBeGreaterThan(0);
   await expect(page.locator('#sk-lista [data-sid][aria-pressed="true"]')).toHaveCount(1);
   await expect(page.locator('#sk-izbor')).toBeHidden();
+});
+
+test('grupe: lovovođa sekcije pravi grupu, raspoređuje lovca, vadi ga i uklanja grupu (drugi dodir)', async ({ page }) => {
+  const server = makeServer();
+  await setup(page, server, GV);
+  await openTab(page);
+  const grupe = page.locator('#sk-grupe');
+  await expect(grupe).toContainText('Još nema grupa');
+  await expect(grupe).toContainText('Bez grupe (2)');
+  await page.locator('#sk-grupa-gv').selectOption(LOVAC.id);
+  await grupe.locator('[data-akcija="grupa-nova"]').click();
+  await expect(grupe.locator('.sk-grupa')).toHaveCount(1);
+  await expect(grupe.locator('.sk-grupa')).toContainText('grupovođa Lovro Lovac');
+  expect(server.db.grupe).toHaveLength(1);
+  // lovac 2 u grupu
+  await grupe.locator(`.sk-bez-grupe [data-uid="${LOVAC2.id}"] [data-akcija="grupa-dodijeli"]`).click();
+  await expect(grupe.locator('.sk-grupa-clanovi')).toContainText('Luka Pogonič');
+  expect(server.db.sekcija_clanovi.find((c) => c.korisnik_id === LOVAC2.id).grupa_id).toBe(server.db.grupe[0].id);
+  await grupe.locator(`.sk-grupa-clanovi [data-uid="${LOVAC2.id}"] [data-akcija="grupa-izbaci"]`).click();
+  await expect(grupe.locator('.sk-grupa-clanovi')).not.toContainText('Luka Pogonič');
+  // uklanjanje grupe traži drugi dodir
+  await grupe.locator('[data-akcija="grupa-ukloni"]').click();
+  expect(server.db.grupe).toHaveLength(1);
+});
+
+test('grupe: običan član vidi grupe ali ne može praviti ni uklanjati', async ({ page }) => {
+  const server = makeServer();
+  server.db.grupe = [{ id: ID(700), sekcija_id: ID(200), grupovodja_id: LOVAC.id }];
+  server.db.sekcija_clanovi[0].grupa_id = ID(700);
+  await setup(page, server, LOVAC2);
+  await openTab(page);
+  await expect(page.locator('#sk-grupe .sk-grupa')).toContainText('grupovođa Lovro Lovac');
+  await expect(page.locator('#sk-grupe [data-akcija="grupa-nova"]')).toHaveCount(0);
+  await expect(page.locator('#sk-grupe [data-akcija="grupa-ukloni"]')).toHaveCount(0);
 });

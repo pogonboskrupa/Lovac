@@ -14,21 +14,21 @@
   <div id="sekcije-odluke" class="sk-odluke" role="status" hidden></div>
   <div id="sekcije-filter" class="segment sks-filter" role="group" aria-label="Prikaz sekcija"></div>
   <div class="sks-alati">
-    <input id="sekcije-trazi" type="search" placeholder="Traži sekciju, revir, lovca…" aria-label="Traži sekcije (sekcija, revir, grupovođa, član)" autocomplete="off">
+    <input id="sekcije-trazi" type="search" placeholder="Traži sekciju, revir, lovca…" aria-label="Traži sekcije (sekcija, revir, lovovođa sekcije, član)" autocomplete="off">
     <button id="btn-sekcije-osvjezi" class="ikona-dugme" type="button" aria-label="Osvježi sa servera" title="Osvježi sa servera"><svg class="ic" aria-hidden="true"><use href="#ic-osvjezi"/></svg></button>
   </div>
   <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
   <p id="sekcije-status" class="status" role="status"></p>
   <details id="uloge-detalji" class="uprava" hidden>
-  <summary>Grupovođe i lovočuvari po revirima</summary>
+  <summary>Lovovođe sekcije i lovočuvari po revirima</summary>
   <div id="grupovodje-blok" hidden>
-    <h3>Grupovođe revira</h3>
-    <p class="sitno">Grupovođa revira smije praviti sekcije u tom reviru. Postavlja ih lovočuvar revira ili administrator.</p>
+    <h3>Ovlašteni za pravljenje sekcija</h3>
+    <p class="sitno">Ovlašteni lovac smije praviti sekcije u tom reviru. Postavlja ih lovočuvar revira ili administrator.</p>
     <ul id="grupovodje-spisak" class="spisak"></ul>
     <div class="red-dugmadi">
       <select id="grupovodja-korisnik" aria-label="Lovac"></select>
       <select id="grupovodja-revir" aria-label="Revir"></select>
-      <button id="btn-grupovodja-dodaj" class="dugme" type="button">Postavi za grupovođu</button>
+      <button id="btn-grupovodja-dodaj" class="dugme" type="button">Postavi za lovovođu sekcije</button>
     </div>
   </div>
   <div id="lovocuvari-blok" hidden>

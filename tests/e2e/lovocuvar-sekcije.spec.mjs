@@ -1,8 +1,8 @@
-// Lovočuvar revira pravi sekciju u svom reviru, postavlja grupovođu sekcije i grupovođe revira (migracija 030).
+// Lovočuvar revira pravi sekciju u svom reviru, postavlja lovovođu sekcije i grupovođe revira (migracija 030).
 import { test, expect } from '@playwright/test';
 import { makeWorld, startSim, ID } from './sim-svijet.mjs';
 
-test('lovočuvar: nova sekcija sa grupovođom, grupovođa postojeće sekcije i grupovođe revira; revir mijenja samo admin', async ({ page }) => {
+test('lovočuvar: nova sekcija sa lovovođom sekcije, lovovođa sekcije postojeće sekcije i grupovođe revira; revir mijenja samo admin', async ({ page }) => {
   test.setTimeout(120000);
   const world = makeWorld({ uToku: false });
   const ja = world.korisnici[0];
@@ -19,7 +19,7 @@ test('lovočuvar: nova sekcija sa grupovođom, grupovođa postojeće sekcije i g
   await expect(page.locator('#sekcije')).toBeVisible();
   await page.locator('#sekcije-filter [data-filter="sve"]').click();
 
-  // Nova sekcija: samo moj revir, biram grupovođu, bez spiska članova (njih dodaje grupovođa)
+  // Nova sekcija: samo moj revir, biram lovovođu sekcije, bez spiska članova (njih dodaje lovovođa sekcije)
   await expect(page.locator('#btn-sekcija-nova')).toBeVisible({ timeout: 10000 });
   await page.locator('#btn-sekcija-nova').click();
   await expect(page.locator('#sekcija-revir option')).toHaveCount(1);
@@ -32,7 +32,7 @@ test('lovočuvar: nova sekcija sa grupovođom, grupovođa postojeće sekcije i g
   await expect.poll(() => sim.db.sekcije.find((s) => s.naziv === 'Nova sekcija lovočuvara')?.grupovodja_id, { timeout: 10000 }).toBe(gv);
   expect(sim.db.sekcije.find((s) => s.naziv === 'Nova sekcija lovočuvara').revir_id).toBe(ID(100));
 
-  // Postojeća sekcija revira: lovočuvar postavlja grupovođu, nema izbor revira
+  // Postojeća sekcija revira: lovočuvar postavlja lovovođu sekcije, nema izbor revira
   const kartica = page.locator(`#sekcije-spisak [data-id="${world.sekcije[0].id}"]`);
   await kartica.locator('.sk-revir-uprava summary').click();
   await expect(kartica.locator('[data-revir]')).toHaveCount(0);

@@ -239,7 +239,7 @@ export function initUzivo(L, map) {
     else await autoPick();
   });
   // ---- Kraj lova iz trake uživo ----
-  // Upravljač (admin, organizator, grupovođa sekcije lova) završava lov za sve (drugi dodir); svako može izaći
+  // Upravljač (admin, organizator, lovovođa sekcije lova) završava lov za sve (drugi dodir); svako može izaći
   // iz lova na svom telefonu (prestaje slanje pozicije, traka nestaje) — lov za ostale traje.
   const krajPloca = $('uzivo-kraj');
   const closeKraj = () => { krajPloca.hidden = true; };

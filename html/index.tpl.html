@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.7.0';
+  const APP_VER = 'v1.7.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -97,13 +97,13 @@
           <select id="pr-revir" name="revir"><option value="">— izaberi revir —</option></select></label>
         <label class="pr-polje"><span>Sekcija <span class="sitno">(neobavezno)</span></span>
           <select id="pr-sekcija" name="sekcija" disabled><option value="">— izaberi sekciju —</option></select></label>
-        <p class="sitno">Ako izabereš sekciju, njen grupovođa, lovočuvar revira ili administrator odlučuje o prijemu (ili te prebacuje u drugu sekciju ako si pogriješio/la).</p>
+        <p class="sitno">Ako izabereš sekciju, njen lovovođa sekcije, lovočuvar revira ili administrator odlučuje o prijemu (ili te prebacuje u drugu sekciju ako si pogriješio/la).</p>
         <p id="pr-sekcija-prazno" class="sitno" hidden>Spisak sekcija nije dostupan (nema veze sa serverom). Sekciju možeš zatražiti poslije prijave.</p>
       </div>
       <label class="pr-polje"><span>PIN <span class="sitno">(6–8 cifara)</span></span>
         <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-brava"/></svg><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required placeholder="••••••">
         <button type="button" id="btn-pin-prikazi" class="pr-oko" aria-label="Prikaži PIN" aria-pressed="false"><svg class="ic"><use href="#ic-eye"/></svg></button></span></label>
-      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog odmah radi 24 sata (probni period). Za stalni pristup izaberi sekciju — odobrava grupovođa, lovočuvar ili administrator. Ako ti nalog pravi grupovođa, ne treba se registrovati.</p>
+      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog odmah radi 24 sata (probni period). Za stalni pristup izaberi sekciju — odobrava lovovođa sekcije, lovočuvar ili administrator. Ako ti nalog pravi lovovođa sekcije, ne treba se registrovati.</p>
       <button type="submit" id="btn-prijava" value="prijava" class="dugme glavno pr-dugme"><span class="pr-vrtilica" aria-hidden="true"></span><span id="btn-prijava-tekst">Prijavi se</span></button>
       <p id="prijava-status" class="status pr-status" role="status"></p>
     </form>
@@ -113,7 +113,7 @@
 
 <main id="ekran-cekanje" class="ekran ekran-forma" hidden>
   <h1>Čeka odobrenje</h1>
-  <p id="cekanje-tekst">Vaš nalog je primljen. Administrator društva ili grupovođa ga treba odobriti prije korištenja.</p>
+  <p id="cekanje-tekst">Vaš nalog je primljen. Administrator društva ili lovovođa sekcije ga treba odobriti prije korištenja.</p>
   <div class="red-dugmadi">
     <button id="btn-provjeri-odobrenje" class="dugme glavno" type="button">Provjeri ponovo</button>
     <button id="btn-odjava" class="dugme" type="button">Odjava</button>
@@ -250,7 +250,7 @@
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
     <section id="lok-sekcija" class="lok-sekcija">
       <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-group"/></svg>Dijeli lokaciju sa sekcijom</h3>
-      <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi, grupovođa, lovočuvar i administrator.</p>
+      <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi, lovovođa sekcije, lovočuvar i administrator.</p>
       <div id="lok-sek-forma">
         <select id="lok-sek-izbor" aria-label="Sekcija" hidden></select>
         <div id="lok-sek-trajanje" class="segment" role="group" aria-label="Koliko dugo dijeliti"></div>
@@ -259,7 +259,7 @@
       </div>
       <h4>Članovi koji dijele lokaciju <span id="lok-sek-broj" class="sitno"></span></h4>
       <ul id="lok-sek-lista" class="spisak"></ul>
-      <p class="sitno">Lokaciju vide samo članovi, grupovođa i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
+      <p class="sitno">Lokaciju vide samo članovi, lovovođa sekcije i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
     </section>
     <section id="lok-izabrani" class="lok-sekcija">
       <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg>Dijeli sa izabranim lovcima</h3>

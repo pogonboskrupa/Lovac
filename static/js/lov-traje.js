@@ -3,7 +3,7 @@
 import { myStatus } from './sekcije.js';
 import { freshnessOf } from './istrazivac-pregled.js';
 
-// Lov dodaju grupovođa svoje sekcije i administrator (svaka sekcija); server to i provjerava (RLS).
+// Lov dodaju lovovođa sekcije svoje sekcije i administrator (svaka sekcija); server to i provjerava (RLS).
 export function organizableSections(ctx = {}, me = null) {
   if (!me?.id) return [];
   return (ctx.sekcije || []).filter((s) => s.aktivno !== false
@@ -26,7 +26,7 @@ export function todayPlannedHunt(lovovi = [], myId, today) {
     .sort((a, b) => String(b.lov.created_at || b.lov.promijenjeno || '').localeCompare(String(a.lov.created_at || a.lov.promijenjeno || '')))[0] || null;
 }
 
-// Upravlja lovom: administrator, organizator lova i grupovođa sekcije lova (server to provjerava kroz RLS).
+// Upravlja lovom: administrator, organizator lova i lovovođa sekcije lova (server to provjerava kroz RLS).
 export function canManageHunt(rec, ctx = {}, me = null) {
   if (!rec?.lov || !me?.id) return false;
   if (me.is_admin || rec.lov.organizator_id === me.id) return true;

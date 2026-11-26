@@ -19,7 +19,7 @@ const CL = [
   { sekcija_id: 's2', korisnik_id: 'l1', status: 'ceka' },
 ];
 
-test('moj status u sekciji: grupovođa, lovočuvar, član, čeka odobrenje, nema pristupa', () => {
+test('moj status u sekciji: lovovođa sekcije, lovočuvar, član, čeka odobrenje, nema pristupa', () => {
   assert.equal(myStatus(SEK[0], CL, 'g1'), 'grupovodja');
   assert.equal(myStatus(SEK[0], CL, 'c1'), 'lovocuvar');
   assert.equal(myStatus(SEK[0], CL, 'l1'), 'clan');
@@ -35,7 +35,7 @@ test('statusi se kažu jasno; bez odobrenja piše da nema ulaza', () => {
   assert.match(pristupText('clan'), /član/i);
 });
 
-test('ko upravlja sekcijom: admin i njen grupovođa, niko drugi', () => {
+test('ko upravlja sekcijom: admin i njen lovovođa sekcije, niko drugi', () => {
   assert.equal(canManage(SEK[0], ADMIN), true);
   assert.equal(canManage(SEK[0], GV), true);
   assert.equal(canManage(SEK[1], GV), false);
@@ -56,7 +56,7 @@ test('sekcije grupisane po reviru (aktivne), revir bez sekcija ostaje prazan', (
 test('zahtjevi na čekanju i kandidati za dodavanje', () => {
   assert.deepEqual(pendingRequests('s1', CL).map((c) => c.korisnik_id), ['l2']);
   const users = [{ id: 'g1' }, { id: 'c1' }, { id: 'l1' }, { id: 'l2' }, { id: 'l3' }];
-  assert.deepEqual(candidatesToAdd(SEK[0], CL, users).map((u) => u.id), ['l3'], 'bez grupovođe, lovočuvara, članova i onih sa zahtjevom');
+  assert.deepEqual(candidatesToAdd(SEK[0], CL, users).map((u) => u.id), ['l3'], 'bez lovovođe sekcije, lovočuvara, članova i onih sa zahtjevom');
 });
 
 test('forma sekcije', () => {
@@ -65,12 +65,12 @@ test('forma sekcije', () => {
   assert.match(validateSekcija({ naziv: 'Krupa 3', revir_id: '' }), /revir/i);
 });
 
-test('sekcije kojima sam grupovođa (za organizaciju lova)', () => {
+test('sekcije kojima sam lovovođa sekcije (za organizaciju lova)', () => {
   assert.deepEqual(mySectionsAsLeader(SEK, 'g1').map((s) => s.id), ['s1']);
 });
 
 import { creationMode } from '../../static/js/sekcije.js';
-test('ko smije praviti naloge: admin/grupovođa/lovočuvar direktno, član predlaže, ostali ne', () => {
+test('ko smije praviti naloge: admin/lovovođa sekcije/lovočuvar direktno, član predlaže, ostali ne', () => {
   assert.equal(creationMode('admin'), 'direct');
   assert.equal(creationMode('grupovodja'), 'direct');
   assert.equal(creationMode('lovocuvar'), 'direct');
@@ -123,7 +123,7 @@ const D = {
 };
 const U = (id, o = {}) => ({ id, odobren: true, ...o });
 
-test('sekcije: "moje" (član/grupovođa/lovočuvar/čeka; admin samo izričito), zahtjevi za odobrenje i pregled', () => {
+test('sekcije: "moje" (član/lovovođa sekcije/lovočuvar/čeka; admin samo izričito), zahtjevi za odobrenje i pregled', () => {
   const ma = (s, id, admin = false) => isMine(s, D.clanovi, id, admin, D.lovocuvari);
   assert.equal(ma(D.sekcije[0], 'l1'), true);
   assert.equal(ma(D.sekcije[1], 'l1'), true, 'zahtjev na čekanju je "moje"');
@@ -131,7 +131,7 @@ test('sekcije: "moje" (član/grupovođa/lovočuvar/čeka; admin samo izričito),
   assert.equal(ma(D.sekcije[2], 'lc'), true, 'lovočuvar revira');
   assert.equal(ma(D.sekcije[0], 'adm', true), false, 'admin nije član svake sekcije');
   assert.equal(ma({ ...D.sekcije[0], grupovodja_id: 'adm' }, 'adm', true), true);
-  // zahtjevi: grupovođa svoje, admin sve aktivne; najstariji prvi; sakrivena sekcija se ne računa
+  // zahtjevi: lovovođa sekcije svoje, admin sve aktivne; najstariji prvi; sakrivena sekcija se ne računa
   assert.deepEqual(approvalsForMe(D, U('gv')).map((x) => x.zahtjev.korisnik_id), ['l3', 'l2']);
   assert.deepEqual(approvalsForMe(D, U('adm', { is_admin: true })).map((x) => x.zahtjev.korisnik_id), ['l3', 'l2', 'l1']);
   assert.deepEqual(approvalsForMe(D, U('l1')), []);
@@ -147,7 +147,7 @@ test('sekcije: filteri Moje / Za odobrenje / Bez pristupa / Sve i pretraga', () 
   assert.deepEqual(f(U('l1'), { filter: 'zahtjevi' }), []);
   assert.deepEqual(f(U('l1'), { filter: 'sve' }), ['S1', 'S2', 'S3'], 'sakrivena se ne prikazuje');
   assert.deepEqual(f(U('l1'), { filter: 'sve', q: 'otoka' }), ['S3']);
-  assert.deepEqual(f(U('l1'), { filter: 'sve', q: 'petar', textOf: (s) => (s.id === 'S2' ? 'Grupovođa Petar' : '') }), ['S2']);
+  assert.deepEqual(f(U('l1'), { filter: 'sve', q: 'petar', textOf: (s) => (s.id === 'S2' ? 'Lovovođa sekcije Petar' : '') }), ['S2']);
 });
 
 test('sekcije: tekst za pločicu u Meniju', () => {
@@ -185,7 +185,7 @@ test('javne sekcije za registraciju: grupisanje po reviru, bez duplikata i prazn
   assert.deepEqual(groupPublicSections(null), []);
 });
 
-test('pregled sekcija: uputa po ulozi, broj po filteru, starost zahtjeva, traka lica (grupovođa prvi)', async () => {
+test('pregled sekcija: uputa po ulozi, broj po filteru, starost zahtjeva, traka lica (lovovođa sekcije prvi)', async () => {
   const { sectionsHint, sectionFilterCounts, requestAgeText, memberFaces } = await import('../../static/js/sekcije.js');
   const data = {
     reviri: [{ id: 'r1' }],

@@ -1,4 +1,4 @@
-// Odaziv na lov (čista logika): na koje lovove pitati "Dolaziš?", red slanja odgovora i sažetak za grupovođu.
+// Odaziv na lov (čista logika): na koje lovove pitati "Dolaziš?", red slanja odgovora i sažetak za lovovođu sekcije.
 // Server provodi isto pravilo kao samoprijava (moze_prijaviti_prisustvo): odobreni član sekcije lova,
 // lov planiran ili u toku; ovdje se samo bira šta pokazati.
 
@@ -34,7 +34,7 @@ export const tableMissing = (err) => ['PGRST205', '42P01'].includes(err?.code);
 // Server odbio (lov završen, nisam član, uklonjen iz lova): izbaciti iz reda da ne visi zauvijek.
 export const answerRejected = (err) => ['42501', 'PGRST301'].includes(err?.code) || /row-level security/i.test(err?.message || '');
 
-// Za grupovođu: ko je rekao Da / Ne (Da = i samoprijava u učesnicima).
+// Za lovovođu sekcije: ko je rekao Da / Ne (Da = i samoprijava u učesnicima).
 export function answersSummary(rows = [], nameOf = (id) => id) {
   const da = rows.filter((r) => r.odgovor === 'da').map((r) => nameOf(r.korisnik_id)).sort((a, b) => a.localeCompare(b, 'bs'));
   const ne = rows.filter((r) => r.odgovor === 'ne').map((r) => nameOf(r.korisnik_id)).sort((a, b) => a.localeCompare(b, 'bs'));

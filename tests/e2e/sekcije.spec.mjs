@@ -3,7 +3,7 @@ import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const ADMIN = { id: ID(1), ime: 'Ado', prezime: 'Admin', odobren: true, is_admin: true };
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Lovac', odobren: true, is_admin: false };
 const R = { krupa: ID(100), otoka: ID(101), jezerski: ID(102) };
@@ -89,8 +89,8 @@ test('tri revira, a u svakom sekcije; lovac bez odobrenja vidi samo naziv i mož
   const card = page.locator('.sekcija-kartica[data-id="' + ID(200) + '"]');
   await expect(card).toHaveAttribute('data-pristup', 'nema');
   await expect(card).toContainText('Nema pristupa');
-  await expect(card.locator('.sk2-ljudi')).toContainText('Grupovođa');
-  await expect(card.locator('.sk2-ljudi')).toContainText('Goran Grupovođa');
+  await expect(card.locator('.sk2-ljudi')).toContainText('Lovovođa sekcije');
+  await expect(card.locator('.sk2-ljudi')).toContainText('Goran Lovovođa sekcije');
   await expect(card.locator('.sk2-clanovi')).toHaveCount(0); // bez pristupa nema spiska članova
   await expect(card.locator('details.uprava')).toHaveCount(0);
   await expect(page.locator('#btn-sekcija-nova')).toBeHidden();
@@ -104,7 +104,7 @@ test('tri revira, a u svakom sekcije; lovac bez odobrenja vidi samo naziv i mož
   await expect.poll(() => server.db.sekcija_clanovi.length).toBe(0);
 });
 
-test('grupovođa odobrava i odbija zahtjeve, dodaje lovce sa spiska i preimenuje sekciju', async ({ page }) => {
+test('lovovođa sekcije odobrava i odbija zahtjeve, dodaje lovce sa spiska i preimenuje sekciju', async ({ page }) => {
   const server = makeServer();
   server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'ceka' }, { sekcija_id: ID(200), korisnik_id: LOVAC2.id, status: 'ceka' });
   await setup(page, server, GV);
@@ -133,7 +133,7 @@ test('grupovođa odobrava i odbija zahtjeve, dodaje lovce sa spiska i preimenuje
   await card.locator('[data-naziv]').fill('Krupa 1 — Gornja');
   await card.locator('[data-akcija="naziv"]').click();
   await expect.poll(() => server.db.sekcije[0].naziv).toBe('Krupa 1 — Gornja');
-  // Grupovođa ne vidi admin polja (grupovođa/lovočuvar).
+  // Lovovođa sekcije ne vidi admin polja (lovovođa sekcije/lovočuvar).
   await expect(card.locator('[data-gv]')).toHaveCount(0);
 
   // Izbacivanje člana traži drugi dodir: prvi samo traži potvrdu, drugi briše članstvo.
@@ -145,7 +145,7 @@ test('grupovođa odobrava i odbija zahtjeve, dodaje lovce sa spiska i preimenuje
   await expect.poll(() => server.db.sekcija_clanovi.some((c) => c.korisnik_id === LOVAC.id)).toBe(false);
 });
 
-test('grupovođa pravi sekciju u SVOM reviru sa spiskom lovaca (odmah odobreni)', async ({ page }) => {
+test('lovovođa sekcije pravi sekciju u SVOM reviru sa spiskom lovaca (odmah odobreni)', async ({ page }) => {
   const server = makeServer();
   await setup(page, server, GV);
   await openSekcije(page);
@@ -171,14 +171,14 @@ test('grupovođa pravi sekciju u SVOM reviru sa spiskom lovaca (odmah odobreni)'
   await expect(page.locator('.sekcija-kartica')).toHaveCount(2);
 });
 
-test('admin: grupovođe po revirima, nova sekcija sa grupovođom i lovočuvarom, uređivanje uloga', async ({ page }) => {
+test('admin: lovovođe sekcije po revirima, nova sekcija sa lovovođom sekcije i lovočuvarom, uređivanje uloga', async ({ page }) => {
   const server = makeServer();
   await setup(page, server, ADMIN);
   await openSekcije(page);
   await page.locator('#uloge-detalji > summary').click(); // blok uloga je sklopiv
   await expect(page.locator('#grupovodje-blok')).toBeVisible();
   await settled(page);
-  await expect(page.locator('#grupovodje-spisak')).toContainText('Goran Grupovođa');
+  await expect(page.locator('#grupovodje-spisak')).toContainText('Goran Lovovođa sekcije');
   await page.locator('#grupovodja-korisnik').selectOption(LOVAC.id);
   await page.locator('#grupovodja-revir').selectOption(R.otoka);
   await page.locator('#btn-grupovodja-dodaj').click();
@@ -215,7 +215,7 @@ test('admin: grupovođe po revirima, nova sekcija sa grupovođom i lovočuvarom,
   await expect(page.locator('.sekcija-kartica', { hasText: 'Krupa 1' })).toHaveCount(0);
 });
 
-test('odobren član vidi članove sekcije; lov sekcije: grupovođa ga pravi za svoju sekciju', async ({ page }) => {
+test('odobren član vidi članove sekcije; lov sekcije: lovovođa sekcije ga pravi za svoju sekciju', async ({ page }) => {
   const server = makeServer();
   server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'odobren' });
   await setup(page, server, LOVAC);
@@ -230,7 +230,7 @@ test('odobren član vidi članove sekcije; lov sekcije: grupovođa ga pravi za s
   await expect(card.locator('details.uprava')).toHaveCount(0);
 });
 
-test('grupovođa organizuje lov svoje sekcije (sekcija je obavezna), lov nosi sekciju', async ({ page }) => {
+test('lovovođa sekcije organizuje lov svoje sekcije (sekcija je obavezna), lov nosi sekciju', async ({ page }) => {
   const server = makeServer();
   await setup(page, server, GV);
   await page.goto('/');
@@ -337,7 +337,7 @@ test('dio 2 (migracija 040): odbijanje sa razlogom, imena podnosilaca, historija
   // historija i Odobri sve (drugi dodir) u Upravljanju
   const card = page.locator('.sekcija-kartica').first();
   await card.locator('details.uprava > summary').click();
-  await expect(card.locator('.sk-historija')).toContainText('odbijen (Goran Grupovođa): Nepoznat');
+  await expect(card.locator('.sk-historija')).toContainText('odbijen (Goran Lovovođa sekcije): Nepoznat');
   const sve = card.locator('[data-akcija="odobri-sve"]');
   await expect(sve).toHaveText('Odobri sve (2)');
   await sve.click();
@@ -366,7 +366,7 @@ test('podnosilac dobije odluku (odbijen sa razlogom): obavijest, poruka u Sekcij
   await page.addInitScript(() => { window.__notif = []; window.AndroidNotif = { prikazi: (n, t) => window.__notif.push({ n, t }), vibriraj: () => {} }; });
   await openSekcije(page);
   await page.locator('#btn-sekcije-zatvori').click();
-  // grupovođa odbija: server upisuje odluku, zahtjev nestaje
+  // lovovođa sekcije odbija: server upisuje odluku, zahtjev nestaje
   server.db.sekcija_clanovi = server.db.sekcija_clanovi.filter((c) => c.korisnik_id !== LOVAC.id);
   server.db.sekcija_odluke.push({ id: ID(902), sekcija_id: ID(200), korisnik_id: LOVAC.id, odluka: 'odbijen', razlog: 'Popunjeno', odlucio: GV.id, created_at: new Date().toISOString() });
   await page.evaluate(() => window.__odluke.check());

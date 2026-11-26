@@ -106,4 +106,39 @@ do $$ begin
 end $$;
 reset role;
 
+-- Faza 2: dodijeli_grupu po ulogama; grupovođa mora biti član sekcije
+set local role authenticated;
+do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045d1', true); end $$;
+do $$ begin
+  begin
+    insert into public.grupe (sekcija_id, grupovodja_id) values ('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045c3');
+    raise exception 'FAIL: grupovođa nije član';
+  exception when check_violation then null; end;
+  perform public.dodijeli_grupu('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045e1', null);
+  assert (select grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045e1') is null, 'lovovođa sekcije skida iz grupe';
+  perform public.dodijeli_grupu('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045e1', '77777777-0000-4000-8000-000000000451');
+end $$;
+reset role;
+-- grupovođa raspoređuje u svoju grupu; član ne; lovovođa revira da
+do $$ begin
+  update public.sekcija_clanovi set grupa_id = null where korisnik_id = '00000000-0000-0000-0000-0000000045e1';
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045d2', true);
+  set local role authenticated;
+  perform public.dodijeli_grupu('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045e1', '77777777-0000-4000-8000-000000000451');
+  assert (select grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045e1') is not null, 'grupovođa u svoju grupu';
+  reset role;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045e1', true);
+  set local role authenticated;
+  begin
+    perform public.dodijeli_grupu('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045e1', null);
+    raise exception 'FAIL: član sam sebe';
+  exception when insufficient_privilege then null; end;
+  reset role;
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000045c2', true);
+  set local role authenticated;
+  perform public.dodijeli_grupu('55555555-0000-4000-8000-000000000451', '00000000-0000-0000-0000-0000000045e1', null);
+  assert (select grupa_id from public.sekcija_clanovi where korisnik_id = '00000000-0000-0000-0000-0000000045e1') is null, 'lovovođa revira skida';
+  reset role;
+end $$;
+
 rollback;

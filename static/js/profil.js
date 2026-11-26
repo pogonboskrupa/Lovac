@@ -1,5 +1,5 @@
 import { hierarchyChips } from './hijerarhija.js';
-// Profil u Postavkama: inicijali i uloge (admin, grupovođa, lovočuvar) iz keširanih podataka.
+// Profil u Postavkama: inicijali i uloge (admin, lovovođa sekcije, lovočuvar) iz keširanih podataka.
 
 export function initialsOfProfile(p) {
   if (!p) return '?';
@@ -14,7 +14,7 @@ export function profileRoles(p, ctx = {}) {
   const naziv = (id) => reviri.find((r) => r.id === id)?.naziv || 'revir';
   const out = [];
   if (p.is_admin) out.push({ kod: 'admin', tekst: 'Administrator' });
-  for (const g of (ctx.grupovodje || []).filter((x) => x.korisnik_id === p.id)) out.push({ kod: 'grupovodja', tekst: `Grupovođa · ${naziv(g.revir_id)}` });
+  for (const g of (ctx.grupovodje || []).filter((x) => x.korisnik_id === p.id)) out.push({ kod: 'grupovodja', tekst: `Lovovođa sekcije · ${naziv(g.revir_id)}` });
   for (const s of (ctx.sekcije || []).filter((x) => x.grupovodja_id === p.id)) out.push({ kod: 'sekcija', tekst: `Vodi sekciju ${s.naziv}` });
   // lovočuvari društva su u ctx.lovocuvari raspisani po revirima (drustvo: true): prikazuju se jednim čipom
   for (const l of (ctx.lovocuvari || []).filter((x) => x.korisnik_id === p.id && !x.drustvo)) out.push({ kod: 'lovocuvar', tekst: `Lovočuvar · ${naziv(l.revir_id)}` });

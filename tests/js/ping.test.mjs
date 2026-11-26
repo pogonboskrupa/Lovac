@@ -5,7 +5,7 @@ import { canPing, newPing, incomingPings, newAnswers, requestText, answerText, c
 const NOW = Date.UTC(2026, 10, 22, 10, 0, 0);
 const iso = (minAgo) => new Date(NOW - minAgo * 60000).toISOString();
 
-test('canPing: član/grupovođa/lovočuvar traže člana ili grupovođu; ne sebe, ne lovočuvara, ne čekanje/admin', () => {
+test('canPing: član/lovovođa sekcije/lovočuvar traže člana ili lovovođu sekcije; ne sebe, ne lovočuvara, ne čekanje/admin', () => {
   assert.equal(canPing('clan', 'clan', 'a', 'b'), true);
   assert.equal(canPing('grupovodja', 'clan', 'a', 'b'), true);
   assert.equal(canPing('lovocuvar', 'grupovodja', 'a', 'b'), true);

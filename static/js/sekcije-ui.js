@@ -1,5 +1,5 @@
-// Ekran "Sekcije i pristup": reviri -> sekcije, zahtjev za pristup, odobravanje (grupovođa/admin),
-// pravljenje sekcije sa spiskom lovaca i (admin) određivanje grupovođa. Server provodi sva prava.
+// Ekran "Sekcije i pristup": reviri -> sekcije, zahtjev za pristup, odobravanje (lovovođa sekcije/admin),
+// pravljenje sekcije sa spiskom lovaca i (admin) određivanje lovovođa sekcije. Server provodi sva prava.
 
 import { getClient, cachedProfile } from './auth.js';
 import { idbGet, idbPut } from './db.js';
@@ -37,7 +37,8 @@ const optional = async (promise) => {
   return error ? [] : data || [];
 };
 
-export async function downloadSekcije() {
+// `grupe` se preuzimaju samo kad ih traži tab sekcije (štedi zahtjeve besplatnom serveru); inače ostaje keširano stanje.
+export async function downloadSekcije({ grupe = false } = {}) {
   const sb = getClient();
   const reviri = await qSek(sb.from('reviri').select('*'));
   const drustvoUloge = await optional(sb.from('drustvo_uloge').select('*'));
@@ -50,6 +51,7 @@ export async function downloadSekcije() {
     lovocuvari: expandKeepers(await qSek(sb.from('revir_lovocuvari').select('*')), drustvoUloge, reviri),
     drustvoUloge,
     revirVodje: await optional(sb.from('revir_vodje').select('*')),
+    grupe: grupe ? await optional(sb.from('grupe').select('*')) : (await cachedSekcije()).grupe,
     preuzeto: Date.now(),
   };
   await idbPut('spiskovi', { id: CACHE_ID, rows: data });
@@ -61,7 +63,7 @@ export async function downloadSekcije() {
 
 export async function cachedSekcije() {
   const c = await idbGet('spiskovi', CACHE_ID);
-  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [], ...(c?.rows || {}) };
+  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [], grupe: [], ...(c?.rows || {}) };
 }
 
 // Ponovno crtanje (podaci sa servera stignu dok lovac bira) ne smije vratiti izbor na prvu stavku.
@@ -99,12 +101,12 @@ export function initSekcije() {
   const canManageSek = (sid) => { const sk = data.sekcije.find((x) => x.id === sid); return Boolean(sk) && canManage(sk, me()); };
   const invitedBy = (sid, uid) => data.clanovi.find((c) => c.sekcija_id === sid && c.korisnik_id === uid && c.status === 'ceka')?.pozvao_id || null;
 
-  // Grupovođa sekcije: admin ili lovočuvar revira (migracija 030). Revir sekcije: samo admin.
-  const gvPicker = (s) => `<label>Grupovođa sekcije<select data-gv><option value="">— niko —</option>${users().map((u) => opt(u.id, memberName(u.id), u.id === s.grupovodja_id)).join('')}</select></label>
-        <button type="button" class="dugme" data-akcija="uloge">Sačuvaj grupovođu</button>`;
+  // Lovovođa sekcije: admin ili lovočuvar revira (migracija 030). Revir sekcije: samo admin.
+  const gvPicker = (s) => `<label>Lovovođa sekcije<select data-gv><option value="">— niko —</option>${users().map((u) => opt(u.id, memberName(u.id), u.id === s.grupovodja_id)).join('')}</select></label>
+        <button type="button" class="dugme" data-akcija="uloge">Sačuvaj lovovođu sekcije</button>`;
   const revirPicker = (s) => `<label>Revir sekcije<select data-revir>${data.reviri.map((r) => opt(r.id, r.naziv, r.id === s.revir_id)).join('')}</select></label>
         <button type="button" class="dugme" data-akcija="revir">Premjesti u revir</button>`;
-  // Lovočuvar revira koji nije grupovođa sekcije: samo grupovođa (ne članovi — njih vodi grupovođa).
+  // Lovočuvar revira koji nije lovovođa sekcije: samo lovovođa sekcije (ne članovi — njih vodi lovovođa sekcije).
   // Prebacivanje zahtjeva u drugu sekciju (lovac se greškom prijavio u pogrešnu): izbor + dugme.
   const moveHtml = (sid) => {
     const others = data.sekcije.filter((x) => x.aktivno !== false && x.id !== sid);
@@ -136,7 +138,7 @@ export function initSekcije() {
     const pending = pendingRequests(s.id, data.clanovi).filter((c) => !c.pozvao_id);
     return `${pending.length ? `<h4>Zahtjevi za pristup</h4><ul class="spisak sk-zahtjevi-lista">${pending.map((c) => requestRow(s, c, false)).join('')}</ul>${bulkHtml(s)}` : ''}${historyHtml(s)}`;
   };
-  const revirHtml = (s) => `<details class="uprava sk-revir-uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Grupovođa sekcije (lovočuvar revira)</summary>
+  const revirHtml = (s) => `<details class="uprava sk-revir-uprava" ${otvoreno.has(s.id) ? 'open' : ''}><summary>Lovovođa sekcije (lovočuvar revira)</summary>
       ${pendingHtml(s)}
       ${gvPicker(s)}
       <button type="button" class="dugme" data-akcija="sakrij">Sakrij sekciju</button></details>`;
@@ -203,11 +205,11 @@ export function initSekcije() {
         ${approver ? `<span data-ima="${pendingN > 0}"><b>${pendingN}</b> ${pendingN === 1 ? 'zahtjev' : 'zahtjeva'}</span>` : ''}
       </div>
       <div class="sk2-ljudi">
-        ${s.grupovodja_id ? person(s.grupovodja_id, 'Grupovođa') : '<span class="sitno">Grupovođa: —</span>'}
+        ${s.grupovodja_id ? person(s.grupovodja_id, 'Lovovođa sekcije') : '<span class="sitno">Lovovođa sekcije: —</span>'}
         ${lcIds.length ? lcIds.map((id) => person(id, 'Lovočuvar revira')).join('') : '<span class="sitno">Lovočuvar revira: —</span>'}
       </div>
       ${showMembers ? `<details class="sk2-clanovi"><summary><span class="sk2-lica">${faces.lica.map((f) => avatar(f.id, 'mali')).join('')}${faces.ostalo ? `<span class="sk2-vise">+${faces.ostalo}</span>` : ''}</span><span>Članovi (${faces.ukupno})</span></summary>
-        <ul class="sk2-spisak">${data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren').map((c) => `<li>${avatar(c.korisnik_id, 'mali')}${escapeHtml(memberName(c.korisnik_id))}${c.korisnik_id === s.grupovodja_id ? ' <span class="sitno">· grupovođa</span>' : ''}</li>`).join('')}</ul></details>` : ''}
+        <ul class="sk2-spisak">${data.clanovi.filter((c) => c.sekcija_id === s.id && c.status === 'odobren').map((c) => `<li>${avatar(c.korisnik_id, 'mali')}${escapeHtml(memberName(c.korisnik_id))}${c.korisnik_id === s.grupovodja_id ? ' <span class="sitno">· lovovođa sekcije</span>' : ''}</li>`).join('')}</ul></details>` : ''}
       <div class="sk2-dugmad" data-glavno="${st === 'nema'}">${buttons}${newBtn}</div>
       ${canManage(s, me()) ? manageHtml(s) : editsRevir(me(), s.revir_id, data.lovocuvari) ? revirHtml(s) : ''}
     </li>`;
@@ -223,7 +225,7 @@ export function initSekcije() {
     if (lcRevirs.length) {
       $('grupovodje-spisak').innerHTML = data.grupovodje.filter((g) => lcRevirs.includes(g.revir_id)).map((g) => `<li class="trag-red" data-uid="${escapeHtml(g.korisnik_id)}" data-revir="${escapeHtml(g.revir_id)}">
         <b>${escapeHtml(memberName(g.korisnik_id))}</b> <span class="sitno">${escapeHtml(data.reviri.find((r) => r.id === g.revir_id)?.naziv || '')}</span>
-        <button type="button" class="dugme" data-akcija="ukloni-gv">Ukloni</button></li>`).join('') || '<li class="sitno">Još nema grupovođa.</li>';
+        <button type="button" class="dugme" data-akcija="ukloni-gv">Ukloni</button></li>`).join('') || '<li class="sitno">Još nema lovovođa sekcije.</li>';
       fillSelect($('grupovodja-korisnik'), users().map((u) => opt(u.id, memberName(u.id))).join(''));
       fillSelect($('grupovodja-revir'), data.reviri.filter((r) => lcRevirs.includes(r.id)).map((r) => opt(r.id, r.naziv)).join(''));
     }
@@ -268,7 +270,7 @@ export function initSekcije() {
       sekcije: sekcije.filter((s) => visibleIds.has(s.id)).sort((a, b) => Number(isMine(b, data.clanovi, user?.id, Boolean(user?.is_admin), data.lovocuvari))
         - Number(isMine(a, data.clanovi, user?.id, Boolean(user?.is_admin), data.lovocuvari))),
     })).filter((g) => g.sekcije.length || activeFilter === 'sve');
-    // izbori u karticama (grupovođa, revir, naziv) preživljavaju ponovno crtanje dok lovac bira
+    // izbori u karticama (lovovođa sekcije, revir, naziv) preživljavaju ponovno crtanje dok lovac bira
     const kept = [...$('sekcije-spisak').querySelectorAll('[data-id] [data-gv], [data-id] [data-revir], [data-id] [data-naziv], [data-id] [data-opis], [data-id] [data-okupljanje]')]
       .filter((el) => el === document.activeElement || el.dataset.dirnuto)
       .map((el) => [el.closest('[data-id]').dataset.id, Object.keys(el.dataset).find((k) => ['gv', 'revir', 'naziv', 'opis', 'okupljanje'].includes(k)), el.value]);
@@ -481,7 +483,7 @@ export function initSekcije() {
         break;
       }
       case 'uloge':
-        run(() => qSek(sb().from('sekcije').update({ grupovodja_id: card.querySelector('[data-gv]').value || null }).eq('id', sid)), 'Grupovođa sačuvan');
+        run(() => qSek(sb().from('sekcije').update({ grupovodja_id: card.querySelector('[data-gv]').value || null }).eq('id', sid)), 'Lovovođa sekcije sačuvan');
         break;
       case 'revir':
         run(() => qSek(sb().from('sekcije').update({ revir_id: card.querySelector('[data-revir]').value }).eq('id', sid)), 'Sekcija je premještena u revir');
@@ -496,7 +498,7 @@ export function initSekcije() {
     }
   });
 
-  // Učitavanje loga sekcije (mala slika, 128 px): grupovođa ili admin. Polje za fajl je JEDNO i van spiska:
+  // Učitavanje loga sekcije (mala slika, 128 px): lovovođa sekcije ili admin. Polje za fajl je JEDNO i van spiska:
   // spisak se zna ponovo nacrtati dok lovac bira sliku (osvježavanje sa servera), pa bi izbor u zamijenjenom polju propao.
   let logoSid = null;
   $('sekcija-logo-ulaz').addEventListener('change', async (e) => {
@@ -512,14 +514,14 @@ export function initSekcije() {
     }
   });
 
-  // ---- grupovođe (admin) ----
+  // ---- lovovođe sekcije (admin) ----
   $('btn-grupovodja-dodaj').addEventListener('click', () => run(() => qSek(getClient().from('grupovodje')
-    .insert({ korisnik_id: $('grupovodja-korisnik').value, revir_id: $('grupovodja-revir').value })), 'Grupovođa postavljen'));
+    .insert({ korisnik_id: $('grupovodja-korisnik').value, revir_id: $('grupovodja-revir').value })), 'Lovovođa sekcije postavljen'));
   $('grupovodje-spisak').addEventListener('click', (e) => {
     const b = e.target.closest('[data-akcija="ukloni-gv"]');
     if (!b) return;
     const row = b.closest('[data-uid]');
-    run(() => qSek(getClient().from('grupovodje').delete().eq('korisnik_id', row.dataset.uid).eq('revir_id', row.dataset.revir)), 'Grupovođa uklonjen');
+    run(() => qSek(getClient().from('grupovodje').delete().eq('korisnik_id', row.dataset.uid).eq('revir_id', row.dataset.revir)), 'Lovovođa sekcije uklonjen');
   });
 
   // ---- lovočuvari po revirima (admin): prate sve sekcije svog revira ----
@@ -536,7 +538,7 @@ export function initSekcije() {
   const openForm = () => {
     const allowed = creatableRevirIds(me(), data.grupovodje, data.reviri, data.lovocuvari);
     $('sekcija-revir').innerHTML = data.reviri.filter((r) => allowed.includes(r.id)).map((r) => opt(r.id, r.naziv)).join('');
-    // admin i lovočuvar revira biraju grupovođu nove sekcije; grupovođa revira pravi sekciju za sebe
+    // admin i lovočuvar revira biraju lovovođu sekcije nove sekcije; grupovođa revira pravi sekciju za sebe
     const picks = allowed.some((id) => editsRevir(me(), id, data.lovocuvari));
     $('sekcija-admin-polja').hidden = !picks;
     if (picks) {
@@ -544,7 +546,7 @@ export function initSekcije() {
     }
     $('sekcija-lovci').innerHTML = users().filter((u) => u.id !== me()?.id).map((u) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(u.id)}"> ${escapeHtml(memberName(u.id))}</label>`).join('')
       || '<p class="sitno">Spisak lovaca se preuzima uz internet.</p>';
-    // lovočuvar (koji nije admin) ne dodaje članove — to radi grupovođa sekcije (RLS sekcija_clanovi)
+    // lovočuvar (koji nije admin) ne dodaje članove — to radi lovovođa sekcije (RLS sekcija_clanovi)
     const keeperOnly = !me()?.is_admin && !data.grupovodje.some((g) => g.korisnik_id === me()?.id);
     $('sekcija-lovci-naslov').hidden = keeperOnly;
     $('sekcija-lovci').hidden = keeperOnly;
@@ -572,7 +574,7 @@ export function initSekcije() {
       if (ids.length) await qSek(getClient().from('sekcija_clanovi').insert(ids.map((id) => ({ sekcija_id: row.id, korisnik_id: id, status: 'odobren' }))));
       form.hidden = true;
       screen.hidden = false;
-      toast(ids.length || picks === false ? 'Sekcija napravljena' : 'Sekcija napravljena — članove dodaje grupovođa sekcije');
+      toast(ids.length || picks === false ? 'Sekcija napravljena' : 'Sekcija napravljena — članove dodaje lovovođa sekcije');
       await load();
     } catch (er) {
       $('sekcija-forma-status').textContent = `Server odbio: ${er.message}`;

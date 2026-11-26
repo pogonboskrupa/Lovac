@@ -1,5 +1,5 @@
 // "Pregled": ono što uloga smije vidjeti o prijavljenim ulovima. Šta stiže provodi server (RLS na ulov_prijave),
-// a ovdje se podaci sabiraju za administratora (društvo), lovočuvara (revir), grupovođu (sekcija) i lovca (moje prijave).
+// a ovdje se podaci sabiraju za administratora (društvo), lovočuvara (revir), lovovođu sekcije (sekcija) i lovca (moje prijave).
 
 import { getClient, cachedProfile } from './auth.js';
 import { idbGet, idbPut } from './db.js';
@@ -97,7 +97,7 @@ export function initPregled() {
 
     const fig = societyFigures(ctx);
     $('pr-drustvo-blok').hidden = role !== 'admin';
-    $('pr-drustvo').innerHTML = [['Revira', fig.reviri], ['Sekcija', fig.sekcija], ['Članova u sekcijama', fig.clanova], ['Lovočuvara', fig.lovocuvara], ['Grupovođa', fig.grupovodja]]
+    $('pr-drustvo').innerHTML = [['Revira', fig.reviri], ['Sekcija', fig.sekcija], ['Članova u sekcijama', fig.clanova], ['Lovočuvara', fig.lovocuvara], ['Lovovođa sekcije', fig.grupovodja]]
       .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
 
     renderGroups(act, ctx, vrste, role);

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -199,13 +199,13 @@ test('Pregled (administrator): cijelo društvo — brojke, po revirima, sekcijam
   await expect(page.locator('#pr-stanje')).toContainText('upravo osvježeni');
 });
 
-test('Pregled (grupovođa): vidi sekciju, nema bloka po revirima ni društva; naslov Pregled', async ({ page }) => {
+test('Pregled (lovovođa sekcije): vidi sekciju, nema bloka po revirima ni društva; naslov Pregled', async ({ page }) => {
   const server = withReports(makeServer());
   await setup(page, server, GV);
   await page.goto('/');
   await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-pregled').click();
-  await expect(page.locator('#pr-uloga')).toHaveText('Grupovođa');
+  await expect(page.locator('#pr-uloga')).toHaveText('Lovovođa sekcije');
   await expect(page.locator('#pr-reviri-blok')).toBeHidden();
   await expect(page.locator('#pr-drustvo-blok')).toBeHidden();
   await expect(page.locator('#pr-sekcije-blok')).toBeVisible();

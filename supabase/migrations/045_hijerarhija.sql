@@ -145,3 +145,40 @@ revoke execute on function public.je_lovovodja_drustva(), public.je_lovocuvar_dr
   public.moze_upravljati_grupama(uuid) from public, anon;
 grant execute on function public.je_lovovodja_drustva(), public.je_lovocuvar_drustva(), public.je_lovovodja_revira(uuid),
   public.moze_upravljati_grupama(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Faza 2: grupovođa mora biti odobren član te sekcije; raspoređivanje lovca u grupu.
+-- ---------------------------------------------------------------------------
+create or replace function public.provjeri_grupovodju()
+returns trigger language plpgsql as $$
+begin
+  if not exists (select 1 from public.sekcija_clanovi c
+                  where c.sekcija_id = new.sekcija_id and c.korisnik_id = new.grupovodja_id and c.status = 'odobren') then
+    raise exception 'Grupovođa mora biti odobren član sekcije' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists grupovodja_clan on public.grupe;
+create trigger grupovodja_clan before insert or update of grupovodja_id, sekcija_id on public.grupe
+  for each row execute function public.provjeri_grupovodju();
+
+-- Lovca u grupu (ili iz grupe, p_grupa = null) stavljaju oni koji upravljaju grupama (lovovođa sekcije, revira,
+-- društva, admin) i grupovođa grupe u koju lovac ulazi / iz koje izlazi. Lovac je u jednoj grupi po sekciji (jedna kolona).
+create or replace function public.dodijeli_grupu(p_sekcija uuid, p_korisnik uuid, p_grupa uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_stara uuid;
+begin
+  if not public.je_odobren() then raise exception 'Nema pristupa' using errcode = '42501'; end if;
+  select c.grupa_id into v_stara from public.sekcija_clanovi c
+   where c.sekcija_id = p_sekcija and c.korisnik_id = p_korisnik and c.status = 'odobren';
+  if not found then raise exception 'Lovac nije odobren član sekcije' using errcode = '23514'; end if;
+  if not (public.moze_upravljati_grupama(p_sekcija)
+          or exists (select 1 from public.grupe g where g.grupovodja_id = auth.uid() and g.id in (coalesce(p_grupa, v_stara), coalesce(v_stara, p_grupa)))) then
+    raise exception 'Nemaš pravo raspoređivati u grupe' using errcode = '42501';
+  end if;
+  update public.sekcija_clanovi set grupa_id = p_grupa where sekcija_id = p_sekcija and korisnik_id = p_korisnik;
+end;
+$$;
+revoke execute on function public.dodijeli_grupu(uuid, uuid, uuid) from public, anon;
+grant execute on function public.dodijeli_grupu(uuid, uuid, uuid) to authenticated;

@@ -1,4 +1,4 @@
-// Organizacija lova iz ploče "+": grupovođa doda lov sa spiskom lovaca, lov se pokrene, "+" tada nudi "Lov traje"
+// Organizacija lova iz ploče "+": lovovođa sekcije doda lov sa spiskom lovaca, lov se pokrene, "+" tada nudi "Lov traje"
 // sa lovcima (pozicija, poruke, slike), porukama i slikama lova.
 import { test, expect } from '@playwright/test';
 import { makeWorld, startSim, ID } from './sim-svijet.mjs';
@@ -12,7 +12,7 @@ async function seedSekcije(page, sim) {
   }), { reviri: db.reviri, sekcije: db.sekcije, clanovi: db.sekcija_clanovi, grupovodje: [], lovocuvari: [] });
 }
 
-test('grupovođa: "+" → Dodaj lov → lov počinje → "Lov traje" sa lovcima, porukama i slikama', async ({ page }) => {
+test('lovovođa sekcije: "+" → Dodaj lov → lov počinje → "Lov traje" sa lovcima, porukama i slikama', async ({ page }) => {
   test.setTimeout(120000);
   const sim = await startSim(page, makeWorld({ uToku: false }), { rpc: true, recv: true });
   await sim.run(20000);
@@ -85,7 +85,7 @@ test('grupovođa: "+" → Dodaj lov → lov počinje → "Lov traje" sa lovcima,
 
 test('običan član sekcije nema "Dodaj lov" u ploči "+"', async ({ page }) => {
   const world = makeWorld({ uToku: false });
-  // ja (prvi lovac) više nije grupovođa nijedne sekcije
+  // ja (prvi lovac) više nije lovovođa sekcije nijedne sekcije
   for (const s of world.sekcije) s.grupovodja_id = ID(999);
   const sim = await startSim(page, world, { rpc: true, recv: true });
   await sim.run(20000);

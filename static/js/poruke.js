@@ -14,7 +14,7 @@ export function validateMessage(text) {
 
 export const KANAL_RUKOVODSTVO = 'rukovodstvo';
 
-// kanal 'rukovodstvo': grupovođe, lovočuvari i admin međusobno (bez sekcije).
+// kanal 'rukovodstvo': lovovođe sekcije, lovočuvari i admin međusobno (bez sekcije).
 export function newMessage({ sekcija_id = null, autor_id, tekst, lov_id = null, kanal = 'sekcija' }, now = Date.now()) {
   return { id: uuid(), kanal, sekcija_id: kanal === KANAL_RUKOVODSTVO ? null : sekcija_id, autor_id, lov_id, tekst: String(tekst).trim(), created_at: new Date(now).toISOString(), sinhronizovano: false };
 }

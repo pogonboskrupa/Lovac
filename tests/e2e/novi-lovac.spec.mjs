@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -111,7 +111,7 @@ async function fillAndSend(page) {
   await page.locator('#btn-ln-posalji').click();
 }
 
-test('grupovođa pravi nalog: server dobija interni email i PIN, nalog je odmah u sekciji', async ({ page }) => {
+test('lovovođa sekcije pravi nalog: server dobija interni email i PIN, nalog je odmah u sekciji', async ({ page }) => {
   await setup(page, makeServer(), GV);
   await withRpc(page, { odobren: true });
   await openTab(page);
@@ -132,15 +132,15 @@ test('grupovođa pravi nalog: server dobija interni email i PIN, nalog je odmah 
   await expect(page.locator('#forma-lovac-novi [name=pin]')).toHaveValue('');
 });
 
-test('obični član samo predlaže: poruka kaže da grupovođa mora odobriti', async ({ page }) => {
+test('obični član samo predlaže: poruka kaže da lovovođa sekcije mora odobriti', async ({ page }) => {
   await setup(page, makeServer(), LOVAC);
   await withRpc(page, { odobren: false });
   await openTab(page);
   await expect(page.locator('#btn-sk-novi')).toContainText('Predloži lovca');
   await page.locator('#btn-sk-novi').click();
-  await expect(page.locator('#ln-uputa')).toContainText('grupovođa sekcije odobri');
+  await expect(page.locator('#ln-uputa')).toContainText('lovovođa sekcije odobri');
   await fillAndSend(page);
-  await expect(page.locator('#ln-gotovo-tekst')).toContainText('tek kad grupovođa odobri');
+  await expect(page.locator('#ln-gotovo-tekst')).toContainText('tek kad lovovođa sekcije odobri');
 });
 
 test('lovočuvar revira pravi nalog direktno; lovac van sekcije nema dugme', async ({ page, browser }) => {
@@ -190,7 +190,7 @@ test('neispravan PIN se odbija prije slanja na server', async ({ page }) => {
   expect(rpcCalls).toHaveLength(0);
 });
 
-test('grupovođa odobrava predloženog lovca preko funkcije, a običan zahtjev preko tabele', async ({ page }) => {
+test('lovovođa sekcije odobrava predloženog lovca preko funkcije, a običan zahtjev preko tabele', async ({ page }) => {
   const server = makeServer();
   server.db.sekcija_clanovi.push(
     { sekcija_id: ID(200), korisnik_id: VAN.id, status: 'ceka', pozvao_id: LOVAC.id },

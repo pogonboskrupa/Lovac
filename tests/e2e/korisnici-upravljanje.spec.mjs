@@ -6,7 +6,7 @@ function world() {
   return {
     korisnici: [
       { id: 'a1', ime: 'Ado', prezime: 'Admin', odobren: true, is_admin: true, created_at: '2026-11-01T08:00:00Z' },
-      { id: 'g1', ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false, created_at: '2026-11-02T08:00:00Z' },
+      { id: 'g1', ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false, created_at: '2026-11-02T08:00:00Z' },
       { id: 'l1', ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false, created_at: '2026-11-03T08:00:00Z' },
       { id: 'l2', ime: 'Luka', prezime: 'Zahtjev', odobren: true, is_admin: false, created_at: '2026-11-04T08:00:00Z' },
       { id: 'b1', ime: 'Bruno', prezime: 'Bez', odobren: true, is_admin: false, created_at: '2026-11-05T08:00:00Z' },
@@ -83,8 +83,8 @@ const poslano = (z, uslov) => z.filter(uslov);
 test('pregled: vodstvo, bez sekcije, filter po sekciji i brojke uloga', async ({ page }) => {
   await setup(page);
   // podaci o sekcijama stižu iz pozadinskog osvježavanja
-  await expect(page.locator('#kor-hero-uloge')).toHaveText('1 grupovođa · 0 lovočuvara · 2 bez sekcije');
-  await expect(page.locator('#kor-filter [data-filter="vodstvo"]')).toHaveText('Vodstvo (2)'); // admin + grupovođa
+  await expect(page.locator('#kor-hero-uloge')).toHaveText('1 lovovođa sekcije · 0 lovočuvara · 2 bez sekcije');
+  await expect(page.locator('#kor-filter [data-filter="vodstvo"]')).toHaveText('Vodstvo (2)'); // admin + lovovođa sekcije
   await expect(page.locator('#kor-filter [data-filter="bez"]')).toHaveText('Bez sekcije (2)'); // Luka (samo zahtjev) i Bruno
   await page.locator('#kor-filter [data-filter="vodstvo"]').click();
   await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(2);
@@ -104,7 +104,7 @@ test('pregled: vodstvo, bez sekcije, filter po sekciji i brojke uloga', async ({
 test('premjesti člana: upis u novu sekciju, brisanje iz stare i skidanje sa vođenja stare sekcije', async ({ page }) => {
   const { zahtjevi, db } = await setup(page);
   const g = await otvori(page, 'g1'); // vodi Krupa 1
-  await expect(g.locator('.kor-sek[data-sid="s1"]')).toContainText('grupovođa');
+  await expect(g.locator('.kor-sek[data-sid="s1"]')).toContainText('lovovođa sekcije');
   // bez izbora se ništa ne šalje
   await g.locator('.kor-sek[data-sid="s1"] [data-akcija="premjesti"]').click();
   await expect(page.locator('#korisnici-status')).toHaveText('Izaberi sekciju u koju se premješta');
@@ -138,7 +138,7 @@ test('ukloni iz sekcije drugim dodirom; dodaj u sekciju; odbij zahtjev', async (
   await l.locator('.kor-sek[data-sid="s1"] [data-akcija="ukloni-sek"]').click();
   await expect.poll(() => zahtjevi.length).toBe(1);
   expect(zahtjevi[0]).toMatchObject({ metoda: 'DELETE', filter: { sekcija_id: 's1', korisnik_id: 'l1' } });
-  expect(zahtjevi.some((z) => z.table === 'sekcije')).toBe(false); // nije bio grupovođa
+  expect(zahtjevi.some((z) => z.table === 'sekcije')).toBe(false); // nije bio lovovođa sekcije
   await expect(kartica(page, 'l1')).not.toContainText('Član:');
   const b = await otvori(page, 'b1');
   await b.locator('select[data-izbor="dodaj"]').selectOption('s2');
@@ -146,11 +146,11 @@ test('ukloni iz sekcije drugim dodirom; dodaj u sekciju; odbij zahtjev', async (
   await expect.poll(() => db.sekcija_clanovi.some((c) => c.korisnik_id === 'b1' && c.sekcija_id === 's2' && c.status === 'odobren')).toBe(true);
 });
 
-test('imenuj grupovođu sekcije (pokazuje koga zamjenjuje) i skini ga', async ({ page }) => {
+test('imenuj lovovođu sekcije (pokazuje koga zamjenjuje) i skini ga', async ({ page }) => {
   const { zahtjevi, db } = await setup(page);
   const l = await otvori(page, 'l1');
   const opcije = await l.locator('select[data-izbor="gv"] option').allTextContents();
-  expect(opcije).toContain('Krupa 1 (Krupa) — zamjenjuje: Goran Grupovođa');
+  expect(opcije).toContain('Krupa 1 (Krupa) — zamjenjuje: Goran Lovovođa sekcije');
   expect(opcije).toContain('Krupa 2 (Krupa)');
   await l.locator('[data-akcija="gv-postavi"]').click();
   await expect(page.locator('#korisnici-status')).toHaveText('Izaberi sekciju');

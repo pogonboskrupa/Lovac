@@ -1,10 +1,10 @@
-// Pregled po ulozi (čista logika): ko je gledalac (administrator, lovočuvar, grupovođa, lovac) i agregati prijavljenog ulova.
+// Pregled po ulozi (čista logika): ko je gledalac (administrator, lovočuvar, lovovođa sekcije, lovac) i agregati prijavljenog ulova.
 // Šta ko vidi provodi SERVER (RLS na ulov_prijave); ovdje se samo sabira ono što je stiglo.
 
 export const ULOGE_OPIS = {
   admin: { naziv: 'Administrator', opis: 'Cijelo društvo: svi reviri, sekcije, prijavljeni ulovi i statistike. Ne vidi privatne zapise lovaca, samo ono što je prijavljeno.' },
   lovocuvar: { naziv: 'Lovočuvar', opis: 'Prati stanje svog revira: sekcije, prijavljene ulove i aktivnost. Ostale revire ne vidi.' },
-  grupovodja: { naziv: 'Grupovođa', opis: 'Vodi sekciju: članovi, lovovi i prijavljeni ulovi njegove sekcije.' },
+  grupovodja: { naziv: 'Lovovođa sekcije', opis: 'Vodi sekciju: članovi, lovovi i prijavljeni ulovi njegove sekcije.' },
   lovac: { naziv: 'Lovac', opis: 'Radi unutar sekcije: evidencija, lov i prijava ulova društvu.' },
 };
 

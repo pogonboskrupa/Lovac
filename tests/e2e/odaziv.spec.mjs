@@ -1,5 +1,5 @@
 // Novi lov sekcije: član dobije pitanje "Dolaziš?"; "Da" = samoprijava + odaziv, "Ne" = odaziv; bez veze odgovor
-// čeka na telefonu i ode kad se veza vrati. Grupovođa vidi ko dolazi i ko ne.
+// čeka na telefonu i ode kad se veza vrati. Lovovođa sekcije vidi ko dolazi i ko ne.
 import { test, expect } from '@playwright/test';
 import { makeWorld, startSim, ID } from './sim-svijet.mjs';
 
@@ -69,7 +69,7 @@ test('bez veze: odgovor čeka na telefonu i ode tačno jednom kad se veza vrati'
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('lovac.odaziv.red')).length)).toBe(0);
 });
 
-test('grupovođa: u tabu sekcije vidi ko dolazi i ko ne; sebe ne pita', async ({ page }) => {
+test('lovovođa sekcije: u tabu sekcije vidi ko dolazi i ko ne; sebe ne pita', async ({ page }) => {
   test.setTimeout(120000);
   const sim = await startSim(page, makeWorld({ uToku: false }), { rpc: true, recv: true });
   await seedSekcije(page, sim.db);

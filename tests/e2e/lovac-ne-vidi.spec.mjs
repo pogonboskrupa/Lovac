@@ -1,5 +1,5 @@
-// Obični lovac (odobren član jedne sekcije, nije grupovođa/lovočuvar/admin) ne vidi ništa što je rezervisano za
-// administratora, lovočuvara i grupovođu: administraciju, upravljanje lovom i sekcijama, kameru, Rukovodstvo,
+// Obični lovac (odobren član jedne sekcije, nije lovovođa sekcije/lovočuvar/admin) ne vidi ništa što je rezervisano za
+// administratora, lovočuvara i lovovođu sekcije: administraciju, upravljanje lovom i sekcijama, kameru, Rukovodstvo,
 // zvanične objekte, "Društvo u brojkama". Server to provodi (RLS, tests/sql/036), klijent ne smije ni nuditi.
 import { test, expect } from '@playwright/test';
 import { makeWorld, startSim, ID } from './sim-svijet.mjs';
@@ -15,7 +15,7 @@ async function seedSekcije(page, db) {
 test('obični lovac: nema administracije, kamere, upravljanja lovom, Rukovodstva ni zvaničnih objekata', async ({ page }) => {
   test.setTimeout(120000);
   const world = makeWorld({ uToku: false });
-  for (const s of world.sekcije) s.grupovodja_id = ID(900); // niko iz sekcije 1 nije grupovođa
+  for (const s of world.sekcije) s.grupovodja_id = ID(900); // niko iz sekcije 1 nije lovovođa sekcije
   for (const l of world.lovovi) l.organizator_id = ID(900);
   const sim = await startSim(page, world, { rpc: true, recv: true });
   await sim.run(20000);

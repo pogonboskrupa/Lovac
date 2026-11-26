@@ -1,5 +1,5 @@
-// Ekran "Novi lovac": admin, lovočuvar i grupovođa prave nalog i odmah dodaju lovca u sekciju;
-// običan član sekcije samo PREDLAŽE — nalog ne radi dok ga grupovođa (ili admin) ne odobri.
+// Ekran "Novi lovac": admin, lovočuvar i lovovođa sekcije prave nalog i odmah dodaju lovca u sekciju;
+// običan član sekcije samo PREDLAŽE — nalog ne radi dok ga lovovođa sekcije (ili admin) ne odobri.
 
 import { cachedProfile, provisionUser } from './auth.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
@@ -34,7 +34,7 @@ export function initNoviLovac() {
   const syncHint = () => {
     $('ln-uputa').textContent = modeFor($('ln-sekcija').value) === 'direct'
       ? 'Nalog je odmah odobren i lovac je odmah član sekcije.'
-      : 'Ti predlažeš lovca: nalog će raditi tek kad ga grupovođa sekcije odobri (najviše 5 predloga odjednom).';
+      : 'Ti predlažeš lovca: nalog će raditi tek kad ga lovovođa sekcije odobri (najviše 5 predloga odjednom).';
     $('btn-ln-posalji').textContent = modeFor($('ln-sekcija').value) === 'direct' ? 'Napravi nalog' : 'Predloži lovca';
   };
 
@@ -60,7 +60,7 @@ export function initNoviLovac() {
       status.textContent = '';
       $('ln-gotovo-tekst').textContent = direct
         ? `${ime} je dodan u sekciju i može se prijaviti imenom, prezimenom i PIN-om.`
-        : `${ime} je predložen. Može se prijaviti tek kad grupovođa odobri.`;
+        : `${ime} je predložen. Može se prijaviti tek kad lovovođa sekcije odobri.`;
       form.hidden = true;
       $('ln-gotovo').hidden = false;
       downloadSekcije().catch(() => {});

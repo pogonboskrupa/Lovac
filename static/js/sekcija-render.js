@@ -11,14 +11,14 @@ import { escapeHtml } from './ui.js';
 
 export const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
 
-// Grupovođa/admin: pokreće i završava lov, dodaje i uklanja prisutne. Član: javlja da je prisutan.
+// Lovovođa sekcije/admin: pokreće i završava lov, dodaje i uklanja prisutne. Član: javlja da je prisutan.
 // o = { s, cur, st, myId, clanovi, odazivi, nameOf }
 export function huntControlsHtml(o) {
   const { s, cur, st, myId, clanovi, odazivi, nameOf } = o;
   const manager = st === 'grupovodja' || st === 'admin';
   if (!cur) {
     return manager ? '<button type="button" class="dugme glavno" data-akcija="lov-novi">Novi lov</button>'
-      : '<p class="sitno">Grupovođa još nije napravio lov. Kad ga napravi, ovdje javljaš da si prisutan.</p>';
+      : '<p class="sitno">Lovovođa sekcije još nije napravio lov. Kad ga napravi, ovdje javljaš da si prisutan.</p>';
   }
   const { lov, ucesnici } = cur.zapis;
   const pres = huntPresence(cur.zapis, myId, st);
@@ -85,7 +85,7 @@ export function conversationHtml(list, { showHunt, myId, nameOf }) {
   }).join('');
 }
 
-const ULOGE_CLANA = { grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
+const ULOGE_CLANA = { grupovodja: 'Lovovođa sekcije', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
 
 // Redovi lovaca sekcije. o = { actOf, myId, st, lovCounts (Map), avatarOf(id), canPing(st, uloga, myId, id), total }
 export function membersHtml(shown, o) {
@@ -106,4 +106,26 @@ export function membersHtml(shown, o) {
         </div>
       </li>`;
   }).join('') || `<li class="sitno">${total ? 'Nijedan lovac ne odgovara pretrazi.' : 'Nema članova.'}</li>`;
+}
+
+// Grupe sekcije. m = { groups, ungrouped, manage, myId, candidates, assignable }. Grupa nema naziv — prepoznaje se po grupovođi.
+export function groupsHtml(m) {
+  const { groups, ungrouped, manage, myId, candidates, assignable } = m;
+  const opts = (list) => list.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.grupovodja)}</option>`).join('');
+  const assign = (id) => (assignable.length
+    ? `<span class="sk-grupa-dodjela"><select data-grupa-izbor aria-label="Grupa (grupovođa)">${opts(assignable)}</select>
+        <button type="button" class="dugme" data-akcija="grupa-dodijeli" data-uid="${escapeHtml(id)}">Dodaj u grupu</button></span>` : '');
+  const grupa = (g) => `<li class="sk-grupa" data-grupa="${escapeHtml(g.id)}">
+      <div class="sk-grupa-glava"><b>Grupa — grupovođa ${escapeHtml(g.grupovodja)}</b><span class="sitno"> · ${g.clanovi.length} lovaca</span>
+        ${manage ? `<button type="button" class="dugme" data-akcija="grupa-ukloni" data-grupa="${escapeHtml(g.id)}">Ukloni grupu</button>` : ''}</div>
+      <ul class="sk-grupa-clanovi">${g.clanovi.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === g.grupovodja_id ? ' <span class="sitno">(grupovođa)</span>' : ''}${manage || g.grupovodja_id === myId ? ` <button type="button" class="dugme" data-akcija="grupa-izbaci" data-uid="${escapeHtml(c.id)}">Izvadi iz grupe</button>` : ''}</li>`).join('') || '<li class="sitno">Nema lovaca u grupi.</li>'}</ul>
+    </li>`;
+  const bez = ungrouped.length
+    ? `<h4>Bez grupe (${ungrouped.length})</h4><ul class="sk-bez-grupe">${ungrouped.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === myId ? ' (ti)' : ''} ${assign(c.id)}</li>`).join('')}</ul>`
+    : '';
+  const nova = manage
+    ? `<div class="sk-grupa-nova"><select id="sk-grupa-gv" aria-label="Grupovođa nove grupe">${candidates.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.ime)}</option>`).join('')}</select>
+        <button type="button" class="dugme" data-akcija="grupa-nova"${candidates.length ? '' : ' disabled'}>Napravi grupu</button></div>`
+    : '';
+  return `${groups.map(grupa).join('') || '<p class="sitno">Još nema grupa.</p>'}${bez}${nova}`;
 }

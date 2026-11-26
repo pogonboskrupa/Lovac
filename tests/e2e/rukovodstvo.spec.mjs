@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -101,7 +101,7 @@ async function openTab(page) {
 
 const ruk = (id, autor, tekst, minAgo) => ({ id, kanal: 'rukovodstvo', sekcija_id: null, autor_id: autor, tekst, created_at: new Date(Date.now() - minAgo * 60000).toISOString() });
 
-test('grupovođa vidi kanal Rukovodstvo i piše drugim grupovođama i lovočuvarima', async ({ page }) => {
+test('lovovođa sekcije vidi kanal Rukovodstvo i piše drugim lovovođa sekcijema i lovočuvarima', async ({ page }) => {
   const server = makeServer();
   server.db.poruke.push(ruk(ID(700), VAN.id, 'Lovočuvar Krupe: sutra obilazak granice', 30));
   await setup(page, server, GV);

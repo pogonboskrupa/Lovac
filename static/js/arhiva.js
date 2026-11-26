@@ -34,7 +34,7 @@ export function huntedText(odstrel, nameOf) {
   return s.length ? s.map((x) => `${nameOf(x.vrsta)} ${x.komada}`).join(', ') : '';
 }
 
-// Slike dodaju učesnici lova i upravljač (organizator, grupovođa sekcije, admin); najviše MAX_PHOTOS_PER_HUNT po lovu.
+// Slike dodaju učesnici lova i upravljač (organizator, lovovođa sekcije, admin); najviše MAX_PHOTOS_PER_HUNT po lovu.
 export function canAddMedia(zapis, myId, isManager, photoCount = 0) {
   if (!zapis || photoCount >= MAX_PHOTOS_PER_HUNT) return false;
   return isManager || Boolean(zapis.ucesnici?.some((u) => u.korisnik_id === myId));

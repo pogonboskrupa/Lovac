@@ -27,14 +27,14 @@ test('nove odluke i kursor sa preklopom (bez duplikata po id-u)', () => {
   assert.equal(nextDecisionCursor([], 'x'), 'x');
 });
 
-test('"Odobri sve" preskače predložene naloge; CSV članova: grupovođa prvi, zaštita od formula, ime fajla', () => {
+test('"Odobri sve" preskače predložene naloge; CSV članova: lovovođa sekcije prvi, zaštita od formula, ime fajla', () => {
   const clanovi = [
     { sekcija_id: 's1', korisnik_id: 'a', status: 'ceka' }, { sekcija_id: 's1', korisnik_id: 'b', status: 'ceka', pozvao_id: 'x' },
     { sekcija_id: 's1', korisnik_id: 'g', status: 'odobren', odlucio_at: '2026-03-01T00:00:00Z' }, { sekcija_id: 's1', korisnik_id: 'z', status: 'odobren', created_at: '2026-01-05T00:00:00Z' },
   ];
   assert.deepEqual(bulkApprovable('s1', clanovi).map((c) => c.korisnik_id), ['a']);
   const rows = memberRows({ id: 's1', grupovodja_id: 'g' }, clanovi, [{ id: 'g', ime: 'Goran', prezime: 'Zukić' }, { id: 'z', ime: '=HACK', prezime: 'Avdić', nadimak: '12' }]);
-  assert.deepEqual(rows.map((r) => r.uloga), ['Grupovođa', 'Član']);
+  assert.deepEqual(rows.map((r) => r.uloga), ['Lovovođa sekcije', 'Član']);
   const csv = toCsv(rows, MEMBER_CSV_COLUMNS);
   assert.match(csv, /^﻿Prezime;Ime;/);
   assert.match(csv, /Avdić;'=HACK;12;Član;2026-01-05/);

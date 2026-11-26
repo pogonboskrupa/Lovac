@@ -17,7 +17,7 @@ export function decisionText(o, sekcije = []) {
   return `Zahtjev za ${ime} je odbijen.${o.razlog ? ` Razlog: ${o.razlog}` : ''}`;
 }
 
-// Red u historiji sekcije (za grupovođu / lovočuvara / admina).
+// Red u historiji sekcije (za lovovođu sekcije / lovočuvara / admina).
 export function historyLine(o, nameOf, sekcije = []) {
   const ko = o.odlucio ? nameOf(o.odlucio) : 'server';
   const za = nameOf(o.korisnik_id);
@@ -44,16 +44,16 @@ export function bulkApprovable(sekcijaId, clanovi = []) {
   return clanovi.filter((c) => c.sekcija_id === sekcijaId && c.status === 'ceka' && !c.pozvao_id);
 }
 
-// Spisak članova za CSV (sastanci, evidencija): grupovođa prvi, pa po prezimenu.
+// Spisak članova za CSV (sastanci, evidencija): lovovođa sekcije prvi, pa po prezimenu.
 export function memberRows(sekcija, clanovi = [], users = []) {
   const byId = new Map(users.map((u) => [u.id, u]));
   return clanovi.filter((c) => c.sekcija_id === sekcija.id && c.status === 'odobren')
     .map((c) => {
       const u = byId.get(c.korisnik_id) || {};
-      return { prezime: u.prezime || '', ime: u.ime || '', nadimak: u.nadimak || '', uloga: c.korisnik_id === sekcija.grupovodja_id ? 'Grupovođa' : 'Član',
+      return { prezime: u.prezime || '', ime: u.ime || '', nadimak: u.nadimak || '', uloga: c.korisnik_id === sekcija.grupovodja_id ? 'Lovovođa sekcije' : 'Član',
         od: (c.odlucio_at || c.created_at || '').slice(0, 10) };
     })
-    .sort((a, b) => Number(b.uloga === 'Grupovođa') - Number(a.uloga === 'Grupovođa') || a.prezime.localeCompare(b.prezime, 'bs') || a.ime.localeCompare(b.ime, 'bs'));
+    .sort((a, b) => Number(b.uloga === 'Lovovođa sekcije') - Number(a.uloga === 'Lovovođa sekcije') || a.prezime.localeCompare(b.prezime, 'bs') || a.ime.localeCompare(b.ime, 'bs'));
 }
 
 export const MEMBER_CSV_COLUMNS = [

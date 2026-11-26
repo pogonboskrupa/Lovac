@@ -6,7 +6,7 @@ import { uuid } from './zapisi.js';
 export const PING_TTL_MS = 15 * 60000;
 export const PING_COOLDOWN_MS = 2 * 60000;
 
-// Traži član, grupovođa ili lovočuvar sekcije; traži se član ili grupovođa (lovočuvar prati, ne dijeli).
+// Traži član, lovovođa sekcije ili lovočuvar sekcije; traži se član ili lovovođa sekcije (lovočuvar prati, ne dijeli).
 export function canPing(myStatus, targetRole, myId, targetId) {
   return Boolean(myId) && myId !== targetId
     && ['clan', 'grupovodja', 'lovocuvar'].includes(myStatus)

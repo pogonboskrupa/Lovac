@@ -131,7 +131,7 @@ export async function register({ ime, prezime, nadimak, pin, sekcija }) {
   const { data, error } = await sb.auth.signUp({
     email: syntheticEmail(ime, prezime, nad),
     password: String(pin),
-    // probni: server daje 24 sata rada dok grupovođa, lovočuvar ili administrator ne odobri nalog (rok bira server).
+    // probni: server daje 24 sata rada dok lovovođa sekcije, lovočuvar ili administrator ne odobri nalog (rok bira server).
     options: { data: { ime: ime.trim(), prezime: prezime.trim(), nadimak: nad, probni: true, ...(sekcija ? { sekcija: String(sekcija) } : {}) } },
   });
   if (error) throw new Error(friendlyAuthError(error));

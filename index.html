@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.7.0';
+  const APP_VER = 'v1.7.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -97,13 +97,13 @@
           <select id="pr-revir" name="revir"><option value="">— izaberi revir —</option></select></label>
         <label class="pr-polje"><span>Sekcija <span class="sitno">(neobavezno)</span></span>
           <select id="pr-sekcija" name="sekcija" disabled><option value="">— izaberi sekciju —</option></select></label>
-        <p class="sitno">Ako izabereš sekciju, njen grupovođa, lovočuvar revira ili administrator odlučuje o prijemu (ili te prebacuje u drugu sekciju ako si pogriješio/la).</p>
+        <p class="sitno">Ako izabereš sekciju, njen lovovođa sekcije, lovočuvar revira ili administrator odlučuje o prijemu (ili te prebacuje u drugu sekciju ako si pogriješio/la).</p>
         <p id="pr-sekcija-prazno" class="sitno" hidden>Spisak sekcija nije dostupan (nema veze sa serverom). Sekciju možeš zatražiti poslije prijave.</p>
       </div>
       <label class="pr-polje"><span>PIN <span class="sitno">(6–8 cifara)</span></span>
         <span class="pr-ulaz"><svg class="ic" aria-hidden="true"><use href="#ic-brava"/></svg><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="8" required placeholder="••••••">
         <button type="button" id="btn-pin-prikazi" class="pr-oko" aria-label="Prikaži PIN" aria-pressed="false"><svg class="ic"><use href="#ic-eye"/></svg></button></span></label>
-      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog odmah radi 24 sata (probni period). Za stalni pristup izaberi sekciju — odobrava grupovođa, lovočuvar ili administrator. Ako ti nalog pravi grupovođa, ne treba se registrovati.</p>
+      <p id="pr-reg-napomena" class="pr-napomena" hidden>Novi nalog odmah radi 24 sata (probni period). Za stalni pristup izaberi sekciju — odobrava lovovođa sekcije, lovočuvar ili administrator. Ako ti nalog pravi lovovođa sekcije, ne treba se registrovati.</p>
       <button type="submit" id="btn-prijava" value="prijava" class="dugme glavno pr-dugme"><span class="pr-vrtilica" aria-hidden="true"></span><span id="btn-prijava-tekst">Prijavi se</span></button>
       <p id="prijava-status" class="status pr-status" role="status"></p>
     </form>
@@ -113,7 +113,7 @@
 
 <main id="ekran-cekanje" class="ekran ekran-forma" hidden>
   <h1>Čeka odobrenje</h1>
-  <p id="cekanje-tekst">Vaš nalog je primljen. Administrator društva ili grupovođa ga treba odobriti prije korištenja.</p>
+  <p id="cekanje-tekst">Vaš nalog je primljen. Administrator društva ili lovovođa sekcije ga treba odobriti prije korištenja.</p>
   <div class="red-dugmadi">
     <button id="btn-provjeri-odobrenje" class="dugme glavno" type="button">Provjeri ponovo</button>
     <button id="btn-odjava" class="dugme" type="button">Odjava</button>
@@ -250,7 +250,7 @@
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
     <section id="lok-sekcija" class="lok-sekcija">
       <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-group"/></svg>Dijeli lokaciju sa sekcijom</h3>
-      <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi, grupovođa, lovočuvar i administrator.</p>
+      <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi, lovovođa sekcije, lovočuvar i administrator.</p>
       <div id="lok-sek-forma">
         <select id="lok-sek-izbor" aria-label="Sekcija" hidden></select>
         <div id="lok-sek-trajanje" class="segment" role="group" aria-label="Koliko dugo dijeliti"></div>
@@ -259,7 +259,7 @@
       </div>
       <h4>Članovi koji dijele lokaciju <span id="lok-sek-broj" class="sitno"></span></h4>
       <ul id="lok-sek-lista" class="spisak"></ul>
-      <p class="sitno">Lokaciju vide samo članovi, grupovođa i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
+      <p class="sitno">Lokaciju vide samo članovi, lovovođa sekcije i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
     </section>
     <section id="lok-izabrani" class="lok-sekcija">
       <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg>Dijeli sa izabranim lovcima</h3>
@@ -1506,7 +1506,7 @@
     <button id="btn-odaziv-ne" class="dugme" type="button">Ne mogu</button>
     <button id="btn-odaziv-kasnije" class="dugme" type="button">Kasnije</button>
   </div>
-  <p class="sitno">Odgovor vidi grupovođa. Bez interneta odgovor čeka na telefonu i šalje se kad se pojavi veza.</p>
+  <p class="sitno">Odgovor vidi lovovođa sekcije. Bez interneta odgovor čeka na telefonu i šalje se kad se pojavi veza.</p>
 </section>
 <section id="teren-ponuda" class="dijalog dijalog-gore teren-ponuda" role="alertdialog" aria-labelledby="teren-ponuda-naslov" hidden>
   <h3 id="teren-ponuda-naslov">Skini terensku kartu</h3>
@@ -1534,21 +1534,21 @@
   <div id="sekcije-odluke" class="sk-odluke" role="status" hidden></div>
   <div id="sekcije-filter" class="segment sks-filter" role="group" aria-label="Prikaz sekcija"></div>
   <div class="sks-alati">
-    <input id="sekcije-trazi" type="search" placeholder="Traži sekciju, revir, lovca…" aria-label="Traži sekcije (sekcija, revir, grupovođa, član)" autocomplete="off">
+    <input id="sekcije-trazi" type="search" placeholder="Traži sekciju, revir, lovca…" aria-label="Traži sekcije (sekcija, revir, lovovođa sekcije, član)" autocomplete="off">
     <button id="btn-sekcije-osvjezi" class="ikona-dugme" type="button" aria-label="Osvježi sa servera" title="Osvježi sa servera"><svg class="ic" aria-hidden="true"><use href="#ic-osvjezi"/></svg></button>
   </div>
   <button id="btn-sekcija-nova" class="dugme glavno" type="button" hidden>Nova sekcija</button>
   <p id="sekcije-status" class="status" role="status"></p>
   <details id="uloge-detalji" class="uprava" hidden>
-  <summary>Grupovođe i lovočuvari po revirima</summary>
+  <summary>Lovovođe sekcije i lovočuvari po revirima</summary>
   <div id="grupovodje-blok" hidden>
-    <h3>Grupovođe revira</h3>
-    <p class="sitno">Grupovođa revira smije praviti sekcije u tom reviru. Postavlja ih lovočuvar revira ili administrator.</p>
+    <h3>Ovlašteni za pravljenje sekcija</h3>
+    <p class="sitno">Ovlašteni lovac smije praviti sekcije u tom reviru. Postavlja ih lovočuvar revira ili administrator.</p>
     <ul id="grupovodje-spisak" class="spisak"></ul>
     <div class="red-dugmadi">
       <select id="grupovodja-korisnik" aria-label="Lovac"></select>
       <select id="grupovodja-revir" aria-label="Revir"></select>
-      <button id="btn-grupovodja-dodaj" class="dugme" type="button">Postavi za grupovođu</button>
+      <button id="btn-grupovodja-dodaj" class="dugme" type="button">Postavi za lovovođu sekcije</button>
     </div>
   </div>
   <div id="lovocuvari-blok" hidden>
@@ -1572,7 +1572,7 @@
     <label>Revir<select id="sekcija-revir" name="revir"></select></label>
     <label>Naziv sekcije<input name="naziv" maxlength="60" placeholder="npr. Sekcija 1"></label>
     <div id="sekcija-admin-polja" hidden>
-      <label>Grupovođa<select id="sekcija-grupovodja" name="grupovodja"></select></label>
+      <label>Lovovođa sekcije<select id="sekcija-grupovodja" name="grupovodja"></select></label>
     </div>
     <h3 id="sekcija-lovci-naslov">Spisak lovaca (odmah odobreni)</h3>
     <div id="sekcija-lovci" class="clanovi"></div>
@@ -1592,7 +1592,7 @@
   <nav id="sk-lista" class="sk-lista" aria-label="Sekcije" hidden></nav>
   <p id="sk-status" class="status" role="status"></p>
   <div id="sk-prazno" hidden>
-    <p>Nisi član nijedne sekcije. Zatraži pristup od grupovođe: bez odobrenja se ne može ući.</p>
+    <p>Nisi član nijedne sekcije. Zatraži pristup od lovovođe sekcije: bez odobrenja se ne može ući.</p>
     <button id="btn-sk-pristup" class="dugme glavno" type="button">Sekcije i pristup</button>
   </div>
   <div id="sk-sadrzaj" hidden>
@@ -1631,6 +1631,12 @@
       <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
     </section>
 
+    <section id="sk-k-grupe" class="sk-kartica">
+      <h3>Grupe <span id="sk-grupe-broj" class="sitno"></span></h3>
+      <p class="sitno">Grupa nema naziv: prepoznaje se po grupovođi. Lovac je u jednoj grupi. Raspoređuju lovovođa sekcije ili grupovođa; radnje traže internet.</p>
+      <div id="sk-grupe"></div>
+    </section>
+
     <section id="sk-k-lov" class="sk-kartica">
       <h3>Tekući lov</h3>
       <div id="sk-lov" class="sk-lov"></div>
@@ -1639,7 +1645,7 @@
 
     <section id="sk-k-poruke" class="sk-kartica">
       <h3>Poruke</h3>
-      <p class="sitno">Poruke vide članovi sekcije, grupovođa, lovočuvar revira i administrator.</p>
+      <p class="sitno">Poruke vide članovi sekcije, lovovođa sekcije, lovočuvar revira i administrator.</p>
       <div id="sk-poruke" class="poruke" role="log" aria-live="polite"></div>
       <div id="sk-brze" class="brze-poruke"></div>
       <form id="forma-poruka" class="forma-poruka" novalidate>
@@ -1650,7 +1656,7 @@
 
     <section id="sk-k-ruk" class="sk-kartica" hidden>
       <h3>Rukovodstvo</h3>
-      <p class="sitno">Razgovor grupovođa, lovočuvara i administratora, izvan sekcija. Članovi ga ne vide.</p>
+      <p class="sitno">Razgovor lovovođa sekcije, lovočuvara i administratora, izvan sekcija. Članovi ga ne vide.</p>
       <div id="sk-ruk-poruke" class="poruke" role="log" aria-live="polite"></div>
       <form id="forma-ruk" class="forma-poruka" novalidate>
         <input name="tekst" maxlength="1000" placeholder="Poruka rukovodstvu" aria-label="Poruka rukovodstvu" autocomplete="off">
@@ -1815,7 +1821,7 @@
       <form id="st-kriteriji-forma" novalidate></form>
       <p id="st-kriteriji-status" class="status" role="status"></p>
     </section>
-    <p class="sitno">Rejting je pomoć grupovođi i društvu, ne kazna: računa se samo iz podataka koji su prijavljeni na serveru. Broj komada ima gornju granicu da se ne nagrađuje pretjeran odstrel. Ne zamjenjuje procjenu grupovođe ni propise društva.</p>
+    <p class="sitno">Rejting je pomoć lovovođi sekcije i društvu, ne kazna: računa se samo iz podataka koji su prijavljeni na serveru. Broj komada ima gornju granicu da se ne nagrađuje pretjeran odstrel. Ne zamjenjuje procjenu lovovođe sekcije ni propise društva.</p>
   </div>
 </section>
 <section id="prijava-dijalog" class="dijalog dijalog-gore" role="dialog" aria-labelledby="prijava-naslov" hidden>
@@ -1952,7 +1958,7 @@
     <h3>Rezultat lova</h3>
     <p id="ad-rezultat-tekst"></p>
     <div id="ad-rezultat-forma" hidden>
-      <label>Rezultat (unosi grupovođa)<textarea id="ad-rezultat" rows="3" maxlength="2000" placeholder="npr. 2 divlje svinje, 1 lisica; pogon prošao bez problema"></textarea></label>
+      <label>Rezultat (unosi lovovođa sekcije)<textarea id="ad-rezultat" rows="3" maxlength="2000" placeholder="npr. 2 divlje svinje, 1 lisica; pogon prošao bez problema"></textarea></label>
       <button id="btn-ad-rezultat" class="dugme" type="button">Sačuvaj rezultat</button>
     </div>
   </section>
@@ -1964,7 +1970,7 @@
       <label>Opis slike (neobavezno)<input id="ad-slika-opis" maxlength="300" autocomplete="off"></label>
       <label class="dugme dugme-fajl">Dodaj sliku lova<input id="ad-slika-ulaz" type="file" accept="image/*" hidden></label>
     </div>
-    <p class="sitno">Slike lova vide učesnici, članovi sekcije i grupovođa. Šalju se na server (smanjene), pa se vide i drugima; velika slika ostaje na serveru 14 dana, a sličica trajno.</p>
+    <p class="sitno">Slike lova vide učesnici, članovi sekcije i lovovođa sekcije. Šalju se na server (smanjene), pa se vide i drugima; velika slika ostaje na serveru 14 dana, a sličica trajno.</p>
   </section>
   <section id="ad-brisanje" class="sk-kartica ad-brisanje" hidden>
     <h3>Brisanje lova</h3>

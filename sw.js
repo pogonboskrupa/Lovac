@@ -1,5 +1,5 @@
 // Service worker: app shell offline. Pločice kešira tiles.js (Cache API), ne ovaj fajl.
-const APP_VERSION = 'v1.7.0';
+const APP_VERSION = 'v1.7.1';
 const SHELL_CACHE = `shell-${APP_VERSION}`;
 
 const SHELL = [
@@ -26,6 +26,7 @@ const SHELL = [
   'static/js/slika-pregled.js',
   'static/js/slika-zoom.js',
   'static/js/sekcija-render.js',
+  'static/js/grupe.js',
   'static/js/hijerarhija.js',
   'static/js/sekcija-poruke.js',
   'static/js/nagib.js',

@@ -55,7 +55,7 @@ export function makeWorld({ uToku = true, historija = 0, poruka = 0, dogadjaja =
 
 const RECV_TABLES = new Set(['lov_tragovi', 'poruke', 'lov_dogadjaji', 'dojave']);
 
-// Pokreće aplikaciju kao prvi lovac sekcije 1 (grupovođa, učesnik lova 1) i vraća stanje za mjerenje.
+// Pokreće aplikaciju kao prvi lovac sekcije 1 (lovovođa sekcije, učesnik lova 1) i vraća stanje za mjerenje.
 export async function startSim(page, world, { rpc = true, recv = true } = {}) {
   const db = world;
   const ja = db.korisnici[0];

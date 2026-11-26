@@ -29,7 +29,7 @@ test('lovočuvar je lovočuvar CIJELOG revira (obje sekcije Krupe, ne Otoke)', (
   assert.equal(myStatus(SEK[0], CL, 'g1', false, LOVOCUVARI), 'grupovodja');
 });
 
-test('moje sekcije: član u više sekcija, grupovođa, lovočuvar revira, admin sve', () => {
+test('moje sekcije: član u više sekcija, lovovođa sekcije, lovočuvar revira, admin sve', () => {
   const ctx = { sekcije: SEK, clanovi: CL, lovocuvari: LOVOCUVARI };
   assert.deepEqual(mySections(ctx, { id: 'l1' }).map((s) => s.id), ['s1', 's3'], 'lovac može biti u više sekcija');
   assert.deepEqual(mySections(ctx, { id: 'l2' }).map((s) => s.id), [], 'zahtjev na čekanju nije pristup');
@@ -74,15 +74,15 @@ test('aktivnost člana u lovu: aktivan (svježa pozicija), u lovu bez signala, p
   assert.equal(memberActivity('a', lov, uc, poz, NOW).uloga, 'strijelac');
 });
 
-test('članovi sekcije: grupovođa, lovočuvar revira, pa članovi po abecedi; bez zahtjeva na čekanju', () => {
+test('članovi sekcije: lovovođa sekcije, lovočuvar revira, pa članovi po abecedi; bez zahtjeva na čekanju', () => {
   const users = [
-    { id: 'g1', ime: 'Goran', prezime: 'Grupovođa' }, { id: 'c1', ime: 'Cvjetko', prezime: 'Čuvar' },
+    { id: 'g1', ime: 'Goran', prezime: 'Lovovođa sekcije' }, { id: 'c1', ime: 'Cvjetko', prezime: 'Čuvar' },
     { id: 'l1', ime: 'Zoran', prezime: 'Zec' }, { id: 'l2', ime: 'Adnan', prezime: 'Ajanović' }, { id: 'l3', ime: 'Ćamil', prezime: 'Ćosić' },
   ];
   const cl = [...CL, { sekcija_id: 's1', korisnik_id: 'l3', status: 'odobren' }, { sekcija_id: 's1', korisnik_id: 'l2', status: 'odobren' }];
   const rows = sectionMembers(SEK[0], cl, LOVOCUVARI, users);
   assert.deepEqual(rows.map((r) => [r.id, r.uloga]), [['g1', 'grupovodja'], ['c1', 'lovocuvar'], ['l2', 'clan'], ['l3', 'clan'], ['l1', 'clan']],
-    'redoslijed: grupovođa, lovočuvar, članovi po prezimenu (bosanska abeceda: Ajanović, Ćosić, Zec)');
+    'redoslijed: lovovođa sekcije, lovočuvar, članovi po prezimenu (bosanska abeceda: Ajanović, Ćosić, Zec)');
   assert.equal(rows.filter((r) => r.id === 'l2').length, 1, 'bez duplikata');
 });
 
@@ -118,12 +118,12 @@ test('lov za danas: naziv sa datumom, status planiran, revir sekcije', () => {
   assert.deepEqual(h, { id: 'L1', revir_id: 'R1', sekcija_id: 'S1', status: 'planiran', datum: '2026-11-09', naziv: 'Krupa 1 — 09.11.2026.' });
 });
 
-test('prisustvo: član se može prijaviti i odjaviti samo svoju samoprijavu; grupovođa i vanjski ne', () => {
+test('prisustvo: član se može prijaviti i odjaviti samo svoju samoprijavu; lovovođa sekcije i vanjski ne', () => {
   const z = { lov: { status: 'planiran' }, ucesnici: [{ korisnik_id: 'gv', uloga: 'vodja', samoprijava: false }, { korisnik_id: 'a', uloga: 'strijelac', samoprijava: true }, { korisnik_id: 'b', uloga: 'strijelac', samoprijava: false }] };
   assert.deepEqual(huntPresence(z, 'c', 'clan'), { mine: null, canJoin: true, canLeave: false });
   assert.equal(huntPresence(z, 'a', 'clan').canLeave, true);
   assert.equal(huntPresence(z, 'a', 'clan').canJoin, false);
-  assert.equal(huntPresence(z, 'b', 'clan').canLeave, false); // dodao ga je grupovođa
+  assert.equal(huntPresence(z, 'b', 'clan').canLeave, false); // dodao ga je lovovođa sekcije
   assert.equal(huntPresence(z, 'gv', 'grupovodja').canJoin, false);
   assert.equal(huntPresence(z, 'x', 'ceka').canJoin, false);
   assert.equal(huntPresence(z, 'x', 'lovocuvar').canJoin, false);
@@ -131,7 +131,7 @@ test('prisustvo: član se može prijaviti i odjaviti samo svoju samoprijavu; gru
   assert.equal(huntPresence(null, 'c', 'clan').canJoin, false);
 });
 
-test('članovi koje grupovođa još može dodati u lov', () => {
+test('članovi koje lovovođa sekcije još može dodati u lov', () => {
   const clanovi = [
     { sekcija_id: 'S1', korisnik_id: 'a', status: 'odobren' }, { sekcija_id: 'S1', korisnik_id: 'b', status: 'odobren' },
     { sekcija_id: 'S1', korisnik_id: 'c', status: 'ceka' }, { sekcija_id: 'S2', korisnik_id: 'd', status: 'odobren' },

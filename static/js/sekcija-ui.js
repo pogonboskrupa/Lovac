@@ -29,7 +29,8 @@ import { organizableSections, lastHuntPreset } from './lov-traje.js';
 import { deleteHunt } from './lov-brisanje.js';
 import { sendPing } from './ping-ui.js';
 import { createMessageSync } from './sekcija-poruke.js';
-import { membersHtml, huntCardHtml, conversationHtml, U_LOVU } from './sekcija-render.js';
+import { membersHtml, huntCardHtml, conversationHtml, groupsHtml, U_LOVU } from './sekcija-render.js';
+import { canManageGroups, groupsOfSection, ungroupedMembers, groupLeaderCandidates, assignableGroups } from './grupe.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
 const NOTIF_KEY = 'lovac.sekcija.obavijest';
@@ -39,7 +40,7 @@ const POLL_BG_MS = 60000;
 const LISTS_OPEN_MS = 60000;
 const LISTS_BG_MS = 5 * 60000;
 const HUNT_REFRESH_MS = 60000;
-const ULOGE_SEKCIJE = { admin: 'Administrator', grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
+const ULOGE_SEKCIJE = { admin: 'Administrator', grupovodja: 'Lovovođa sekcije', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
 const STATUS_LOVA = { planiran: 'Planiran', u_toku: 'U toku', zavrsen: 'Završen' };
 const $ = (id) => document.getElementById(id);
 
@@ -51,12 +52,12 @@ async function qSk(promise) {
 
 export function initSekcijaEkran(L, map) {
   const screen = $('sekcija-ekran');
-  let ctx = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [] };
+  let ctx = { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], grupe: [], revirVodje: [], drustvoUloge: [] };
   let lovovi = [];
   let poruke = [];
   let vrste = [];
   let extra = { pozicije: [], odstrel: [], sos: [], lovId: null }; // uživo podaci tekućeg lova
-  let odazivi = { lovId: null, rows: [] }; // "Dolaziš?" odgovori za grupovođu (034); čita se samo dok je tab otvoren
+  let odazivi = { lovId: null, rows: [] }; // "Dolaziš?" odgovori za lovovođu sekcije (034); čita se samo dok je tab otvoren
   let selectedId = loadJSON(SEL_KEY, null);
   let lastHuntRefresh = 0;
   let lastListsRefresh = 0;
@@ -156,7 +157,7 @@ export function initSekcijaEkran(L, map) {
     try {
       // spiskovi sekcija i članova se rijetko mijenjaju: ne pri svakom osvježavanju (štedi besplatni server)
       if (withHunts || Date.now() - lastListsRefresh > (isOpen() ? LISTS_OPEN_MS : LISTS_BG_MS)) {
-        await downloadSekcije();
+        await downloadSekcije({ grupe: withHunts || isOpen() });
         await refreshMembers().catch(() => {});
         lastListsRefresh = Date.now();
       }
@@ -206,7 +207,7 @@ export function initSekcijaEkran(L, map) {
     $('sk-podnaslov').textContent = `Revir ${revir?.naziv || ''} · ${pristupText(st)}`;
     const mode = creationMode(st);
     $('btn-sk-novi').hidden = !mode;
-    $('btn-sk-novi').textContent = mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava grupovođa)';
+    $('btn-sk-novi').textContent = mode === 'direct' ? 'Dodaj lovca (novi nalog)' : 'Predloži lovca (odobrava lovovođa sekcije)';
     const checked = new Set([...$('sk-lov').querySelectorAll('[data-spisak] input:checked')].map((i) => i.value));
     $('sk-lov').innerHTML = huntCard(s, cur, users, st);
     $('sk-lov').querySelectorAll('[data-spisak] input').forEach((i) => { i.checked = checked.has(i.value); });
@@ -249,6 +250,16 @@ export function initSekcijaEkran(L, map) {
       actOf, myId: me()?.id, st, lovCounts, avatarOf, canPing, total: rows.length,
     });
 
+    const manageG = canManageGroups(st, { myId: me()?.id, sekcija: s, revirVodje: ctx.revirVodje, drustvoUloge: ctx.drustvoUloge });
+    const groups = groupsOfSection(s.id, ctx.grupe, ctx.clanovi, memberName);
+    $('sk-grupe').innerHTML = groupsHtml({
+      groups, manage: manageG, myId: me()?.id,
+      ungrouped: ungroupedMembers(s.id, ctx.grupe, ctx.clanovi, memberName),
+      candidates: groupLeaderCandidates(s.id, ctx.grupe, ctx.clanovi, memberName),
+      assignable: assignableGroups(groups, { manage: manageG, myId: me()?.id }),
+    });
+    $('sk-grupe-broj').textContent = groups.length ? `(${groups.length})` : '';
+
     queueMicrotask(() => document.dispatchEvent(new Event('sekcija:nacrtana')));
     // poruke
     const msgs = poruke.filter((m) => m.sekcija_id === s.id);
@@ -257,7 +268,7 @@ export function initSekcijaEkran(L, map) {
     box.scrollTop = box.scrollHeight;
     $('sk-brze').innerHTML = QUICK_MESSAGES.map((t) => `<button type="button" data-brza="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
 
-    // rukovodstvo (grupovođe, lovočuvari, admin)
+    // rukovodstvo (lovovođe sekcije, lovočuvari, admin)
     const isLeader = leader();
     $('sk-k-ruk').hidden = !isLeader;
     $('sk-nav-ruk').hidden = !isLeader;
@@ -272,7 +283,7 @@ export function initSekcijaEkran(L, map) {
     const pending = pendingRequests(s.id, ctx.clanovi).length;
     $('sk-podaci').innerHTML = `<dl class="tabela-info">
         <dt>Revir</dt><dd>${escapeHtml(revir?.naziv || '—')}</dd>
-        <dt>Grupovođa</dt><dd>${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'}</dd>
+        <dt>Lovovođa sekcije</dt><dd>${s.grupovodja_id ? escapeHtml(memberName(s.grupovodja_id)) : '—'}</dd>
         <dt>Lovočuvar revira</dt><dd>${lovocuvari.length ? escapeHtml(lovocuvari.join(', ')) : '—'}</dd>
         <dt>Članova</dt><dd>${rows.length}</dd>
         ${['grupovodja', 'admin'].includes(st) ? `<dt>Zahtjeva na čekanju</dt><dd>${pending}</dd>` : ''}
@@ -310,7 +321,7 @@ export function initSekcijaEkran(L, map) {
     refresh({ withHunts: true });
   });
   // Admin i lovočuvar vide mnogo sekcija: spisak lovaca je zadano sklopljen; dodir na sekciju ga rasklapa (drugi dodir
-  // na istu sekciju ili na naslov kartice ga sklapa). Grupovođa i lovac uvijek vide svoje lovce.
+  // na istu sekciju ili na naslov kartice ga sklapa). Lovovođa sekcije i lovac uvijek vide svoje lovce.
   const toggleLovci = (sid, open) => {
     if (open ?? !lovciOtvoreni.has(sid)) lovciOtvoreni.add(sid); else lovciOtvoreni.delete(sid);
   };
@@ -370,7 +381,7 @@ export function initSekcijaEkran(L, map) {
       updateNav();
       if (ok) toast(ok);
     } catch (err) {
-      toast(/row-level security|permission/i.test(err.message) ? 'Server nije dozvolio (grupovođa te je uklonio iz lova ili lov nije otvoren)' : `Nije uspjelo: ${err.message}`);
+      toast(/row-level security|permission/i.test(err.message) ? 'Server nije dozvolio (lovovođa sekcije te je uklonio iz lova ili lov nije otvoren)' : `Nije uspjelo: ${err.message}`);
     }
   };
   let armedRemove = null;
@@ -436,6 +447,48 @@ export function initSekcijaEkran(L, map) {
     if (c) document.dispatchEvent(new CustomEvent('lovtrag:trazi', { detail: { lovId: c.dataset.trag, on: c.checked, live: c.dataset.live === 'true' } }));
   });
 
+  // Grupe: sve radnje traže internet (server provodi prava); poslije svake se spiskovi ponovo preuzmu.
+  const groupAction = async (b) => {
+    const s = selected();
+    if (!s) return;
+    if (!online()) { toast('Za rad sa grupama potreban je internet'); return; }
+    const sb = getClient();
+    const akcija = b.dataset.akcija;
+    const uid = b.dataset.uid || b.closest('[data-uid]')?.dataset.uid;
+    try {
+      if (akcija === 'grupa-nova') {
+        const gv = $('sk-grupa-gv').value;
+        if (!gv) return;
+        const [nova] = await qSk(sb.from('grupe').insert({ sekcija_id: s.id, grupovodja_id: gv }).select('id'));
+        await qSk(sb.rpc('dodijeli_grupu', { p_sekcija: s.id, p_korisnik: gv, p_grupa: nova.id }));
+        toast('Grupa je napravljena');
+      } else if (akcija === 'grupa-ukloni') {
+        const key = `grupa:${b.dataset.grupa}`;
+        if (armedRemove !== key) {
+          armedRemove = key;
+          b.textContent = 'Dodirni ponovo — lovci ostaju bez grupe';
+          setTimeout(() => { if (armedRemove === key) { armedRemove = null; if (b.isConnected) b.textContent = 'Ukloni grupu'; } }, 4000);
+          return;
+        }
+        armedRemove = null;
+        await qSk(sb.from('grupe').delete().eq('id', b.dataset.grupa));
+        toast('Grupa je uklonjena');
+      } else if (akcija === 'grupa-dodijeli') {
+        const g = b.closest('li').querySelector('[data-grupa-izbor]').value;
+        await qSk(sb.rpc('dodijeli_grupu', { p_sekcija: s.id, p_korisnik: uid, p_grupa: g }));
+        toast('Lovac je dodan u grupu');
+      } else if (akcija === 'grupa-izbaci') {
+        await qSk(sb.rpc('dodijeli_grupu', { p_sekcija: s.id, p_korisnik: uid, p_grupa: null }));
+        toast('Lovac je izvađen iz grupe');
+      }
+      await downloadSekcije({ grupe: true });
+      await loadLocal();
+      render();
+    } catch (err) {
+      toast(/row-level security|permission|42501|Nemaš/i.test(err.message) ? 'Server nije dozvolio ovu radnju' : `Greška: ${err.message}`);
+    }
+  };
+
   screen.addEventListener('click', async (e) => {
     const brza = e.target.closest('[data-brza]');
     if (brza) {
@@ -447,6 +500,7 @@ export function initSekcijaEkran(L, map) {
     const b = e.target.closest('button[data-akcija]');
     if (!b) return;
     if (b.dataset.akcija.startsWith('lov-')) { await huntAction(b); return; }
+    if (b.dataset.akcija.startsWith('grupa-')) { await groupAction(b); return; }
     if (b.dataset.akcija === 'raspored') {
       close();
       document.dispatchEvent(new CustomEvent('lov:otvori', { detail: { id: b.dataset.lov } }));
@@ -576,7 +630,7 @@ export function initSekcijaEkran(L, map) {
   document.addEventListener('lov:dodaj', async () => {
     await loadLocal();
     const izbor = organizableSections(ctx, me());
-    if (!izbor.length) { toast('Lov pravi grupovođa sekcije ili administrator'); return; }
+    if (!izbor.length) { toast('Lov pravi lovovođa sekcije ili administrator'); return; }
     const cur = selected();
     openNewHunt(izbor.find((x) => x.id === cur?.id) || izbor[0], { izbor, odmah: true });
   });

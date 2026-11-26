@@ -59,7 +59,7 @@ const ctx = {
   lovocuvari: [{ revir_id: 'R2', korisnik_id: 'lc' }],
 };
 
-test('scopeOptions: admin sve, lovočuvar revir (i sekcija ako je i član), grupovođa/lovac svoju sekciju', () => {
+test('scopeOptions: admin sve, lovočuvar revir (i sekcija ako je i član), lovovođa sekcije/lovac svoju sekciju', () => {
   const adm = scopeOptions({ id: 'a', odobren: true, is_admin: true }, ctx).map((o) => o.kljuc);
   assert.deepEqual(adm, ['drustvo', 'revir:R1', 'revir:R2', 'sekcija:S1', 'sekcija:S2']);
   assert.deepEqual(scopeOptions({ id: 'lc', odobren: true }, ctx).map((o) => o.kljuc), ['revir:R2', 'sekcija:S2']);

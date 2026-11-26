@@ -119,5 +119,5 @@ test('ciljevi: premještanje bez sekcija gdje već jesi, imenovanje pokazuje tre
 test('pregled uloga: broji različite ljude, ne redove', () => {
   const o = rolesOverview(USERS, DATA);
   assert.deepEqual(o, { grupovodje: 1, lovocuvari: 1, bez: 3 });
-  assert.equal(rolesText(o), '1 grupovođa · 1 lovočuvara · 3 bez sekcije');
+  assert.equal(rolesText(o), '1 lovovođa sekcije · 1 lovočuvara · 3 bez sekcije');
 });

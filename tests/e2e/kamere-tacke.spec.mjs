@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles, fakeServerConfigUnset, PNG, lok } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -175,7 +175,7 @@ test('kamere: lovočuvar revira ih postavlja (lokalno pa na server), vidi na kar
   await expect.poll(() => server.db.kamere[0].aktivno).toBe(false);
   await expect(page.locator('.kamera-marker')).toHaveCount(0);
 
-  // grupovođa: nema dugmeta i, i da server pogrešno vrati redove, nema markera (klijent ih ne crta)
+  // lovovođa sekcije: nema dugmeta i, i da server pogrešno vrati redove, nema markera (klijent ih ne crta)
   const ctx2 = await browser.newContext({ viewport: { width: 412, height: 915 } });
   const p2 = await ctx2.newPage();
   const server2 = makeServer();

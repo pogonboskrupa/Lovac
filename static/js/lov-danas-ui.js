@@ -1,4 +1,4 @@
-// Ploča "+": "Dodaj lov" (grupovođa/admin, kad nema lova u toku) i "Lov traje" (dok traje lov u kojem sam).
+// Ploča "+": "Dodaj lov" (lovovođa sekcije/admin, kad nema lova u toku) i "Lov traje" (dok traje lov u kojem sam).
 // Ekran "Lov traje": pregled, lovci (pozicija uživo, poruke i slike svakog), poruke lova i slike lova.
 // Sve se crta iz keša na telefonu; dok je ekran otvoren i ima veze, osvježava se u pozadini.
 import { todayHuntSummary } from './lov-danas.js';

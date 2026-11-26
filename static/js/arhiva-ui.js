@@ -200,7 +200,7 @@ export function initArhiva() {
     renderShots(z, d);
     renderMovement(z);
     $('btn-ad-trag').hidden = z.lov.status === 'planiran';
-    // briše admin ili grupovođa sekcije lova (server: obrisi_lov, migracija 032)
+    // briše admin ili lovovođa sekcije lova (server: obrisi_lov, migracija 032)
     $('ad-brisanje').hidden = !canDeleteHunt(z, me());
   };
 

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles, fakeServerConfigUnset } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -119,7 +119,7 @@ test('lov u toku: pozicija se šalje i bez otvorenog rasporeda; ekran lokacije; 
   await expect(goran).toContainText(/Dijeli uživo · [A-Z]+ /);
   await expect(page.locator(`#lokacija-clanovi [data-uid="${LOVAC2.id}"]`)).toContainText(/Dijeli|Bez signala|Ne dijeli/);
   // marker sa inicijalima na mapi
-  await expect(page.locator('.uc-marker').first()).toContainText('GG');
+  await expect(page.locator('.uc-marker').first()).toContainText('GS');
   // dodir na marker kolege: ime i prezime + udaljenost od mene
   await page.locator('.uc-marker').first().evaluate((el) => el.click());
   await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText('Goran');

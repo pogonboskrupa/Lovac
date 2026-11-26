@@ -171,7 +171,7 @@ test('dodirne mete objekata ≥ 44 px, polja ≥ 48 px', async ({ page }) => {
 
 async function seedRole(page, grupovodja) {
   await page.addInitScript(() => {
-    localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u1', ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false }));
+    localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u1', ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false }));
   });
   await page.goto('/');
   await page.evaluate((gv) => new Promise((resolve) => {
@@ -189,7 +189,7 @@ async function seedRole(page, grupovodja) {
   await page.reload();
 }
 
-test('zvanični objekat: grupovođa ga označi (društvo, zlatna oznaka), lovac nema izbor', async ({ page }) => {
+test('zvanični objekat: lovovođa sekcije ga označi (društvo, zlatna oznaka), lovac nema izbor', async ({ page }) => {
   await seedRole(page, true);
   await page.locator('#btn-dodaj').click();
   await page.locator('#btn-dodaj-objekat').click();

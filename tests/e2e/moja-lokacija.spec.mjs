@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -160,11 +160,11 @@ test('lokacije članova koji dijele: spisak u ploči, marker na karti i "Na kart
   await setup(page, server, LOVAC);
   await openLok(page);
   await expect(page.locator('#lok-sek-lista [data-uid]')).toHaveCount(1);
-  await expect(page.locator(`#lok-sek-lista [data-uid="${GV.id}"]`)).toContainText('Goran Grupovođa');
+  await expect(page.locator(`#lok-sek-lista [data-uid="${GV.id}"]`)).toContainText('Goran Lovovođa sekcije');
   await expect(page.locator('#lok-sek-broj')).toHaveText('(1)');
-  await expect(page.locator('.sek-marker')).toHaveText('GG');
+  await expect(page.locator('.sek-marker')).toHaveText('GS');
   await page.locator('.sek-marker').evaluate((el) => el.click());
-  await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText('Goran Grupovođa');
+  await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText('Goran Lovovođa sekcije');
   await expect(page.locator('.leaflet-popup .kolega-kartica')).toContainText(/ od tebe/);
   await page.locator(`#lok-sek-lista [data-uid="${GV.id}"] [data-akcija="na-karti"]`).click();
   await expect(page.locator('#lok-ploca')).toBeHidden();
@@ -232,7 +232,7 @@ test('dijeljenje sa izabranim lovcima: samo pretraga (bez spiska), izbor više l
   // lovac vidi da je lokacija stvarno otišla
   await expect(page.locator('#lok-iz-stanje')).toContainText('Poslano');
   // primljeno: Goran dijeli samo sa mnom
-  await expect(page.locator('#lok-iz-lista')).toContainText('Goran Grupovođa');
+  await expect(page.locator('#lok-iz-lista')).toContainText('Goran Lovovođa sekcije');
   // ukloni jednog dok dijeliš → red za njega nestaje sa servera
   await page.locator(`#lok-iz-izabrani [data-uid="${VAN.id}"] [data-akcija="ukloni"]`).click();
   await expect.poll(() => server.db.lokacije_izabranih.some((r) => r.primalac_id === VAN.id)).toBe(false);
@@ -267,7 +267,7 @@ test('neko dijeli lokaciju sa mnom: značka na dugmetu Moja lokacija, ponuda "Di
   await page.locator('#btn-moja-lokacija').click();
   await expect(page.locator('#lok-ploca')).toBeVisible();
   await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(1);
-  await expect(page.locator('#lok-iz-ponude')).toContainText('Goran Grupovođa dijeli lokaciju sa tobom');
+  await expect(page.locator('#lok-iz-ponude')).toContainText('Goran Lovovođa sekcije dijeli lokaciju sa tobom');
   await expect(page.locator('#lok-znacka')).toHaveText('1');
   // sistemska obavijest je poslana jednom
   expect(await page.evaluate(() => window.__notif.filter((n) => /dijeli lokaciju sa tobom/.test(n.t)).length)).toBe(1);
@@ -297,7 +297,7 @@ test('ponuda "Dijeli i ti": "Ne sada" se pamti', async ({ page }) => {
   expect(server.db.lokacije_izabranih.some((r) => r.vlasnik_id === LOVAC.id)).toBe(false); // ništa se ne šalje
   await page.reload();
   await page.locator('#btn-moja-lokacija').click();
-  await expect(page.locator('#lok-iz-lista')).toContainText('Goran Grupovođa'); // i dalje ga vidim na spisku
+  await expect(page.locator('#lok-iz-lista')).toContainText('Goran Lovovođa sekcije'); // i dalje ga vidim na spisku
   await expect(page.locator('#lok-iz-ponude .lok-ponuda')).toHaveCount(0);
 });
 

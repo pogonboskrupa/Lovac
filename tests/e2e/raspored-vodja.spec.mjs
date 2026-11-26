@@ -12,7 +12,7 @@ async function seedSekcije(page, db) {
 
 const openSchedule = (page, id) => page.evaluate((lid) => document.dispatchEvent(new CustomEvent('lov:otvori', { detail: { id: lid } })), id);
 
-test('grupovođa: lov bez stanova → "Postavi stanove" iz panela → stan na serveru', async ({ page }) => {
+test('lovovođa sekcije: lov bez stanova → "Postavi stanove" iz panela → stan na serveru', async ({ page }) => {
   test.setTimeout(90000);
   const sim = await startSim(page, makeWorld({ uToku: true }), { rpc: true, recv: true });
   await sim.run(20000);

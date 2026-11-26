@@ -12,8 +12,8 @@ export function myStatus(sekcija, clanovi, myId, isAdmin = false, lovocuvari = [
   return c.status === 'odobren' ? 'clan' : 'ceka';
 }
 
-// Ko smije praviti naloge u sekciji: admin/grupovođa/lovočuvar direktno, običan član samo predlaže.
-// Kanal Rukovodstvo: admin, grupovođe i lovočuvari (server to provjerava kroz je_rukovodstvo()).
+// Ko smije praviti naloge u sekciji: admin/lovovođa sekcije/lovočuvar direktno, običan član samo predlaže.
+// Kanal Rukovodstvo: admin, lovovođe sekcije i lovočuvari (server to provjerava kroz je_rukovodstvo()).
 export function isLeadership(user, ctx = {}) {
   if (!user?.id) return false;
   if (user.is_admin) return true;
@@ -29,11 +29,11 @@ export function creationMode(status) {
 
 const TEKST = {
   admin: 'Administrator: puni pristup',
-  grupovodja: 'Ti si grupovođa ove sekcije',
+  grupovodja: 'Ti si lovovođa ove sekcije',
   lovocuvar: 'Ti si lovočuvar revira: pratiš sekciju (bez upravljanja)',
   clan: 'Član sekcije',
-  ceka: 'Zahtjev čeka odobrenje grupovođe',
-  nema: 'Nema pristupa — zatraži ga od grupovođe',
+  ceka: 'Zahtjev čeka odobrenje lovovođe sekcije',
+  nema: 'Nema pristupa — zatraži ga od lovovođe sekcije',
 };
 
 export function pristupText(status) {
@@ -50,7 +50,7 @@ export function creatableRevirIds(user, grupovodje, reviri, lovocuvari = []) {
   return [...new Set([...grupovodje, ...lovocuvari].filter((g) => g.korisnik_id === user?.id).map((g) => g.revir_id))];
 }
 
-// Uređuje revir (grupovođu sekcije, grupovođe revira): admin ili lovočuvar tog revira. Revir sekcije mijenja samo admin.
+// Uređuje revir (lovovođu sekcije, grupovođe revira): admin ili lovočuvar tog revira. Revir sekcije mijenja samo admin.
 export function editsRevir(user, revirId, lovocuvari = []) {
   if (!user?.id) return false;
   return Boolean(user.is_admin) || lovocuvari.some((l) => l.korisnik_id === user.id && l.revir_id === revirId);
@@ -68,7 +68,7 @@ export function pendingRequests(sekcijaId, clanovi) {
   return clanovi.filter((c) => c.sekcija_id === sekcijaId && c.status === 'ceka');
 }
 
-// Lovci koje grupovođa može dodati: odobreni, a još nisu u sekciji ni imaju zahtjev.
+// Lovci koje lovovođa sekcije može dodati: odobreni, a još nisu u sekciji ni imaju zahtjev.
 export function candidatesToAdd(sekcija, clanovi, users) {
   const taken = new Set(clanovi.filter((c) => c.sekcija_id === sekcija.id).map((c) => c.korisnik_id));
   if (sekcija.grupovodja_id) taken.add(sekcija.grupovodja_id);
@@ -88,8 +88,8 @@ export function mySectionsAsLeader(sekcije, myId) {
 
 // ---- pregled sekcija (v0.5.8) ----
 
-// "Moje" sekcije: u kojima sam član/grupovođa/lovočuvar ili čekam odobrenje. Admin je u svakoj sekciji sa punim pristupom,
-// pa su za njega "moje" samo one u kojima je i izričito grupovođa ili član.
+// "Moje" sekcije: u kojima sam član/lovovođa sekcije/lovočuvar ili čekam odobrenje. Admin je u svakoj sekciji sa punim pristupom,
+// pa su za njega "moje" samo one u kojima je i izričito lovovođa sekcije ili član.
 export function isMine(sekcija, clanovi, myId, isAdmin = false, lovocuvari = []) {
   const st = myStatus(sekcija, clanovi, myId, isAdmin, lovocuvari);
   if (st === 'admin') {
@@ -98,8 +98,8 @@ export function isMine(sekcija, clanovi, myId, isAdmin = false, lovocuvari = [])
   return st !== 'nema';
 }
 
-// Zahtjevi koje JA smijem odobriti (grupovođa svoje sekcije, admin sve): [{sekcija, zahtjev}] najstariji prvi.
-// Zahtjev za pristup odobrava grupovođa/admin (canManage) i lovočuvar revira te sekcije (migracija 038).
+// Zahtjevi koje JA smijem odobriti (lovovođa sekcije svoje sekcije, admin sve): [{sekcija, zahtjev}] najstariji prvi.
+// Zahtjev za pristup odobrava lovovođa sekcije/admin (canManage) i lovočuvar revira te sekcije (migracija 038).
 export function canApprove(sekcija, user, lovocuvari = []) {
   return canManage(sekcija, user) || keeperRevirIds(user, lovocuvari).includes(sekcija.revir_id);
 }
@@ -125,7 +125,7 @@ export function sectionsOverview(data, user) {
 
 export const SEKCIJE_FILTERI = [['moje', 'Moje'], ['zahtjevi', 'Zahtjevi'], ['slobodne', 'Bez pristupa'], ['sve', 'Sve']];
 
-// Filter + pretraga sekcija. `textOf(s)` daje tekst za pretragu (naziv, revir, grupovođa, članovi...).
+// Filter + pretraga sekcija. `textOf(s)` daje tekst za pretragu (naziv, revir, lovovođa sekcije, članovi...).
 export function filterSections(data, user, { filter = 'sve', q = '', textOf = () => '', match = (fields, query) => fields.join(' ').toLowerCase().includes(String(query).toLowerCase()) } = {}) {
   const id = user?.id;
   const admin = Boolean(user?.is_admin);
@@ -147,7 +147,7 @@ export function menuSummary(data, user) {
 }
 
 // Ko vidi više sekcija odjednom (admin: sve revire, lovočuvar: svoj revir) dobija tab "Sekcije" sa spiskom;
-// grupovođa i lovac vide svoju sekciju (pristup ionako provodi server).
+// lovovođa sekcije i lovac vide svoju sekciju (pristup ionako provodi server).
 export function seesSectionList(user, ctx = {}) {
   if (!user?.id) return false;
   if (user.is_admin) return true;
@@ -175,7 +175,7 @@ export function sectionsHint(user, data) {
   if (user?.is_admin) return 'Vidiš sve revire i sekcije. Zahtjeve odobravaš ovdje ili u Korisnici i odobrenja.';
   if (keeperRevirIds(user, data.lovocuvari || []).length) return 'Pratiš sekcije svog revira i odobravaš zahtjeve u njima.';
   if ((data.sekcije || []).some((s) => s.grupovodja_id === user?.id)) return 'Vodiš svoju sekciju: odobravaš zahtjeve i dodaješ lovce.';
-  return 'U sekciju se ulazi uz odobrenje: zatraži pristup, a grupovođa, lovočuvar ili administrator odobri.';
+  return 'U sekciju se ulazi uz odobrenje: zatraži pristup, a lovovođa sekcije, lovočuvar ili administrator odobri.';
 }
 
 // Broj sekcija po filteru (za čipove "Moje 1 · Za odobrenje 2 …").
@@ -191,7 +191,7 @@ export function requestAgeText(createdAt, now = Date.now()) {
   return d <= 0 ? 'danas' : d === 1 ? 'jučer' : `prije ${d} dana`;
 }
 
-// Članovi sekcije za traku lica: prvo grupovođa, pa po imenu; prvih `n` i broj ostalih.
+// Članovi sekcije za traku lica: prvo lovovođa sekcije, pa po imenu; prvih `n` i broj ostalih.
 export function memberFaces(sekcija, clanovi, nameOf, n = 6) {
   const ids = clanovi.filter((c) => c.sekcija_id === sekcija.id && c.status === 'odobren').map((c) => c.korisnik_id);
   const sorted = [...new Set(ids)].sort((a, b) => Number(b === sekcija.grupovodja_id) - Number(a === sekcija.grupovodja_id)

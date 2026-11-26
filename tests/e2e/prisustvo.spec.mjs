@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -104,7 +104,7 @@ function planned(server) {
   server.db.lov_pozicije = [];
 }
 
-test('grupovođa pravi lov kroz modal (naziv, napomena, učesnici) i upisuje sebe kao vođu', async ({ page }) => {
+test('lovovođa sekcije pravi lov kroz modal (naziv, napomena, učesnici) i upisuje sebe kao vođu', async ({ page }) => {
   const server = makeServer();
   server.db.lovovi = [];
   server.db.lov_ucesnici = [];
@@ -126,7 +126,7 @@ test('grupovođa pravi lov kroz modal (naziv, napomena, učesnici) i upisuje seb
   await expect(page.locator('#sk-lov [data-akcija="lov-pokreni"]')).toBeVisible();
 });
 
-test('član javlja da je prisutan i može se odjaviti; grupovođa ga vidi kao "prijavio se sam"', async ({ page }) => {
+test('član javlja da je prisutan i može se odjaviti; lovovođa sekcije ga vidi kao "prijavio se sam"', async ({ page }) => {
   const server = makeServer();
   planned(server);
   await setup(page, server, LOVAC);
@@ -142,7 +142,7 @@ test('član javlja da je prisutan i može se odjaviti; grupovođa ga vidi kao "p
   await expect(page.locator('#sk-lov [data-akcija="lov-prijavi"]')).toBeVisible();
 });
 
-test('grupovođa uklanja neprisutnog (drugi dodir), dodaje člana sa spiska i pokreće lov', async ({ page }) => {
+test('lovovođa sekcije uklanja neprisutnog (drugi dodir), dodaje člana sa spiska i pokreće lov', async ({ page }) => {
   const server = makeServer();
   planned(server);
   server.db.lov_ucesnici.push({ lov_id: LOV, korisnik_id: LOVAC.id, uloga: 'strijelac', samoprijava: true });
@@ -183,7 +183,7 @@ test('lovočuvar revira prati lov, ali ga ne vodi: nema dugmadi za prijavu ni up
   await expect(page.locator('#sk-lov [data-prisutni]')).toHaveCount(0);
 });
 
-test('grupovođa briše lov iz taba sekcije (drugi dodir, za sve); član nema dugme', async ({ page }) => {
+test('lovovođa sekcije briše lov iz taba sekcije (drugi dodir, za sve); član nema dugme', async ({ page }) => {
   const server = makeServer();
   planned(server);
   await setup(page, server, GV);
@@ -216,7 +216,7 @@ test('član sekcije nema dugme "Obriši lov"', async ({ page }) => {
   await expect(page.locator('#sk-lov [data-akcija="lov-obrisi"]')).toHaveCount(0);
 });
 
-test('"Podaci o sekciji i lovu": grupovođa briše planirani lov iz spiska lovova sekcije; član nema dugme', async ({ page }) => {
+test('"Podaci o sekciji i lovu": lovovođa sekcije briše planirani lov iz spiska lovova sekcije; član nema dugme', async ({ page }) => {
   const server = makeServer();
   planned(server);
   // još jedan planirani lov iste sekcije (stariji), a tekući ostaje drugi

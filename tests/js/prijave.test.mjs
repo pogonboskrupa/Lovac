@@ -11,7 +11,7 @@ const ctx = {
   lovocuvari: [{ revir_id: 'R1', korisnik_id: 'lc1' }],
 };
 
-test('reportTargets: zapis iz lova nosi revir; inače samo moje sekcije (član/grupovođa); admin bilo koji revir', () => {
+test('reportTargets: zapis iz lova nosi revir; inače samo moje sekcije (član/lovovođa sekcije); admin bilo koji revir', () => {
   assert.deepEqual(reportTargets({ revir_id: 'R1', sekcija_id: 'S1', lov_id: 'L' }, ctx, 'l1'), [{ revirId: 'R1', sekcijaId: 'S1', lovId: 'L', fixed: true }]);
   assert.deepEqual(reportTargets({}, ctx, 'l1').map((t) => t.sekcijaId), ['S1']);
   assert.deepEqual(reportTargets({}, ctx, 'gv').map((t) => t.sekcijaId), ['S1']);
@@ -42,7 +42,7 @@ test('izlazna kutija: stanje, dedup i označavanje poslanog', () => {
   assert.equal(reportState('a', r.outbox, r.sent, ['a']), 'povucena');
 });
 
-test('viewerRole: admin > lovočuvar > grupovođa > lovac; neodobren je lovac; nikad iz imena', () => {
+test('viewerRole: admin > lovočuvar > lovovođa sekcije > lovac; neodobren je lovac; nikad iz imena', () => {
   assert.equal(viewerRole({ id: 'adm', odobren: true, is_admin: true }, ctx), 'admin');
   assert.equal(viewerRole({ id: 'lc1', odobren: true }, ctx), 'lovocuvar');
   assert.equal(viewerRole({ id: 'lc2', odobren: true }, ctx), 'lovocuvar', 'lovočuvar sekcije');

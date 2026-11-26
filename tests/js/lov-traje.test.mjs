@@ -8,7 +8,7 @@ const ctx = {
   clanovi: [{ sekcija_id: 'S2', korisnik_id: 'g', status: 'odobren' }], lovocuvari: [{ korisnik_id: 'lc', revir_id: 'R1' }],
 };
 
-test('lov dodaje grupovođa svoje sekcije i admin; član i lovočuvar ne', () => {
+test('lov dodaje lovovođa sekcije svoje sekcije i admin; član i lovočuvar ne', () => {
   assert.deepEqual(organizableSections(ctx, { id: 'g' }).map((s) => s.id), ['S1']);
   assert.deepEqual(organizableSections(ctx, { id: 'a', is_admin: true }).map((s) => s.id), ['S1', 'S2']);
   assert.deepEqual(organizableSections(ctx, { id: 'lc' }), []);
@@ -52,7 +52,7 @@ test('"+" za lov planiran danas pokazuje "Lov danas", ne "Dodaj lov"', () => {
   assert.equal(todayPlannedHunt(lovovi, 'o', '2026-11-23') !== null, true);
 });
 
-test('upravlja lovom: admin, organizator i grupovođa sekcije lova; član ne', () => {
+test('upravlja lovom: admin, organizator i lovovođa sekcije lova; član ne', () => {
   const rec = { lov: { sekcija_id: 'S1', organizator_id: 'o' } };
   assert.equal(canManageHunt(rec, ctx, { id: 'g' }), true);
   assert.equal(canManageHunt(rec, ctx, { id: 'o' }), true);

@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
   await fakeServerConfigUnset(page);
   await serveTiles(page);
   await page.addInitScript(() => {
-    localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u1', ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false }));
+    localStorage.setItem('lovac.profil', JSON.stringify({ id: 'u1', ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false }));
   });
 });
 
@@ -42,8 +42,8 @@ test('profil kartica: logo avatar (dok nema slike), uloge iz keša sekcija i sta
   await page.reload();
   await page.locator('#btn-postavke').click();
   await expect(page.locator('#p-avatar')).toHaveClass(/logo-avatar/);
-  await expect(page.locator('#p-ime')).toHaveText('Goran Grupovođa');
-  await expect(page.locator('#p-uloge .p-uloga')).toHaveText(['Grupovođa · Krupa', 'Vodi sekciju Krupa 1']);
+  await expect(page.locator('#p-ime')).toHaveText('Goran Lovovođa sekcije');
+  await expect(page.locator('#p-uloge .p-uloga')).toHaveText(['Lovovođa sekcije · Krupa', 'Vodi sekciju Krupa 1']);
   await expect(page.locator('#p-stanje')).toContainText('sve je poslano');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });

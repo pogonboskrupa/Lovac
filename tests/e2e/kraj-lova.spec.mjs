@@ -44,7 +44,7 @@ test('član (nije vođa): Kraj → Izađi iz lova na ovom telefonu (drugi dodir)
   expect(sim.stat.get('POST lov_pozicije') || 0).toBe(poslano);
 });
 
-test('grupovođa: Kraj → Završi lov za sve (drugi dodir) — lov završen na serveru, traka nestaje', async ({ page }) => {
+test('lovovođa sekcije: Kraj → Završi lov za sve (drugi dodir) — lov završen na serveru, traka nestaje', async ({ page }) => {
   test.setTimeout(120000);
   const sim = await startSim(page, makeWorld({ uToku: true }), { rpc: true, recv: true });
   await sim.run(90000);

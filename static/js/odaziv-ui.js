@@ -1,4 +1,4 @@
-// "Dolaziš na lov?": kad grupovođa napravi lov sekcije, član dobije pitanje (i obavijest dok je app živa).
+// "Dolaziš na lov?": kad lovovođa sekcije napravi lov sekcije, član dobije pitanje (i obavijest dok je app živa).
 // Odgovor ide prvo u red na telefonu (radi offline), pa na server: "Da" = samoprijava (013) + odaziv, "Ne" = odaziv (034).
 
 import { getClient, cachedProfile } from './auth.js';
@@ -37,7 +37,7 @@ export function initOdaziv() {
             await run(sb.from('lov_ucesnici').upsert({ lov_id: item.lovId, korisnik_id: me.id, uloga: 'strijelac', samoprijava: true },
               { onConflict: 'lov_id,korisnik_id', ignoreDuplicates: true }));
           } else {
-            // brisanje dozvoljava samo vlastitu samoprijavu (RLS); onu koju je upisao grupovođa ne dira
+            // brisanje dozvoljava samo vlastitu samoprijavu (RLS); onu koju je upisao lovovođa sekcije ne dira
             await run(sb.from('lov_ucesnici').delete().eq('lov_id', item.lovId).eq('korisnik_id', me.id).eq('samoprijava', true));
           }
           await run(sb.from('lov_odazivi').upsert({ lov_id: item.lovId, korisnik_id: me.id, odgovor: item.odgovor }, { onConflict: 'lov_id,korisnik_id' }));

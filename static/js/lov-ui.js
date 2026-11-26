@@ -151,7 +151,7 @@ export function initLov(L, map) {
     $('lov-panel-prazno').hidden = !bezStanova;
     $('lov-kompas').hidden = bezStanova; // bez stanova nema šta provjeravati; ostaje samo poruka o rasporedu
     $('btn-lov-panel-uredi').textContent = bezStanova ? 'Postavi stanove' : 'Uredi raspored';
-    // Ko upravlja lovom (admin, organizator, grupovođa sekcije) mora odavde moći postaviti raspored —
+    // Ko upravlja lovom (admin, organizator, lovovođa sekcije) mora odavde moći postaviti raspored —
     // lov napravljen iz taba sekcije nema stanova, a spisak "Organizuj" nije na putu do karte.
     cachedSekcije().catch(() => ({})).then((ctx) => {
       if (shown) $('btn-lov-panel-uredi').hidden = shown.lov.status === 'zavrsen' || !canManageHunt(shown, ctx, me());
@@ -287,12 +287,12 @@ export function initLov(L, map) {
   // ---------------- organizacija ----------------
   const reviriCache = async () => (await idbGet('spiskovi', 'reviri'))?.rows || [];
 
-  // Sekcije u kojima smijem organizovati lov: admin sve, grupovođa svoje.
+  // Sekcije u kojima smijem organizovati lov: admin sve, lovovođa sekcije svoje.
   const organizableSections = async () => {
     const all = (await cachedSekcije()).sekcije.filter((s) => s.aktivno !== false);
     return me()?.is_admin ? all : mySectionsAsLeader(all, me()?.id);
   };
-  // Bez prava na revir (samo grupovođa) lov MORA imati sekciju; server to provodi, ovdje se samo vodi lovca.
+  // Bez prava na revir (samo lovovođa sekcije) lov MORA imati sekciju; server to provodi, ovdje se samo vodi lovca.
   let sectionRequired = false;
 
   $('btn-lov-novi').addEventListener('click', async () => {

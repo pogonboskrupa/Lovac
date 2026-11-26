@@ -234,7 +234,7 @@ function wireAuthForms() {
     submitBtn.value = m;
     status.textContent = '';
   };
-  // Revir i sekcija pri registraciji: izbor je neobavezan zahtjev, a odobrava ga grupovođa/lovočuvar/administrator.
+  // Revir i sekcija pri registraciji: izbor je neobavezan zahtjev, a odobrava ga lovovođa sekcije/lovočuvar/administrator.
   let sectionsLoaded = false;
   const fillSections = (groups) => {
     const revirSel = document.getElementById('pr-revir');
@@ -306,7 +306,7 @@ function wireAuthForms() {
   document.getElementById('btn-provjeri-odobrenje')?.addEventListener('click', () => backgroundSession(true));
   document.getElementById('btn-odjava')?.addEventListener('click', doLogout);
   // Ponovna prijava na zahtjev lovca (traka "Prijava istekla"); neposlani zapisi ostaju u redu.
-  // Traka probnog perioda vodi na "Sekcije i pristup" (tamo se traži članstvo, a grupovođa ga odobrava).
+  // Traka probnog perioda vodi na "Sekcije i pristup" (tamo se traži članstvo, a lovovođa sekcije ga odobrava).
   document.getElementById('probni-traka')?.addEventListener('click', () => document.getElementById('btn-sekcije')?.click());
   document.getElementById('prijava-istekla')?.addEventListener('click', () => {
     document.getElementById('prijava-istekla').hidden = true;
@@ -334,7 +334,7 @@ async function backgroundSession(userAsked = false) {
     const next = hasAppAccess(profile) ? 'mapa' : 'cekanje';
     renderTrial(profile);
     if (next !== shownScreen) enter(next);
-    else if (userAsked && !profile.odobren) toast('Još čeka odobrenje administratora ili grupovođe');
+    else if (userAsked && !profile.odobren) toast('Još čeka odobrenje administratora ili lovovođe sekcije');
   } catch (err) {
     console.warn('pozadinska sesija', err);
     if (userAsked) toast('Nema veze sa serverom');

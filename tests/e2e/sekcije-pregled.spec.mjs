@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -102,7 +102,7 @@ async function openSekcijeScreen(page) {
   await expect(page.locator('#sekcije')).toBeVisible();
 }
 
-test('Sekcije (grupovođa): hero, "Moje" kao zadani prikaz, zahtjevi na vrhu se odobravaju bez otvaranja upravljanja, tekst u Meniju', async ({ page }) => {
+test('Sekcije (lovovođa sekcije): hero, "Moje" kao zadani prikaz, zahtjevi na vrhu se odobravaju bez otvaranja upravljanja, tekst u Meniju', async ({ page }) => {
   const server = makeServer();
   server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: VAN.id, status: 'ceka', created_at: '2026-11-01T10:00:00Z' });
   await setup(page, server, GV);
@@ -122,7 +122,7 @@ test('Sekcije (grupovođa): hero, "Moje" kao zadani prikaz, zahtjevi na vrhu se 
   await expect(page.locator('#sks-odobrenje')).toHaveText('0');
 });
 
-test('Sekcije (lovac bez sekcije): zadani prikaz "Sve", Bez pristupa, pretraga po reviru i grupovođi, Zatraži pristup', async ({ page }) => {
+test('Sekcije (lovac bez sekcije): zadani prikaz "Sve", Bez pristupa, pretraga po reviru i lovovođi sekcije, Zatraži pristup', async ({ page }) => {
   const server = makeServer();
   await setup(page, server, VAN);
   await openSekcijeScreen(page);
@@ -136,7 +136,7 @@ test('Sekcije (lovac bez sekcije): zadani prikaz "Sve", Bez pristupa, pretraga p
   await expect(page.locator('#sekcije-spisak .sekcija-kartica')).toHaveCount(3);
   await page.fill('#sekcije-trazi', 'otoka');
   await expect(page.locator('#sekcije-spisak .sekcija-kartica')).toHaveCount(1);
-  await page.fill('#sekcije-trazi', 'goran'); // grupovođa Krupe 1
+  await page.fill('#sekcije-trazi', 'goran'); // lovovođa sekcije Krupe 1
   await expect(page.locator('#sekcije-spisak .sekcija-kartica')).toHaveCount(1);
   await expect(page.locator('#sekcije-spisak .sekcija-kartica')).toContainText('Krupa 1');
   await page.locator('#sekcije-spisak .sekcija-kartica [data-akcija="zatrazi"]').click();
@@ -147,7 +147,7 @@ test('Sekcije (lovac bez sekcije): zadani prikaz "Sve", Bez pristupa, pretraga p
   await expect(page.locator('#sks-odobrenje')).toHaveText('0');
 });
 
-test('Meni: pločica Sekcije i pristup pokazuje koliko zahtjeva čeka grupovođu', async ({ page }) => {
+test('Meni: pločica Sekcije i pristup pokazuje koliko zahtjeva čeka lovovođu sekcije', async ({ page }) => {
   const server = makeServer();
   server.db.sekcija_clanovi.push({ sekcija_id: ID(200), korisnik_id: VAN.id, status: 'ceka', created_at: '2026-11-01T10:00:00Z' });
   await setup(page, server, GV);

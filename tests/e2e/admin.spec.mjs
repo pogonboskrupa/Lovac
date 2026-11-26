@@ -130,7 +130,7 @@ test('Korisnici i odobrenja: administracija je kartica odmah poslije ažuriranja
   expect(b.height).toBeGreaterThanOrEqual(44);
 });
 
-test('Korisnici: "Odobri i primi u sekciju" odobri nalog I prijem u traženu sekciju; grupovođa dobije čip uloge', async ({ page }) => {
+test('Korisnici: "Odobri i primi u sekciju" odobri nalog I prijem u traženu sekciju; lovovođa sekcije dobije čip uloge', async ({ page }) => {
   const rpc = await setup(page);
   const patchovi = [];
   await page.route(/lazni\.supabase\.test\/rest\/v1\/sekcija_clanovi/, (r) => {
@@ -156,7 +156,7 @@ test('Korisnici: "Odobri i primi u sekciju" odobri nalog I prijem u traženu sek
   const novi = page.locator('#korisnici-spisak [data-id="b2"]');
   await expect(novi).toContainText('Traži ulaz: Krupa 1 (Krupa)');
   await expect(novi.locator('[data-akcija="odobri"]')).toHaveText('Odobri i primi u Krupa 1');
-  await expect(page.locator('#korisnici-spisak [data-id="c3"]')).toContainText('Grupovođa · Krupa');
+  await expect(page.locator('#korisnici-spisak [data-id="c3"]')).toContainText('Lovovođa sekcije · Krupa');
   await novi.locator('[data-akcija="odobri"]').click();
   await expect.poll(() => rpc.length).toBe(1);
   expect(rpc[0]).toEqual({ fn: 'admin_odobri', body: { p_korisnik: 'b2', p_odobren: true } });

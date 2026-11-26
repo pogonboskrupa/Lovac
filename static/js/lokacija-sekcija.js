@@ -25,8 +25,8 @@ export function activeShare(raw, now = Date.now()) {
   return { sekcijaId: raw.sekcijaId, do: raw.do };
 }
 
-// Dijele svi koji sa sekcijom imaju veze: član, grupovođa, lovočuvar revira i administrator (migracija 035).
-// Gledaju samo članovi, grupovođa i lovočuvar — administrator tuđe lokacije ne vidi (nije dio sekcije).
+// Dijele svi koji sa sekcijom imaju veze: član, lovovođa sekcije, lovočuvar revira i administrator (migracija 035).
+// Gledaju samo članovi, lovovođa sekcije i lovočuvar — administrator tuđe lokacije ne vidi (nije dio sekcije).
 export function canShareToSection(status) {
   return ['clan', 'grupovodja', 'lovocuvar', 'admin'].includes(status);
 }

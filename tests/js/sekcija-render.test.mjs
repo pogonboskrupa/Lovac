@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { huntControlsHtml, huntCardHtml, conversationHtml, membersHtml } from '../../static/js/sekcija-render.js';
 
-const names = { gv: 'Gvido Grupovođa', a: 'Adnan <b>', b: 'Bego' };
+const names = { gv: 'Gvido Lovovođa sekcije', a: 'Adnan <b>', b: 'Bego' };
 const nameOf = (id) => names[id] || 'drugi lovac';
 const sekcija = { id: 'S', naziv: 'Krupa 1' };
 const clanovi = [
@@ -14,14 +14,14 @@ const lov = { id: 'L1', naziv: 'Pogon <1>', datum: '2026-11-25', status: 'planir
 const cur = { zapis: { lov, ucesnici: [{ korisnik_id: 'gv', uloga: 'vodja' }, { korisnik_id: 'a', uloga: 'strijelac', samoprijava: true }], stanovi: [] } };
 const base = { s: sekcija, cur, st: 'grupovodja', myId: 'gv', clanovi, odazivi: { lovId: null, rows: [] }, nameOf, extra: { pozicije: [], odstrel: [], sos: [], lovId: null }, vrste: [], traceOn: false };
 
-test('bez lova: grupovođa dobija "Novi lov", član objašnjenje', () => {
+test('bez lova: lovovođa sekcije dobija "Novi lov", član objašnjenje', () => {
   assert.match(huntControlsHtml({ ...base, cur: null }), /data-akcija="lov-novi"/);
   const clan = huntControlsHtml({ ...base, cur: null, st: 'clan', myId: 'a' });
   assert.ok(!clan.includes('lov-novi'));
-  assert.match(clan, /Grupovođa još nije napravio lov/);
+  assert.match(clan, /Lovovođa sekcije još nije napravio lov/);
 });
 
-test('planirani lov: grupovođa vidi Pokreni, Obriši, prisutne i spisak za dodavanje; član ne vidi upravljanje', () => {
+test('planirani lov: lovovođa sekcije vidi Pokreni, Obriši, prisutne i spisak za dodavanje; član ne vidi upravljanje', () => {
   const html = huntControlsHtml(base);
   for (const a of ['lov-pokreni', 'lov-obrisi', 'lov-ukloni', 'lov-dodaj']) assert.ok(html.includes(`data-akcija="${a}"`), a);
   assert.match(html, /Prisutni \(2\)/);

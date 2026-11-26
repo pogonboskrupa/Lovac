@@ -48,7 +48,7 @@ export function activityText(a, now = Date.now()) {
 
 const name = (u) => (u ? `${u.ime} ${u.prezime}${u.nadimak ? ` (${u.nadimak})` : ''}` : 'drugi lovac');
 
-// Grupovođa, lovočuvar(i) revira, pa odobreni članovi po prezimenu.
+// Lovovođa sekcije, lovočuvar(i) revira, pa odobreni članovi po prezimenu.
 export function sectionMembers(sekcija, clanovi, lovocuvari, users) {
   const byId = new Map(users.map((u) => [u.id, u]));
   const rows = [];
@@ -108,7 +108,7 @@ export function huntPresence(zapis, myId, myStatusInSection) {
   };
 }
 
-// Odobreni članovi sekcije kojih još nema među učesnicima lova (grupovođa ih može dodati).
+// Odobreni članovi sekcije kojih još nema među učesnicima lova (lovovođa sekcije ih može dodati).
 export function addableMembers(sekcija, clanovi, ucesnici) {
   const inHunt = new Set(ucesnici.map((u) => u.korisnik_id));
   return clanovi.filter((c) => c.sekcija_id === sekcija.id && c.status === 'odobren' && !inHunt.has(c.korisnik_id)).map((c) => c.korisnik_id);

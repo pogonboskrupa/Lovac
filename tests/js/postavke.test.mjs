@@ -32,7 +32,7 @@ test('profil: inicijali i uloge iz keša, nikad iz imena', () => {
     grupovodje: [{ korisnik_id: 'u1', revir_id: 'R1' }],
     lovocuvari: [{ korisnik_id: 'u2', revir_id: 'R1' }],
   };
-  assert.deepEqual(profileRoles({ id: 'u1', odobren: true }, ctx).map((r) => r.tekst), ['Grupovođa · Krupa', 'Vodi sekciju Krupa 1']);
+  assert.deepEqual(profileRoles({ id: 'u1', odobren: true }, ctx).map((r) => r.tekst), ['Lovovođa sekcije · Krupa', 'Vodi sekciju Krupa 1']);
   assert.deepEqual(profileRoles({ id: 'u2', odobren: true }, ctx).map((r) => r.tekst), ['Lovočuvar · Krupa']);
   assert.deepEqual(profileRoles({ id: 'u3', odobren: true, ime: 'Admin', is_admin: false }, ctx).map((r) => r.kod), ['lovac']);
   assert.deepEqual(profileRoles({ id: 'u4', odobren: true, is_admin: true }, ctx).map((r) => r.kod), ['admin']);

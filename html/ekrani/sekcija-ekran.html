@@ -6,7 +6,7 @@
   <nav id="sk-lista" class="sk-lista" aria-label="Sekcije" hidden></nav>
   <p id="sk-status" class="status" role="status"></p>
   <div id="sk-prazno" hidden>
-    <p>Nisi član nijedne sekcije. Zatraži pristup od grupovođe: bez odobrenja se ne može ući.</p>
+    <p>Nisi član nijedne sekcije. Zatraži pristup od lovovođe sekcije: bez odobrenja se ne može ući.</p>
     <button id="btn-sk-pristup" class="dugme glavno" type="button">Sekcije i pristup</button>
   </div>
   <div id="sk-sadrzaj" hidden>
@@ -45,6 +45,12 @@
       <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
     </section>
 
+    <section id="sk-k-grupe" class="sk-kartica">
+      <h3>Grupe <span id="sk-grupe-broj" class="sitno"></span></h3>
+      <p class="sitno">Grupa nema naziv: prepoznaje se po grupovođi. Lovac je u jednoj grupi. Raspoređuju lovovođa sekcije ili grupovođa; radnje traže internet.</p>
+      <div id="sk-grupe"></div>
+    </section>
+
     <section id="sk-k-lov" class="sk-kartica">
       <h3>Tekući lov</h3>
       <div id="sk-lov" class="sk-lov"></div>
@@ -53,7 +59,7 @@
 
     <section id="sk-k-poruke" class="sk-kartica">
       <h3>Poruke</h3>
-      <p class="sitno">Poruke vide članovi sekcije, grupovođa, lovočuvar revira i administrator.</p>
+      <p class="sitno">Poruke vide članovi sekcije, lovovođa sekcije, lovočuvar revira i administrator.</p>
       <div id="sk-poruke" class="poruke" role="log" aria-live="polite"></div>
       <div id="sk-brze" class="brze-poruke"></div>
       <form id="forma-poruka" class="forma-poruka" novalidate>
@@ -64,7 +70,7 @@
 
     <section id="sk-k-ruk" class="sk-kartica" hidden>
       <h3>Rukovodstvo</h3>
-      <p class="sitno">Razgovor grupovođa, lovočuvara i administratora, izvan sekcija. Članovi ga ne vide.</p>
+      <p class="sitno">Razgovor lovovođa sekcije, lovočuvara i administratora, izvan sekcija. Članovi ga ne vide.</p>
       <div id="sk-ruk-poruke" class="poruke" role="log" aria-live="polite"></div>
       <form id="forma-ruk" class="forma-poruka" novalidate>
         <input name="tekst" maxlength="1000" placeholder="Poruka rukovodstvu" aria-label="Poruka rukovodstvu" autocomplete="off">

@@ -27,7 +27,7 @@ export function usersOverview(users = [], now = Date.now()) {
 // Filteri: Svi / Čekaju (ceka + probni, njih admin treba da pregleda) / Odobreni / Admini.
 export const USER_FILTERS = [['svi', 'Svi'], ['cekaju', 'Čekaju'], ['odobreni', 'Odobreni'], ['vodstvo', 'Vodstvo'], ['admini', 'Admini'], ['bez', 'Bez sekcije']];
 
-// Vodstvo = grupovođa sekcije, lovočuvar revira ili administrator. "Bez sekcije" = odobren lovac koji nije član nijedne sekcije
+// Vodstvo = lovovođa sekcije, lovočuvar revira ili administrator. "Bez sekcije" = odobren lovac koji nije član nijedne sekcije
 // (ni vođa neke): takvog nema ko da pozove na lov, pa ga admin treba rasporediti.
 export function matchesFilter(u, filter, now = Date.now(), data = {}) {
   const s = userState(u, now);
@@ -70,7 +70,7 @@ const sekcijaTekst = (s, data) => {
   return revir ? `${s.naziv} (${revir})` : s.naziv;
 };
 
-// Sve što korisnik JESTE u sekcijama i revirima (iz keša sekcija): vodi sekcije (grupovođa), lovočuvar revira, član, traži ulaz.
+// Sve što korisnik JESTE u sekcijama i revirima (iz keša sekcija): vodi sekcije (lovovođa sekcije), lovočuvar revira, član, traži ulaz.
 export function roleInfo(userId, data = {}) {
   const sekcije = data.sekcije || [];
   const byId = new Map(sekcije.map((s) => [s.id, s]));
@@ -94,7 +94,7 @@ export function sectionTargets(userId, data = {}) {
     .sort((a, b) => a.revir.localeCompare(b.revir, 'bs') || a.tekst.localeCompare(b.tekst, 'bs'));
 }
 
-// Sekcije u kojima korisnik još NIJE grupovođa (imenovanje zamjenjuje postojećeg, pa se vidi ko je trenutni).
+// Sekcije u kojima korisnik još NIJE lovovođa sekcije (imenovanje zamjenjuje postojećeg, pa se vidi ko je trenutni).
 export function leaderTargets(userId, users = [], data = {}) {
   const name = (id) => { const u = users.find((x) => x.id === id); return u ? `${u.ime} ${u.prezime}` : ''; };
   return (data.sekcije || []).filter((s) => s.aktivno !== false && s.grupovodja_id !== userId)
@@ -121,7 +121,7 @@ export function rolesOverview(users = [], data = {}, now = Date.now()) {
 }
 
 export function rolesText(o) {
-  return `${o.grupovodje} grupovođa · ${o.lovocuvari} lovočuvara · ${o.bez} bez sekcije`;
+  return `${o.grupovodje} lovovođa sekcije · ${o.lovocuvari} lovočuvara · ${o.bez} bez sekcije`;
 }
 
 // Redoslijed za pregled: prvo ko čeka odluku (probni period koji prije ističe ide ispred), pa odobreni po prezimenu.

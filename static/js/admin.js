@@ -54,7 +54,7 @@ function sectionsBlock(u, info, data) {
   const list = rows.map((m) => `
     <div class="kor-sek" data-sid="${escapeHtml(m.id)}" data-status="${m.status}">
       <div class="kor-sek-ime"><b>${escapeHtml(m.tekst)}</b>
-        <span class="kor-cip">${m.status === 'ceka' ? 'traži ulaz' : 'član'}</span>${info.vodi.some((v) => v.id === m.id) ? '<span class="kor-cip kor-uloga">grupovođa</span>' : ''}</div>
+        <span class="kor-cip">${m.status === 'ceka' ? 'traži ulaz' : 'član'}</span>${info.vodi.some((v) => v.id === m.id) ? '<span class="kor-cip kor-uloga">lovovođa sekcije</span>' : ''}</div>
       <div class="kor-sek-akcije">
         ${select(u.id, `cilj:${m.id}`, 'Premjesti u…', targets, `Premjesti ${u.ime} iz ${m.tekst} u`)}
         <button type="button" class="dugme" data-akcija="premjesti">Premjesti</button>
@@ -103,10 +103,10 @@ function rolesBlock(u, info, data, users) {
   const chips = (arr, akcija, kljuc, poruka) => arr.map((x) => `<span class="kor-uloga-red" data-${kljuc}="${escapeHtml(x.id)}"><span>${escapeHtml(x.tekst)}</span>
     <button type="button" class="dugme" data-akcija="${akcija}" data-dvaput="${escapeHtml(poruka)}">Skini</button></span>`).join('');
   return `<h4 class="kor-podnaslov">Uloge</h4>
-    <div class="kor-uloga-grupa" data-grupa="gv"><b>Grupovođa sekcije</b>
-      ${chips(info.vodi, 'gv-skini', 'sid', 'Dodirni ponovo — skida grupovođu') || '<span class="sitno">Nije grupovođa nijedne sekcije.</span>'}
-      ${gv.length ? `<div class="kor-sek-akcije">${select(u.id, 'gv', 'Izaberi sekciju…', gv, `Postavi ${u.ime} za grupovođu sekcije`)}
-        <button type="button" class="dugme" data-akcija="gv-postavi">Postavi za grupovođu</button></div>` : ''}</div>
+    <div class="kor-uloga-grupa" data-grupa="gv"><b>Lovovođa sekcije</b>
+      ${chips(info.vodi, 'gv-skini', 'sid', 'Dodirni ponovo — skida lovovođu sekcije') || '<span class="sitno">Nije lovovođa sekcije nijedne sekcije.</span>'}
+      ${gv.length ? `<div class="kor-sek-akcije">${select(u.id, 'gv', 'Izaberi sekciju…', gv, `Postavi ${u.ime} za lovovođu sekcije`)}
+        <button type="button" class="dugme" data-akcija="gv-postavi">Postavi za lovovođu sekcije</button></div>` : ''}</div>
     ${drustvoGrupa(u, data, 'lcd', ULOGA_LOVOCUVAR, 'Lovočuvar društva', 'Radi na cijelom području; društvo ima najviše 2 lovočuvara.', users)}
     ${drustvoGrupa(u, data, 'ldd', ULOGA_LOVOVODJA_DRUSTVA, 'Lovovođa društva', 'Glavni lovovođa; društvo ima samo jednog.', users)}
     ${revirVodjaGrupa(u, data, users)}
@@ -304,12 +304,12 @@ export function initAdmin() {
       case 'gv-postavi': {
         const to = val('gv');
         if (!need(to, 'Izaberi sekciju')) return;
-        await run(() => q(sb().from('sekcije').update({ grupovodja_id: u.id }).eq('id', to)), `${u.ime} ${u.prezime} je grupovođa: ${sekcijaNaziv(to)}`);
+        await run(() => q(sb().from('sekcije').update({ grupovodja_id: u.id }).eq('id', to)), `${u.ime} ${u.prezime} je lovovođa sekcije: ${sekcijaNaziv(to)}`);
         break;
       }
       case 'gv-skini': {
         const sid = btn.closest('[data-sid]').dataset.sid;
-        await run(() => q(sb().from('sekcije').update({ grupovodja_id: null }).eq('id', sid).eq('grupovodja_id', u.id)), 'Grupovođa skinut sa sekcije');
+        await run(() => q(sb().from('sekcije').update({ grupovodja_id: null }).eq('id', sid).eq('grupovodja_id', u.id)), 'Lovovođa sekcije skinut sa sekcije');
         break;
       }
       case 'lcd-postavi':

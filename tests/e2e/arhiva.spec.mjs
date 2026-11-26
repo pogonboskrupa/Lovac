@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles, PNG } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -143,7 +143,7 @@ test('arhiva lova: datum, vrijeme početka i kraja, učesnici, ulov, rezultat i 
   await expect(page.locator('#ad-ulov')).toContainText('Lisica');
   await expect(page.locator('#ad-rezultat-tekst')).toHaveText('Dvije divlje svinje i lisica');
   await expect(page.locator('#ad-rezultat-forma')).toBeHidden(); // učesnik ne uređuje rezultat
-  await expect(page.locator('#ad-ucesnici')).toContainText('Goran Grupovođa');
+  await expect(page.locator('#ad-ucesnici')).toContainText('Goran Lovovođa sekcije');
   await expect(page.locator('#ad-ucesnici')).toContainText('Vođa lova');
   await expect(page.locator('#ad-stat-slika')).toHaveText('1');
   await page.locator('#ad-slike .ad-slika img').click();
@@ -152,7 +152,7 @@ test('arhiva lova: datum, vrijeme početka i kraja, učesnici, ulov, rezultat i 
   await expect.poll(() => page.locator('#slika-velika-img').getAttribute('src')).toContain('data:image/png');
 });
 
-test('učesnik dodaje sliku u arhivu lova (mala + smanjena), grupovođa upisuje rezultat; neučesnik ne može dodati', async ({ page, browser }) => {
+test('učesnik dodaje sliku u arhivu lova (mala + smanjena), lovovođa sekcije upisuje rezultat; neučesnik ne može dodati', async ({ page, browser }) => {
   const server = makeServer();
   finished(server);
   server.db.lov_ucesnici = server.db.lov_ucesnici.filter((u) => u.korisnik_id !== LOVAC2.id);
@@ -311,7 +311,7 @@ test('tokom lova: tačke kretanja se bilježe lokalno i šalju na server (samo d
   expect(server.db.lov_tragovi.length).toBe(before);
 });
 
-test('brisanje lova u arhivi: grupovođa sekcije briše (drugi dodir) — lov nestaje sa servera i iz arhive; član nema dugme', async ({ page, browser }) => {
+test('brisanje lova u arhivi: lovovođa sekcije briše (drugi dodir) — lov nestaje sa servera i iz arhive; član nema dugme', async ({ page, browser }) => {
   const server = makeServer();
   finished(server);
   await setup(page, server, GV);
@@ -389,7 +389,7 @@ test('preuzimanje lova na telefon: jedan HTML fajl sa ulovom, učesnicima, velik
   expect(f.content).toContain('<h1>Pogon Grmeč</h1>');
   expect(f.content).toContain('Dvije divlje svinje i lisica');
   expect(f.content).toContain('Lisica</b>: 1 kom., 6 kg');
-  expect(f.content).toContain('Goran Grupovođa');
+  expect(f.content).toContain('Goran Lovovođa sekcije');
   expect(f.content).toContain('data:image/png;base64,'); // velika slika sa servera, ne samo sličica
   expect((f.content.match(/<polyline/g) || []).length).toBe(2);
   expect(f.content).toContain('Ne zamjenjuje službeni lovački dnevnik');
@@ -450,7 +450,7 @@ test('lov na karti iz arhive (dugme): pogoci i tragovi zajedno; lov bez lokacija
   await expect(page.locator('#btn-arh-pogoci')).toBeDisabled();
 });
 
-test('Zajednički lov: grupovođa sekcije briše lov (i planirani) drugim dodirom; član nema dugme', async ({ page, browser }) => {
+test('Zajednički lov: lovovođa sekcije briše lov (i planirani) drugim dodirom; član nema dugme', async ({ page, browser }) => {
   const server = makeServer();
   Object.assign(server.db.lovovi[0], { status: 'planiran', datum: new Date(Date.now() + 86400000).toISOString().slice(0, 10) });
   await setup(page, server, GV);
@@ -497,7 +497,7 @@ test('Zajednički lov: administrator vidi "Obriši lov" na svakom lovu; greška 
   Object.assign(server.db.lovovi[0], { status: 'zavrsen', datum: '2026-11-22', pocetak: T(0), kraj: T(60) });
   server.db.korisnici = server.db.korisnici.map((k) => (k.id === LOVAC.id ? { ...k, is_admin: true } : k));
   await setup(page, server, { ...LOVAC, is_admin: true });
-  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, (route) => route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: 'Lov briše administrator ili grupovođa sekcije tog lova' }) }));
+  await page.route(/lazni\.supabase\.test\/rest\/v1\/rpc\/obrisi_lov/, (route) => route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ code: '42501', message: 'Lov briše administrator ili lovovođa sekcije tog lova' }) }));
   await page.goto('/');
   await page.locator('#btn-spiskovi').click();
   await page.locator('#btn-lovovi').click();

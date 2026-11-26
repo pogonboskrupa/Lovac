@@ -1,5 +1,5 @@
 // Probni period samoregistrovanog lovca (rok postavlja server: korisnici.probni_do, migracija 026).
-// Dok traje, aplikacija radi; stalni pristup daje administrator, lovočuvar revira ili grupovođa (primanjem u sekciju).
+// Dok traje, aplikacija radi; stalni pristup daje administrator, lovočuvar revira ili lovovođa sekcije (primanjem u sekciju).
 
 export function trialEndsAt(profile) {
   const t = Date.parse(profile?.probni_do || '');
@@ -36,12 +36,12 @@ export function trialLeftText(profile, now = Date.now()) {
 }
 
 export function trialBannerText(profile, now = Date.now()) {
-  return `Probni pristup: još ${trialLeftText(profile, now)}. Za stalni pristup zatraži sekciju — odobrava grupovođa, lovočuvar ili administrator.`;
+  return `Probni pristup: još ${trialLeftText(profile, now)}. Za stalni pristup zatraži sekciju — odobrava lovovođa sekcije, lovočuvar ili administrator.`;
 }
 
 // Ekran čekanja: istekao probni period ili nalog bez probnog perioda.
 export function waitingText(profile) {
   return trialEndsAt(profile)
-    ? 'Probni period od 24 sata je istekao. Grupovođa ili lovočuvar te treba primiti u sekciju, ili administrator odobriti nalog.'
-    : 'Vaš nalog je primljen. Administrator društva ili grupovođa ga treba odobriti prije korištenja.';
+    ? 'Probni period od 24 sata je istekao. Lovovođa sekcije ili lovočuvar te treba primiti u sekciju, ili administrator odobriti nalog.'
+    : 'Vaš nalog je primljen. Administrator društva ili lovovođa sekcije ga treba odobriti prije korištenja.';
 }

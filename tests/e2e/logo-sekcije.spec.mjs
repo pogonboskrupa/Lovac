@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { serveTiles, PNG } from './helpers.mjs';
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const GV = { id: ID(2), ime: 'Goran', prezime: 'Grupovođa', odobren: true, is_admin: false };
+const GV = { id: ID(2), ime: 'Goran', prezime: 'Lovovođa sekcije', odobren: true, is_admin: false };
 const LOVAC = { id: ID(3), ime: 'Lovro', prezime: 'Lovac', odobren: true, is_admin: false };
 const LOVAC2 = { id: ID(4), ime: 'Luka', prezime: 'Pogonič', odobren: true, is_admin: false };
 const VAN = { id: ID(5), ime: 'Vanja', prezime: 'Van', odobren: true, is_admin: false };
@@ -93,7 +93,7 @@ async function setup(page, server, user) {
 
 
 
-test('logo sekcije: automatski crtan iz naziva u navigaciji, tabu i kartici; grupovođa učitava vlastiti, pa vraća automatski', async ({ page }) => {
+test('logo sekcije: automatski crtan iz naziva u navigaciji, tabu i kartici; lovovođa sekcije učitava vlastiti, pa vraća automatski', async ({ page }) => {
   const server = makeServer();
   await setup(page, server, GV);
   await page.goto('/');

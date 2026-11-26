@@ -13,7 +13,7 @@ const clanovi = [{ sekcija_id: 's3', korisnik_id: 'l1', status: 'odobren' }];
 const lovocuvari = [{ revir_id: 'r1', korisnik_id: 'lc' }];
 const ctx = { sekcije, clanovi, lovocuvari };
 
-test('opseg: admin sve sekcije, lovočuvar cijeli svoj revir, grupovođa i lovac samo svoju', () => {
+test('opseg: admin sve sekcije, lovočuvar cijeli svoj revir, lovovođa sekcije i lovac samo svoju', () => {
   assert.equal(mySections(ctx, { id: 'a', is_admin: true }).length, 3);
   assert.deepEqual(mySections(ctx, { id: 'lc' }).map((s) => s.id).sort(), ['s1', 's2']);
   assert.deepEqual(mySections(ctx, { id: 'g1' }).map((s) => s.id), ['s1']);
@@ -21,7 +21,7 @@ test('opseg: admin sve sekcije, lovočuvar cijeli svoj revir, grupovođa i lovac
   assert.equal(myStatus(sekcije[2], clanovi, 'lc', false, lovocuvari), 'nema');
 });
 
-test('tab "Sekcije" sa spiskom: admin i lovočuvar, ne grupovođa ni lovac', () => {
+test('tab "Sekcije" sa spiskom: admin i lovočuvar, ne lovovođa sekcije ni lovac', () => {
   assert.equal(seesSectionList({ id: 'a', is_admin: true }, ctx), true);
   assert.equal(seesSectionList({ id: 'lc' }, ctx), true);
   assert.equal(seesSectionList({ id: 'g1' }, ctx), false);
