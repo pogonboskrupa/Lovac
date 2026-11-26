@@ -10,7 +10,7 @@ import { isServerConfigured } from './config.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { downloadHunts } from './lov-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
-import { mySections, currentHunt, memberActivity, activityText, sectionMembers, huntCreatePlan, huntPresence, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip, huntCountsByMember, sortByActivity, huntsText } from './sekcija-podaci.js';
+import { mySections, currentHunt, memberActivity, sectionMembers, huntCreatePlan, addableMembers, CLAN_FILTERI, huntersCounts, filterHunters, faceStrip, huntCountsByMember, sortByActivity } from './sekcija-podaci.js';
 import { matchesQuery } from './pretraga.js';
 import { uuid } from './zapisi.js';
 import { trailEnabled } from './lov-tragovi-ui.js';
@@ -20,17 +20,16 @@ import { initialsOf } from './lokacija.js';
 import { huntDateText } from './lov.js';
 import { myStatus, pendingRequests, pristupText, creationMode, isLeadership, seesSectionList, groupSectionsByRevir } from './sekcije.js';
 import {
-  validateMessage, newMessage, mergeMessages, unreadCount, formatMessageTime, QUICK_MESSAGES, KANAL_RUKOVODSTVO, conversationItems,
+  validateMessage, newMessage, unreadCount, QUICK_MESSAGES, KANAL_RUKOVODSTVO,
 } from './poruke.js';
-import { summarizeHarvest, formatDecimalBs } from './odstrel.js';
-import { getSpisakAll, lookupNaziv } from './spiskovi.js';
+import { getSpisakAll } from './spiskovi.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 import { canPing } from './ping.js';
-import { fetchNew, nextCursor } from './inkrement.js';
 import { organizableSections, lastHuntPreset } from './lov-traje.js';
 import { deleteHunt } from './lov-brisanje.js';
 import { sendPing } from './ping-ui.js';
-import { answersSummary } from './odaziv.js';
+import { createMessageSync } from './sekcija-poruke.js';
+import { membersHtml, huntCardHtml, conversationHtml, U_LOVU } from './sekcija-render.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
 const NOTIF_KEY = 'lovac.sekcija.obavijest';
@@ -41,8 +40,6 @@ const LISTS_OPEN_MS = 60000;
 const LISTS_BG_MS = 5 * 60000;
 const HUNT_REFRESH_MS = 60000;
 const ULOGE_SEKCIJE = { admin: 'Administrator', grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
-const ULOGE = { grupovodja: 'Grupovođa', lovocuvar: 'Lovočuvar revira', clan: 'Član' };
-const U_LOVU = { strijelac: 'Strijelac', pogonic: 'Pogonič', vodja: 'Vođa lova' };
 const STATUS_LOVA = { planiran: 'Planiran', u_toku: 'U toku', zavrsen: 'Završen' };
 const $ = (id) => document.getElementById(id);
 
@@ -131,62 +128,9 @@ export function initSekcijaEkran(L, map) {
     updateNav();
   };
 
-  const notifyNew = (fresh) => {
-    const since = loadJSON(NOTIF_KEY, 0);
-    const news = fresh.filter((m) => m.autor_id !== me()?.id && Date.parse(m.created_at) > since);
-    if (!news.length) return;
-    saveSoft(NOTIF_KEY, Math.max(...news.map((m) => Date.parse(m.created_at))));
-    if (isOpen() && document.visibilityState === 'visible') return;
-    const m = news[news.length - 1];
-    const s = ctx.sekcije.find((x) => x.id === m.sekcija_id);
-    const naslov = `${m.kanal === KANAL_RUKOVODSTVO ? 'Rukovodstvo' : (s?.naziv || 'Sekcija')} — ${memberName(m.autor_id)}`;
-    // Poruke imaju vlastiti, običan kanal (ne alarmni kao SOS); starije aplikacije bez njega koriste opšti.
-    if (globalThis.AndroidNotif?.poruka) globalThis.AndroidNotif.poruka(naslov, m.tekst, news.length);
-    else globalThis.AndroidNotif?.prikazi?.(naslov, m.tekst);
-  };
-
-  // Samo nove poruke od zadnjeg kursora (ranije: svaki put 300 NAJSTARIJIH — nove se poslije 300 nisu vidjele).
-  const pullChannel = async (key, base, local) => {
-    const ck = `lovac.kursor.poruke.${key}`;
-    const cursor = loadJSON(ck, null);
-    const remote = await fetchNew(base, cursor);
-    const known = new Set(poruke.map((m) => m.id));
-    const fresh = [];
-    for (const m of mergeMessages(local, remote)) {
-      if (known.has(m.id) && !remote.some((r) => r.id === m.id)) continue;
-      await idbPut('poruke', m);
-      if (!known.has(m.id)) fresh.push(m);
-    }
-    saveSoft(ck, nextCursor(remote, cursor));
-    return fresh;
-  };
-  const pullMessages = async () => {
-    const fresh = [];
-    for (const s of mine()) {
-      fresh.push(...await pullChannel(s.id, () => getClient().from('poruke').select('*').eq('sekcija_id', s.id),
-        poruke.filter((m) => m.sekcija_id === s.id)));
-    }
-    if (leader()) {
-      fresh.push(...await pullChannel('rukovodstvo', () => getClient().from('poruke').select('*').eq('kanal', KANAL_RUKOVODSTVO), rukPoruke()));
-    }
-    await reloadPoruke();
-    notifyNew(fresh);
-  };
-
-  const flushOutbox = async () => {
-    for (const m of poruke.filter((x) => x.sinhronizovano === false && x.autor_id === me()?.id)) {
-      try {
-        await qSk(getClient().from('poruke').upsert({
-          id: m.id, kanal: m.kanal || 'sekcija', sekcija_id: m.sekcija_id ?? null, lov_id: m.lov_id ?? null, autor_id: m.autor_id, tekst: m.tekst, created_at: m.created_at,
-        }, { onConflict: 'id', ignoreDuplicates: true }));
-        await idbPut('poruke', { ...m, sinhronizovano: true });
-      } catch (err) {
-        console.warn('poruka čeka slanje', err.message);
-        break;
-      }
-    }
-    await reloadPoruke();
-  };
+  const { pullMessages, flushOutbox } = createMessageSync({
+    client: getClient, me, mine, leader, ctx: () => ctx, poruke: () => poruke, rukPoruke, reload: reloadPoruke, isOpen, q: qSk,
+  });
 
   const pullLive = async (zapis) => {
     if (!zapis || zapis.lov.status !== 'u_toku') { extra = { pozicije: [], odstrel: [], sos: [], lovId: null }; return; }
@@ -235,74 +179,10 @@ export function initSekcijaEkran(L, map) {
   };
 
   // ---------- prikaz ----------
-  // Grupovođa/admin: pokreće i završava lov, dodaje i uklanja prisutne. Član: javlja da je prisutan.
-  const huntControls = (s, cur, st) => {
-    const manager = st === 'grupovodja' || st === 'admin';
-    if (!cur) {
-      return manager ? '<button type="button" class="dugme glavno" data-akcija="lov-novi">Novi lov</button>'
-        : '<p class="sitno">Grupovođa još nije napravio lov. Kad ga napravi, ovdje javljaš da si prisutan.</p>';
-    }
-    const { lov, ucesnici } = cur.zapis;
-    const pres = huntPresence(cur.zapis, me()?.id, st);
-    let html = '';
-    if (pres.canJoin) html += '<button type="button" class="dugme glavno" data-akcija="lov-prijavi">Prisutan sam — pridruži se lovu</button>';
-    if (pres.canLeave) html += '<button type="button" class="dugme" data-akcija="lov-odjavi">Nisam prisutan</button>';
-    if (!manager) return html;
-    if (lov.status === 'planiran') html += `<button type="button" class="dugme glavno" data-akcija="lov-pokreni" data-lov="${escapeHtml(lov.id)}">Pokreni lov</button>`;
-    if (lov.status === 'u_toku') html += `<button type="button" class="dugme" data-akcija="lov-zavrsi" data-lov="${escapeHtml(lov.id)}">Završi lov</button>`;
-    html += '<button type="button" class="dugme" data-akcija="lov-obrisi">Obriši lov</button>';
-    const addable = addableMembers(s, ctx.clanovi, ucesnici);
-    if (odazivi.lovId === lov.id) {
-      const sum = answersSummary(odazivi.rows, memberName);
-      html += `<div class="odaziv-odgovori" id="sk-odazivi"><b>${escapeHtml(sum.tekst)}</b>${sum.ne.length ? `<div class="sitno">Ne dolaze: ${sum.ne.map(escapeHtml).join(', ')}</div>` : ''}</div>`;
-    }
-    html += `<h4>Prisutni (${ucesnici.length})</h4><ul class="spisak" data-prisutni>${ucesnici.map((u) => `<li class="clan-red" data-uid="${escapeHtml(u.korisnik_id)}">
-        <span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(memberName(u.korisnik_id)))}</span>
-        <span class="clan-tekst"><b>${escapeHtml(memberName(u.korisnik_id))}</b>${u.samoprijava ? ' <span class="sitno">· prijavio se sam</span>' : ''}</span>
-        ${u.korisnik_id === me()?.id ? '' : '<button type="button" class="dugme" data-akcija="lov-ukloni">Ukloni</button>'}</li>`).join('')
-      || '<li class="sitno">Još niko nije prisutan.</li>'}</ul>
-      <h4>Dodaj iz sekcije</h4>
-      <div class="clanovi" data-spisak>${addable.map((id) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(memberName(id))}</label>`).join('')
-    || '<p class="sitno">Svi članovi sekcije su već u lovu.</p>'}</div>
-      ${addable.length ? '<button type="button" class="dugme" data-akcija="lov-dodaj">Dodaj izabrane</button>' : ''}`;
-    return html;
-  };
-
-  const huntCard = (s, cur, users, st) => {
-    if (!cur) return `<p>Nema lova u toku ni planiranog lova za ovu sekciju.</p>${huntControls(s, cur, st)}`;
-    const { lov, ucesnici, stanovi } = cur.zapis;
-    const live = lov.status === 'u_toku';
-    const acts = ucesnici.map((u) => memberActivity(u.korisnik_id, lov, ucesnici, extra.lovId === lov.id ? extra.pozicije : []));
-    const aktivnih = acts.filter((a) => a.stanje === 'aktivan').length;
-    const mineAssign = ucesnici.find((u) => u.korisnik_id === me()?.id);
-    const stan = stanovi.find((x) => x.korisnik_id === me()?.id);
-    const odstrel = live && extra.lovId === lov.id ? summarizeHarvest(extra.odstrel.map((o) => ({ vrsta: o.vrsta, tezina: o.tezina }))) : [];
-    const traceOn = trailEnabled(lov.id);
-    return `<div class="sk-lov-glava"><b>${escapeHtml(lov.naziv)}</b><span class="lov-status" data-status="${lov.status}">${live ? 'U TOKU' : lov.status === 'zavrsen' ? 'Završen' : 'Planiran'}</span></div>
-      <p class="lk-datum">${escapeHtml(huntDateText(lov.datum))}</p>
-      <div class="sk-statovi">
-        <div data-stat="prisutnih"><b>${ucesnici.length}</b><span>prisutnih</span></div>
-        ${live ? `<div data-stat="aktivnih"><b>${aktivnih}</b><span>aktivnih sada</span></div>` : ''}
-        <div data-stat="stanova"><b>${stanovi.length}</b><span>stanova</span></div>
-      </div>
-      ${mineAssign ? `<p>Moja uloga: ${escapeHtml(U_LOVU[mineAssign.uloga] || mineAssign.uloga)}${stan ? `, stan ${stan.broj}` : ''}</p>` : ''}
-      ${live ? `<p class="sitno">Odstrel u lovu: ${odstrel.length ? odstrel.map((o) => `${escapeHtml(lookupNaziv(vrste, o.vrsta))}: ${o.komada} kom., ${escapeHtml(formatDecimalBs(Math.round(o.tezina * 10) / 10))} kg`).join('; ') : 'još nema'} · SOS poruka: ${extra.sos.length}</p>` : ''}
-      <label class="red-check"><input type="checkbox" data-trag="${escapeHtml(lov.id)}" data-live="${live}"${traceOn ? ' checked' : ''}> Prikaži trag kretanja lovaca sekcije</label>
-      <button type="button" class="dugme glavno" data-akcija="raspored" data-lov="${escapeHtml(lov.id)}">Raspored na karti</button>
-      ${huntControls(s, cur, st)}`;
-  };
-
-  // Jedan način crtanja razgovora za sekciju i rukovodstvo: naslovi dana, ime i inicijali samo na prvoj poruci niza.
-  const chatHtml = (list, showHunt) => conversationItems(list).map((it) => {
-    if (it.dan) return `<div class="poruka-dan"><span>${escapeHtml(it.dan)}</span></div>`;
-    const m = it.poruka;
-    const mine = m.autor_id === me()?.id;
-    const name = mine ? 'Ti' : memberName(m.autor_id);
-    const head = it.prva ? `<small>${escapeHtml(name)} · ${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}${showHunt && m.lov_id ? ' · u lovu' : ''}</small>`
-      : `<small class="poruka-vrijeme">${escapeHtml(formatMessageTime(m.created_at))}${m.sinhronizovano === false ? ' · čeka slanje' : ''}</small>`;
-    const av = !mine && it.prva ? `<span class="poruka-av" aria-hidden="true">${escapeHtml(initialsOf(name))}</span>` : '';
-    return `<div class="poruka-red${mine ? ' moja' : ''}${it.prva ? '' : ' nastavak'}" data-id="${escapeHtml(m.id)}">${av}${head}${escapeHtml(m.tekst)}</div>`;
-  }).join('');
+  // Crtanje je u sekcija-render.js (čiste funkcije); ovdje se samo skuplja stanje.
+  const renderCtx = (s, cur, st) => ({ s, cur, st, myId: me()?.id, clanovi: ctx.clanovi, odazivi, nameOf: memberName, extra, vrste, traceOn: cur ? trailEnabled(cur.zapis.lov.id) : false });
+  const huntCard = (s, cur, users, st) => huntCardHtml(renderCtx(s, cur, st));
+  const chatHtml = (list, showHunt) => conversationHtml(list, { showHunt, myId: me()?.id, nameOf: memberName });
 
   const render = () => {
     const list = mine();
@@ -365,21 +245,9 @@ export function initSekcijaEkran(L, map) {
     $('sk-poredak').querySelectorAll('[data-por]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.por === memOrder)));
     const filtered = filterHunters(rows, actOf, memFilter, memQuery, matchesQuery);
     const shown = memOrder === 'aktivnost' ? sortByActivity(filtered, lovCounts) : filtered;
-    $('sk-clanovi').innerHTML = shown.map((r) => {
-      const a = actOf(r.id);
-      const ja = r.id === me()?.id;
-      return `<li class="clan-red" data-uid="${escapeHtml(r.id)}" data-stanje="${a.stanje}" data-uloga="${r.uloga}">
-        <span class="sk-avatar${avatarOf(r.id) ? ' ima-sliku' : ''}" aria-hidden="true"${avatarOf(r.id) ? ` style="background-image:url('${avatarOf(r.id)}')"` : ''}>${avatarOf(r.id) ? '' : escapeHtml(initialsOf(r.ime))}</span>
-        <div class="clan-tekst"><b>${escapeHtml(r.ime)}${ja ? ' (ti)' : ''}</b>
-          <span class="sitno"><span class="sk-znacka" data-uloga="${r.uloga}">${escapeHtml(ULOGE[r.uloga])}</span>${a.uloga ? ` · u lovu: ${escapeHtml(U_LOVU[a.uloga] || a.uloga)}` : ''} · <span class="sk-lovova">${escapeHtml(huntsText(lovCounts.get(r.id) || 0))}</span></span>
-          <span class="sitno aktivnost">${escapeHtml(activityText(a))}</span></div>
-        <div class="clan-akcije">
-          ${a.zadnje && Number.isFinite(a.lat) ? '<button type="button" class="dugme" data-akcija="na-karti">Na karti</button>' : ''}
-          ${ja ? '' : '<button type="button" class="dugme" data-akcija="poruka">Poruka</button>'}
-          ${canPing(st, r.uloga, me()?.id, r.id) ? '<button type="button" class="dugme" data-akcija="ping">Gdje si?</button>' : ''}
-        </div>
-      </li>`;
-    }).join('') || `<li class="sitno">${rows.length ? 'Nijedan lovac ne odgovara pretrazi.' : 'Nema članova.'}</li>`;
+    $('sk-clanovi').innerHTML = membersHtml(shown, {
+      actOf, myId: me()?.id, st, lovCounts, avatarOf, canPing, total: rows.length,
+    });
 
     queueMicrotask(() => document.dispatchEvent(new Event('sekcija:nacrtana')));
     // poruke
