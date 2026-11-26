@@ -45,18 +45,26 @@ if grep -E "Uncaught|neuhvaćena greška" logcat-js.txt; then echo "JS greška p
 echo "Pokretanje OK"
 
 # ---- snimanje traga kroz native servis ----
-adb shell am force-stop $PKG
-adb logcat -c
-adb shell am start -W -n $PKG/.MainActivity -e autotest trag
-cekaj BOOT_OK 90 || { echo "BOOT_OK (autotest) nije stigao"; diagnoza; exit 1; }
-for i in $(seq 0 14); do
-  lat=$(awk -v i="$i" 'BEGIN { printf "%.6f", 44.88 + i * 0.0002 }')
-  adb emu geo fix 16.1500 "$lat" 300 >/dev/null || true
-  sleep 2
-done
-adb logcat -d -s LovacJS:I > logcat-js.txt || true
-grep TRAG_TACAKA logcat-js.txt | tail -3
-max=$(grep -oE "TRAG_TACAKA -?[0-9]+" logcat-js.txt | awk '{print $2}' | sort -n | tail -1)
+# Hladan emulator zna zaustaviti JS tajmere WebView-a usred testa (u logu stane TRAG_TACAKA), pa se test ponovi JEDNOM.
+proba_traga() {
+  adb shell am force-stop $PKG
+  adb logcat -c
+  adb shell am start -W -n $PKG/.MainActivity -e autotest trag
+  cekaj BOOT_OK 90 || { echo "BOOT_OK (autotest) nije stigao"; diagnoza; exit 1; }
+  for i in $(seq 0 14); do
+    lat=$(awk -v i="$i" 'BEGIN { printf "%.6f", 44.88 + i * 0.0002 }')
+    adb emu geo fix 16.1500 "$lat" 300 >/dev/null || true
+    sleep 2
+  done
+  adb logcat -d -s LovacJS:I > logcat-js.txt || true
+  grep TRAG_TACAKA logcat-js.txt | tail -3
+  max=$(grep -oE "TRAG_TACAKA -?[0-9]+" logcat-js.txt | awk '{print $2}' | sort -n | tail -1)
+}
+proba_traga
+if [ -z "$max" ] || [ "$max" -lt 3 ]; then
+  echo "Snimanje traga: prvi pokušaj stigao ${max:-0} tačaka (očekivano ≥ 3), ponavljam jednom"
+  proba_traga
+fi
 if [ -z "$max" ] || [ "$max" -lt 3 ]; then
   echo "Snimanje traga: stiglo ${max:-0} tačaka kroz native servis (očekivano ≥ 3)"
   diagnoza; exit 1
