@@ -1,5 +1,6 @@
 // Tab "LD Grmeč" (čista logika): ko je ko u udruženju — predsjednik, lovočuvari, lovovođa udruženja, lovovođe revira,
 // lovovođe sekcija i grupovođe. Podaci su iz keša sekcija (`cachedSekcije`); server (RLS) odlučuje šta ko smije vidjeti.
+import { groupedIds } from './grupe.js';
 import { MAX_LOVOCUVARA } from './hijerarhija.js';
 
 // Tab vide rukovodioci: admin, predsjednik, lovočuvari, lovovođe (udruženja, revira, sekcije). Uloga se nikad ne izvodi iz imena.
@@ -90,10 +91,10 @@ export function ldCandidates(meta, ctx = {}, users = [], nameOf = () => '', popu
   let ids;
   if (popuna === 'grupa') {
     const vode = new Set((ctx.grupe || []).filter((g) => g.sekcija_id === meta.sekcijaId).map((g) => g.grupovodja_id));
-    const zauzeti = roleHolders(ctx);
+    const zauzeti = new Set([...roleHolders(ctx), ...groupedIds(ctx.grupe, ctx.clanovi), ...(ctx.izvanPregleda || []).map((x) => x.korisnik_id)]);
     ids = (ctx.clanovi || []).filter((c) => c.sekcija_id === meta.sekcijaId && c.status === 'odobren' && !vode.has(c.korisnik_id) && !zauzeti.has(c.korisnik_id)).map((c) => c.korisnik_id);
   } else {
-    const drzi = new Set([meta.korisnikId, ...roleHolders(ctx)]);
+    const drzi = new Set([meta.korisnikId, ...roleHolders(ctx), ...(ctx.izvanPregleda || []).map((x) => x.korisnik_id)]);
     ids = users.filter((u) => u.odobren !== false && !drzi.has(u.id)).map((u) => u.id);
   }
   return [...new Set(ids)].filter((id) => ime(id)).map((id) => ({ id, ime: ime(id) })).sort(byName2);
@@ -117,7 +118,9 @@ export function groupAddable(sekcijaId, ctx = {}, nameOf = () => '') {
   const gs = (ctx.grupe || []).filter((g) => g.sekcija_id === sekcijaId);
   const ids = new Set(gs.map((g) => g.id));
   const vode = new Set(gs.map((g) => g.grupovodja_id)); // grupovođa već vodi grupu: ne nudi se za dodavanje u grupu
-  return (ctx.clanovi || []).filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id) && !vode.has(c.korisnik_id))
+  // ko je već u grupi bilo koje sekcije ili je sklonjen iz pregleda, ne nudi se
+  const skip = new Set([...groupedIds(ctx.grupe, ctx.clanovi), ...(ctx.izvanPregleda || []).map((x) => x.korisnik_id)]);
+  return (ctx.clanovi || []).filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id) && !vode.has(c.korisnik_id) && !skip.has(c.korisnik_id))
     .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) })).filter((x) => x.ime)
     .sort((a, b) => String(a.ime).localeCompare(String(b.ime), 'bs'));
 }

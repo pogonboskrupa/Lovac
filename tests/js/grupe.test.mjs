@@ -28,7 +28,8 @@ test('grupe: članovi grupe (grupovođa prvi), bez grupe, kandidati', () => {
   assert.deepEqual(g[0].clanovi.map((c) => c.id), ['b', 'a']);
   assert.equal(g[0].grupovodja, 'Boris Bašić');
   assert.deepEqual(ungroupedMembers('s1', grupe, clanovi, nameOf).map((c) => c.id), ['c']); // čekanje (d) i druga sekcija se ne računaju
-  assert.deepEqual(groupLeaderCandidates('s1', grupe, clanovi, nameOf).map((c) => c.id), ['a', 'c']); // b već vodi grupu
+  assert.deepEqual(groupLeaderCandidates('s1', grupe, clanovi, nameOf).map((c) => c.id), ['c']); // b vodi grupu, a je već u grupi: ko je u grupi ne nudi se za drugu
+  assert.deepEqual(groupLeaderCandidates('s1', grupe, clanovi, nameOf, [{ korisnik_id: 'c' }]).map((c) => c.id), []); // sklonjen iz pregleda
 });
 
 test('grupe: član obrisane grupe je bez grupe; grupovođa raspoređuje samo u svoju', () => {

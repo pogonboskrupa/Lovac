@@ -842,3 +842,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Ko ima ulogu ne nudi se za drugu (v1.8.6, bez migracije)**
 - U Struktura LD Grmeč spiskovima "Dodijeli" i "Dodaj grupu" ne nudi se korisnik koji već ima BILO KOJU ulogu (`ld-grmec.js roleHolders`: predsjednik, lovočuvar, lovovođa društva/revira/sekcije, grupovođa grupe) — ponovo se nudi tek kad mu se uloga skine. Admin zastavica nije uloga.
+
+**Dropdowni: ko je u grupi ili sklonjen iz pregleda se ne nudi (v1.8.7, bez migracije)**
+- Odluka vlasnika: lovac koji je već u nekoj grupi (bilo koje sekcije, kao član ili grupovođa) ne može biti dodan u drugu dok ga se ne izvadi; isto za uloge. `grupe.js groupedIds` + `ld-grmec.js groupAddable/ldCandidates` ("Dodaj u grupu", nova grupa, "Dodijeli") i `groupLeaderCandidates` isključuju takve, te korisnike iz `izvanPregleda` (049). `ungroupedMembers` (prikaz "Bez grupe" u sekciji) isključuje samo sklonjene iz pregleda, ne članove grupa drugih sekcija (da lovac ne nestane iz spiska svoje sekcije). Server to ne provodi (nema migracije): pravilo je u izboru.

@@ -263,8 +263,8 @@ export function initSekcijaEkran(L, map) {
     const groups = groupsOfSection(s.id, ctx.grupe, ctx.clanovi, memberName);
     $('sk-grupe').innerHTML = groupsHtml({
       groups, manage: manageG, myId: me()?.id, pregled: groupOverview(ctx, lovovi, s.id, memberName),
-      ungrouped: ungroupedMembers(s.id, ctx.grupe, ctx.clanovi, memberName),
-      candidates: groupLeaderCandidates(s.id, ctx.grupe, ctx.clanovi, memberName),
+      ungrouped: ungroupedMembers(s.id, ctx.grupe, ctx.clanovi, memberName, ctx.izvanPregleda),
+      candidates: groupLeaderCandidates(s.id, ctx.grupe, ctx.clanovi, memberName, ctx.izvanPregleda),
       assignable: assignableGroups(groups, { manage: manageG, myId: me()?.id }),
     });
     $('sk-grupe-broj').textContent = groups.length ? `(${groups.length})` : '';
