@@ -101,6 +101,21 @@ export function ldCandidates(meta, ctx = {}, users = [], nameOf = () => '', popu
 }
 const byName2 = (a, b) => String(a.ime).localeCompare(String(b.ime), 'bs');
 
+// Ko može postati grupovođa POSTOJEĆE grupe: odobreni član te sekcije koji je već u toj grupi ili nije ni u jednoj grupi,
+// a ne vodi drugu grupu i nije sklonjen iz pregleda (ko je u drugoj grupi, prvo se izvadi iz nje).
+export function groupLeaderChoices(sekcijaId, grupaId, ctx = {}, nameOf = () => '') {
+  const grupe = ctx.grupe || [];
+  const vode = new Set(grupe.filter((g) => g.id !== grupaId).map((g) => g.grupovodja_id));
+  const trenutni = grupe.find((g) => g.id === grupaId)?.grupovodja_id;
+  const ids = new Set(grupe.map((g) => g.id));
+  const skriveni = new Set((ctx.izvanPregleda || []).map((x) => x.korisnik_id));
+  return (ctx.clanovi || [])
+    .filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && c.korisnik_id !== trenutni && !vode.has(c.korisnik_id) && !skriveni.has(c.korisnik_id)
+      && (c.grupa_id === grupaId || !c.grupa_id || !ids.has(c.grupa_id)))
+    .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) })).filter((x) => x.ime)
+    .sort((a, b) => String(a.ime).localeCompare(String(b.ime), 'bs'));
+}
+
 // Ko smije dodati lovca u grupu (novi nalog ili postojeći član): administrator, lovovođa te sekcije, lovovođa revira i lovovođa društva.
 // Grupa koja nema grupovođu ne postoji, pa je uslov "prvo grupovođa" ispunjen samim postojanjem grupe.
 export function canAddToGroup(me, ctx = {}, sekcijaId) {

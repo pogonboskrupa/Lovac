@@ -161,3 +161,19 @@ test('LD Grmeč: korisnik sklonjen iz pregleda nije među lovcima ni u brojevima
   assert.deepEqual(sek.djeca.find((d) => d.nivo === 'bez-grupe').djeca.map((d) => d.ime), ['Prvi']);
   assert.equal(sek.napomena, '1 članova');
 });
+
+import { groupLeaderChoices } from '../../static/js/ld-grmec.js';
+test('promjena grupovođe: nudi članove te grupe i one bez grupe, ne i vođe drugih grupa ni sklonjene iz pregleda', () => {
+  const c = {
+    grupe: [{ id: 'g1', sekcija_id: 's1', grupovodja_id: 'a' }, { id: 'g2', sekcija_id: 's1', grupovodja_id: 'd' }],
+    clanovi: [
+      { sekcija_id: 's1', korisnik_id: 'a', status: 'odobren', grupa_id: 'g1' }, { sekcija_id: 's1', korisnik_id: 'b', status: 'odobren', grupa_id: 'g1' },
+      { sekcija_id: 's1', korisnik_id: 'c', status: 'odobren', grupa_id: null }, { sekcija_id: 's1', korisnik_id: 'd', status: 'odobren', grupa_id: 'g2' },
+      { sekcija_id: 's1', korisnik_id: 'e', status: 'odobren', grupa_id: 'g2' }, { sekcija_id: 's1', korisnik_id: 'f', status: 'odobren', grupa_id: null },
+      { sekcija_id: 's1', korisnik_id: 'g', status: 'ceka', grupa_id: null },
+    ],
+    izvanPregleda: [{ korisnik_id: 'f' }],
+  };
+  const nm = (id) => id.toUpperCase();
+  assert.deepEqual(groupLeaderChoices('s1', 'g1', c, nm).map((x) => x.id), ['b', 'c']);
+});

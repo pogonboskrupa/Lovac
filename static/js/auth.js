@@ -154,6 +154,20 @@ export async function provisionUser({ ime, prezime, nadimak, pin, sekcijaId }) {
   return data;
 }
 
+// Promjena imena i prezimena (svoje, ili tuđe ako je administrator): server uz ime mijenja i interni email za prijavu
+// (ime.prezime[.nadimak]@…), pa se lovac od tada prijavljuje novim imenom. Traži internet.
+export async function renameUser({ userId, ime, prezime, nadimak = '' }) {
+  const err = validateName(ime) || validateName(prezime);
+  if (err) throw new Error(err);
+  const nad = String(nadimak ?? '').trim();
+  const { error } = await getClient().rpc('promijeni_ime', {
+    p_korisnik: userId, p_ime: ime.trim(), p_prezime: prezime.trim(), p_email: syntheticEmail(ime, prezime, nad),
+  });
+  if (error) throw new Error(friendlyAuthError(error));
+  const me = cachedProfile();
+  if (me?.id === userId) storeProfile({ ...me, ime: ime.trim(), prezime: prezime.trim() });
+}
+
 // Promjena vlastitog PIN-a (nalog koji je napravio drugi ima PIN koji je pravljač znao).
 export async function changePin(newPin) {
   const err = validatePin(newPin);

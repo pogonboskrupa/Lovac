@@ -4,7 +4,7 @@ import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import { memberName, refreshMembers } from './dijeljenje-ui.js';
 import { connectionQuality } from './net.js';
 import { isServerConfigured } from './config.js';
-import { canSeeLd, ldTree, ldCandidates, canAddToGroup, groupAddable } from './ld-grmec.js';
+import { canSeeLd, ldTree, ldCandidates, canAddToGroup, groupAddable, groupLeaderChoices } from './ld-grmec.js';
 import { loadJSON } from './storage.js';
 import { toast, escapeHtml } from './ui.js';
 import { assignRole, removeRole } from './uloge-dodjela.js';
@@ -43,6 +43,10 @@ function urediGrupu(c, o) {
     h += '<button type="button" class="dugme glavno" data-ld-akcija="lovac-u-grupi">Napravi lovca u ovoj grupi</button>';
     if (kand.length) h += `<select class="ld-izbor" aria-label="Postojeći član bez grupe">${opcije(kand, 'Postojeći član bez grupe…')}</select><button type="button" class="dugme" data-ld-akcija="u-grupu">Dodaj u grupu</button>`;
   }
+  if (o.canAdd(m.sekcijaId)) {
+    const gv = o.leaders(m.sekcijaId, m.grupaId);
+    if (gv.length) h += `<select class="ld-izbor-gv" aria-label="Nova grupovođa">${opcije(gv, 'Nova grupovođa…')}</select><button type="button" class="dugme" data-ld-akcija="promijeni-gv">Postavi za grupovođu</button>`;
+  }
   if (o.edit) h += '<button type="button" class="dugme" data-ld-akcija="skini" data-dvaput="Dodirni ponovo — uklanja grupu (lovci ostaju bez grupe)">Ukloni grupu</button>';
   return h;
 }
@@ -70,7 +74,7 @@ const cvor = (c, o) => {
 
 // opcije: { edit, sklopljeno:Set, urediOtvoreno:Set, candidates(meta, popuna), canAdd(sekcijaId), addable(sekcijaId) }
 export function ldHtml(tree, opcijeUredi = {}) {
-  const o = { edit: false, sklopljeno: new Set(), urediOtvoreno: new Set(), candidates: () => [], canAdd: () => false, addable: () => [], ...opcijeUredi };
+  const o = { edit: false, sklopljeno: new Set(), urediOtvoreno: new Set(), candidates: () => [], canAdd: () => false, addable: () => [], leaders: () => [], ...opcijeUredi };
   const z = tree.sazetak;
   const pct = z.mjesta ? Math.round((z.popunjeno / z.mjesta) * 100) : 0;
   return `<div class="ld-plocice">
@@ -107,17 +111,19 @@ export function initLdGrmec() {
     // Osvježavanje sa servera ponovo crta stablo: izbor koji je admin već napravio ne smije nestati (isto pravilo kao u Sekcijama).
     const kljuc = (el) => Object.values(el.dataset).join('|');
     const izabrano = new Map([...$('ldg-sadrzaj').querySelectorAll('.ld-uredi')].map((el) => [kljuc(el),
-      [el.querySelector('.ld-izbor')?.value || '', el.querySelector('.ld-izbor-grupa')?.value || '']]));
+      [el.querySelector('.ld-izbor')?.value || '', el.querySelector('.ld-izbor-grupa')?.value || '', el.querySelector('.ld-izbor-gv')?.value || '']]));
     zadnjeStablo = ldTree(ctx, memberName);
     $('ldg-sadrzaj').innerHTML = ldHtml(zadnjeStablo, {
       edit: edit(), sklopljeno, urediOtvoreno,
       candidates: (meta, popuna) => ldCandidates(meta, ctx, users, memberName, popuna),
       canAdd: (sekcijaId) => canAddToGroup(me(), ctx, sekcijaId),
       addable: (sekcijaId) => groupAddable(sekcijaId, ctx, memberName),
+      leaders: (sekcijaId, grupaId) => groupLeaderChoices(sekcijaId, grupaId, ctx, memberName),
     });
     drawKorisnici();
     for (const el of $('ldg-sadrzaj').querySelectorAll('.ld-uredi')) {
-      const [a, g] = izabrano.get(kljuc(el)) || ['', ''];
+      const [a, g, gv] = izabrano.get(kljuc(el)) || ['', '', ''];
+      if (gv && el.querySelector('.ld-izbor-gv')) el.querySelector('.ld-izbor-gv').value = gv;
       if (a && el.querySelector('.ld-izbor')) el.querySelector('.ld-izbor').value = a;
       if (g && el.querySelector('.ld-izbor-grupa')) el.querySelector('.ld-izbor-grupa').value = g;
     }
@@ -165,7 +171,7 @@ export function initLdGrmec() {
     if (!b) return;
     const m = metaOf(b);
     const akcija = b.dataset.ldAkcija;
-    const grupaAkcija = akcija === 'lovac-u-grupi' || akcija === 'u-grupu';
+    const grupaAkcija = akcija === 'lovac-u-grupi' || akcija === 'u-grupu' || akcija === 'promijeni-gv';
     if (grupaAkcija ? !canAddToGroup(me(), ctx, m.sekcijaId) : !edit()) return;
     if (akcija === 'lovac-u-grupi') {
       const grupa = (ctx.grupe || []).find((x) => x.id === m.grupaId);
@@ -204,6 +210,23 @@ export function initLdGrmec() {
         const { error } = await sb.rpc('dodijeli_grupu', { p_sekcija: m.sekcijaId, p_korisnik: id, p_grupa: m.grupaId });
         if (error) throw new Error(error.message);
         toast('Lovac je dodan u grupu');
+      } else if (akcija === 'promijeni-gv') {
+        const id = b.closest('.ld-uredi').querySelector('.ld-izbor-gv')?.value;
+        if (!id) { toast('Izaberi novu grupovođu'); return; }
+        // novi grupovođa mora biti u toj grupi (prvo se stavi u nju, pa postane vođa); raniji ostaje član grupe
+        const red = (ctx.clanovi || []).find((c) => c.sekcija_id === m.sekcijaId && c.korisnik_id === id);
+        if (red?.grupa_id !== m.grupaId) {
+          const r = await sb.rpc('dodijeli_grupu', { p_sekcija: m.sekcijaId, p_korisnik: id, p_grupa: m.grupaId });
+          if (r.error) throw new Error(r.error.message);
+        }
+        const stari = (ctx.grupe || []).find((x) => x.id === m.grupaId)?.grupovodja_id;
+        const u = await sb.from('grupe').update({ grupovodja_id: id }).eq('id', m.grupaId);
+        if (u.error) throw new Error(u.error.message);
+        if (stari && stari !== id) {
+          const r2 = await sb.rpc('dodijeli_grupu', { p_sekcija: m.sekcijaId, p_korisnik: stari, p_grupa: m.grupaId });
+          if (r2.error) console.warn('raniji grupovođa ostaje bez grupe', r2.error.message);
+        }
+        toast('Grupovođa je promijenjen');
       } else if (akcija === 'grupa-nova') {
         const id = b.closest('.ld-uredi').querySelector('.ld-izbor-grupa')?.value;
         if (!id) { toast('Izaberi grupovođu'); return; }

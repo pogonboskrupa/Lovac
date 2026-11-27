@@ -62,9 +62,14 @@ do $$ begin
   exception when insufficient_privilege then null;
   end;
 
-  -- Ime smije mijenjati na svom redu.
-  update public.korisnici set ime = 'Novak' where id = auth.uid();
-  assert (select ime from public.korisnici where id = auth.uid()) = 'Novak', 'izmjena svog imena';
+  -- Ime se (od migracije 051) mijenja samo kroz promijeni_ime (uz email za prijavu); direktan update je zabranjen,
+  -- a ostala polja svog reda se i dalje smiju mijenjati.
+  begin
+    update public.korisnici set ime = 'Novak' where id = auth.uid();
+    raise exception 'FAIL: direktna izmjena imena prošla';
+  exception when insufficient_privilege then null;
+  end;
+  update public.korisnici set updated_at = now() where id = auth.uid();
 end $$;
 reset role;
 

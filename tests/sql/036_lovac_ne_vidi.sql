@@ -135,7 +135,8 @@ begin
 end $$;
 -- is_admin/odobren se tiho ne mijenjaju ni kad update prođe
 do $$ begin
-  update public.korisnici set nadimak = 'xx' where id = auth.uid();
+  begin update public.korisnici set nadimak = 'xx' where id = auth.uid(); raise exception 'FAIL: direktna izmjena nadimka (dio emaila za prijavu)';
+  exception when insufficient_privilege then null; end;
 end $$;
 reset role;
 do $$ begin

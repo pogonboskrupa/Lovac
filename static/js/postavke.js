@@ -2,7 +2,7 @@
 
 import { applyTheme, toast, registerBackHandler, wireTwoTap, escapeHtml } from './ui.js';
 import { tileCacheCount, clearTileCache } from './tiles.js';
-import { cachedProfile, changePin } from './auth.js';
+import { cachedProfile, changePin, renameUser } from './auth.js';
 import { isServerConfigured } from './config.js';
 import { connectionDetail } from './net.js';
 import { checkForUpdate, installUpdate } from './update.js';
@@ -192,6 +192,25 @@ function wireReadiness() {
   });
 }
 
+function wireIme() {
+  const fill = () => { const p = cachedProfile(); if (p) { el('moje-ime').value = p.ime || ''; el('moje-prezime').value = p.prezime || ''; } };
+  fill();
+  el('btn-ime-promijeni').addEventListener('click', async () => {
+    const status = el('ime-status');
+    const p = cachedProfile();
+    if (!p) return;
+    status.textContent = 'Spremam…';
+    try {
+      await renameUser({ userId: p.id, ime: el('moje-ime').value, prezime: el('moje-prezime').value, nadimak: p.nadimak || '' });
+      status.textContent = 'Spremljeno. Od sada se prijavljuješ novim imenom i prezimenom.';
+      el('postavke-nalog').textContent = describeProfile(cachedProfile());
+      renderProfile();
+    } catch (err) {
+      status.textContent = /fetch|network|timeout|nije odgovorio|veze/i.test(err.message) ? 'Potreban je internet za promjenu imena.' : err.message;
+    }
+  });
+}
+
 function wirePin() {
   el('btn-pin-promijeni').addEventListener('click', async () => {
     const status = el('pin-status');
@@ -347,6 +366,7 @@ export function initPostavke({ setBase, onLogout, appVer }) {
     if (b) { setVelicina(b.dataset.velicina); refreshStatic(appVer); }
   });
   wireShare();
+  wireIme();
   wirePin();
   wireReadiness();
   wireReliability();

@@ -353,3 +353,26 @@ test('Struktura LD Grmeč: lovac se pravi odmah u grupi (nalog + dodjela grupe),
   await expect.poll(() => zahtjevi.filter((z) => z.rpc === 'dodijeli_grupu').length).toBe(1);
   expect(zahtjevi.find((z) => z.rpc === 'dodijeli_grupu').body).toEqual({ p_sekcija: 's1', p_korisnik: 'novi1', p_grupa: 'gr1' });
 });
+
+test('admin mijenja ime i prezime korisnika: server dobija ime i novi interni email za prijavu', async ({ page }) => {
+  const { zahtjevi } = await setup(page);
+  const b = await otvori(page, 'b1');
+  await b.locator('input[name="novo-ime"]').fill('Branimir');
+  await b.locator('input[name="novo-prezime"]').fill('Čeh');
+  await b.locator('[data-akcija="ime"]').click();
+  await expect.poll(() => zahtjevi.some((z) => z.rpc === 'promijeni_ime')).toBe(true);
+  expect(zahtjevi.find((z) => z.rpc === 'promijeni_ime').body).toEqual({ p_korisnik: 'b1', p_ime: 'Branimir', p_prezime: 'Čeh', p_email: 'branimir.ceh@lovci.grmec.app' });
+});
+
+test('korisnik mijenja svoje ime i prezime u Postavkama (tab Nalog)', async ({ page }) => {
+  const { zahtjevi } = await setup(page);
+  await page.locator('#btn-postavke').click(); // zatvara ekran Korisnici, ostaju Postavke
+  await page.locator('#p-tabovi [data-ptab="nalog"]').click();
+  await page.fill('#moje-ime', 'Adin');
+  await page.fill('#moje-prezime', 'Administrator');
+  await page.locator('#btn-ime-promijeni').click();
+  await expect.poll(() => zahtjevi.some((z) => z.rpc === 'promijeni_ime')).toBe(true);
+  expect(zahtjevi.find((z) => z.rpc === 'promijeni_ime').body).toMatchObject({ p_korisnik: 'a1', p_ime: 'Adin', p_prezime: 'Administrator', p_email: 'adin.administrator@lovci.grmec.app' });
+  await expect(page.locator('#ime-status')).toContainText('Spremljeno');
+  await expect(page.locator('#p-ime')).toContainText('Adin Administrator');
+});

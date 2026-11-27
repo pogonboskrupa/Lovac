@@ -2,7 +2,7 @@
 // skrivanje u UI-ju je samo pogodnost, ne zaštita.
 
 import { inTrial, trialLeftText } from './probni.js';
-import { getClient, cachedProfile, validatePin } from './auth.js';
+import { getClient, cachedProfile, validatePin, renameUser } from './auth.js';
 import { registerBackHandler, wireTwoTap, escapeHtml, toast } from './ui.js';
 import { idbGet } from './db.js';
 import { saveSoft } from './storage.js';
@@ -169,6 +169,11 @@ function userRow(u, meId, data, users, now = Date.now()) {
         ${ja ? '' : rolesBlock(u, info, data, users)}
         <h4 class="kor-podnaslov">Nalog</h4>
         <div class="red-dugmadi">
+          <input name="novo-ime" maxlength="40" value="${escapeHtml(u.ime)}" placeholder="Ime" aria-label="Ime korisnika">
+          <input name="novo-prezime" maxlength="40" value="${escapeHtml(u.prezime)}" placeholder="Prezime" aria-label="Prezime korisnika">
+          <button type="button" class="dugme" data-akcija="ime">Spremi ime i prezime</button>
+        </div>
+        <div class="red-dugmadi">
           <input name="novi-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Novi PIN" aria-label="Novi PIN za ${escapeHtml(u.ime)}">
           <button type="button" class="dugme" data-akcija="pin">Postavi PIN</button>
         </div>
@@ -216,7 +221,16 @@ export function initAdmin() {
     $('kor-filter').innerHTML = USER_FILTERS.map(([k, naziv]) => `<button type="button" data-filter="${k}" aria-pressed="${k === filter}">${naziv} (${counts[k]})</button>`).join('');
     $('kor-sekcija').innerHTML = sekcijaOpcije();
     const shown = reviewOrder(filterUsers(users, { filter, q: query, now, data: sekData, sekcija, extra: (u) => { const s = sectionLines(u.id, sekData); return [...s.traze, ...s.clan].join(' '); } }), now);
+    // upisan tekst (ime, prezime, PIN) preživi ponovno crtanje kad stignu podaci sa servera
+    const upisano = new Map();
+    $('korisnici-spisak').querySelectorAll('li[data-id] input[name]').forEach((inp) => {
+      if (inp.value !== inp.defaultValue) upisano.set(`${inp.closest('li[data-id]').dataset.id}|${inp.name}`, inp.value);
+    });
     $('korisnici-spisak').innerHTML = shown.map((u) => userRow(u, me, sekData, users, now)).join('');
+    $('korisnici-spisak').querySelectorAll('li[data-id] input[name]').forEach((inp) => {
+      const v = upisano.get(`${inp.closest('li[data-id]').dataset.id}|${inp.name}`);
+      if (v !== undefined) inp.value = v;
+    });
     $('korisnici-prazno').hidden = shown.length > 0 || !users.length;
     // radnje koje traže drugi dodir (brisanje, uklanjanje iz sekcije, skidanje uloge)
     $('korisnici-spisak').querySelectorAll('[data-dvaput]').forEach((b) => {
@@ -294,6 +308,12 @@ export function initAdmin() {
           if (error) throw new Error(error.code === 'PGRST205' ? 'Server još nema migraciju 049 (izvan_pregleda)' : error.message);
           sekData = { ...sekData, izvanPregleda: skriven ? sekData.izvanPregleda.filter((x) => x.korisnik_id !== u.id) : [...(sekData.izvanPregleda || []), { korisnik_id: u.id }] };
         }, skriven ? 'Vraćen u preglede' : 'Sklonjen iz pregleda');
+        break;
+      }
+      case 'ime': {
+        const ime = row.querySelector('input[name="novo-ime"]').value;
+        const prezime = row.querySelector('input[name="novo-prezime"]').value;
+        await run(() => renameUser({ userId: u.id, ime, prezime, nadimak: u.nadimak || '' }), 'Ime i prezime su promijenjeni (prijava ide novim imenom)');
         break;
       }
       case 'pin': {
