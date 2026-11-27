@@ -1,0 +1,56 @@
+<section id="grupa-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="gr-naslov" hidden>
+  <header class="postavke-glava">
+    <h2 id="gr-naslov">Moja grupa</h2>
+    <button id="btn-gr-sekcija" class="dugme" type="button">Cijela sekcija</button>
+  </header>
+  <p id="gr-status" class="status" role="status"></p>
+  <div id="gr-prazno" hidden>
+    <p>Nisi ni u jednoj grupi. Lovovođa sekcije ili grupovođa te rasporedi u grupu, ili je izaberi u Sekcije i pristup.</p>
+    <button id="btn-gr-pristup" class="dugme glavno" type="button">Sekcije i pristup</button>
+  </div>
+  <div id="gr-sadrzaj" hidden>
+    <div class="sk-hero">
+      <div class="sk-hero-glava"><span id="gr-logo" class="sek-logo velik" role="img" aria-label="Logo sekcije"></span><span id="gr-uloga" class="sk-uloga"></span></div>
+      <p id="gr-podnaslov" class="sk-podnaslov"></p>
+      <div id="gr-lica" class="sk-lica" aria-label="Lovci grupe"></div>
+      <div class="sk-statovi sk-statovi-hero">
+        <div data-stat="clanova"><b id="gr-stat-clanova">0</b><span>lovaca</span></div>
+        <div data-stat="aktivnih"><b id="gr-stat-aktivnih">0</b><span>aktivnih sada</span></div>
+        <div data-stat="lovova"><b id="gr-stat-lovova">0</b><span>lovova grupe</span></div>
+      </div>
+    </div>
+    <nav id="gr-nav" class="sk-nav" aria-label="Dijelovi grupe">
+      <button type="button" data-cilj="gr-k-lov">Lov</button>
+      <button type="button" data-cilj="gr-k-lovci">Lovci</button>
+      <button type="button" data-cilj="gr-k-poruke">Poruke</button>
+      <button type="button" data-cilj="gr-k-stat">Statistika</button>
+    </nav>
+
+    <section id="gr-k-lov" class="sk-kartica">
+      <h3>Lov grupe</h3>
+      <div id="gr-lov" class="sk-lov"></div>
+    </section>
+
+    <section id="gr-k-lovci" class="sk-kartica">
+      <h3>Lovci grupe <span id="gr-broj" class="sitno"></span></h3>
+      <p class="sitno">Nisu svi uvijek prisutni: ko dolazi određuje se za svaki lov posebno (vidi Lov grupe).</p>
+      <ul id="gr-clanovi" class="spisak"></ul>
+    </section>
+
+    <section id="gr-k-poruke" class="sk-kartica">
+      <h3>Poruke grupe</h3>
+      <p class="sitno">Poruke vide lovci ove grupe, lovovođa sekcije i lovočuvar revira. Cijela sekcija ih ne vidi.</p>
+      <div id="gr-poruke" class="poruke" role="log" aria-live="polite"></div>
+      <div id="gr-brze" class="brze-poruke"></div>
+      <form id="forma-gr-poruka" class="forma-poruka" novalidate>
+        <input name="tekst" maxlength="1000" placeholder="Poruka grupi" aria-label="Poruka grupi" autocomplete="off">
+        <button type="submit" class="dugme glavno">Pošalji</button>
+      </form>
+    </section>
+
+    <section id="gr-k-stat" class="sk-kartica">
+      <h3>Statistika grupe</h3>
+      <div id="gr-stat"></div>
+    </section>
+  </div>
+</section>

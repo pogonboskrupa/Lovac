@@ -13,10 +13,15 @@ export function validateMessage(text) {
 }
 
 export const KANAL_RUKOVODSTVO = 'rukovodstvo';
+export const KANAL_GRUPA = 'grupa';
 
 // kanal 'rukovodstvo': lovovođe sekcije, lovočuvari i admin međusobno (bez sekcije).
-export function newMessage({ sekcija_id = null, autor_id, tekst, lov_id = null, kanal = 'sekcija' }, now = Date.now()) {
-  return { id: uuid(), kanal, sekcija_id: kanal === KANAL_RUKOVODSTVO ? null : sekcija_id, autor_id, lov_id, tekst: String(tekst).trim(), created_at: new Date(now).toISOString(), sinhronizovano: false };
+// kanal 'grupa': samo grupa (`grupa_id`), bez sekcije — poruke grupe ne ulaze u razgovor cijele sekcije.
+export function newMessage({ sekcija_id = null, grupa_id = null, autor_id, tekst, lov_id = null, kanal = 'sekcija' }, now = Date.now()) {
+  const bezSekcije = kanal === KANAL_RUKOVODSTVO || kanal === KANAL_GRUPA;
+  return {
+    id: uuid(), kanal, sekcija_id: bezSekcije ? null : sekcija_id, grupa_id: kanal === KANAL_GRUPA ? grupa_id : null, autor_id, lov_id, tekst: String(tekst).trim(), created_at: new Date(now).toISOString(), sinhronizovano: false,
+  };
 }
 
 // Lokalne + poruke sa servera: bez duplikata (po id), sortirano po vremenu; ono što je na serveru je sinhronizovano.

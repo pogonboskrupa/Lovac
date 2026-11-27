@@ -17,9 +17,9 @@ function visible(id) {
 
 export function activeTab() {
   if (visible('postavke')) return 'postavke';
-  if (visible('sekcija-ekran')) return 'sekcija';
+  if (visible('sekcija-ekran') || visible('grupa-ekran')) return 'sekcija';
   if (visible('meni-spiskovi') || [...document.querySelectorAll('.list-preko')]
-    .some((s) => !s.hidden && s.id !== 'postavke' && s.id !== 'sekcija-ekran')) return 'meni';
+    .some((s) => !s.hidden && s.id !== 'postavke' && s.id !== 'sekcija-ekran' && s.id !== 'grupa-ekran')) return 'meni';
   return 'mapa';
 }
 

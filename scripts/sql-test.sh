@@ -33,6 +33,8 @@ for m in supabase/migrations/*.sql; do
   [ "$n" -le 025 ] && continue
   echo "migracija sama (bez 026–039): $m"
   "${ADM[@]}" -c "drop database if exists $ONE_DB" -c "create database $ONE_DB template $BASE_DB"
+  # 046+ zavisi od 045 (grupe); 045 sama zavisi samo od 001–025
+  [ "$n" -gt 045 ] && "${PSQL[@]}" -d "$ONE_DB" -f supabase/migrations/045_hijerarhija.sql
   "${PSQL[@]}" -d "$ONE_DB" -f "$m"
   if [ "$n" = 038 ] || [ "$n" = 039 ]; then
     "${PSQL[@]}" -d "$ONE_DB" -c "insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-00000000aa01', 'red@t', '{\"ime\":\"A\",\"prezime\":\"B\",\"probni\":\"true\"}')"

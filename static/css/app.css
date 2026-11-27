@@ -1223,15 +1223,15 @@ svg[hidden] { display: none; }
 #statistika select { border: 2px solid var(--okvir); }
 
 /* Tab sekcije: okviri, čitljiva dugmad člana, aktivni dio u traci */
-#sekcija-ekran :is(.sk-kartica, .p-kartica, #sk-clanovi .clan-red) { border: 1.5px solid var(--okvir); box-shadow: none; }
-#sekcija-ekran .sk-nav button { border: 1.5px solid var(--okvir); }
-#sekcija-ekran .sk-nav button[aria-current="true"] { background: var(--naglasak); color: var(--naglasak-tekst); border-color: var(--naglasak); }
-#sekcija-ekran :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
-#sekcija-ekran :is(.segment button[aria-pressed="true"], .dugme.glavno) { border: 1.5px solid var(--naglasak); }
-#sekcija-ekran :is(input, select, textarea) { border: 2px solid var(--okvir); }
-#sekcija-ekran .clan-akcije { display: flex; flex-wrap: wrap; gap: 6px; }
-#sekcija-ekran .clan-akcije .dugme { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: nowrap; }
-#sekcija-ekran .sk-lovci { border: 2px solid var(--naglasak); }
+:is(#sekcija-ekran, #grupa-ekran) :is(.sk-kartica, .p-kartica, #sk-clanovi .clan-red) { border: 1.5px solid var(--okvir); box-shadow: none; }
+:is(#sekcija-ekran, #grupa-ekran) .sk-nav button { border: 1.5px solid var(--okvir); }
+:is(#sekcija-ekran, #grupa-ekran) .sk-nav button[aria-current="true"] { background: var(--naglasak); color: var(--naglasak-tekst); border-color: var(--naglasak); }
+:is(#sekcija-ekran, #grupa-ekran) :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
+:is(#sekcija-ekran, #grupa-ekran) :is(.segment button[aria-pressed="true"], .dugme.glavno) { border: 1.5px solid var(--naglasak); }
+:is(#sekcija-ekran, #grupa-ekran) :is(input, select, textarea) { border: 2px solid var(--okvir); }
+:is(#sekcija-ekran, #grupa-ekran) .clan-akcije { display: flex; flex-wrap: wrap; gap: 6px; }
+:is(#sekcija-ekran, #grupa-ekran) .clan-akcije .dugme { flex: 1 1 calc(50% - 6px); min-width: 0; white-space: nowrap; }
+:is(#sekcija-ekran, #grupa-ekran) .sk-lovci { border: 2px solid var(--naglasak); }
 
 /* Opažanja: filteri zbijeni (vrsta+redoslijed u redu, period u jednom redu, prikaz na karti zajedno) */
 .op-red2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1276,10 +1276,10 @@ svg[hidden] { display: none; }
 .poruka-red .poruka-vrijeme { opacity: .7; }
 .poruka-av { position: absolute; left: -34px; top: 0; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--povrsina); border: 1.5px solid var(--okvir); font-size: 11px; font-weight: 800; color: var(--tekst); }
 .poruke-prazno { text-align: center; padding: 12px 4px; }
-#sekcija-ekran .brze-poruke { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
-#sekcija-ekran .brze-poruke button { flex: none; border: 1.5px solid var(--okvir); }
-#sekcija-ekran .poruke { border: 1.5px solid var(--okvir); }
-#sekcija-ekran .forma-poruka { margin-top: 10px; }
+:is(#sekcija-ekran, #grupa-ekran) .brze-poruke { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+:is(#sekcija-ekran, #grupa-ekran) .brze-poruke button { flex: none; border: 1.5px solid var(--okvir); }
+:is(#sekcija-ekran, #grupa-ekran) .poruke { border: 1.5px solid var(--okvir); }
+:is(#sekcija-ekran, #grupa-ekran) .forma-poruka { margin-top: 10px; }
 
 /* Istraživač: magla horizonta pri strmom nagibu (prekriva najdalji, najrazvučeniji dio karte) */
 #ist-magla { position: absolute; left: 0; right: 0; top: 0; z-index: 500; pointer-events: none;

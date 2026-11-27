@@ -96,6 +96,9 @@ async function setup(page, server, user) {
 async function openTab(page) {
   await page.goto('/');
   await page.locator('#btn-sekcija').click();
+  // Lovac i grupovođa u grupi dobiju "Moja grupa"; cijela sekcija je dugme na tom ekranu.
+  const grupa = page.locator('#grupa-ekran');
+  if (await grupa.isVisible().catch(() => false)) await page.locator('#btn-gr-sekcija').click();
   await expect(page.locator('#sekcija-ekran')).toBeVisible();
   await expect(page.locator('#sk-status')).toHaveText('');
   await expect(page.locator('#sk-clanovi [data-uid]').first()).toBeVisible();
@@ -418,4 +421,111 @@ test('izbor grupe: sekcija bez grupa se ne pita; "Kasnije" zatvara bez pamćenja
   await expect.poll(() => server.db.javneZatrazene || 0, { timeout: 15000 }).toBeGreaterThan(0);
   await expect(page.locator('#grupa-dijalog')).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem('lovac.grupa.pitano.00000000-0000-4000-8000-000000000200'))).toBe('true');
+});
+
+// ---------- Moja grupa (v1.7.7) ----------
+const G1 = ID(700), G2 = ID(701);
+const danas = () => new Date().toISOString().slice(0, 10);
+
+// LOVAC2 vodi grupu G1 (u njoj je i LOVAC), VAN je u drugoj grupi G2; lov grupe G1 je planiran za danas.
+function grupaServer() {
+  const server = makeServer();
+  const d = server.db;
+  d.grupe = [{ id: G1, sekcija_id: ID(200), grupovodja_id: LOVAC2.id, dozvola_visih: false }, { id: G2, sekcija_id: ID(200), grupovodja_id: VAN.id, dozvola_visih: false }];
+  d.sekcija_clanovi = [
+    { sekcija_id: ID(200), korisnik_id: LOVAC.id, status: 'odobren', grupa_id: G1 },
+    { sekcija_id: ID(200), korisnik_id: LOVAC2.id, status: 'odobren', grupa_id: G1 },
+    { sekcija_id: ID(200), korisnik_id: VAN.id, status: 'odobren', grupa_id: G2 },
+  ];
+  d.lovovi = [{ id: LOV, revir_id: R.krupa, sekcija_id: ID(200), grupa_id: G1, naziv: 'Pogon grupe', datum: danas(), status: 'planiran', organizator_id: LOVAC2.id }];
+  d.lov_ucesnici = [{ lov_id: LOV, korisnik_id: LOVAC2.id, uloga: 'vodja' }];
+  d.lov_pozicije = [];
+  d.poruke = [];
+  return server;
+}
+async function openGrupa(page) {
+  await page.goto('/');
+  await expect(page.locator('#nav-sekcija-ime')).toHaveText('Moja grupa', { timeout: 15000 }); // keš se puni pri prvom osvježavanju (5 s poslije pokretanja)
+  await page.locator('#btn-sekcija').click();
+  await expect(page.locator('#grupa-ekran')).toBeVisible();
+  await expect(page.locator('#gr-clanovi [data-uid]').first()).toBeVisible();
+}
+
+test('Moja grupa: lovac u grupi dobije tab "Moja grupa" sa grupovođom, lovcima grupe i lovom grupe (tuđa grupa se ne vidi)', async ({ page }) => {
+  const server = grupaServer();
+  await setup(page, server, LOVAC);
+  await openGrupa(page);
+  await expect(page.locator('#gr-podnaslov')).toContainText('grupovođa Luka Pogonič');
+  await expect(page.locator('#gr-podnaslov')).toContainText('Krupa 1');
+  await expect(page.locator('#gr-clanovi [data-uid]')).toHaveCount(2);
+  await expect(page.locator('#gr-clanovi')).not.toContainText('Vanja');
+  await expect(page.locator(`#gr-clanovi [data-uid="${LOVAC2.id}"]`)).toContainText('Grupovođa');
+  await expect(page.locator('#gr-lov')).toContainText('Pogon grupe');
+  await expect(page.locator('#gr-lov')).toContainText('lov grupe');
+  await expect(page.locator('#gr-lov [data-akcija="gr-novi"]')).toHaveCount(0); // lovac ne organizuje
+  if (process.env.SNIMCI_DIR) await page.screenshot({ path: `${process.env.SNIMCI_DIR}/moja-grupa.png`, fullPage: false });
+});
+
+test('Moja grupa: "Dolazim" prijavljuje lovca na lov grupe (nisu svi uvijek prisutni; ko dolazi se javlja za svaki lov)', async ({ page }) => {
+  const server = grupaServer();
+  await setup(page, server, LOVAC);
+  await openGrupa(page);
+  await expect(page.locator('#gr-lov .gr-moje')).toContainText('Još nisi javio');
+  await page.locator('#gr-lov [data-akcija="gr-dolazim"]').click();
+  await expect.poll(() => server.db.lov_ucesnici.some((u) => u.korisnik_id === LOVAC.id && u.samoprijava)).toBe(true);
+  await expect(page.locator('#gr-lov .gr-moje')).toContainText('Prisutan si');
+  await expect(page.locator('#gr-lov [data-stat="prisutnih"] b')).toHaveText('2');
+});
+
+test('Moja grupa: poruke grupe idu kanalom grupe, ne u razgovor sekcije; tuđa grupa se ne vidi', async ({ page }) => {
+  const server = grupaServer();
+  const prije = new Date(Date.now() - 600000).toISOString();
+  server.db.poruke = [
+    { id: ID(610), kanal: 'grupa', sekcija_id: null, grupa_id: G1, autor_id: LOVAC2.id, tekst: 'Sutra okupljanje u 6', created_at: prije },
+    { id: ID(611), kanal: 'grupa', sekcija_id: null, grupa_id: G2, autor_id: VAN.id, tekst: 'Samo druga grupa', created_at: prije },
+  ];
+  await setup(page, server, LOVAC);
+  await openGrupa(page);
+  await expect(page.locator('#gr-poruke')).toContainText('Sutra okupljanje u 6');
+  await expect(page.locator('#gr-poruke')).not.toContainText('Samo druga grupa');
+  await page.locator('#forma-gr-poruka input[name=tekst]').fill('Stižem');
+  await page.locator('#forma-gr-poruka button[type=submit]').click();
+  await expect.poll(() => server.db.poruke.some((m) => m.tekst === 'Stižem' && m.kanal === 'grupa' && m.grupa_id === G1 && !m.sekcija_id), { timeout: 15000 }).toBe(true);
+  await expect(page.locator('#gr-poruke')).toContainText('Stižem');
+  // razgovor cijele sekcije ih ne pokazuje
+  await page.locator('#btn-gr-sekcija').click();
+  await expect(page.locator('#sekcija-ekran')).toBeVisible();
+  await expect(page.locator('#sk-poruke')).not.toContainText('Stižem');
+  await expect(page.locator('#sk-poruke')).not.toContainText('Sutra okupljanje');
+});
+
+test('Moja grupa: grupovođa vidi "Novi lov grupe" i vođenje lova; lovovođa sekcije ostaje na tabu sekcije', async ({ page, browser }) => {
+  const server = grupaServer();
+  await setup(page, server, LOVAC2);
+  await openGrupa(page);
+  await expect(page.locator('#gr-lov [data-akcija="gr-pokreni"]')).toHaveCount(1);
+  await page.locator('#gr-lov [data-akcija="gr-novi"]').click();
+  await expect(page.locator('#sk-lov-forma')).toBeVisible();
+
+  const page2 = await browser.newPage();
+  await setup(page2, grupaServer(), GV);
+  await page2.goto('/');
+  await expect(page2.locator('#nav-sekcija-ime')).toHaveText('Krupa 1', { timeout: 15000 });
+  await page2.locator('#btn-sekcija').click();
+  await expect(page2.locator('#sekcija-ekran')).toBeVisible();
+  await expect(page2.locator('#grupa-ekran')).toBeHidden();
+  await page2.close();
+});
+
+test('Moja grupa: statistika iz završenih lovova grupe i dugme Nazad', async ({ page }) => {
+  const server = grupaServer();
+  server.db.lovovi.push({ id: ID(301), revir_id: R.krupa, sekcija_id: ID(200), grupa_id: G1, naziv: 'Stari lov', datum: '2026-10-01', status: 'zavrsen', organizator_id: LOVAC2.id });
+  server.db.lov_ucesnici.push({ lov_id: ID(301), korisnik_id: LOVAC2.id, uloga: 'vodja' }, { lov_id: ID(301), korisnik_id: LOVAC.id, uloga: 'strijelac' });
+  await setup(page, server, LOVAC);
+  await openGrupa(page);
+  await expect(page.locator('#gr-stat [data-stat="lovova"] b')).toHaveText('1');
+  await expect(page.locator('#gr-stat [data-stat="prosjek"] b')).toHaveText('100 %');
+  await page.keyboard.press('Escape').catch(() => {});
+  await page.evaluate(() => globalThis.__nazad?.());
+  await expect(page.locator('#grupa-ekran')).toBeHidden();
 });

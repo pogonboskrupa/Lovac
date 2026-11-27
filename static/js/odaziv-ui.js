@@ -90,17 +90,25 @@ export function initOdaziv() {
     }
   };
 
+  // Odgovor za lov id (iz dijaloga ili iz ekrana "Moja grupa"): prvo lokalno, pa u red slanja.
+  const record = (id, odgovor) => {
+    saveSoft(ODAZIV_KEY, { ...loadJSON(ODAZIV_KEY, {}), [id]: { odgovor, t: Date.now() } });
+    saveSoft(ODAZIV_RED_KEY, queueAnswer(loadJSON(ODAZIV_RED_KEY, []), id, odgovor));
+    toast(odgovor === 'da' ? 'Javljeno: dolaziš na lov' : 'Javljeno: ne dolaziš');
+    flush().then(() => document.dispatchEvent(new CustomEvent('lovovi:promjena'))).catch(() => {});
+  };
   const answer = (odgovor) => {
     if (!current) return;
     const id = current.id;
-    saveSoft(ODAZIV_KEY, { ...loadJSON(ODAZIV_KEY, {}), [id]: { odgovor, t: Date.now() } });
-    saveSoft(ODAZIV_RED_KEY, queueAnswer(loadJSON(ODAZIV_RED_KEY, []), id, odgovor));
     box.hidden = true;
     current = null;
-    toast(odgovor === 'da' ? 'Javljeno: dolaziš na lov' : 'Javljeno: ne dolaziš');
-    flush().then(() => document.dispatchEvent(new CustomEvent('lovovi:promjena'))).catch(() => {});
+    record(id, odgovor);
     setTimeout(check, 400); // sljedeći lov koji čeka odgovor
   };
+  document.addEventListener('odaziv:odgovori', (e) => {
+    const { lovId, odgovor } = e.detail || {};
+    if (lovId && ['da', 'ne'].includes(odgovor)) record(lovId, odgovor);
+  });
 
   $('btn-odaziv-da').addEventListener('click', () => answer('da'));
   $('btn-odaziv-ne').addEventListener('click', () => answer('ne'));

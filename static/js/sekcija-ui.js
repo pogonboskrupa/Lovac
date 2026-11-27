@@ -30,6 +30,7 @@ import { deleteHunt } from './lov-brisanje.js';
 import { sendPing } from './ping-ui.js';
 import { createMessageSync } from './sekcija-poruke.js';
 import { membersHtml, huntCardHtml, conversationHtml, groupsHtml, U_LOVU } from './sekcija-render.js';
+import { myGroupSlot, groupUnread, GROUP_READ_KEY } from './grupa-podaci.js';
 import { canManageGroups, groupsOfSection, ungroupedMembers, groupLeaderCandidates, assignableGroups } from './grupe.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
@@ -46,7 +47,7 @@ const $ = (id) => document.getElementById(id);
 
 async function qSk(promise) {
   const { data, error } = await promise;
-  if (error) throw new Error(error.message);
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
   return data;
 }
 
@@ -98,17 +99,21 @@ export function initSekcijaEkran(L, map) {
   };
 
   const leader = () => isLeadership(me(), ctx);
+  // Lovac i grupovođa grupe: tab vodi na "Moja grupa"; rukovodstvo iznad grupe ostaje na tabu sekcije.
+  const groupSlot = () => myGroupSlot(ctx, me(), selectedId);
   const rukPoruke = () => poruke.filter((m) => m.kanal === KANAL_RUKOVODSTVO);
 
   const unreadTotal = () => mine().reduce((n, s) => n + unreadCount(
     poruke.filter((m) => m.sekcija_id === s.id), loadJSON(READ_KEY(s.id), null), me()?.id), 0)
-    + (leader() ? unreadCount(rukPoruke(), loadJSON(READ_KEY(KANAL_RUKOVODSTVO), null), me()?.id) : 0);
+    + (leader() ? unreadCount(rukPoruke(), loadJSON(READ_KEY(KANAL_RUKOVODSTVO), null), me()?.id) : 0)
+    + (groupSlot() ? groupUnread(poruke, groupSlot().grupaId, me()?.id, loadJSON(GROUP_READ_KEY(groupSlot().grupaId), null)) : 0);
 
   const updateNav = () => {
     // Admin vidi sve sekcije: tab je "Sekcije" (spisak + izbor unutra), ne naziv jedne sekcije.
     const wide = seesSectionList(me(), ctx);
-    const s = wide ? null : selected();
-    $('nav-sekcija-ime').textContent = wide ? 'Sekcije' : s ? s.naziv : 'Sekcija';
+    const grupa = !wide && groupSlot();
+    const s = wide || grupa ? null : selected();
+    $('nav-sekcija-ime').textContent = grupa ? 'Moja grupa' : wide ? 'Sekcije' : s ? s.naziv : 'Sekcija';
     $('nav-sekcija-logo').hidden = !s;
     // SVG element nema svojstvo hidden: atribut se postavlja ručno
     if (s) $('nav-sekcija-ikona').setAttribute('hidden', ''); else $('nav-sekcija-ikona').removeAttribute('hidden');
@@ -130,7 +135,7 @@ export function initSekcijaEkran(L, map) {
   };
 
   const { pullMessages, flushOutbox } = createMessageSync({
-    client: getClient, me, mine, leader, ctx: () => ctx, poruke: () => poruke, rukPoruke, reload: reloadPoruke, isOpen, q: qSk,
+    client: getClient, me, mine, leader, groupIds: () => { const g = groupSlot(); return g ? [g.grupaId] : []; }, ctx: () => ctx, poruke: () => poruke, rukPoruke, reload: reloadPoruke, isOpen, q: qSk,
   });
 
   const pullLive = async (zapis) => {
@@ -157,7 +162,7 @@ export function initSekcijaEkran(L, map) {
     try {
       // spiskovi sekcija i članova se rijetko mijenjaju: ne pri svakom osvježavanju (štedi besplatni server)
       if (withHunts || Date.now() - lastListsRefresh > (isOpen() ? LISTS_OPEN_MS : LISTS_BG_MS)) {
-        await downloadSekcije({ grupe: withHunts || isOpen() });
+        await downloadSekcije({ grupe: withHunts || isOpen() || Boolean(groupSlot()) });
         await refreshMembers().catch(() => {});
         lastListsRefresh = Date.now();
       }
@@ -316,7 +321,10 @@ export function initSekcijaEkran(L, map) {
     timer = null;
   };
 
-  $('btn-sekcija').addEventListener('click', open);
+  // Lovac u grupi: tab otvara "Moja grupa"; "Cijela sekcija" (događaj) otvara ovaj ekran.
+  $('btn-sekcija').addEventListener('click', () => { if (groupSlot() && !seesSectionList(me(), ctx)) document.dispatchEvent(new Event('grupa:otvori')); else open(); });
+  document.addEventListener('sekcija:otvori', open);
+  document.addEventListener('grupa:procitano', updateNav);
   $('sk-izbor').addEventListener('change', async (e) => {
     selectedId = e.target.value;
     saveSoft(SEL_KEY, selectedId);
@@ -655,12 +663,14 @@ export function initSekcijaEkran(L, map) {
     if (s) openNewHunt(s, { izbor, odmah: lnForm.pokreni.checked });
   });
   // "+" → Dodaj lov: sekcija koja je otvorena u tabu ako je smijem organizovati, inače prva; lov se odmah pokreće.
-  document.addEventListener('lov:dodaj', async () => {
+  document.addEventListener('lov:dodaj', async (e) => {
     await loadLocal();
     const izbor = organizableSections(ctx, me());
     if (!izbor.length) { toast('Lov pravi lovovođa sekcije ili administrator'); return; }
+    const { sekcijaId, grupaId } = e.detail || {}; // iz ekrana "Moja grupa": baš ta sekcija i grupa
     const cur = selected();
-    openNewHunt(izbor.find((x) => x.id === cur?.id) || izbor[0], { izbor, odmah: true });
+    const target = izbor.find((x) => x.id === (sekcijaId || cur?.id)) || izbor[0];
+    openNewHunt(target, { izbor, odmah: true, ...(grupaId ? { grupa: grupaId } : {}) });
   });
   // Upravljanje iz ekrana "Lov traje" / "Lov danas": isto kao dugmad u tabu sekcije (server provjerava pravo).
   document.addEventListener('lov:upravljanje', async (e) => {
