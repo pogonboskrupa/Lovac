@@ -67,3 +67,14 @@ test('redovi lovaca: broj lovova, oznaka (ti), dugmad po pravima, prazno stanje'
   assert.match(membersHtml([], { actOf, myId: 'x', st: 'clan', lovCounts: new Map(), avatarOf: () => null, canPing: () => false, total: 0 }), /Nema članova/);
   assert.match(membersHtml([], { actOf, myId: 'x', st: 'clan', lovCounts: new Map(), avatarOf: () => null, canPing: () => false, total: 4 }), /ne odgovara pretrazi/);
 });
+
+import { groupsHtml } from '../../static/js/sekcija-render.js';
+test('grupe: upravljač ima promjenu grupovođe (članovi grupe + bez grupe), ostali je nemaju', () => {
+  const g = { id: 'g1', grupovodja: 'Vođa', grupovodja_id: 'v', dozvola: false, clanovi: [{ id: 'v', ime: 'Vođa' }, { id: 'c', ime: 'Cero' }] };
+  const base = { groups: [g], ungrouped: [{ id: 'f', ime: 'Fadil' }], myId: 'x', candidates: [], assignable: [] };
+  const html = groupsHtml({ ...base, manage: true });
+  assert.match(html, /data-akcija="grupa-gv"[^>]*data-grupa="g1"/);
+  assert.match(html, /value="c">Cero/); assert.match(html, /value="f">Fadil/);
+  assert.doesNotMatch(html, /<option value="v">/);
+  assert.doesNotMatch(groupsHtml({ ...base, manage: false }), /grupa-gv/);
+});

@@ -116,6 +116,12 @@ export function groupsHtml(m) {
     ? `<span class="sk-grupa-dodjela"><select data-grupa-izbor aria-label="Grupa (grupovođa)">${opts(assignable)}</select>
         <button type="button" class="dugme" data-akcija="grupa-dodijeli" data-uid="${escapeHtml(id)}">Dodaj u grupu</button></span>` : '');
   const pregledOf = (id) => pregled.find((o) => o.id === id);
+  // Promjena grupovođe: član ove grupe ili lovac bez grupe (ko je u drugoj grupi, prvo se izvadi); raniji ostaje član grupe.
+  const gvPromjena = (g) => {
+    const kand = [...g.clanovi.filter((c) => c.id !== g.grupovodja_id), ...ungrouped.filter((c) => !g.clanovi.some((x) => x.id === c.id))];
+    return kand.length ? `<div class="sk-gv-promjena"><select data-gv-izbor aria-label="Nova grupovođa">${kand.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.ime)}</option>`).join('')}</select>
+      <button type="button" class="dugme" data-akcija="grupa-gv" data-grupa="${escapeHtml(g.id)}" data-sada="${escapeHtml(g.grupovodja_id || '')}">Promijeni grupovođu</button></div>` : '';
+  };
   const grupa = (g) => {
     const o = manage ? pregledOf(g.id) : null;
     const brojke = o ? `<p class="sitno sk-grupa-pregled">Lovova ${o.lovova} · ${o.zadnji ? `zadnji lov ${escapeHtml(huntDateText(o.zadnji.datum))}: prisutnih ${o.zadnji.prisutnih} od ${o.clanova}` : 'još nema održanog lova'}</p>` : '';
@@ -127,6 +133,7 @@ export function groupsHtml(m) {
       ${g.grupovodja_id === myId ? `<button type="button" class="dugme sk-dozvola" data-akcija="grupa-dozvola" data-grupa="${escapeHtml(g.id)}" data-nova="${g.dozvola ? 'false' : 'true'}" aria-pressed="${g.dozvola}">Lovovođa sekcije i viši smiju organizovati lov za moju grupu: ${g.dozvola ? 'DA' : 'NE'}</button>`
         : `<p class="sitno">Lov za grupu organizuje grupovođa; lovovođa sekcije i viši samo uz njegovo dopuštenje (${g.dozvola ? 'dato' : 'nije dato'}).</p>`}
       <ul class="sk-grupa-clanovi">${g.clanovi.map((c) => `<li data-uid="${escapeHtml(c.id)}"><span>${escapeHtml(c.ime)}${c.id === g.grupovodja_id ? ' <span class="sitno">(grupovođa)</span>' : ''}</span>${manage || g.grupovodja_id === myId ? `<button type="button" class="dugme" data-akcija="grupa-izbaci" data-uid="${escapeHtml(c.id)}">Izvadi iz grupe</button>` : ''}</li>`).join('') || '<li class="sitno">Nema lovaca u grupi.</li>'}</ul>
+      ${manage ? gvPromjena(g) : ''}
       ${manage ? `<button type="button" class="dugme sk-grupa-ukloni" data-akcija="grupa-ukloni" data-grupa="${escapeHtml(g.id)}">Ukloni grupu</button>` : ''}
     </li>`;
   };
