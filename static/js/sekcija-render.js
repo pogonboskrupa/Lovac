@@ -110,7 +110,7 @@ export function membersHtml(shown, o) {
 
 // Grupe sekcije. m = { groups, ungrouped, manage, myId, candidates, assignable }. Grupa nema naziv — prepoznaje se po grupovođi.
 export function groupsHtml(m) {
-  const { groups, ungrouped, manage, myId, candidates, assignable } = m;
+  const { groups, ungrouped, manage, myId, candidates, assignable, pregled = [] } = m;
   const opts = (list) => list.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.grupovodja)}</option>`).join('');
   const assign = (id) => (assignable.length
     ? `<span class="sk-grupa-dodjela"><select data-grupa-izbor aria-label="Grupa (grupovođa)">${opts(assignable)}</select>
@@ -136,5 +136,10 @@ export function groupsHtml(m) {
     ? `<div class="sk-grupa-nova"><select id="sk-grupa-gv" aria-label="Grupovođa nove grupe">${candidates.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.ime)}</option>`).join('')}</select>
         <button type="button" class="dugme" data-akcija="grupa-nova"${candidates.length ? '' : ' disabled'}>Napravi grupu</button></div>`
     : '';
-  return `${groups.map(grupa).join('') || '<p class="sitno">Još nema grupa.</p>'}${bez}${nova}`;
+  // Pregled za upravljača: koliko lovaca, lovova i ko je bio na zadnjem lovu grupe.
+  const sazetak = manage && pregled.length
+    ? `<ul class="sk-grupe-pregled" aria-label="Pregled grupa">${pregled.map((o) => `<li data-grupa="${escapeHtml(o.id)}"><b>${escapeHtml(o.grupovodja)}</b>
+        <span class="sitno">${o.clanova} lovaca · lovova ${o.lovova} · ${o.zadnji ? `zadnji lov ${escapeHtml(huntDateText(o.zadnji.datum))}: prisutnih ${o.zadnji.prisutnih} od ${o.clanova}` : 'još nema održanog lova'}</span></li>`).join('')}</ul>`
+    : '';
+  return `${sazetak}${groups.map(grupa).join('') || '<p class="sitno">Još nema grupa.</p>'}${bez}${nova}`;
 }

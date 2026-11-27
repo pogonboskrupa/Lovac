@@ -85,3 +85,46 @@ export function groupUnread(poruke, grupaId, myId, lastRead = null) {
   if (!grupaId) return 0;
   return poruke.filter((m) => m.kanal === 'grupa' && m.grupa_id === grupaId && m.autor_id !== myId && (!lastRead || m.created_at > lastRead)).length;
 }
+
+// Grupa u kojoj sam u datoj sekciji (id) ili null — i za rukovodioce koji su istovremeno članovi grupe. Za prijavu ulova.
+export function groupIdIn(clanovi, myId, sekcijaId) {
+  const c = (clanovi || []).find((x) => x.sekcija_id === sekcijaId && x.korisnik_id === myId && x.status === 'odobren');
+  return c?.grupa_id || null;
+}
+
+const dayDiff = (datum, now) => {
+  const a = Date.parse(`${String(datum).slice(0, 10)}T00:00:00Z`);
+  const t = new Date(now);
+  const b = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+  return Math.round((a - b) / 86400000);
+};
+
+// Traka na mapi: lov moje grupe (ili cijele sekcije) koji je u toku ili tek dolazi. null = nema šta pokazati.
+export function groupBanner(ctx, lovovi, user, now = Date.now()) {
+  const slot = myGroupSlot(ctx, user);
+  if (!slot) return null;
+  const cur = currentGroupHunt(lovovi, slot.sekcija.id, slot.grupaId, now);
+  if (!cur) return null;
+  const { lov, ucesnici } = cur.zapis;
+  const ids = new Set(groupMembers(ctx, slot.grupaId).map((m) => m.id));
+  const prisutnih = ucesnici.filter((u) => ids.has(u.korisnik_id)).length;
+  const moj = ucesnici.some((u) => u.korisnik_id === user.id);
+  const d = dayDiff(lov.datum, now);
+  const kad = lov.status === 'u_toku' ? 'u toku' : d <= 0 ? 'danas' : d === 1 ? 'sutra' : `za ${d} dana`;
+  return { lovId: lov.id, kad, prisutnih, ukupno: ids.size, moj, tekst: `Lov grupe ${kad} · prisutnih ${prisutnih}/${ids.size}${moj ? '' : ' · javi dolaziš li'}` };
+}
+
+// Pregled grupa jedne sekcije za lovovođu sekcije: članovi, lovovi grupe i prisutnost na zadnjem lovu grupe.
+export function groupOverview(ctx, lovovi, sekcijaId, nameOf = (id) => id) {
+  return (ctx.grupe || []).filter((g) => g.sekcija_id === sekcijaId).map((g) => {
+    const members = groupMembers(ctx, g.id, nameOf);
+    const ids = new Set(members.map((m) => m.id));
+    const hunts = lovovi.filter((z) => z.lov.sekcija_id === sekcijaId && z.lov.grupa_id === g.id);
+    const held = hunts.filter((z) => z.lov.status !== 'planiran').sort((a, b) => String(b.lov.datum).localeCompare(String(a.lov.datum)));
+    const zadnji = held[0];
+    return {
+      id: g.id, grupovodja: nameOf(g.grupovodja_id), clanova: members.length, lovova: held.length,
+      zadnji: zadnji ? { datum: zadnji.lov.datum, status: zadnji.lov.status, prisutnih: zadnji.ucesnici.filter((u) => ids.has(u.korisnik_id)).length } : null,
+    };
+  }).sort((a, b) => a.grupovodja.localeCompare(b.grupovodja, 'bs'));
+}

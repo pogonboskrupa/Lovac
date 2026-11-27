@@ -270,3 +270,31 @@ test('Prijava ulova: jedan odbijen red ne blokira ostale (odbijena se izbacuje i
   await expect(page.locator(`#odstrel-spisak [data-id="${ID(910)}"] [data-prijava="odbijena"]`)).toHaveText('Prijava odbijena');
   await expect(page.locator(`#odstrel-spisak [data-id="${ID(911)}"] [data-prijava="poslana"]`)).toBeVisible();
 });
+
+test('Prijava ulova nosi grupu lovca; lovovođa sekcije u Pregledu vidi "Po grupama"', async ({ page, browser }) => {
+  const G = ID(700);
+  const server = makeServer();
+  server.db.grupe = [{ id: G, sekcija_id: ID(200), grupovodja_id: LOVAC2.id, dozvola_visih: false }];
+  server.db.sekcija_clanovi.forEach((c) => { c.grupa_id = G; });
+  await setup(page, server, LOVAC);
+  await page.goto('/');
+  await putRec(page, 'odstrel', odstrel(ID(900)));
+  await openOdstrel(page);
+  await page.locator('#odstrel-spisak [data-id="' + ID(900) + '"] [data-akcija="prijavi"]').click();
+  await page.locator('#btn-prijava-potvrdi').click();
+  await expect.poll(() => server.db.ulov_prijave?.length).toBe(1);
+  expect(server.db.ulov_prijave[0].grupa_id).toBe(G);
+
+  const p2 = await browser.newPage();
+  const s2 = withReports(makeServer());
+  s2.db.grupe = server.db.grupe;
+  s2.db.ulov_prijave[0].grupa_id = G;
+  await setup(p2, s2, GV);
+  await p2.goto('/');
+  await p2.locator('#btn-spiskovi').click();
+  await p2.locator('#btn-pregled').click();
+  await expect(p2.locator('#pr-grupe-blok')).toBeVisible();
+  await expect(p2.locator('#pr-grupe .tr-kartica')).toHaveCount(2); // grupa + prijave bez grupe
+  await expect(p2.locator('#pr-grupe')).toContainText('Bez grupe');
+  await p2.close();
+});

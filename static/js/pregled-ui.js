@@ -54,8 +54,11 @@ export function initPregled() {
     $('pr-reviri-blok').hidden = !['admin', 'lovocuvar'].includes(role);
     $('pr-sekcije-blok').hidden = role === 'lovac';
     $('pr-lovci-blok').hidden = role === 'lovac';
+    $('pr-grupe-blok').hidden = role === 'lovac';
     $('pr-reviri').innerHTML = groupBy(act, 'revir_id').map((g) => line(revirName(g.kljuc), g)).join('') || '<li class="sitno">Nema prijava.</li>';
     $('pr-sekcije').innerHTML = groupBy(act, 'sekcija_id').map((g) => line(sekName(g.kljuc), g)).join('') || '<li class="sitno">Nema prijava.</li>';
+    const grupaName = (id) => { const g = (ctx.grupe || []).find((x) => x.id === id); return g ? `Grupa — grupovođa ${memberName(g.grupovodja_id)}` : (id ? 'Grupa' : 'Bez grupe'); };
+    $('pr-grupe').innerHTML = groupBy(act, 'grupa_id').map((g) => line(grupaName(g.kljuc), g)).join('') || '<li class="sitno">Nema prijava.</li>';
     $('pr-lovci').innerHTML = groupBy(act, 'lovac_id').map((g) => line(memberName(g.kljuc), g)).join('') || '<li class="sitno">Nema prijava.</li>';
     $('pr-vrste').innerHTML = groupBy(act, 'vrsta').map((g) => `<li>${escapeHtml(lookupNaziv(vrste, g.kljuc))}: <b>${g.komada}</b> kom., ${escapeHtml(kg(g.kg))} kg</li>`).join('')
       || '<li>Nema prijava u ovom periodu.</li>';

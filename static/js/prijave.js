@@ -32,7 +32,7 @@ export function targetLabel(t, ctx) {
 }
 
 // Red za tabelu ulov_prijave. Samo ono što društvu treba: vrsta, kategorija, težina, vrijeme.
-export function buildReport(rec, target, myId) {
+export function buildReport(rec, target, myId, grupaId = null) {
   const kg = Number(rec.tezina);
   return {
     id: rec.id,
@@ -40,6 +40,7 @@ export function buildReport(rec, target, myId) {
     revir_id: target.revirId,
     sekcija_id: target.sekcijaId || null,
     lov_id: target.lovId || null,
+    ...(grupaId ? { grupa_id: grupaId } : {}),
     vrsta: rec.vrsta,
     kategorija: rec.kategorija && rec.kategorija !== 'nepoznato' ? rec.kategorija : null,
     tezina: Number.isFinite(kg) && rec.tezina != null ? kg : null,
@@ -61,6 +62,10 @@ export function isRejection(error) {
   if (!error) return false;
   return error.code === '42501' || Number(error.status) === 403 || /row-level security|permission denied|violates/i.test(String(error.message || ''));
 }
+
+// Server bez migracije 047 nema kolonu `grupa_id`: prijava se tada šalje bez nje (ne smije visjeti u kutiji).
+export const missingGroupColumn = (error) => ['PGRST204', '42703'].includes(error?.code) || /grupa_id/i.test(String(error?.message || ''));
+export const withoutGroup = (rows) => rows.map(({ grupa_id, ...ostalo }) => ostalo);
 
 export function addToOutbox(outbox, row) {
   return outbox.some((r) => r.id === row.id) ? outbox : [...outbox, row];

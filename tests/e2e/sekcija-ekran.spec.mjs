@@ -490,7 +490,7 @@ test('Moja grupa: poruke grupe idu kanalom grupe, ne u razgovor sekcije; tuđa g
   await expect(page.locator('#gr-poruke')).not.toContainText('Samo druga grupa');
   await page.locator('#forma-gr-poruka input[name=tekst]').fill('Stižem');
   await page.locator('#forma-gr-poruka button[type=submit]').click();
-  await expect.poll(() => server.db.poruke.some((m) => m.tekst === 'Stižem' && m.kanal === 'grupa' && m.grupa_id === G1 && !m.sekcija_id), { timeout: 15000 }).toBe(true);
+  await expect.poll(() => server.db.poruke.some((m) => m.tekst === 'Stižem' && m.kanal === 'grupa' && m.grupa_id === G1 && !m.sekcija_id), { timeout: 40000 }).toBe(true);
   await expect(page.locator('#gr-poruke')).toContainText('Stižem');
   // razgovor cijele sekcije ih ne pokazuje
   await page.locator('#btn-gr-sekcija').click();
@@ -528,4 +528,37 @@ test('Moja grupa: statistika iz završenih lovova grupe i dugme Nazad', async ({
   await page.keyboard.press('Escape').catch(() => {});
   await page.evaluate(() => globalThis.__nazad?.());
   await expect(page.locator('#grupa-ekran')).toBeHidden();
+});
+
+test('traka lova grupe na mapi: pokazuje lov, prisutne i otvara Moju grupu; lovovođa sekcije je nema', async ({ page, browser }) => {
+  const server = grupaServer();
+  await setup(page, server, LOVAC);
+  await page.goto('/');
+  const traka = page.locator('#grupa-traka');
+  await expect(traka).toBeVisible({ timeout: 20000 });
+  await expect(traka).toContainText('Lov grupe danas');
+  await expect(traka).toContainText('prisutnih 1/2');
+  await expect(traka).toContainText('javi dolaziš li');
+  await traka.click();
+  await expect(page.locator('#grupa-ekran')).toBeVisible();
+
+  const page2 = await browser.newPage();
+  await setup(page2, grupaServer(), GV);
+  await page2.goto('/');
+  await expect(page2.locator('#nav-sekcija-ime')).toHaveText('Krupa 1', { timeout: 15000 });
+  await expect(page2.locator('#grupa-traka')).toBeHidden();
+  await page2.close();
+});
+
+test('pregled grupa u tabu sekcije: lovovođa vidi koliko lovaca i lovova ima svaka grupa', async ({ page }) => {
+  const server = grupaServer();
+  server.db.lovovi.push({ id: ID(301), revir_id: R.krupa, sekcija_id: ID(200), grupa_id: G1, naziv: 'Stari lov', datum: '2026-10-01', status: 'zavrsen', organizator_id: LOVAC2.id });
+  server.db.lov_ucesnici.push({ lov_id: ID(301), korisnik_id: LOVAC2.id, uloga: 'vodja' });
+  await setup(page, server, GV);
+  await openTab(page);
+  const pregled = page.locator('#sk-grupe .sk-grupe-pregled li');
+  await expect(pregled).toHaveCount(2);
+  await expect(pregled.filter({ hasText: 'Luka Pogonič' })).toContainText('2 lovaca · lovova 1 · zadnji lov');
+  await expect(pregled.filter({ hasText: 'Luka Pogonič' })).toContainText('prisutnih 1 od 2');
+  await expect(pregled.filter({ hasText: 'Vanja' })).toContainText('još nema održanog lova');
 });

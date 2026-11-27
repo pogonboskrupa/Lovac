@@ -124,3 +124,14 @@ test('sat servera iz zaglavlja Date: zahtjevi ne zavise od sata telefona', () =>
   resetQualityForTests();
   assert.equal(serverNow(local), local);
 });
+
+import { missingGroupColumn, withoutGroup } from '../../static/js/prijave.js';
+test('prijava nosi grupu lovca; bez grupe nema kolone; server bez 047 se prepoznaje', () => {
+  const rec = { id: 'z1', vrsta: 'divlja_svinja', vrijeme: '2026-11-01T06:00:00Z' };
+  const t = { revirId: 'R1', sekcijaId: 'S1', lovId: null };
+  assert.equal(buildReport(rec, t, 'u1', 'g1').grupa_id, 'g1');
+  assert.equal('grupa_id' in buildReport(rec, t, 'u1'), false);
+  assert.equal('grupa_id' in withoutGroup([buildReport(rec, t, 'u1', 'g1')])[0], false);
+  assert.equal(missingGroupColumn({ code: 'PGRST204', message: "Could not find the 'grupa_id' column" }), true);
+  assert.equal(missingGroupColumn({ code: '42501', message: 'row-level security' }), false);
+});

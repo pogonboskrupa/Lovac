@@ -30,7 +30,7 @@ import { deleteHunt } from './lov-brisanje.js';
 import { sendPing } from './ping-ui.js';
 import { createMessageSync } from './sekcija-poruke.js';
 import { membersHtml, huntCardHtml, conversationHtml, groupsHtml, U_LOVU } from './sekcija-render.js';
-import { myGroupSlot, groupUnread, GROUP_READ_KEY } from './grupa-podaci.js';
+import { myGroupSlot, groupUnread, GROUP_READ_KEY, groupOverview } from './grupa-podaci.js';
 import { canManageGroups, groupsOfSection, ungroupedMembers, groupLeaderCandidates, assignableGroups } from './grupe.js';
 
 const SEL_KEY = 'lovac.sekcija.izabrana';
@@ -262,7 +262,7 @@ export function initSekcijaEkran(L, map) {
     const manageG = canManageGroups(st, { myId: me()?.id, sekcija: s, revirVodje: ctx.revirVodje, drustvoUloge: ctx.drustvoUloge });
     const groups = groupsOfSection(s.id, ctx.grupe, ctx.clanovi, memberName);
     $('sk-grupe').innerHTML = groupsHtml({
-      groups, manage: manageG, myId: me()?.id,
+      groups, manage: manageG, myId: me()?.id, pregled: groupOverview(ctx, lovovi, s.id, memberName),
       ungrouped: ungroupedMembers(s.id, ctx.grupe, ctx.clanovi, memberName),
       candidates: groupLeaderCandidates(s.id, ctx.grupe, ctx.clanovi, memberName),
       assignable: assignableGroups(groups, { manage: manageG, myId: me()?.id }),

@@ -71,3 +71,37 @@ test('statistika grupe: prosjek prisutnosti i lovovi po članu; planirani i tuđ
   assert.deepEqual(s.poClanu.map((x) => [x.id, x.lovova, x.procenat]), [['a', 2, 100], ['b', 1, 50]]);
   assert.deepEqual(groupStats([], 's1', 'g1', members), { lovova: 0, prosjek: 0, poClanu: [{ id: 'a', ime: 'Ado', lovova: 0, procenat: 0 }, { id: 'b', ime: 'Bero', lovova: 0, procenat: 0 }] });
 });
+
+import { groupIdIn, groupBanner, groupOverview } from '../../static/js/grupa-podaci.js';
+
+test('grupa u sekciji: i za rukovodioca koji je član grupe', () => {
+  assert.equal(groupIdIn(clanovi, 'a', 's1'), 'g1');
+  assert.equal(groupIdIn(clanovi, 'vs', 's1'), 'g1');
+  assert.equal(groupIdIn(clanovi, 'd', 's1'), null);
+  assert.equal(groupIdIn(clanovi, 'e', 's1'), null);
+});
+test('traka na mapi: lov grupe sa prisutnima i pozivom da se javi', () => {
+  const now = Date.parse('2099-01-01T08:00:00');
+  const l = [lov('1', 'g1', 'planiran', '2099-01-02', ['b'])];
+  const t = groupBanner(ctx, l, { id: 'a' }, now);
+  assert.equal(t.kad, 'sutra'); assert.equal(t.prisutnih, 1); assert.equal(t.ukupno, 3); assert.equal(t.moj, false);
+  assert.match(t.tekst, /javi dolaziš li/);
+  const moj = groupBanner(ctx, [lov('1', 'g1', 'planiran', '2099-01-01', ['a', 'b'])], { id: 'a' }, now);
+  assert.equal(moj.kad, 'danas'); assert.doesNotMatch(moj.tekst, /javi/);
+  assert.equal(groupBanner(ctx, [lov('1', 'g1', 'u_toku', '2098-12-31')], { id: 'a' }, now).kad, 'u toku');
+});
+test('traka na mapi: nema lova, tuđa grupa, rukovodilac', () => {
+  const now = Date.parse('2099-01-01T08:00:00');
+  assert.equal(groupBanner(ctx, [], { id: 'a' }, now), null);
+  assert.equal(groupBanner(ctx, [lov('3', 'g2', 'planiran', '2099-01-02')], { id: 'a' }, now), null);
+  assert.equal(groupBanner(ctx, [lov('1', 'g1', 'planiran', '2099-01-02')], { id: 'vs' }, now), null);
+});
+test('pregled grupa: članovi, lovovi i prisutnost na zadnjem lovu', () => {
+  const l = [lov('1', 'g1', 'zavrsen', '2026-10-01', ['a']), lov('2', 'g1', 'zavrsen', '2026-11-01', ['a', 'b']), lov('3', 'g1', 'planiran', '2026-12-01'), lov('4', 'g2', 'zavrsen', '2026-11-05', ['c'])];
+  const o = groupOverview(ctx, l, 's1', (id) => id);
+  const g1 = o.find((x) => x.id === 'g1');
+  assert.equal(g1.clanova, 3); assert.equal(g1.lovova, 2);
+  assert.deepEqual(g1.zadnji, { datum: '2026-11-01', status: 'zavrsen', prisutnih: 2 });
+  assert.equal(o.find((x) => x.id === 'g2').zadnji.prisutnih, 1);
+  assert.equal(groupOverview(ctx, [], 's1').every((x) => x.zadnji === null), true);
+});

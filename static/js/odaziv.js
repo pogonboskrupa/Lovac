@@ -6,7 +6,9 @@ export const ODAZIV_KEY = 'lovac.odaziv';        // { [lovId]: { odgovor: 'da'|'
 export const ODAZIV_RED_KEY = 'lovac.odaziv.red'; // [{ lovId, odgovor, t }] — čeka slanje
 export const ODAZIV_JAVLJENO_KEY = 'lovac.odaziv.javljeno'; // id-evi lovova za koje je obavijest već prikazana
 
-const approvedIn = (sekcijaId, clanovi, myId) => clanovi.some((c) => c.sekcija_id === sekcijaId && c.korisnik_id === myId && c.status === 'odobren');
+// Lov grupe pita samo lovce te grupe (lov cijele sekcije, bez grupe, pita sve članove sekcije).
+const approvedIn = (sekcijaId, clanovi, myId, grupaId = null) => clanovi.some((c) => c.sekcija_id === sekcijaId && c.korisnik_id === myId && c.status === 'odobren'
+  && (!grupaId || c.grupa_id === grupaId));
 
 // lovovi: zapisi iz keša ({ id, lov, ucesnici }); vraća lovove na koje treba odgovoriti, najbliži datum prvi.
 export function huntsToAsk(lovovi = [], { myId, clanovi = [], odgovori = {}, odlozeni = [], today } = {}) {
@@ -18,7 +20,7 @@ export function huntsToAsk(lovovi = [], { myId, clanovi = [], odgovori = {}, odl
     if (l.organizator_id === myId) return false;
     if ((r.ucesnici || []).some((u) => u.korisnik_id === myId)) return false;
     if (odgovori[r.id] || odlozeni.includes(r.id)) return false;
-    return approvedIn(l.sekcija_id, clanovi, myId);
+    return approvedIn(l.sekcija_id, clanovi, myId, l.grupa_id || null);
   }).sort((a, b) => String(a.lov.datum).localeCompare(String(b.lov.datum)));
 }
 

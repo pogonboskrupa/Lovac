@@ -43,3 +43,12 @@ test('answersSummary i greške servera', () => {
   assert.ok(answerRejected({ message: 'new row violates row-level security policy' }));
   assert.ok(!answerRejected({ message: 'Failed to fetch' }));
 });
+
+test('huntsToAsk: lov grupe pita samo lovce te grupe, lov sekcije sve', () => {
+  const cl = [{ sekcija_id: 's1', korisnik_id: JA, status: 'odobren', grupa_id: 'g1' }];
+  const lovovi = [lov('moja', { grupa_id: 'g1' }), lov('tuda', { grupa_id: 'g2' }), lov('sekcija')];
+  assert.deepEqual(huntsToAsk(lovovi, { myId: JA, clanovi: cl, today: '2026-11-24' }).map((r) => r.id).sort(), ['moja', 'sekcija']);
+  // lovac bez grupe ne dobija pitanje za lov grupe
+  const bez = [{ sekcija_id: 's1', korisnik_id: JA, status: 'odobren', grupa_id: null }];
+  assert.deepEqual(huntsToAsk(lovovi, { myId: JA, clanovi: bez, today: '2026-11-24' }).map((r) => r.id), ['sekcija']);
+});

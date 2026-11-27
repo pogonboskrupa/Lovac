@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.7.7';
+  const APP_VER = 'v1.7.8';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -136,6 +136,7 @@
     <span id="veza" class="znacka veza-upozorenje" data-veza="nepoznato"></span>
     <span id="bez-servera" class="znacka upozorenje" hidden>Server nije podešen</span>
     <button id="probni-traka" class="znacka znacka-dugme probni-traka" type="button" hidden></button>
+    <button id="grupa-traka" class="znacka znacka-dugme probni-traka grupa-traka" type="button" hidden></button>
     <button id="prijava-istekla" class="znacka znacka-dugme upozorenje" type="button" hidden>Prijava istekla — zapisi čekaju na telefonu. Dodirni za prijavu</button>
     <button id="red-znacka" class="znacka znacka-dugme" type="button" hidden></button>
     <button id="lovno-chip" class="lovno-chip" type="button" hidden></button>
@@ -1844,6 +1845,7 @@
   </section>
   <section id="pr-reviri-blok"><h3>Po revirima</h3><ul id="pr-reviri" class="spisak"></ul></section>
   <section id="pr-sekcije-blok"><h3>Po sekcijama</h3><ul id="pr-sekcije" class="spisak"></ul></section>
+  <section id="pr-grupe-blok"><h3>Po grupama</h3><ul id="pr-grupe" class="spisak"></ul></section>
   <section id="pr-lovci-blok"><h3>Po lovcima</h3><ul id="pr-lovci" class="spisak"></ul></section>
   <h3>Po vrstama</h3>
   <ul id="pr-vrste" class="zbir"></ul>

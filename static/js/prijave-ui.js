@@ -7,8 +7,9 @@ import { connectionQuality, onQualityChange } from './net.js';
 import { getRecord } from './zapisi.js';
 import { cachedSekcije, downloadSekcije } from './sekcije-ui.js';
 import {
-  REPORT_OUTBOX_KEY, REPORT_SENT_KEY, REPORT_WITHDRAWN_KEY, REPORT_REJECTED_KEY, isRejection, reportTargets, targetLabel, buildReport, reportState, addToOutbox, markSent,
+  REPORT_OUTBOX_KEY, REPORT_SENT_KEY, REPORT_WITHDRAWN_KEY, REPORT_REJECTED_KEY, isRejection, reportTargets, targetLabel, buildReport, reportState, addToOutbox, markSent, missingGroupColumn, withoutGroup,
 } from './prijave.js';
+import { groupIdIn } from './grupa-podaci.js';
 import { toast, registerBackHandler, escapeHtml } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -30,7 +31,12 @@ export async function flushReports() {
   if (!box.length) return 0;
   flushing = true;
   const sb = getClient();
-  const send = (rows) => sb.from('ulov_prijave').upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+  let noGroup = false; // server bez migracije 047
+  const send = async (rows) => {
+    const r = await sb.from('ulov_prijave').upsert(noGroup ? withoutGroup(rows) : rows, { onConflict: 'id', ignoreDuplicates: true });
+    if (r.error && !noGroup && missingGroupColumn(r.error)) { noGroup = true; return send(rows); }
+    return r;
+  };
   const sentIds = [];
   const rejectedIds = [];
   try {
@@ -99,7 +105,7 @@ export function initPrijave() {
     if (!current) return;
     const me = cachedProfile();
     const t = current.targets[Number($('prijava-cilj').value) || 0];
-    const row = buildReport(current.rec, t, me.id);
+    const row = buildReport(current.rec, t, me.id, groupIdIn(current.ctx.clanovi, me.id, t.sekcijaId));
     saveSoft(REPORT_OUTBOX_KEY, addToOutbox(loadJSON(REPORT_OUTBOX_KEY, []), row));
     close();
     document.dispatchEvent(new CustomEvent('prijave:promjena'));
