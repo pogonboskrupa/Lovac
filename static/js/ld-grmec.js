@@ -32,10 +32,21 @@ export function ldTree(ctx = {}, nameOf = () => '') {
     const v = (ctx.revirVodje || []).find((x) => x.revir_id === r.id);
     const djeca = sekcije.filter((s) => s.revir_id === r.id).sort((a, b) => byName(a.naziv, b.naziv)).map((s) => {
       brojSekcija += 1;
+      const lovac = (id) => ({ nivo: 'lovac', uloga: 'Lovac', ime: ime(id), napomena: '', djeca: [] });
+      const odob = odobreni(s.id);
       const grupe = (ctx.grupe || []).filter((g) => g.sekcija_id === s.id)
-        .map((g) => ({ nivo: 'grupa', meta: { uloga: 'grupovodja_grupe', korisnikId: g.grupovodja_id, grupaId: g.id, sekcijaId: s.id }, grupaTekst: `grupovođa ${ime(g.grupovodja_id)}`, uloga: 'Grupovođa', ime: ime(g.grupovodja_id), napomena: `${odobreni(s.id).filter((c) => c.grupa_id === g.id).length} lovaca`, djeca: [] }))
+        .map((g) => {
+          const clanoviGrupe = odob.filter((c) => c.grupa_id === g.id);
+          // grupovođa je čvor same grupe; ispod njega su ostali lovci grupe (samo odobreni članovi)
+          const lovci = clanoviGrupe.filter((c) => c.korisnik_id !== g.grupovodja_id).map((c) => lovac(c.korisnik_id)).sort((a, b) => byName(a.ime, b.ime));
+          return { nivo: 'grupa', kljuc: `g:${g.id}`, meta: { uloga: 'grupovodja_grupe', korisnikId: g.grupovodja_id, grupaId: g.id, sekcijaId: s.id }, grupaTekst: `grupovođa ${ime(g.grupovodja_id)}`, uloga: 'Grupovođa', ime: ime(g.grupovodja_id), napomena: `${clanoviGrupe.length} lovaca`, djeca: lovci };
+        })
         .sort((a, b) => byName(a.ime, b.ime));
-      brojGrupa += grupe.length;
+      // članovi sekcije koji još nisu ni u jednoj grupi
+      const poznate = new Set(grupe.map((g) => g.meta.grupaId));
+      const bez = odob.filter((c) => !c.grupa_id || !poznate.has(c.grupa_id)).map((c) => lovac(c.korisnik_id)).sort((a, b) => byName(a.ime, b.ime));
+      if (bez.length) grupe.push({ nivo: 'bez-grupe', kljuc: `b:${s.id}`, uloga: 'Bez grupe', ime: 'Članovi bez grupe', napomena: `${bez.length} lovaca`, djeca: bez });
+      brojGrupa += grupe.filter((g) => g.nivo === 'grupa').length;
       return { nivo: 'sekcija', kljuc: `s:${s.id}`, meta: { uloga: 'lovovodja_sekcije', korisnikId: s.grupovodja_id || null, sekcijaId: s.id, revirId: r.id, dodajGrupu: true }, uloga: s.naziv, ulogaOznaka: 'Lovovođa sekcije', ime: s.grupovodja_id ? ime(s.grupovodja_id) : '', napomena: `${odobreni(s.id).length} članova`, djeca: grupe };
     });
     return { nivo: 'revir', kljuc: `r:${r.id}`, meta: { uloga: 'lovovodja_revira', korisnikId: v?.korisnik_id || null, revirId: r.id }, uloga: `Revir ${r.naziv}`, ulogaOznaka: 'Lovovođa revira', ime: v ? ime(v.korisnik_id) : '', napomena: '', djeca };
@@ -50,7 +61,7 @@ export function ldTree(ctx = {}, nameOf = () => '') {
   // Mjesta za popuniti: svako mjesto na stablu osim grupa (grupa postoji tek kad ima grupovođu).
   let ukupno = 0;
   let popunjeno = 0;
-  const brojMjesta = (c) => { if (c.nivo !== 'grupa') { ukupno += 1; if (c.ime) popunjeno += 1; } c.djeca.forEach(brojMjesta); };
+  const brojMjesta = (c) => { if (!['grupa', 'lovac', 'bez-grupe'].includes(c.nivo)) { ukupno += 1; if (c.ime) popunjeno += 1; } c.djeca.forEach(brojMjesta); };
   brojMjesta(korijen);
   return { korijen, sazetak: { reviri: reviri.length, sekcija: brojSekcija, grupa: brojGrupa, mjesta: ukupno, popunjeno, slobodno: ukupno - popunjeno } };
 }

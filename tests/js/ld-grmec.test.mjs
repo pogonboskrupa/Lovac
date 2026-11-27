@@ -102,3 +102,20 @@ test('LD Grmeč: ko dodaje lovce u grupu, ko se nudi, i dugmad u HTML-u', () => 
   const sklopljen = ldHtml(tree, { sklopljeno: new Set([rid]) });
   assert.ok(!sklopljen.includes('data-nivo="sekcija"'));
 });
+
+test('LD Grmeč: lovci su prikazani ispod grupe (bez grupovođe), članovi bez grupe u zasebnom čvoru, čekaoci se ne prikazuju', () => {
+  const c2 = { ...ctx, clanovi: [...ctx.clanovi, { sekcija_id: 's1', korisnik_id: 'y', status: 'odobren', grupa_id: null }] };
+  const nm = (id) => ({ ...names, y: 'Bez Grupe' }[id] || '');
+  const { korijen, sazetak } = ldTree(c2, nm);
+  const sek = korijen.djeca.find((d) => d.nivo === 'lovovodja').djeca.find((r) => r.meta.revirId === 'r1').djeca.find((s) => s.meta.sekcijaId === 's1');
+  const grupa = sek.djeca.find((d) => d.nivo === 'grupa');
+  assert.deepEqual(grupa.djeca.map((d) => d.ime), ['Obični Lovac']);
+  const bez = sek.djeca.find((d) => d.nivo === 'bez-grupe');
+  assert.deepEqual(bez.djeca.map((d) => d.ime), ['Bez Grupe']);
+  assert.ok(!sek.djeca.flatMap((d) => d.djeca).some((d) => d.nivo === 'lovac' && d.ime === 'Nepoznat član'));
+  assert.equal(sazetak.grupa, 1);
+  // lovci i čvor "bez grupe" nisu mjesta za popunjavanje
+  assert.equal(ldTree(ctx, nameOf).sazetak.mjesta, sazetak.mjesta);
+  const html = ldHtml(ldTree(c2, nm));
+  assert.match(html, /data-nivo="lovac"/); assert.match(html, /Obični Lovac/); assert.match(html, /Članovi bez grupe/);
+});

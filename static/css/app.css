@@ -1968,3 +1968,6 @@ svg[hidden] { display: none; }
 .cp-clan:first-child { border-top: 0; }
 .cp-clan .sk-avatar { width: 34px; height: 34px; flex: none; font-size: 13px; }
 .cp-ime { flex: 1; min-width: 0; }
+.ld-cvor[data-nivo="lovac"] > .ld-kartica-cvora, .ld-cvor[data-nivo="bez-grupe"] > .ld-kartica-cvora { background: transparent; }
+.ld-cvor[data-nivo="lovac"] .ld-lice { width: 30px; height: 30px; font-size: 12px; }
+.ld-cvor[data-nivo="bez-grupe"] > .ld-kartica-cvora { border-style: dashed; }
