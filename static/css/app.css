@@ -565,7 +565,7 @@ progress { width: 100%; height: 12px; margin: 8px 0; accent-color: var(--naglasa
 .sk-lov h4 { margin: 16px 0 4px; }
 .sk-lov .clan-red .dugme { width: auto; margin-top: 0; flex: none; }
 .clan-tekst { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-#sk-clanovi .clan-red { flex-wrap: wrap; }
+:is(#sk-clanovi, #gr-clanovi) .clan-red { flex-wrap: wrap; }
 .clan-akcije { display: flex; gap: 8px; width: 100%; padding-left: 54px; }
 .clan-akcije:empty { display: none; }
 .clan-akcije .dugme { flex: 1; margin-top: 0; }
@@ -1009,10 +1009,10 @@ svg[hidden] { display: none; }
 .sk-broj[data-b="aktivni"] { background: var(--gps-dobro); color: var(--gps-tekst); }
 .sk-broj[data-b="bez-signala"] { background: var(--gps-srednje); color: var(--gps-tekst); }
 #sk-pretraga { width: 100%; min-height: 48px; margin: 8px 0; font-size: 16px; box-sizing: border-box; }
-#sk-clanovi .clan-red { padding: 10px; margin: 6px 0; border-radius: 14px; background: var(--dugme); list-style: none; }
-#sk-clanovi .clan-red[data-uloga="grupovodja"], #sk-clanovi .clan-red[data-uloga="lovocuvar"] { border-left: 6px solid var(--naglasak, #2e7d32); }
-#sk-clanovi .sk-avatar { width: 52px; height: 52px; }
-#sk-clanovi .clan-akcije { padding-left: 62px; }
+:is(#sk-clanovi, #gr-clanovi) .clan-red { padding: 10px; margin: 6px 0; border-radius: 14px; background: var(--dugme); list-style: none; }
+:is(#sk-clanovi, #gr-clanovi) .clan-red[data-uloga="grupovodja"], #sk-clanovi .clan-red[data-uloga="lovocuvar"] { border-left: 6px solid var(--naglasak, #2e7d32); }
+:is(#sk-clanovi, #gr-clanovi) .sk-avatar { width: 52px; height: 52px; }
+:is(#sk-clanovi, #gr-clanovi) .clan-akcije { padding-left: 62px; }
 .sk-znacka { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: var(--povrsina); font-weight: 700; font-size: 12px; }
 .sk-znacka[data-uloga="grupovodja"] { background: #1d4ed8; color: #ffffff; }
 .sk-znacka[data-uloga="lovocuvar"] { background: #7c3aed; color: #ffffff; }
@@ -1223,7 +1223,7 @@ svg[hidden] { display: none; }
 #statistika select { border: 2px solid var(--okvir); }
 
 /* Tab sekcije: okviri, čitljiva dugmad člana, aktivni dio u traci */
-:is(#sekcija-ekran, #grupa-ekran) :is(.sk-kartica, .p-kartica, #sk-clanovi .clan-red) { border: 1.5px solid var(--okvir); box-shadow: none; }
+:is(#sekcija-ekran, #grupa-ekran) :is(.sk-kartica, .p-kartica, #sk-clanovi .clan-red, #gr-clanovi .clan-red) { border: 1.5px solid var(--okvir); box-shadow: none; }
 :is(#sekcija-ekran, #grupa-ekran) .sk-nav button { border: 1.5px solid var(--okvir); }
 :is(#sekcija-ekran, #grupa-ekran) .sk-nav button[aria-current="true"] { background: var(--naglasak); color: var(--naglasak-tekst); border-color: var(--naglasak); }
 :is(#sekcija-ekran, #grupa-ekran) :is(.segment button, .dugme:not(.glavno)) { border: 1.5px solid var(--okvir); }
@@ -1931,3 +1931,21 @@ svg[hidden] { display: none; }
 .ln-grupa { padding: 8px 12px; border: 1.5px solid var(--okvir); border-radius: 12px; }
 .sk-grupe-pregled { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
 .sk-grupe-pregled li { padding: 8px 10px; border-radius: 12px; background: var(--dugme); display: grid; gap: 2px; }
+
+/* Grupe (v1.8.0): kartica po grupi sa zaglavljem, pregledom i redovima članova */
+.sk-grupe-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.sk-grupa { list-style: none; padding: 12px; border-radius: 16px; background: var(--dugme); border: 1.5px solid var(--okvir); display: grid; gap: 8px; }
+.sk-grupa-glava { display: flex; align-items: center; gap: 10px; }
+.sk-grupa-glava > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sk-grupa-glava .sk-avatar { width: 44px; height: 44px; flex: none; border-color: var(--naglasak); }
+.sk-grupa-pregled { margin: 0; }
+.sk-grupa-clanovi { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sk-grupa-clanovi li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; border-top: 1px solid var(--okvir); }
+.sk-grupa-clanovi li .dugme { flex: none; }
+.sk-grupa > .dugme, .sk-grupa .sk-dozvola { width: 100%; }
+.sk-bez-grupe { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sk-bez-grupe > li { padding: 10px; border-radius: 12px; background: var(--dugme); display: grid; gap: 6px; }
+.sk-grupa-dodjela { display: flex; gap: 8px; align-items: center; }
+.sk-grupa-dodjela select { flex: 1; min-width: 0; }
+.sk-grupa-nova { display: grid; gap: 8px; padding: 12px; border-radius: 16px; border: 1.5px dashed var(--okvir); margin-top: 12px; }
+.sk-grupa-ukloni { width: 100%; }

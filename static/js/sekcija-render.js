@@ -115,13 +115,21 @@ export function groupsHtml(m) {
   const assign = (id) => (assignable.length
     ? `<span class="sk-grupa-dodjela"><select data-grupa-izbor aria-label="Grupa (grupovođa)">${opts(assignable)}</select>
         <button type="button" class="dugme" data-akcija="grupa-dodijeli" data-uid="${escapeHtml(id)}">Dodaj u grupu</button></span>` : '');
-  const grupa = (g) => `<li class="sk-grupa" data-grupa="${escapeHtml(g.id)}">
-      <div class="sk-grupa-glava"><b>Grupa — grupovođa ${escapeHtml(g.grupovodja)}</b><span class="sitno"> · ${g.clanovi.length} lovaca</span>
-        ${manage ? `<button type="button" class="dugme" data-akcija="grupa-ukloni" data-grupa="${escapeHtml(g.id)}">Ukloni grupu</button>` : ''}</div>
+  const pregledOf = (id) => pregled.find((o) => o.id === id);
+  const grupa = (g) => {
+    const o = manage ? pregledOf(g.id) : null;
+    const brojke = o ? `<p class="sitno sk-grupa-pregled">Lovova ${o.lovova} · ${o.zadnji ? `zadnji lov ${escapeHtml(huntDateText(o.zadnji.datum))}: prisutnih ${o.zadnji.prisutnih} od ${o.clanova}` : 'još nema održanog lova'}</p>` : '';
+    return `<li class="sk-grupa" data-grupa="${escapeHtml(g.id)}">
+      <div class="sk-grupa-glava"><span class="sk-avatar" aria-hidden="true">${escapeHtml(initialsOf(g.grupovodja))}</span>
+        <div><b>Grupa — grupovođa ${escapeHtml(g.grupovodja)}</b><span class="sitno">${g.clanovi.length} lovaca</span></div>
+      </div>
+      ${brojke}
       ${g.grupovodja_id === myId ? `<button type="button" class="dugme sk-dozvola" data-akcija="grupa-dozvola" data-grupa="${escapeHtml(g.id)}" data-nova="${g.dozvola ? 'false' : 'true'}" aria-pressed="${g.dozvola}">Lovovođa sekcije i viši smiju organizovati lov za moju grupu: ${g.dozvola ? 'DA' : 'NE'}</button>`
         : `<p class="sitno">Lov za grupu organizuje grupovođa; lovovođa sekcije i viši samo uz njegovo dopuštenje (${g.dozvola ? 'dato' : 'nije dato'}).</p>`}
-      <ul class="sk-grupa-clanovi">${g.clanovi.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === g.grupovodja_id ? ' <span class="sitno">(grupovođa)</span>' : ''}${manage || g.grupovodja_id === myId ? ` <button type="button" class="dugme" data-akcija="grupa-izbaci" data-uid="${escapeHtml(c.id)}">Izvadi iz grupe</button>` : ''}</li>`).join('') || '<li class="sitno">Nema lovaca u grupi.</li>'}</ul>
+      <ul class="sk-grupa-clanovi">${g.clanovi.map((c) => `<li data-uid="${escapeHtml(c.id)}"><span>${escapeHtml(c.ime)}${c.id === g.grupovodja_id ? ' <span class="sitno">(grupovođa)</span>' : ''}</span>${manage || g.grupovodja_id === myId ? `<button type="button" class="dugme" data-akcija="grupa-izbaci" data-uid="${escapeHtml(c.id)}">Izvadi iz grupe</button>` : ''}</li>`).join('') || '<li class="sitno">Nema lovaca u grupi.</li>'}</ul>
+      ${manage ? `<button type="button" class="dugme sk-grupa-ukloni" data-akcija="grupa-ukloni" data-grupa="${escapeHtml(g.id)}">Ukloni grupu</button>` : ''}
     </li>`;
+  };
   // Lovac je sam izabrao grupu (želja): upravljač ili grupovođa te grupe je odobrava jednim dodirom.
   const zelja = (c) => {
     const g = c.zeljena && groups.find((x) => x.id === c.zeljena);
@@ -133,13 +141,8 @@ export function groupsHtml(m) {
     ? `<h4>Bez grupe (${ungrouped.length})</h4><ul class="sk-bez-grupe">${ungrouped.map((c) => `<li data-uid="${escapeHtml(c.id)}">${escapeHtml(c.ime)}${c.id === myId ? ' (ti)' : ''} ${zelja(c)} ${assign(c.id)}</li>`).join('')}</ul>`
     : '';
   const nova = manage
-    ? `<div class="sk-grupa-nova"><select id="sk-grupa-gv" aria-label="Grupovođa nove grupe">${candidates.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.ime)}</option>`).join('')}</select>
+    ? `<div class="sk-grupa-nova"><b>Nova grupa</b><span class="sitno">Izaberi grupovođu (odobreni član sekcije koji još ne vodi grupu).</span><select id="sk-grupa-gv" aria-label="Grupovođa nove grupe">${candidates.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.ime)}</option>`).join('')}</select>
         <button type="button" class="dugme" data-akcija="grupa-nova"${candidates.length ? '' : ' disabled'}>Napravi grupu</button></div>`
     : '';
-  // Pregled za upravljača: koliko lovaca, lovova i ko je bio na zadnjem lovu grupe.
-  const sazetak = manage && pregled.length
-    ? `<ul class="sk-grupe-pregled" aria-label="Pregled grupa">${pregled.map((o) => `<li data-grupa="${escapeHtml(o.id)}"><b>${escapeHtml(o.grupovodja)}</b>
-        <span class="sitno">${o.clanova} lovaca · lovova ${o.lovova} · ${o.zadnji ? `zadnji lov ${escapeHtml(huntDateText(o.zadnji.datum))}: prisutnih ${o.zadnji.prisutnih} od ${o.clanova}` : 'još nema održanog lova'}</span></li>`).join('')}</ul>`
-    : '';
-  return `${sazetak}${groups.map(grupa).join('') || '<p class="sitno">Još nema grupa.</p>'}${bez}${nova}`;
+  return `${groups.length ? `<ul class="sk-grupe-lista">${groups.map(grupa).join('')}</ul>` : '<p class="sitno">Još nema grupa.</p>'}${bez}${nova}`;
 }

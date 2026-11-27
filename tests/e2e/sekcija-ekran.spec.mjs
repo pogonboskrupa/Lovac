@@ -445,7 +445,7 @@ function grupaServer() {
 }
 async function openGrupa(page) {
   await page.goto('/');
-  await expect(page.locator('#nav-sekcija-ime')).toHaveText('Moja grupa', { timeout: 15000 }); // keš se puni pri prvom osvježavanju (5 s poslije pokretanja)
+  await expect(page.locator('#nav-sekcija-ime')).toHaveText('Grupa', { timeout: 15000 }); // keš se puni pri prvom osvježavanju (5 s poslije pokretanja)
   await page.locator('#btn-sekcija').click();
   await expect(page.locator('#grupa-ekran')).toBeVisible();
   await expect(page.locator('#gr-clanovi [data-uid]').first()).toBeVisible();
@@ -556,9 +556,10 @@ test('pregled grupa u tabu sekcije: lovovođa vidi koliko lovaca i lovova ima sv
   server.db.lov_ucesnici.push({ lov_id: ID(301), korisnik_id: LOVAC2.id, uloga: 'vodja' });
   await setup(page, server, GV);
   await openTab(page);
-  const pregled = page.locator('#sk-grupe .sk-grupe-pregled li');
+  const pregled = page.locator('#sk-grupe .sk-grupa');
   await expect(pregled).toHaveCount(2);
-  await expect(pregled.filter({ hasText: 'Luka Pogonič' })).toContainText('2 lovaca · lovova 1 · zadnji lov');
+  await expect(pregled.filter({ hasText: 'Luka Pogonič' })).toContainText('2 lovaca');
+  await expect(pregled.filter({ hasText: 'Luka Pogonič' })).toContainText('Lovova 1 · zadnji lov');
   await expect(pregled.filter({ hasText: 'Luka Pogonič' })).toContainText('prisutnih 1 od 2');
   await expect(pregled.filter({ hasText: 'Vanja' })).toContainText('još nema održanog lova');
 });

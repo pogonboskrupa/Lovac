@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.7.9';
+  const APP_VER = 'v1.8.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -1633,12 +1633,19 @@
       </div>
     </div>
     <nav id="sk-nav" class="sk-nav" aria-label="Dijelovi sekcije">
+      <button type="button" data-cilj="sk-k-grupe">Grupe</button>
       <button type="button" data-cilj="sk-k-lov">Lov</button>
       <button type="button" data-cilj="sk-k-clanovi">Lovci</button>
       <button type="button" data-cilj="sk-k-poruke">Poruke</button>
       <button id="sk-nav-ruk" type="button" data-cilj="sk-k-ruk" hidden>Rukovodstvo</button>
       <button type="button" data-cilj="sk-k-podaci">Podaci</button>
     </nav>
+
+    <section id="sk-k-grupe" class="sk-kartica">
+      <h3>Grupe <span id="sk-grupe-broj" class="sitno"></span></h3>
+      <p class="sitno">Grupa nema naziv: prepoznaje se po grupovođi. Lovac je u jednoj grupi. Raspoređuju lovovođa sekcije ili grupovođa; radnje traže internet.</p>
+      <div id="sk-grupe"></div>
+    </section>
 
     <section id="sk-k-clanovi" class="sk-kartica sk-lovci">
       <h3><button id="btn-sk-lovci" class="sk-lovci-glava" type="button" aria-expanded="true">Lovci sekcije <span id="sk-broj" class="sitno"></span><span class="sk-lovci-strelica" aria-hidden="true">▾</span></button></h3>
@@ -1655,12 +1662,6 @@
       <input id="sk-pretraga" type="search" placeholder="Traži lovca" aria-label="Traži lovca" autocomplete="off">
       <ul id="sk-clanovi" class="spisak"></ul>
       <button id="btn-sk-novi" class="dugme" type="button" hidden>Dodaj lovca</button>
-    </section>
-
-    <section id="sk-k-grupe" class="sk-kartica">
-      <h3>Grupe <span id="sk-grupe-broj" class="sitno"></span></h3>
-      <p class="sitno">Grupa nema naziv: prepoznaje se po grupovođi. Lovac je u jednoj grupi. Raspoređuju lovovođa sekcije ili grupovođa; radnje traže internet.</p>
-      <div id="sk-grupe"></div>
     </section>
 
     <section id="sk-k-lov" class="sk-kartica">

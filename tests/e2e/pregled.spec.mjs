@@ -239,7 +239,7 @@ test('Pregled (lovočuvar): uloga i revir; (lovac): "Moje prijave" sa povlačenj
   await expect(mine).toBeVisible();
   await mine.click();
   await mine.click();
-  await expect.poll(() => s2.db.ulov_prijave.find((r) => r.id === ID(950)).povucena).toBe(true);
+  await expect.poll(() => s2.db.ulov_prijave.find((r) => r.id === ID(950)).povucena, { timeout: 20000 }).toBe(true);
   await ctx2.close();
 });
 

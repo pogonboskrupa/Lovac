@@ -51,7 +51,13 @@ export function initGrupaEkran() {
     poruke = (await idbAll('poruke')).sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
   };
 
-  const myAnswer = (lovId) => loadJSON(ODAZIV_KEY, {})[lovId]?.odgovor;
+  // Lokalni "Dolazim" važi samo kratko, dok raspored sa servera ne stigne; poslije toga odlučuje server (lovovođa me je mogao ukloniti iz lova).
+  const LOKALNI_ODGOVOR_MS = 2 * 60000;
+  const myAnswer = (lovId) => {
+    const a = loadJSON(ODAZIV_KEY, {})[lovId];
+    if (!a) return undefined;
+    return a.odgovor === 'da' && Date.now() - (a.t || 0) > LOKALNI_ODGOVOR_MS ? undefined : a.odgovor;
+  };
 
   const pullOdazivi = async (zapis) => {
     if (!zapis || zapis.lov.status === 'zavrsen' || !online()) { odazivi = { lovId: null, rows: [] }; return; }

@@ -113,7 +113,7 @@ export function initSekcijaEkran(L, map) {
     const wide = seesSectionList(me(), ctx);
     const grupa = !wide && groupSlot();
     const s = wide || grupa ? null : selected();
-    $('nav-sekcija-ime').textContent = grupa ? 'Moja grupa' : wide ? 'Sekcije' : s ? s.naziv : 'Sekcija';
+    $('nav-sekcija-ime').textContent = grupa ? 'Grupa' : wide ? 'Sekcije' : s ? s.naziv : 'Sekcija';
     $('nav-sekcija-logo').hidden = !s;
     // SVG element nema svojstvo hidden: atribut se postavlja ručno
     if (s) $('nav-sekcija-ikona').setAttribute('hidden', ''); else $('nav-sekcija-ikona').removeAttribute('hidden');

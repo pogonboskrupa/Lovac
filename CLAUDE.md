@@ -818,3 +818,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 - Pregled grupa u tabu sekcije (`grupa-podaci.js groupOverview`, `sekcija-render.js groupsHtml` `.sk-grupe-pregled`, samo upravljači): grupovođa, lovaca, lovova (održanih) i prisutnih na zadnjem lovu grupe, iz keša. Rejting odaziva se još računa po sekciji (server funkcija `rejting_podaci`), ne po grupi.
 - Test 047 mora proći na bazi 001–025 + 045 (`scripts/sql-test.sh`).
 
+**Tab Grupa i pregled grupa u tabu sekcije (v1.8.0, bez migracije)**
+- Donji tab lovca i grupovođe se zove **Grupa** (ekran je i dalje "Moja grupa"; "Moja gr…" se na uskom ekranu odsijecalo). Lokalni odgovor "Dolazim" važi samo 2 min (`grupa-ui.js myAnswer`), dok raspored sa servera ne stigne — poslije toga odlučuje server, pa lovac kojeg je lovovođa uklonio iz lova ne vidi "Prisutan si" zauvijek.
+- Tab sekcije: kartica **Grupe** je PRVA (i prvo dugme u traci dijelova); svaka grupa je kartica (`.sk-grupa`: lice i ime grupovođe, brojke lovova i prisutnih na zadnjem lovu iz `groupOverview` samo za upravljače, dopuštenje, redovi članova sa "Izvadi iz grupe", "Ukloni grupu" na dnu), pa "Bez grupe" i uokvirena "Nova grupa". Zasebna lista pregleda je uklonjena (duplirala je imena grupovođa). Stilovi za redove lovaca (`#sk-clanovi .clan-red…`) važe i za `#gr-clanovi` (prije je lista u Mojoj grupi imala stupac riječ po riječ).
+
