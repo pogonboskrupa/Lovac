@@ -59,6 +59,7 @@ test('moje prisustvo: samoprijava se može povući, dodavanje od grupovođe ne',
   assert.deepEqual(myAttendance(z, 'a'), { stanje: 'prisutan', mozeOdjava: true });
   assert.deepEqual(myAttendance(z, 'b'), { stanje: 'prisutan', mozeOdjava: false });
   assert.equal(myAttendance(z, 'x', 'ne').stanje, 'ne');
+  assert.deepEqual(myAttendance(z, 'x', 'da'), { stanje: 'prisutan', mozeOdjava: true }); // odgovor važi prije servera
   assert.equal(myAttendance(z, 'x').stanje, 'nema');
 });
 test('statistika grupe: prosjek prisutnosti i lovovi po članu; planirani i tuđi se ne broje', () => {

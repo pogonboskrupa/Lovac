@@ -89,7 +89,9 @@ export function initGrupaEkran() {
       + (strip.ostalo ? `<span class="sk-lice-vise">+${strip.ostalo}</span>` : '');
 
     // lov i prisustvo
-    const att = attendance(members, uc, odazivi.lovId === lov?.id ? odazivi.rows : []);
+    // moj lokalni odgovor ulazi u brojke odmah (server ga još nije vratio)
+    const mine = lov && myAnswer(lov.id) ? [{ korisnik_id: me()?.id, odgovor: myAnswer(lov.id) }] : [];
+    const att = attendance(members, uc, [...(odazivi.lovId === lov?.id ? odazivi.rows.filter((r) => r.korisnik_id !== me()?.id) : []), ...mine]);
     const canCreate = huntTargets(s, ctx, me(), memberName).some((m) => m.grupaId === grupaId);
     $('gr-lov').innerHTML = groupHuntHtml({
       cur, grupaId, att, my: zapis ? myAttendance(zapis, me()?.id, myAnswer(lov.id)) : { stanje: 'nema', mozeOdjava: false },
@@ -156,6 +158,8 @@ export function initGrupaEkran() {
   document.addEventListener('uzivo:pozicije', (e) => { pozicije = e.detail?.rows || []; if (isOpen()) render(); });
   document.addEventListener('poruke:promjena', () => { if (isOpen()) load().then(render); });
   document.addEventListener('lovovi:promjena', () => { if (isOpen()) load().then(render); });
+  // odgovor Dolazim/Ne dolazim je poslan: raspored lova sa servera se osvježi da svi vide isto
+  document.addEventListener('lovovi:promjena', () => { if (isOpen() && online()) downloadHunts().then(load).then(render).catch(() => {}); });
   document.addEventListener('sekcije:promjena', () => { if (isOpen()) load().then(render); });
 
   const curZapis = () => { const sl = slot(); return sl ? currentGroupHunt(lovovi, sl.sekcija.id, sl.grupaId)?.zapis : null; };

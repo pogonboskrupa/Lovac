@@ -56,6 +56,8 @@ export function attendance(members, ucesnici = [], odazivi = []) {
 export function myAttendance(zapis, myId, myAnswer) {
   const u = zapis.ucesnici.find((x) => x.korisnik_id === myId);
   if (u) return { stanje: 'prisutan', mozeOdjava: Boolean(u.samoprijava) };
+  // moj odgovor "Dolazim" važi odmah, prije nego raspored lova stigne sa servera
+  if (myAnswer === 'da') return { stanje: 'prisutan', mozeOdjava: true };
   return { stanje: myAnswer === 'ne' ? 'ne' : 'nema', mozeOdjava: false };
 }
 
