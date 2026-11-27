@@ -230,7 +230,7 @@ export function initSekcije() {
 
   const render = () => {
     const admin = Boolean(me()?.is_admin);
-    $('btn-sekcija-nova').hidden = !creatableRevirIds(me(), data.grupovodje, data.reviri, data.lovocuvari).length;
+    $('btn-sekcija-nova').hidden = !creatableRevirIds(me(), data.grupovodje, data.reviri, data.lovocuvari, data).length;
     // grupovođe revira (ko smije praviti sekcije): admin sve, lovočuvar u svom reviru
     const lcRevirs = admin ? data.reviri.map((r) => r.id) : keeperRevirIds(me(), data.lovocuvari);
     $('grupovodje-blok').hidden = !lcRevirs.length;
@@ -574,10 +574,10 @@ export function initSekcije() {
 
   // ---- nova sekcija ----
   const openForm = () => {
-    const allowed = creatableRevirIds(me(), data.grupovodje, data.reviri, data.lovocuvari);
+    const allowed = creatableRevirIds(me(), data.grupovodje, data.reviri, data.lovocuvari, data);
     $('sekcija-revir').innerHTML = data.reviri.filter((r) => allowed.includes(r.id)).map((r) => opt(r.id, r.naziv)).join('');
     // admin i lovočuvar revira biraju lovovođu sekcije nove sekcije; grupovođa revira pravi sekciju za sebe
-    const picks = allowed.some((id) => editsRevir(me(), id, data.lovocuvari));
+    const picks = allowed.some((id) => editsRevir(me(), id, data.lovocuvari, data));
     $('sekcija-admin-polja').hidden = !picks;
     if (picks) {
       $('sekcija-grupovodja').innerHTML = '<option value="">— niko —</option>' + users().map((u) => opt(u.id, memberName(u.id))).join('');
@@ -585,7 +585,9 @@ export function initSekcije() {
     $('sekcija-lovci').innerHTML = users().filter((u) => u.id !== me()?.id).map((u) => `<label class="red-check"><input type="checkbox" value="${escapeHtml(u.id)}"> ${escapeHtml(memberName(u.id))}</label>`).join('')
       || '<p class="sitno">Spisak lovaca se preuzima uz internet.</p>';
     // lovočuvar (koji nije admin) ne dodaje članove — to radi lovovođa sekcije (RLS sekcija_clanovi)
-    const keeperOnly = !me()?.is_admin && !data.grupovodje.some((g) => g.korisnik_id === me()?.id);
+    const vodstvo = (data.revirVodje || []).some((v) => v.korisnik_id === me()?.id)
+      || (data.drustvoUloge || []).some((u) => u.korisnik_id === me()?.id && ['predsjednik', 'lovovodja_drustva'].includes(u.uloga));
+    const keeperOnly = !me()?.is_admin && !vodstvo && !data.grupovodje.some((g) => g.korisnik_id === me()?.id);
     $('sekcija-lovci-naslov').hidden = keeperOnly;
     $('sekcija-lovci').hidden = keeperOnly;
     $('sekcija-forma-status').textContent = '';
@@ -601,7 +603,7 @@ export function initSekcije() {
     const naziv = f.naziv.value.trim();
     const err = validateSekcija({ naziv, revir_id: f.revir.value });
     if (err) { $('sekcija-forma-status').textContent = err; return; }
-    const picks = editsRevir(me(), f.revir.value, data.lovocuvari);
+    const picks = editsRevir(me(), f.revir.value, data.lovocuvari, data);
     const ids = $('sekcija-lovci').hidden ? [] : [...$('sekcija-lovci').querySelectorAll('input:checked')].map((i) => i.value);
     try {
       const row = (await qSek(getClient().from('sekcije').insert({

@@ -867,3 +867,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Promjena grupovođe i u tabu sekcije (v1.9.3, bez migracije)**
 - Kartica Grupe u tabu sekcije (`sekcija-render.js groupsHtml`, samo upravljači) ima uz svaku grupu izbor člana te grupe ili lovca bez grupe i dugme "Promijeni grupovođu" (`grupa-gv` u `sekcija-ui.js groupAction`: `dodijeli_grupu` novog u grupu, `update grupe.grupovodja_id`, raniji vođa ostaje član). Ista radnja je i u Struktura LD Grmeč.
+
+**Vodstvo pravi sekcije (migracija 052, v1.9.4)**
+- Odluka vlasnika ("admin" = vodstvo): sekcije prave administrator, predsjednik i lovovođa udruženja (svaki revir), lovočuvar i lovovođa revira (svoj revir) i ovlašteni (`grupovodje`) za svoj revir. Server `moze_praviti_sekciju(revir)` u politici `unos` na `sekcije` (zavisi od 045); klijent `sekcije.js creatableRevirIds/editsRevir(..., hier)` (hier = `data` sa `drustvoUloge` i `revirVodje`), vodstvo bira lovovođu sekcije u formi kao lovočuvar. Revir u registraciji (`javne_sekcije`, anon) se nudi tek kad ima bar jednu aktivnu sekciju — zato "Jezerski" nije bio na izboru dok nema sekcije.

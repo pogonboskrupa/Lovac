@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  myStatus, canManage, creatableRevirIds, groupByRevir, pendingRequests, candidatesToAdd, validateSekcija, pristupText, mySectionsAsLeader,
+  myStatus, canManage, creatableRevirIds, editsRevir, groupByRevir, pendingRequests, candidatesToAdd, validateSekcija, pristupText, mySectionsAsLeader,
 } from '../../static/js/sekcije.js';
 
 const ADMIN = { id: 'a', is_admin: true, odobren: true };
@@ -210,4 +210,15 @@ test('pregled sekcija: uputa po ulozi, broj po filteru, starost zahtjeva, traka 
   assert.deepEqual(f.lica.map((x) => x.id), ['g', 'a']);
   assert.equal(f.ostalo, 1);
   assert.equal(f.ukupno, 3);
+});
+
+test('vodstvo pravi sekcije: predsjednik i lovovođa udruženja u svakom reviru, lovovođa revira u svom; lovac nigdje', () => {
+  const hier = { drustvoUloge: [{ korisnik_id: 'p', uloga: 'predsjednik' }, { korisnik_id: 'ld', uloga: 'lovovodja_drustva' }, { korisnik_id: 'lc', uloga: 'lovocuvar' }], revirVodje: [{ korisnik_id: 'rv', revir_id: 'r2' }] };
+  assert.deepEqual(creatableRevirIds({ id: 'p' }, [], REVIRI, [], hier), ['r1', 'r2', 'r3']);
+  assert.deepEqual(creatableRevirIds({ id: 'ld' }, [], REVIRI, [], hier), ['r1', 'r2', 'r3']);
+  assert.deepEqual(creatableRevirIds({ id: 'rv' }, [], REVIRI, [], hier), ['r2']);
+  assert.deepEqual(creatableRevirIds({ id: 'lovac' }, [], REVIRI, [], hier), []);
+  assert.equal(editsRevir({ id: 'rv' }, 'r2', [], hier), true);
+  assert.equal(editsRevir({ id: 'rv' }, 'r1', [], hier), false);
+  assert.equal(editsRevir({ id: 'p' }, 'r3', [], hier), true);
 });
