@@ -23,7 +23,8 @@ export function ldTree(ctx = {}, nameOf = () => '') {
   const sa = (uloga) => uloge.filter((u) => u.uloga === uloga).map((u) => ime(u.korisnik_id)).sort(byName);
   const ids = (uloga) => uloge.filter((u) => u.uloga === uloga).map((u) => u.korisnik_id).sort((a, b) => byName(nameOf(a), nameOf(b)));
   const clanovi = ctx.clanovi || [];
-  const odobreni = (sid) => clanovi.filter((c) => c.sekcija_id === sid && c.status === 'odobren');
+  const skriveni = new Set((ctx.izvanPregleda || []).map((x) => x.korisnik_id)); // sklonjeni iz pregleda (migracija 049)
+  const odobreni = (sid) => clanovi.filter((c) => c.sekcija_id === sid && c.status === 'odobren' && !skriveni.has(c.korisnik_id));
   const reviri = (ctx.reviri || []).filter((r) => r.aktivno !== false).sort((a, b) => byName(a.naziv, b.naziv));
   const sekcije = (ctx.sekcije || []).filter((s) => s.aktivno !== false);
   let brojGrupa = 0;

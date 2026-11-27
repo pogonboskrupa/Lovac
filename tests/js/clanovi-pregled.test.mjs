@@ -71,3 +71,14 @@ test('CSV i tekst pločice', () => {
   assert.ok(rows.some((r) => r.clan === 'Ado Prvi' && r.uloga === 'Grupovođa'));
   assert.match(menuText(ov), /4 članova · 1 grupa/);
 });
+
+test('korisnik koga je admin sklonio iz pregleda (izvanPregleda) se ne prikazuje i ne broji', () => {
+  const ctx = {
+    reviri: [{ id: 'r1', naziv: 'R' }], sekcije: [{ id: 's1', revir_id: 'r1', naziv: 'S' }], grupe: [],
+    clanovi: [{ sekcija_id: 's1', korisnik_id: 'a', status: 'odobren' }, { sekcija_id: 's1', korisnik_id: 'b', status: 'odobren' }],
+    izvanPregleda: [{ korisnik_id: 'b' }],
+  };
+  const ov = buildOverview(ctx, { sve: true, reviri: new Set() }, (id) => id);
+  assert.equal(ov.totals.clanova, 1);
+  assert.deepEqual(ov.reviri[0].sekcije[0].bezGrupe.map((m) => m.id), ['a']);
+});

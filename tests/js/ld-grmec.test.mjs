@@ -144,3 +144,10 @@ test('grupovođa čiji red u članstvu nema grupu ne nudi se za "Dodaj u grupu" 
   assert.deepEqual(s1.bezGrupe.map((m) => m.id), ['x']);
   assert.ok(s1.grupe[0].clanovi.some((m) => m.id === 'g1' && m.vodja));
 });
+
+test('LD Grmeč: korisnik sklonjen iz pregleda nije među lovcima ni u brojevima', () => {
+  const c = { ...ctx, clanovi: [{ sekcija_id: 's1', korisnik_id: 'x', status: 'odobren', grupa_id: null }, { sekcija_id: 's1', korisnik_id: 'y', status: 'odobren', grupa_id: null }], izvanPregleda: [{ korisnik_id: 'y' }] };
+  const sek = ldTree(c, (id) => ({ ...names, x: 'Prvi', y: 'Sakriven' }[id] || '')).korijen.djeca.find((d) => d.nivo === 'lovovodja').djeca.find((r) => r.meta.revirId === 'r1').djeca.find((s) => s.meta.sekcijaId === 's1');
+  assert.deepEqual(sek.djeca.find((d) => d.nivo === 'bez-grupe').djeca.map((d) => d.ime), ['Prvi']);
+  assert.equal(sek.napomena, '1 članova');
+});

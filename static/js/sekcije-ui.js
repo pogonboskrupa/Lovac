@@ -54,6 +54,8 @@ export async function downloadSekcije({ grupe = false } = {}) {
     drustvoUloge,
     revirVodje: await optional(sb.from('revir_vodje').select('*')),
     grupe: grupe ? await optional(sb.from('grupe').select('*')) : (await cachedSekcije()).grupe,
+    // korisnici koje admin skriva iz pregleda (migracija 049); tabele koje nema = prazno
+    izvanPregleda: grupe ? await optional(sb.from('izvan_pregleda').select('korisnik_id')) : (await cachedSekcije()).izvanPregleda,
     preuzeto: Date.now(),
   };
   await idbPut('spiskovi', { id: CACHE_ID, rows: data });
@@ -65,7 +67,7 @@ export async function downloadSekcije({ grupe = false } = {}) {
 
 export async function cachedSekcije() {
   const c = await idbGet('spiskovi', CACHE_ID);
-  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [], grupe: [], ...(c?.rows || {}) };
+  return { reviri: [], sekcije: [], clanovi: [], grupovodje: [], lovocuvari: [], drustvoUloge: [], revirVodje: [], grupe: [], izvanPregleda: [], ...(c?.rows || {}) };
 }
 
 // Ponovno crtanje (podaci sa servera stignu dok lovac bira) ne smije vratiti izbor na prvu stavku.

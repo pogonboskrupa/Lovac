@@ -138,6 +138,8 @@ function userRow(u, meId, data, users, now = Date.now()) {
   const reqs = approvableRequests(u.id, data);
   const odobri = ja ? '' : `<button type="button" class="dugme${u.odobren ? '' : ' glavno'}" data-akcija="odobri">${u.odobren ? 'Opozovi pristup' : approveLabel(reqs)}</button>`;
   const obrisi = ja ? '' : '<button type="button" class="dugme" data-akcija="obrisi" data-dvaput="Dodirni ponovo za brisanje">Obriši</button>';
+  const skriven = (data.izvanPregleda || []).some((x) => x.korisnik_id === u.id);
+  const pregled = `<button type="button" class="dugme" data-akcija="pregled">${skriven ? 'Vrati u preglede' : 'Sakrij iz pregleda'}</button>`;
   const sek = sectionLines(u.id, data);
   const info = roleInfo(u.id, data);
   const lines = [];
@@ -170,7 +172,7 @@ function userRow(u, meId, data, users, now = Date.now()) {
           <input name="novi-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="Novi PIN" aria-label="Novi PIN za ${escapeHtml(u.ime)}">
           <button type="button" class="dugme" data-akcija="pin">Postavi PIN</button>
         </div>
-        <div class="red-dugmadi">${obrisi}</div>
+        <div class="red-dugmadi">${pregled}${obrisi}</div>
       </details>
     </li>`;
 }
@@ -282,6 +284,18 @@ export function initAdmin() {
       case 'admin':
         await run(() => callRpc('admin_postavi_ulogu', { p_korisnik: u.id, p_admin: !u.is_admin }), 'Uloga promijenjena');
         break;
+      case 'pregled': {
+        // korisnik ostaje u aplikaciji, samo se ne prikazuje u Članovi i grupe / Struktura LD (migracija 049)
+        const skriven = (sekData.izvanPregleda || []).some((x) => x.korisnik_id === u.id);
+        await run(async () => {
+          const { error } = skriven
+            ? await sb().from('izvan_pregleda').delete().eq('korisnik_id', u.id)
+            : await sb().from('izvan_pregleda').insert({ korisnik_id: u.id, postavio: cachedProfile()?.id });
+          if (error) throw new Error(error.code === 'PGRST205' ? 'Server još nema migraciju 049 (izvan_pregleda)' : error.message);
+          sekData = { ...sekData, izvanPregleda: skriven ? sekData.izvanPregleda.filter((x) => x.korisnik_id !== u.id) : [...(sekData.izvanPregleda || []), { korisnik_id: u.id }] };
+        }, skriven ? 'Vraćen u preglede' : 'Sklonjen iz pregleda');
+        break;
+      }
       case 'pin': {
         const pin = row.querySelector('input[name="novi-pin"]').value;
         const err = validatePin(pin);

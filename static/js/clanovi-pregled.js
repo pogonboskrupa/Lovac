@@ -30,11 +30,12 @@ const byName = (a, b) => String(a || '').localeCompare(String(b || ''), 'bs');
 // Stablo za opseg. nameOf(id) daje ime lovca. Članovi koji čekaju odobrenje se samo broje (imena ne čitamo).
 export function buildOverview(ctx, scope, nameOf = (id) => id) {
   if (!scope) return { reviri: [], totals: { reviri: 0, sekcija: 0, grupa: 0, clanova: 0, bezGrupe: 0, cekaju: 0 } };
+  const skriveni = new Set((ctx.izvanPregleda || []).map((x) => x.korisnik_id)); // admin ih je sklonio iz pregleda (migracija 049)
   const reviri = (ctx.reviri || []).filter((r) => r.aktivno !== false && (scope.sve || scope.reviri.has(r.id))).sort((a, b) => byName(a.naziv, b.naziv));
   const out = reviri.map((r) => {
     const sekcije = (ctx.sekcije || []).filter((s) => s.revir_id === r.id && s.aktivno !== false).sort((a, b) => byName(a.naziv, b.naziv)).map((s) => {
       const rows = (ctx.clanovi || []).filter((c) => c.sekcija_id === s.id);
-      const odobreni = rows.filter((c) => c.status === 'odobren');
+      const odobreni = rows.filter((c) => c.status === 'odobren' && !skriveni.has(c.korisnik_id));
       const gs = (ctx.grupe || []).filter((g) => g.sekcija_id === s.id);
       const known = new Set(gs.map((g) => g.id));
       const vode = new Set(gs.map((g) => g.grupovodja_id));
