@@ -37,14 +37,17 @@ export function ldTree(ctx = {}, nameOf = () => '') {
       const grupe = (ctx.grupe || []).filter((g) => g.sekcija_id === s.id)
         .map((g) => {
           const clanoviGrupe = odob.filter((c) => c.grupa_id === g.id);
+          // grupovođa je u svojoj grupi i kad mu red u članstvu nema grupu (grupa napravljena bez dodjele)
+          const brojLovaca = clanoviGrupe.length + (clanoviGrupe.some((c) => c.korisnik_id === g.grupovodja_id) ? 0 : 1);
           // grupovođa je čvor same grupe; ispod njega su ostali lovci grupe (samo odobreni članovi)
           const lovci = clanoviGrupe.filter((c) => c.korisnik_id !== g.grupovodja_id).map((c) => lovac(c.korisnik_id)).sort((a, b) => byName(a.ime, b.ime));
-          return { nivo: 'grupa', kljuc: `g:${g.id}`, meta: { uloga: 'grupovodja_grupe', korisnikId: g.grupovodja_id, grupaId: g.id, sekcijaId: s.id }, grupaTekst: `grupovođa ${ime(g.grupovodja_id)}`, uloga: 'Grupovođa', ime: ime(g.grupovodja_id), napomena: `${clanoviGrupe.length} lovaca`, djeca: lovci };
+          return { nivo: 'grupa', kljuc: `g:${g.id}`, meta: { uloga: 'grupovodja_grupe', korisnikId: g.grupovodja_id, grupaId: g.id, sekcijaId: s.id }, grupaTekst: `grupovođa ${ime(g.grupovodja_id)}`, uloga: 'Grupovođa', ime: ime(g.grupovodja_id), napomena: `${brojLovaca} lovaca`, djeca: lovci };
         })
         .sort((a, b) => byName(a.ime, b.ime));
       // članovi sekcije koji još nisu ni u jednoj grupi
       const poznate = new Set(grupe.map((g) => g.meta.grupaId));
-      const bez = odob.filter((c) => !c.grupa_id || !poznate.has(c.grupa_id)).map((c) => lovac(c.korisnik_id)).sort((a, b) => byName(a.ime, b.ime));
+      const vode = new Set((ctx.grupe || []).filter((g) => g.sekcija_id === s.id).map((g) => g.grupovodja_id));
+      const bez = odob.filter((c) => (!c.grupa_id || !poznate.has(c.grupa_id)) && !vode.has(c.korisnik_id)).map((c) => lovac(c.korisnik_id)).sort((a, b) => byName(a.ime, b.ime));
       if (bez.length) grupe.push({ nivo: 'bez-grupe', kljuc: `b:${s.id}`, uloga: 'Bez grupe', ime: 'Članovi bez grupe', napomena: `${bez.length} lovaca`, djeca: bez });
       brojGrupa += grupe.filter((g) => g.nivo === 'grupa').length;
       return { nivo: 'sekcija', kljuc: `s:${s.id}`, meta: { uloga: 'lovovodja_sekcije', korisnikId: s.grupovodja_id || null, sekcijaId: s.id, revirId: r.id, dodajGrupu: true }, uloga: s.naziv, ulogaOznaka: 'Lovovođa sekcije', ime: s.grupovodja_id ? ime(s.grupovodja_id) : '', napomena: `${odobreni(s.id).length} članova`, djeca: grupe };
@@ -96,8 +99,10 @@ export function canAddToGroup(me, ctx = {}, sekcijaId) {
 
 // Članovi sekcije koji još nisu ni u jednoj grupi (mogu se dodati u grupu).
 export function groupAddable(sekcijaId, ctx = {}, nameOf = () => '') {
-  const ids = new Set((ctx.grupe || []).filter((g) => g.sekcija_id === sekcijaId).map((g) => g.id));
-  return (ctx.clanovi || []).filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id))
+  const gs = (ctx.grupe || []).filter((g) => g.sekcija_id === sekcijaId);
+  const ids = new Set(gs.map((g) => g.id));
+  const vode = new Set(gs.map((g) => g.grupovodja_id)); // grupovođa već vodi grupu: ne nudi se za dodavanje u grupu
+  return (ctx.clanovi || []).filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id) && !vode.has(c.korisnik_id))
     .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) })).filter((x) => x.ime)
     .sort((a, b) => String(a.ime).localeCompare(String(b.ime), 'bs'));
 }

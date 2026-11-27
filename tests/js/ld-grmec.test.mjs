@@ -119,3 +119,21 @@ test('LD Grmeč: lovci su prikazani ispod grupe (bez grupovođe), članovi bez g
   const html = ldHtml(ldTree(c2, nm));
   assert.match(html, /data-nivo="lovac"/); assert.match(html, /Obični Lovac/); assert.match(html, /Članovi bez grupe/);
 });
+
+
+import { ungroupedMembers, groupsOfSection } from '../../static/js/grupe.js';
+import { buildOverview, overviewScope } from '../../static/js/clanovi-pregled.js';
+
+test('grupovođa čiji red u članstvu nema grupu ne nudi se za "Dodaj u grupu" niti je "bez grupe", a broji se u svojoj grupi', () => {
+  const c = { ...ctx, clanovi: [{ sekcija_id: 's1', korisnik_id: 'g1', status: 'odobren', grupa_id: null }, { sekcija_id: 's1', korisnik_id: 'x', status: 'odobren', grupa_id: null }] };
+  assert.deepEqual(groupAddable('s1', c, nameOf).map((m) => m.id), ['x']);
+  assert.deepEqual(ungroupedMembers('s1', c.grupe, c.clanovi, nameOf).map((m) => m.id), ['x']);
+  assert.ok(groupsOfSection('s1', c.grupe, c.clanovi, nameOf)[0].clanovi.some((m) => m.id === 'g1'));
+  const sek = ldTree(c, nameOf).korijen.djeca.find((d) => d.nivo === 'lovovodja').djeca.find((r) => r.meta.revirId === 'r1').djeca.find((s) => s.meta.sekcijaId === 's1');
+  assert.deepEqual(sek.djeca.find((d) => d.nivo === 'bez-grupe').djeca.map((d) => d.ime), ['Obični Lovac']);
+  assert.equal(sek.djeca.find((d) => d.nivo === 'grupa').napomena, '1 lovaca');
+  const ov = buildOverview(c, overviewScope({ id: 'p' }, c), nameOf);
+  const s1 = ov.reviri.find((r) => r.id === 'r1').sekcije.find((s) => s.id === 's1');
+  assert.deepEqual(s1.bezGrupe.map((m) => m.id), ['x']);
+  assert.ok(s1.grupe[0].clanovi.some((m) => m.id === 'g1' && m.vodja));
+});

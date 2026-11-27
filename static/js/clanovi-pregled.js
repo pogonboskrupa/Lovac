@@ -37,12 +37,14 @@ export function buildOverview(ctx, scope, nameOf = (id) => id) {
       const odobreni = rows.filter((c) => c.status === 'odobren');
       const gs = (ctx.grupe || []).filter((g) => g.sekcija_id === s.id);
       const known = new Set(gs.map((g) => g.id));
-      const grupe = gs.map((g) => ({
-        id: g.id, grupovodja_id: g.grupovodja_id, grupovodja: nameOf(g.grupovodja_id),
-        clanovi: odobreni.filter((c) => c.grupa_id === g.id).map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id), vodja: c.korisnik_id === g.grupovodja_id }))
-          .sort((a, b) => Number(b.vodja) - Number(a.vodja) || byName(a.ime, b.ime)),
-      })).sort((a, b) => byName(a.grupovodja, b.grupovodja));
-      const bezGrupe = odobreni.filter((c) => !c.grupa_id || !known.has(c.grupa_id)).map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) })).sort((a, b) => byName(a.ime, b.ime));
+      const vode = new Set(gs.map((g) => g.grupovodja_id));
+      const grupe = gs.map((g) => {
+        const clanovi = odobreni.filter((c) => c.grupa_id === g.id).map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id), vodja: c.korisnik_id === g.grupovodja_id }));
+        // grupovođa je u svojoj grupi i kad mu red u članstvu nema grupu
+        if (g.grupovodja_id && !clanovi.some((m) => m.vodja)) clanovi.push({ id: g.grupovodja_id, ime: nameOf(g.grupovodja_id), vodja: true });
+        return { id: g.id, grupovodja_id: g.grupovodja_id, grupovodja: nameOf(g.grupovodja_id), clanovi: clanovi.sort((a, b) => Number(b.vodja) - Number(a.vodja) || byName(a.ime, b.ime)) };
+      }).sort((a, b) => byName(a.grupovodja, b.grupovodja));
+      const bezGrupe = odobreni.filter((c) => (!c.grupa_id || !known.has(c.grupa_id)) && !vode.has(c.korisnik_id)).map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) })).sort((a, b) => byName(a.ime, b.ime));
       return {
         id: s.id, naziv: s.naziv, vodja: s.grupovodja_id ? { id: s.grupovodja_id, ime: nameOf(s.grupovodja_id) } : null,
         clanova: odobreni.length, grupe, bezGrupe, cekaju: rows.filter((c) => c.status === 'ceka').length,

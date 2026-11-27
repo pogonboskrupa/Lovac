@@ -829,3 +829,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Struktura LD Grmeč: lovci ispod grupe (v1.8.2, bez migracije)**
 - Uzrok "dodao sam članove u grupu, ali ih nema u strukturi": čvor grupe je pokazivao samo grupovođu i broj lovaca ("N lovaca"), a članovi nisu imali čvorove. Sada `ld-grmec.js ldTree` daje grupi djecu `nivo: 'lovac'` (odobreni članovi grupe, bez grupovođe koji je čvor same grupe), a sekciji čvor `nivo: 'bez-grupe'` ("Članovi bez grupe") sa lovcima kojih nema ni u jednoj grupi. Članovi koji čekaju odobrenje se ne prikazuju. Lovci i čvor "bez grupe" se NE računaju kao mjesta za popunjavanje (`sazetak.mjesta`) i nemaju uređivanje; grupa i "bez grupe" imaju `kljuc` pa se sklapaju.
 
+**Grupovođa bez grupe u članstvu (v1.8.3, bez migracije)**
+- Uzrok: grupovođa čiji red u `sekcija_clanovi` nema `grupa_id` (grupa napravljena bez uspjele dodjele) se nudio u "Dodaj u grupu" i vodio kao "bez grupe", iako već vodi grupu. Sada se grupovođa grupe nikad ne nudi kao "bez grupe" (`ld-grmec.js groupAddable` i čvor "bez grupe", `grupe.js ungroupedMembers`, `clanovi-pregled.js buildOverview`) i uvijek se broji u svojoj grupi (`groupsOfSection`, pregled, čvor grupe). Pravilo: lista "ko nema grupu" mora isključiti one koji grupu vode.
+

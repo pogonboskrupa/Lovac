@@ -13,6 +13,8 @@ export function groupsOfSection(sekcijaId, grupe = [], clanovi = [], nameOf = ()
   const odobreni = clanovi.filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren');
   return grupe.filter((g) => g.sekcija_id === sekcijaId).map((g) => {
     const clanoviGrupe = odobreni.filter((c) => c.grupa_id === g.id).map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id) }));
+    // grupovođa je član svoje grupe i kad mu red u članstvu nema grupu
+    if (g.grupovodja_id && !clanoviGrupe.some((c) => c.id === g.grupovodja_id)) clanoviGrupe.push({ id: g.grupovodja_id, ime: nameOf(g.grupovodja_id) });
     clanoviGrupe.sort((a, b) => Number(b.id === g.grupovodja_id) - Number(a.id === g.grupovodja_id) || a.ime.localeCompare(b.ime, 'bs'));
     return { id: g.id, grupovodja_id: g.grupovodja_id, grupovodja: nameOf(g.grupovodja_id), dozvola: Boolean(g.dozvola_visih), clanovi: clanoviGrupe };
   }).sort((a, b) => a.grupovodja.localeCompare(b.grupovodja, 'bs'));
@@ -20,8 +22,10 @@ export function groupsOfSection(sekcijaId, grupe = [], clanovi = [], nameOf = ()
 
 // Odobreni članovi sekcije koji nisu ni u jednoj (postojećoj) grupi.
 export function ungroupedMembers(sekcijaId, grupe = [], clanovi = [], nameOf = () => '') {
-  const ids = new Set(grupe.filter((g) => g.sekcija_id === sekcijaId).map((g) => g.id));
-  return clanovi.filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id))
+  const gs = grupe.filter((g) => g.sekcija_id === sekcijaId);
+  const ids = new Set(gs.map((g) => g.id));
+  const vode = new Set(gs.map((g) => g.grupovodja_id));
+  return clanovi.filter((c) => c.sekcija_id === sekcijaId && c.status === 'odobren' && !ids.has(c.grupa_id) && !vode.has(c.korisnik_id))
     .map((c) => ({ id: c.korisnik_id, ime: nameOf(c.korisnik_id), zeljena: c.zeljena_grupa_id || null }))
     .sort((a, b) => a.ime.localeCompare(b.ime, 'bs'));
 }
