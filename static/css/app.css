@@ -1949,3 +1949,22 @@ svg[hidden] { display: none; }
 .sk-grupa-dodjela select { flex: 1; min-width: 0; }
 .sk-grupa-nova { display: grid; gap: 8px; padding: 12px; border-radius: 16px; border: 1.5px dashed var(--okvir); margin-top: 12px; }
 .sk-grupa-ukloni { width: 100%; }
+
+/* Članovi i grupe (v1.8.1): stablo revir → sekcija → grupa → članovi */
+.cp-stablo { display: grid; gap: 12px; padding-bottom: 24px; }
+.cp-revir, .cp-sekcija { border: 1.5px solid var(--okvir); border-radius: 16px; background: var(--povrsina); }
+.cp-revir > summary, .cp-sekcija > summary { cursor: pointer; padding: 12px 14px; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; list-style: none; }
+.cp-revir > summary { background: var(--dugme); border-radius: 14px; }
+.cp-revir[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 1.5px solid var(--okvir); }
+.cp-sekcija { margin: 10px; background: var(--dugme); }
+.cp-sekcija[open] > summary { border-bottom: 1px solid var(--okvir); }
+.cp-ceka { margin-left: auto; padding: 2px 10px; border-radius: 999px; background: var(--upozorenje); color: var(--upozorenje-tekst); font-size: 13px; font-weight: 600; }
+.cp-vodja { margin: 8px 14px 0; }
+.cp-grupa { margin: 10px 14px; padding: 10px; border-radius: 12px; border: 1px solid var(--okvir); background: var(--povrsina); }
+.cp-grupa h4 { margin: 0 0 6px; }
+.cp-bez { border-style: dashed; }
+.cp-clanovi { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.cp-clan { display: flex; align-items: center; gap: 10px; min-height: 44px; border-top: 1px solid var(--dugme); }
+.cp-clan:first-child { border-top: 0; }
+.cp-clan .sk-avatar { width: 34px; height: 34px; flex: none; font-size: 13px; }
+.cp-ime { flex: 1; min-width: 0; }

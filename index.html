@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.8.0';
+  const APP_VER = 'v1.8.1';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -186,6 +186,7 @@
       <button type="button" id="btn-lovovi" class="meni-plocica"><svg class="ic"><use href="#ic-hunt"/></svg><span class="m-tekst"><span class="m-naslov">Zajednički lov</span><span class="m-opis" id="btn-lovovi-opis">Raspored, stanovi, sektori</span></span></button>
       <button type="button" id="btn-arhiva" class="meni-plocica"><svg class="ic"><use href="#ic-archive"/></svg><span class="m-tekst"><span class="m-naslov">Arhiva lova</span><span class="m-opis" id="btn-arhiva-opis">Slike, učesnici, ulov, trag</span></span></button>
       <button type="button" id="btn-sekcije" class="meni-plocica"><svg class="ic"><use href="#ic-group"/></svg><span class="m-tekst"><span class="m-naslov">Sekcije i pristup</span><span class="m-opis" id="btn-sekcije-opis">Članstvo i odobrenja</span></span></button>
+      <button type="button" id="btn-clanovi" class="meni-plocica" hidden><svg class="ic"><use href="#ic-group"/></svg><span class="m-tekst"><span class="m-naslov">Članovi i grupe</span><span class="m-opis" id="btn-clanovi-opis">Reviri, sekcije, grupe i članovi</span></span></button>
       <button type="button" id="btn-danas" class="meni-plocica"><svg class="ic"><use href="#ic-sun"/></svg><span class="m-tekst"><span class="m-naslov">Svjetlo, vrijeme, vjetar</span><span class="m-opis" id="btn-danas-opis">Lovno vrijeme i lovostaj</span></span></button>
       <button type="button" id="btn-divljac" class="meni-plocica"><svg class="ic"><use href="#ic-deer"/></svg><span class="m-tekst"><span class="m-naslov">Divljač</span><span class="m-opis" id="btn-divljac-opis">7 vrsta: biologija i lov</span></span></button>
       <button type="button" id="btn-pas" class="meni-plocica"><svg class="ic"><use href="#ic-paw"/></svg><span class="m-tekst"><span class="m-naslov">Moj pas</span><span class="m-opis" id="btn-pas-opis">Pozicija sa ogrlice</span></span></button>
@@ -1752,6 +1753,30 @@
       <div id="gr-stat"></div>
     </section>
   </div>
+</section>
+<section id="clanovi-pregled" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="cp-naslov" hidden>
+  <header class="postavke-glava"><h2 id="cp-naslov">Članovi i grupe</h2>
+    <button id="btn-cp-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+  <div class="sk-hero tr-hero ev-hero">
+    <div class="sk-hero-glava"><span id="cp-uloga" class="tr-chip">Uloga</span><b id="cp-opseg"></b></div>
+    <p id="cp-opis" class="sitno"></p>
+    <div class="sk-statovi sk-statovi-hero">
+      <div data-stat="clanova"><b id="cp-stat-clanova">0</b><span>članova</span></div>
+      <div data-stat="grupa"><b id="cp-stat-grupa">0</b><span>grupa</span></div>
+      <div data-stat="bez"><b id="cp-stat-bez">0</b><span>bez grupe</span></div>
+      <div data-stat="cekaju"><b id="cp-stat-cekaju">0</b><span>čekaju</span></div>
+    </div>
+  </div>
+  <div class="red-dugmadi">
+    <input id="cp-trazi" type="search" placeholder="Traži lovca, grupovođu ili sekciju" aria-label="Pretraga članova" autocomplete="off">
+  </div>
+  <div id="cp-filter" class="segment p-tabovi" role="group" aria-label="Prikaz članova"></div>
+  <div class="red-dugmadi">
+    <button type="button" id="btn-cp-sve" class="dugme">Rasklopi sve</button>
+    <button type="button" id="btn-cp-csv" class="dugme">Izvezi (Excel)</button>
+  </div>
+  <p id="cp-status" class="sitno" role="status"></p>
+  <div id="cp-stablo" class="cp-stablo"></div>
 </section>
 
 <section id="pas-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="pas-naslov" hidden>

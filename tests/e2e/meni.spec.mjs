@@ -33,7 +33,7 @@ test('meni: grupe, pločice sa kratkom informacijom, dovoljno velike mete, bez v
   await expect(page.locator('#btn-objekti-opis')).toContainText('2 ukupno');
   await expect(page.locator('#btn-danas-opis')).toContainText(/^Svjetlo do \d\d:\d\d/);
   await expect(page.locator('#btn-lovovi-opis')).toHaveText('Raspored, stanovi, sektori');
-  const tiles = menu.locator('.meni-plocica');
+  const tiles = menu.locator('.meni-plocica:visible');
   await expect(tiles).toHaveCount(16); // + Prijave lovočuvaru (v1.1.1), Slike lovcima (v1.1.6)
   for (const box of await tiles.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height, right: r.right, left: r.left }; }))) {
     expect(box.h).toBeGreaterThanOrEqual(44);

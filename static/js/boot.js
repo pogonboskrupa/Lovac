@@ -52,6 +52,7 @@ import { initOdaziv } from './odaziv-ui.js';
 import { initGrupaIzbor } from './grupa-izbor-ui.js';
 import { initGrupaEkran } from './grupa-ui.js';
 import { initGrupaTraka } from './grupa-traka-ui.js';
+import { initClanoviPregled } from './clanovi-pregled-ui.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
 import { initLdGrmec } from './ld-grmec-ui.js';
 import { initMeni } from './meni-ui.js';
@@ -131,6 +132,7 @@ function enter(screen) {
       ['sekcija-ekran', () => initSekcijaEkran(globalThis.L, map)],
       ['grupa-ekran', () => initGrupaEkran()],
       ['grupa-traka', () => initGrupaTraka()],
+      ['clanovi-pregled', () => initClanoviPregled()],
       ['tok', () => initTok()],
       ['stan', () => initStan()],
       ['meni', () => initMeni()],

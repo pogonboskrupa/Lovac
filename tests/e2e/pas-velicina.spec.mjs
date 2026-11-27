@@ -29,7 +29,7 @@ test('veličina teksta: veliko i najveće povećavaju sadržaj, meni ide u jednu
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-velicina', 'najvece');
   await page.locator('#btn-spiskovi').click();
-  const boxes = await page.locator('#meni-spiskovi .meni-plocica').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right }; }));
+  const boxes = await page.locator('#meni-spiskovi .meni-plocica:visible').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right }; }));
   expect(boxes.length).toBeGreaterThan(8);
   expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBe(1); // sve pločice poravnate u jednoj koloni
   for (const b of boxes) expect(b.right).toBeLessThanOrEqual(360);
