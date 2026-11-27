@@ -1995,3 +1995,19 @@ svg[hidden] { display: none; }
 /* Tab Lov (vodstvo): lovovi u toku po revirima */
 #lov-nadzor .ln-revir h3 { margin: 12px 0 6px; }
 #lov-nadzor .ln-lov { display: flex; flex-direction: column; gap: 6px; }
+
+/* Crvene radnje: SVE što zatvara (×, "Zatvori") ili briše/uklanja (Obriši, Ukloni, Skini, Izvadi) je crveno u obje teme.
+   Bijeli tekst na #c62828 ima kontrast ≥ 5,5:1. !important jer ekrani imaju vlastita pravila sa id selektorima. */
+:root { --crveno: #c62828; --crveno-tamno: #8e1b1b; }
+button:is(
+  [id*="-zatvori"], .ikona-dugme[aria-label^="Zatvori"],
+  [data-akcija="obrisi"], [data-akcija="tr-obrisi"], [data-akcija="lov-obrisi"], [data-akcija="grupa-ukloni"], [data-akcija="grupa-izbaci"],
+  [data-akcija="skini"], [data-akcija="gg-skini"], [data-akcija="lvr-skini"], [data-akcija^="ukloni"],
+  #btn-ad-obrisi, #btn-kes-obrisi, #btn-od-obrisi, #btn-pas-obrisi, #btn-mjesto-skini, #btn-odbijeno-ukloni, #btn-pf-avatar-ukloni, #btn-pf-pas-ukloni, #btn-teren-ukloni
+):not(#btn-slika-velika-zatvori) {
+  background: var(--crveno) !important;
+  border-color: var(--crveno-tamno) !important;
+  color: #ffffff !important;
+}
+button:is([id*="-zatvori"], [data-akcija="obrisi"], [data-akcija^="ukloni"], [data-akcija="skini"]):not(#btn-slika-velika-zatvori) .ic { color: #ffffff !important; }
+button:is([id*="-zatvori"], [data-akcija="obrisi"], [data-akcija^="ukloni"], [data-akcija="skini"]):not(#btn-slika-velika-zatvori):active { background: var(--crveno-tamno) !important; }
