@@ -848,3 +848,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Čipovi uloga (v1.8.8, bez migracije)**
 - `profil.js profileRoles`: tabela `grupovodje` (ko smije praviti sekcije u reviru) je DOZVOLA, ne uloga, pa se više ne prikazuje kao "Lovovođa sekcije · revir"; uloga lovovođe sekcije je samo kad je korisnik `sekcije.grupovodja_id` ("Lovovođa sekcije · <sekcija>", ranije "Vodi sekciju"). Stari redovi (`revir_lovocuvari`, `grupovodje`) iz probe se skidaju u Sekcije i pristup → Grupovođe i lovočuvari po revirima; kod ih ne sakriva jer su stvarni podaci.
+
+**Pregled: osvježavanje ne poništava prvi dodir (v1.8.9)**
+- Uzrok CI neuspjeha `pregled.spec` ("Povuci prijavu"): osvježavanje sekcija sa servera ponovo crta spisak i poništi naoružano dugme (prvi dodir), pa drugi dodir samo ponovo naoruža. `pregled-ui.js armed()`: dok je neko "Povuci prijavu" naoružano, pozadinsko ponovno crtanje se preskače. Pravilo: ponovno crtanje liste ne smije poništiti dvodiranje (`data-potvrda`) u toku.

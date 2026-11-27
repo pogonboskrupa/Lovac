@@ -129,6 +129,8 @@ export function initPregled() {
     return connectionQuality() === 'nema' ? 'Nema veze i nema sačuvanih podataka. Pregled traži internet bar jednom.' : 'Pregled nije mogao biti učitan.';
   };
 
+  const armed = () => [...$('pr-zadnje').querySelectorAll('[data-akcija="povuci"]')].some((b) => b.dataset.potvrda);
+
   const open = async () => {
     $('meni-spiskovi').hidden = true;
     const my = ++seq;
@@ -137,12 +139,15 @@ export function initPregled() {
     // Prvo zadnje sačuvano (radi i bez veze), pa osvježavanje sekcija u pozadini (uloga zavisi od njih).
     await render().catch(() => {});
     if (connectionQuality() !== 'nema' && getClient()) {
-      downloadSekcije().then(() => { if (my === seq && !panel.hidden) render(); }).catch(() => {});
+      downloadSekcije().then(() => {
+        // ponovno crtanje bi poništilo već naoružano "Povuci prijavu" (prvi dodir): tada se preskače
+        if (my === seq && !panel.hidden && !armed()) render();
+      }).catch(() => {});
     }
     const { fresh } = await load();
     if (my !== seq) return;
     $('pr-stanje').textContent = stateText(fresh);
-    await render();
+    if (!armed()) await render();
   };
 
   $('btn-pregled').addEventListener('click', open);

@@ -237,7 +237,11 @@ test('Pregled (lovočuvar): uloga i revir; (lovac): "Moje prijave" sa povlačenj
   await expect(p2.locator('#pr-sekcije-blok')).toBeHidden();
   const mine = p2.locator(`#pr-zadnje [data-id="${ID(950)}"] [data-akcija="povuci"]`);
   await expect(mine).toBeVisible();
-  await mine.click();
+  // Osvježavanje sekcija ponovo crta spisak i može poništiti prvi dodir: dodiruje se dok se dugme ne naoruža, pa tek onda potvrđuje
+  await expect(async () => {
+    await mine.click();
+    await expect(mine).toHaveText('Dodirni ponovo', { timeout: 500 });
+  }).toPass({ timeout: 10000 });
   await mine.click();
   await expect.poll(() => s2.db.ulov_prijave.find((r) => r.id === ID(950)).povucena, { timeout: 20000 }).toBe(true);
   await ctx2.close();
