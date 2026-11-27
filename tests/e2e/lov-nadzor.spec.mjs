@@ -19,6 +19,7 @@ function server(status) {
     drustvo_uloge: [{ korisnik_id: PRED.id, uloga: 'predsjednik' }],
     revir_vodje: [],
     lovovi: [{ id: LOV, naziv: 'Pogon Grmeč', status, revir_id: R.krupa, sekcija_id: ID(200), grupa_id: G1, pocetak: new Date(Date.now() - 3600e3).toISOString(), organizator_id: A.id, promijenjeno: new Date().toISOString() }],
+    lov_pozicije: [{ lov_id: LOV, korisnik_id: A.id, lat: 44.9, lon: 16.1, acc: 5, t: new Date().toISOString() }, { lov_id: LOV, korisnik_id: B.id, lat: 44.9005, lon: 16.1005, acc: 5, t: new Date().toISOString() }],
     lov_ucesnici: [{ lov_id: LOV, korisnik_id: A.id, uloga: 'vodja' }, { lov_id: LOV, korisnik_id: B.id, uloga: 'strijelac' }, { lov_id: LOV, korisnik_id: LOVAC.id, uloga: 'pogonic' }],
   };
   return { async handle(route) {
@@ -59,8 +60,14 @@ test('vodstvo: tab "Lov" se pojavi dok traje lov u opsegu i pokazuje lov, grupu 
   await expect(kartica).toContainText('grupa — grupovođa Ado Prvi');
   await expect(page.locator('#lnz-stat-lovaca')).toHaveText('3');
   await expect(tab).toHaveAttribute('aria-current', 'page');
-  await page.locator('#btn-lnz-zatvori').click();
+  // pozicije lovaca i trag kretanja na karti (bočna kontrola lova)
+  await kartica.locator('[data-akcija="na-karti"]').click();
   await expect(page.locator('#lov-nadzor')).toBeHidden();
+  await expect(page.locator('#arh-karta')).toBeVisible();
+  await expect(page.locator('.uc-marker')).not.toHaveCount(0, { timeout: 15000 });
+  await page.locator('#btn-arh-karta-zatvori').click();
+  await expect(page.locator('#arh-karta')).toBeHidden();
+  await expect(page.locator('.uc-marker')).toHaveCount(0);
 });
 
 test('tab "Lov" se ne vidi lovcu, ni vodstvu kad lov nije u toku', async ({ page, browser }) => {

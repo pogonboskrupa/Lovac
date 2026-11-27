@@ -60,7 +60,10 @@ export function initArhivaKarta(L, map) {
     if (showShots && brojPogodaka) shots.addTo(map); else shots.remove();
   };
   const hide = () => {
-    if (cur) document.dispatchEvent(new CustomEvent('lovtrag:sakrij', { detail: { lovId: cur.lovId } }));
+    if (cur) {
+      document.dispatchEvent(new CustomEvent('lovtrag:sakrij', { detail: { lovId: cur.lovId } }));
+      document.dispatchEvent(new CustomEvent('arhiva:zatvorena', { detail: { lovId: cur.lovId } }));
+    }
     photos.clearLayers();
     photos.remove();
     shots.clearLayers();
@@ -70,9 +73,9 @@ export function initArhivaKarta(L, map) {
   };
 
   document.addEventListener('arhiva:na-karti', (e) => {
-    const { lovId, naziv, slike = [], pogoci = [], fokus = null } = e.detail;
+    const { lovId, naziv, slike = [], pogoci = [], fokus = null, live = false } = e.detail;
     if (cur && cur.lovId !== lovId) hide();
-    cur = { lovId, naziv, slike, pogoci };
+    cur = { lovId, naziv, slike, pogoci, live };
     showTrails = true;
     showPhotos = true;
     showShots = true;
@@ -82,7 +85,7 @@ export function initArhivaKarta(L, map) {
     drawShots();
     sync();
     if (fokus) focusShot(fokus);
-    document.dispatchEvent(new CustomEvent('lovtrag:arhiva', { detail: { lovId, fit: !fokus } }));
+    document.dispatchEvent(new CustomEvent('lovtrag:arhiva', { detail: { lovId, fit: !fokus, live } }));
     // bez traga: karta ide na pogotke i slike lova (a na pogodak je već postavljena)
     const tacke = [...pogoci.map((s) => [s.lat, s.lon]), ...photosOnMap(slike).sa.map((s) => [s.lat, s.lon])];
     if (tacke.length && !fokus) setTimeout(() => { if (!document.querySelector('#lov-trag-legenda:not([hidden])')) map.fitBounds(tacke, { padding: [60, 60], maxZoom: 16, animate: false }); }, 600);
@@ -97,7 +100,7 @@ export function initArhivaKarta(L, map) {
   $('btn-arh-tragovi').addEventListener('click', () => {
     if (!cur) return;
     showTrails = !showTrails;
-    document.dispatchEvent(new CustomEvent(showTrails ? 'lovtrag:arhiva' : 'lovtrag:sakrij', { detail: { lovId: cur.lovId, fit: false } }));
+    document.dispatchEvent(new CustomEvent(showTrails ? 'lovtrag:arhiva' : 'lovtrag:sakrij', { detail: { lovId: cur.lovId, fit: false, live: cur.live } }));
     sync();
   });
   $('btn-arh-slike').addEventListener('click', () => { if (cur) { showPhotos = !showPhotos; sync(); } });

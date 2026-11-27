@@ -17,7 +17,8 @@ export const cardHtml = (l) => `<li class="tr-kartica ln-lov" data-id="${escapeH
   <div class="sk-statovi"><div><b>${l.trajanje || '—'}</b><span>traje${l.pocetak ? ` (od ${escapeHtml(l.pocetak)})` : ''}</span></div>
     <div><b>${l.ucesnika}</b><span>učesnika</span></div><div><b>${l.pogonica}</b><span>pogonica</span></div></div>
   <span class="sitno">Vođa lova: ${l.vodje.length ? escapeHtml(l.vodje.join(', ')) : 'nije određen'}</span>
-  ${l.napomena ? `<span class="sitno">${escapeHtml(l.napomena)}</span>` : ''}</li>`;
+  ${l.napomena ? `<span class="sitno">${escapeHtml(l.napomena)}</span>` : ''}
+  <button type="button" class="dugme glavno" data-akcija="na-karti" data-naziv="${escapeHtml(l.naziv)}">Lovci i trag kretanja na karti</button></li>`;
 
 export function pageHtml(ov) {
   if (!ov.ukupno) return '<p class="sitno">Trenutno nema lova u toku.</p>';
@@ -60,6 +61,12 @@ export function initLovNadzor() {
     render(); screen.hidden = false;
     // imena grupovođa: grupe se preuzimaju samo na otvaranje (budžet servera), u pozadini
     if (connectionQuality() !== 'nema' && getClient()) downloadSekcije({ grupe: true }).then(update).catch(() => {});
+  });
+  $('lnz-sadrzaj').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-akcija="na-karti"]');
+    if (!b) return;
+    screen.hidden = true;
+    document.dispatchEvent(new CustomEvent('nadzor:prikazi', { detail: { lovId: b.closest('[data-id]').dataset.id, naziv: b.dataset.naziv } }));
   });
   $('btn-lnz-zatvori').addEventListener('click', () => { screen.hidden = true; });
   registerBackHandler(() => { if (screen.hidden) return false; screen.hidden = true; return true; });

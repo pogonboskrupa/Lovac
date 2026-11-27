@@ -156,7 +156,7 @@ export function initLovTragovi(L, map) {
     await rowsFor(lovId, true);
     document.dispatchEvent(new CustomEvent('lovtrag:preuzet', { detail: { lovId } }));
   });
-  document.addEventListener('lovtrag:arhiva', (e) => show(e.detail.lovId, { isLive: false, fit: e.detail.fit !== false }));
+  document.addEventListener('lovtrag:arhiva', (e) => show(e.detail.lovId, { isLive: e.detail.live === true, fit: e.detail.fit !== false }));
   // bočna kontrola lova iz arhive: sakrij tragove tog lova
   document.addEventListener('lovtrag:sakrij', (e) => { if (activeId && activeId === e.detail?.lovId) clear(); });
   // vlastite tačke su već u lokalnom baferu: crta se iz keša, bez novog upita na server
