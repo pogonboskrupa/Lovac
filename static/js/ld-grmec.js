@@ -70,6 +70,19 @@ export function ldTree(ctx = {}, nameOf = () => '') {
   return { korijen, sazetak: { reviri: reviri.length, sekcija: brojSekcija, grupa: brojGrupa, mjesta: ukupno, popunjeno, slobodno: ukupno - popunjeno } };
 }
 
+// Ko već ima neku ulogu u strukturi (predsjednik, lovočuvar, lovovođa društva/revira/sekcije, grupovođa grupe): takav se ne nudi
+// u spiskovima za dodjelu uloge, dok mu se uloga ne skine.
+export function roleHolders(ctx = {}) {
+  const ids = new Set();
+  for (const u of ctx.drustvoUloge || []) ids.add(u.korisnik_id);
+  for (const v of ctx.revirVodje || []) ids.add(v.korisnik_id);
+  for (const l of ctx.lovocuvari || []) ids.add(l.korisnik_id);
+  for (const s of ctx.sekcije || []) if (s.aktivno !== false) ids.add(s.grupovodja_id);
+  for (const g of ctx.grupe || []) ids.add(g.grupovodja_id);
+  ids.delete(null); ids.delete(undefined);
+  return ids;
+}
+
 // Ko se može dodijeliti ulozi: odobreni korisnici bez onih koji je već imaju; za novu grupu samo članovi te sekcije bez grupe koju vode.
 // users: [{ id, odobren }] (spisak članova društva); `popuna` je 'grupa' za dodavanje grupe u sekciji.
 export function ldCandidates(meta, ctx = {}, users = [], nameOf = () => '', popuna = '') {
@@ -77,9 +90,10 @@ export function ldCandidates(meta, ctx = {}, users = [], nameOf = () => '', popu
   let ids;
   if (popuna === 'grupa') {
     const vode = new Set((ctx.grupe || []).filter((g) => g.sekcija_id === meta.sekcijaId).map((g) => g.grupovodja_id));
-    ids = (ctx.clanovi || []).filter((c) => c.sekcija_id === meta.sekcijaId && c.status === 'odobren' && !vode.has(c.korisnik_id)).map((c) => c.korisnik_id);
+    const zauzeti = roleHolders(ctx);
+    ids = (ctx.clanovi || []).filter((c) => c.sekcija_id === meta.sekcijaId && c.status === 'odobren' && !vode.has(c.korisnik_id) && !zauzeti.has(c.korisnik_id)).map((c) => c.korisnik_id);
   } else {
-    const drzi = new Set([meta.korisnikId, ...(meta.uloga === 'lovocuvar' ? (ctx.drustvoUloge || []).filter((u) => u.uloga === 'lovocuvar').map((u) => u.korisnik_id) : [])]);
+    const drzi = new Set([meta.korisnikId, ...roleHolders(ctx)]);
     ids = users.filter((u) => u.odobren !== false && !drzi.has(u.id)).map((u) => u.id);
   }
   return [...new Set(ids)].filter((id) => ime(id)).map((id) => ({ id, ime: ime(id) })).sort(byName2);

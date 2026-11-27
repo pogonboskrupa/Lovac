@@ -62,7 +62,11 @@ test('LD Grmeč: kandidati — ne nude one koji ulogu već imaju; nova grupa sam
   const users = [{ id: 'p' }, { id: 'l1' }, { id: 'x' }, { id: 'g1' }, { id: 'n', odobren: false }];
   const imena = { ...names, n: 'Neodobren' };
   const nm = (id) => imena[id] || '';
-  assert.deepEqual(ldCandidates({ uloga: 'predsjednik', korisnikId: 'p' }, ctx, users, nm).map((c) => c.id).sort(), ['g1', 'l1', 'x']);
+  // ko već ima BILO KOJU ulogu (lovočuvar l1, grupovođa g1) se ne nudi ni za jedno drugo mjesto dok mu se uloga ne skine
+  assert.deepEqual(ldCandidates({ uloga: 'predsjednik', korisnikId: 'p' }, ctx, users, nm).map((c) => c.id).sort(), ['x']);
+  assert.deepEqual(ldCandidates({ uloga: 'lovovodja_revira', korisnikId: null, revirId: 'r1' }, { ...ctx, revirVodje: [{ revir_id: 'r1', korisnik_id: 'x' }] }, users, nm).map((c) => c.id), []);
+  // poslije skidanja uloge ponovo se nudi
+  assert.ok(ldCandidates({ uloga: 'predsjednik', korisnikId: 'p' }, { ...ctx, drustvoUloge: [] }, users, nm).some((c) => c.id === 'l1'));
   // drugi lovočuvar: prvi (l1) se ne nudi ponovo
   assert.ok(!ldCandidates({ uloga: 'lovocuvar', korisnikId: null }, ctx, users, nm).some((c) => c.id === 'l1'));
   // nova grupa u s1: g1 već vodi grupu, x je član bez grupe vođe

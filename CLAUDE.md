@@ -839,3 +839,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Sklanjanje korisnika iz pregleda (migracija 049, v1.8.5)**
 - Korisnik koji koristi aplikaciju, a ne treba biti u pregledima (npr. administrator koji nije lovac, testni nalog): admin u Korisnici i odobrenja → Upravljanje → Nalog → "Sakrij iz pregleda" / "Vrati u preglede" (`admin.js`, akcija `pregled`). Tabela `izvan_pregleda` (migracija 049; piše/briše samo admin, čitaju odobreni; zavisi samo od 001). Klijent: `downloadSekcije({ grupe: true })` je preuzima u `izvanPregleda` (tabela koje nema = prazno), a `clanovi-pregled.js buildOverview` i `ld-grmec.js ldTree` izostavljaju te korisnike iz članova, brojeva i "bez grupe". Ne mijenja pristup, ulogu ni vidljivost zapisa; uloga (npr. grupovođa grupe) se i dalje prikazuje. Admin ih i dalje vidi u spisku Korisnici (da ih može vratiti). Imena se NE zakucavaju u kod ni migraciju. Treba ručno pokrenuti migraciju 049.
+
+**Ko ima ulogu ne nudi se za drugu (v1.8.6, bez migracije)**
+- U Struktura LD Grmeč spiskovima "Dodijeli" i "Dodaj grupu" ne nudi se korisnik koji već ima BILO KOJU ulogu (`ld-grmec.js roleHolders`: predsjednik, lovočuvar, lovovođa društva/revira/sekcije, grupovođa grupe) — ponovo se nudi tek kad mu se uloga skine. Admin zastavica nije uloga.
