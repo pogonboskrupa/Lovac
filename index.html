@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.8.9';
+  const APP_VER = 'v1.9.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -432,6 +432,7 @@
   <nav class="donja-nav" aria-label="Glavna navigacija">
     <button id="nav-mapa" type="button" aria-current="page"><svg class="ic"><use href="#ic-compass"/></svg><span>Mapa</span></button>
     <button id="btn-sekcija" type="button"><svg id="nav-sekcija-ikona" class="ic"><use href="#ic-group"/></svg><span id="nav-sekcija-logo" class="sek-logo mali" hidden></span><span id="nav-sekcija-ime">Sekcija</span><span id="nav-sekcija-znacka" class="znacka-broj" hidden></span></button>
+    <button id="btn-lov-nadzor" type="button" hidden><svg class="ic"><use href="#ic-hunt"/></svg><span>Lov</span><span id="nav-lov-znacka" class="znacka-broj" hidden></span></button>
     <button id="btn-spiskovi" type="button"><svg class="ic"><use href="#ic-menu"/></svg><span>Meni</span></button>
     <button id="btn-postavke" type="button"><svg class="ic"><use href="#ic-settings"/></svg><span>Postavke</span></button>
   </nav>
@@ -1777,6 +1778,19 @@
   </div>
   <p id="cp-status" class="sitno" role="status"></p>
   <div id="cp-stablo" class="cp-stablo"></div>
+</section>
+<section id="lov-nadzor" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="lnz-naslov" hidden>
+  <header class="postavke-glava"><h2 id="lnz-naslov">Lov u toku</h2>
+    <button id="btn-lnz-zatvori" class="ikona-dugme" type="button" aria-label="Zatvori"><svg class="ic"><use href="#ic-close"/></svg></button></header>
+  <div class="sk-hero tr-hero ev-hero">
+    <div class="sk-hero-glava"><span class="tr-chip">Pregled vodstva</span><b id="lnz-opseg"></b></div>
+    <div class="sk-statovi sk-statovi-hero">
+      <div><b id="lnz-stat-lovova">0</b><span>lovova u toku</span></div>
+      <div><b id="lnz-stat-lovaca">0</b><span>učesnika</span></div>
+    </div>
+  </div>
+  <p class="sitno">Pregled iz podataka na telefonu. Ne zamjenjuje pravila lova ni vođu lova.</p>
+  <div id="lnz-sadrzaj"></div>
 </section>
 
 <section id="pas-ekran" class="list-preko" role="dialog" aria-modal="true" aria-labelledby="pas-naslov" hidden>

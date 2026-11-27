@@ -176,7 +176,7 @@ html[data-velicina="najvece"] .dodaj-mreza { grid-template-columns: 1fr; }
 /* Donja navigacija */
 .donja-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 3100; height: var(--nav-h); box-sizing: border-box;
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   background: var(--pozadina); border-top: 1px solid var(--dugme);
 }
 .donja-nav button {
@@ -1991,3 +1991,7 @@ svg[hidden] { display: none; }
   /* grupe unutar sekcije u dvije kolone */
   .ld-cvor[data-nivo="sekcija"] > ul { display: grid; grid-template-columns: 1fr; }
 }
+
+/* Tab Lov (vodstvo): lovovi u toku po revirima */
+#lov-nadzor .ln-revir h3 { margin: 12px 0 6px; }
+#lov-nadzor .ln-lov { display: flex; flex-direction: column; gap: 6px; }

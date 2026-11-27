@@ -11,13 +11,13 @@ test.beforeEach(async ({ page }) => {
 const box = (page, sel) => page.locator(sel).boundingBox();
 
 test('donja navigacija: Mapa, Sekcija, Meni, Postavke (redom), Mapa je aktivna', async ({ page }) => {
-  const labels = await page.locator('.donja-nav > button').allInnerTexts();
+  const labels = await page.locator('.donja-nav > button:visible').allInnerTexts();
   expect(labels.map((t) => t.trim())).toEqual(['Mapa', 'Sekcija', 'Meni', 'Postavke']);
   await expect(page.locator('#nav-mapa')).toHaveAttribute('aria-current', 'page');
   const vp = page.viewportSize();
   const nav = await box(page, '.donja-nav');
   expect(nav.y + nav.height).toBeGreaterThan(vp.height - 2);
-  for (const b of await page.locator('.donja-nav > button').all()) {
+  for (const b of await page.locator('.donja-nav > button:visible').all()) {
     const r = await b.boundingBox();
     expect(Math.min(r.width, r.height)).toBeGreaterThanOrEqual(44);
   }

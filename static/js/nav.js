@@ -18,12 +18,13 @@ function visible(id) {
 export function activeTab() {
   if (visible('postavke')) return 'postavke';
   if (visible('sekcija-ekran') || visible('grupa-ekran')) return 'sekcija';
+  if (visible('lov-nadzor')) return 'nadzor';
   if (visible('meni-spiskovi') || [...document.querySelectorAll('.list-preko')]
-    .some((s) => !s.hidden && s.id !== 'postavke' && s.id !== 'sekcija-ekran' && s.id !== 'grupa-ekran')) return 'meni';
+    .some((s) => !s.hidden && s.id !== 'postavke' && s.id !== 'sekcija-ekran' && s.id !== 'grupa-ekran' && s.id !== 'lov-nadzor')) return 'meni';
   return 'mapa';
 }
 
-const TAB_BUTTON = { mapa: 'nav-mapa', sekcija: 'btn-sekcija', meni: 'btn-spiskovi', postavke: 'btn-postavke' };
+const TAB_BUTTON = { mapa: 'nav-mapa', sekcija: 'btn-sekcija', nadzor: 'btn-lov-nadzor', meni: 'btn-spiskovi', postavke: 'btn-postavke' };
 
 function markActive() {
   const tab = activeTab();

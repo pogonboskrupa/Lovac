@@ -53,6 +53,7 @@ import { initGrupaIzbor } from './grupa-izbor-ui.js';
 import { initGrupaEkran } from './grupa-ui.js';
 import { initGrupaTraka } from './grupa-traka-ui.js';
 import { initClanoviPregled } from './clanovi-pregled-ui.js';
+import { initLovNadzor } from './lov-nadzor-ui.js';
 import { initNoviLovac } from './novi-lovac-ui.js';
 import { initLdGrmec } from './ld-grmec-ui.js';
 import { initMeni } from './meni-ui.js';
@@ -133,6 +134,7 @@ function enter(screen) {
       ['grupa-ekran', () => initGrupaEkran()],
       ['grupa-traka', () => initGrupaTraka()],
       ['clanovi-pregled', () => initClanoviPregled()],
+      ['lov-nadzor', () => initLovNadzor()],
       ['tok', () => initTok()],
       ['stan', () => initStan()],
       ['meni', () => initMeni()],

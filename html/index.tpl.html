@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.8.9';
+  const APP_VER = 'v1.9.0';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -432,6 +432,7 @@
   <nav class="donja-nav" aria-label="Glavna navigacija">
     <button id="nav-mapa" type="button" aria-current="page"><svg class="ic"><use href="#ic-compass"/></svg><span>Mapa</span></button>
     <button id="btn-sekcija" type="button"><svg id="nav-sekcija-ikona" class="ic"><use href="#ic-group"/></svg><span id="nav-sekcija-logo" class="sek-logo mali" hidden></span><span id="nav-sekcija-ime">Sekcija</span><span id="nav-sekcija-znacka" class="znacka-broj" hidden></span></button>
+    <button id="btn-lov-nadzor" type="button" hidden><svg class="ic"><use href="#ic-hunt"/></svg><span>Lov</span><span id="nav-lov-znacka" class="znacka-broj" hidden></span></button>
     <button id="btn-spiskovi" type="button"><svg class="ic"><use href="#ic-menu"/></svg><span>Meni</span></button>
     <button id="btn-postavke" type="button"><svg class="ic"><use href="#ic-settings"/></svg><span>Postavke</span></button>
   </nav>
@@ -515,6 +516,7 @@
 <!--@ekran:sekcija-ekran-->
 <!--@ekran:grupa-ekran-->
 <!--@ekran:clanovi-pregled-->
+<!--@ekran:lov-nadzor-->
 
 <!--@ekran:pas-ekran-->
 <!--@ekran:divljac-->
