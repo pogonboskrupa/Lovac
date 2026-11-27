@@ -14,8 +14,8 @@ export function profileRoles(p, ctx = {}) {
   const naziv = (id) => reviri.find((r) => r.id === id)?.naziv || 'revir';
   const out = [];
   if (p.is_admin) out.push({ kod: 'admin', tekst: 'Administrator' });
-  for (const g of (ctx.grupovodje || []).filter((x) => x.korisnik_id === p.id)) out.push({ kod: 'grupovodja', tekst: `Lovovođa sekcije · ${naziv(g.revir_id)}` });
-  for (const s of (ctx.sekcije || []).filter((x) => x.grupovodja_id === p.id)) out.push({ kod: 'sekcija', tekst: `Vodi sekciju ${s.naziv}` });
+  // `grupovodje` (ko smije praviti sekcije u reviru) je dozvola, ne uloga: ne prikazuje se kao "Lovovođa sekcije". Uloga je samo ako je upisan kao vođa sekcije.
+  for (const s of (ctx.sekcije || []).filter((x) => x.grupovodja_id === p.id)) out.push({ kod: 'sekcija', tekst: `Lovovođa sekcije · ${s.naziv}` });
   // lovočuvari društva su u ctx.lovocuvari raspisani po revirima (drustvo: true): prikazuju se jednim čipom
   for (const l of (ctx.lovocuvari || []).filter((x) => x.korisnik_id === p.id && !x.drustvo)) out.push({ kod: 'lovocuvar', tekst: `Lovočuvar · ${naziv(l.revir_id)}` });
   out.push(...hierarchyChips(p.id, ctx));

@@ -845,3 +845,6 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 
 **Dropdowni: ko je u grupi ili sklonjen iz pregleda se ne nudi (v1.8.7, bez migracije)**
 - Odluka vlasnika: lovac koji je već u nekoj grupi (bilo koje sekcije, kao član ili grupovođa) ne može biti dodan u drugu dok ga se ne izvadi; isto za uloge. `grupe.js groupedIds` + `ld-grmec.js groupAddable/ldCandidates` ("Dodaj u grupu", nova grupa, "Dodijeli") i `groupLeaderCandidates` isključuju takve, te korisnike iz `izvanPregleda` (049). `ungroupedMembers` (prikaz "Bez grupe" u sekciji) isključuje samo sklonjene iz pregleda, ne članove grupa drugih sekcija (da lovac ne nestane iz spiska svoje sekcije). Server to ne provodi (nema migracije): pravilo je u izboru.
+
+**Čipovi uloga (v1.8.8, bez migracije)**
+- `profil.js profileRoles`: tabela `grupovodje` (ko smije praviti sekcije u reviru) je DOZVOLA, ne uloga, pa se više ne prikazuje kao "Lovovođa sekcije · revir"; uloga lovovođe sekcije je samo kad je korisnik `sekcije.grupovodja_id` ("Lovovođa sekcije · <sekcija>", ranije "Vodi sekciju"). Stari redovi (`revir_lovocuvari`, `grupovodje`) iz probe se skidaju u Sekcije i pristup → Grupovođe i lovočuvari po revirima; kod ih ne sakriva jer su stvarni podaci.

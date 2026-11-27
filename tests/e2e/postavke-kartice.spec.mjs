@@ -43,7 +43,7 @@ test('profil kartica: logo avatar (dok nema slike), uloge iz keša sekcija i sta
   await page.locator('#btn-postavke').click();
   await expect(page.locator('#p-avatar')).toHaveClass(/logo-avatar/);
   await expect(page.locator('#p-ime')).toHaveText('Goran Lovovođa sekcije');
-  await expect(page.locator('#p-uloge .p-uloga')).toHaveText(['Lovovođa sekcije · Krupa', 'Vodi sekciju Krupa 1']);
+  await expect(page.locator('#p-uloge .p-uloga')).toHaveText(['Lovovođa sekcije · Krupa 1']);
   await expect(page.locator('#p-stanje')).toContainText('sve je poslano');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });

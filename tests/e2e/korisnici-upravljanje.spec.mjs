@@ -103,7 +103,7 @@ test('pregled: vodstvo, bez sekcije, filter po sekciji i brojke uloga', async ({
   await page.selectOption('#kor-sekcija', 'bez');
   await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(3); // Ado, Bruno, Nino
   await page.selectOption('#kor-sekcija', '');
-  await expect(kartica(page, 'g1')).toContainText('Vodi sekciju Krupa 1');
+  await expect(kartica(page, 'g1')).toContainText('Lovovođa sekcije · Krupa 1');
   // pretraga i po nazivu sekcije
   await page.fill('#kor-trazi', 'krupa 2');
   await expect(page.locator('#korisnici-spisak [data-id]')).toHaveCount(1);
@@ -167,7 +167,7 @@ test('imenuj lovovođu sekcije (pokazuje koga zamjenjuje) i skini ga', async ({ 
   await l.locator('[data-akcija="gv-postavi"]').click();
   await expect.poll(() => zahtjevi.length).toBe(1);
   expect(zahtjevi[0]).toMatchObject({ metoda: 'PATCH', table: 'sekcije', filter: { id: 's2' }, body: { grupovodja_id: 'l1' } });
-  await expect(kartica(page, 'l1')).toContainText('Vodi sekciju Krupa 2');
+  await expect(kartica(page, 'l1')).toContainText('Lovovođa sekcije · Krupa 2');
   // skidanje traži drugi dodir i skida SAMO tog korisnika (filter grupovodja_id)
   const l2 = await kartica(page, 'l1');
   await l2.locator('[data-grupa="gv"] [data-akcija="gv-skini"]').click();
