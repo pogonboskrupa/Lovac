@@ -832,3 +832,7 @@ PGHOST=... PGUSER=... PGDATABASE=... bash scripts/sql-test.sh   # migracije 2x (
 **Grupovođa bez grupe u članstvu (v1.8.3, bez migracije)**
 - Uzrok: grupovođa čiji red u `sekcija_clanovi` nema `grupa_id` (grupa napravljena bez uspjele dodjele) se nudio u "Dodaj u grupu" i vodio kao "bez grupe", iako već vodi grupu. Sada se grupovođa grupe nikad ne nudi kao "bez grupe" (`ld-grmec.js groupAddable` i čvor "bez grupe", `grupe.js ungroupedMembers`, `clanovi-pregled.js buildOverview`) i uvijek se broji u svojoj grupi (`groupsOfSection`, pregled, čvor grupe). Pravilo: lista "ko nema grupu" mora isključiti one koji grupu vode.
 
+
+**Struktura LD: sklopljeni lovci i raspored na računaru (v1.8.4, bez migracije)**
+- Grupe (`g:<id>`) i "Članovi bez grupe" (`b:<id>`) su ZADANO sklopljeni (spisak lovaca je dug), revir i sekcija zadano rasklopljeni. `ld-grmec-ui.js jeSklopljen(kljuc, obrnuto)`: set `sklopljeno` pamti samo ODSTUPANJA od zadanog (zadano XOR u setu). Dugmad `[data-ld-svi="otvori|sklopi"]` ("Prikaži sve lovce" / "Sklopi lovce") rasklapaju/sklapaju sve grupe; na dugmetu grupe piše "N lovaca".
+- Od 900 px širine: vodstvo (lovočuvari) u 2 kolone, a tri revira kao mreža kolona (`.ld-cvor[data-nivo="lovovodja"] > ul`) umjesto jedne duboke liste. Test: `SNIMCI_DIR=<folder>` u `korisnici-upravljanje.spec.mjs` pravi snimke na 412 i 1280 px.

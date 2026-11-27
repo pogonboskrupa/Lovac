@@ -47,17 +47,23 @@ function urediGrupu(c, o) {
   return h;
 }
 
+// Grupe i "Članovi bez grupe" su zadano SKLOPLJENI (spisak lovaca je dug); revir i sekcija zadano rasklopljeni.
+// `sklopljeno` pamti samo odstupanja od zadanog (obrnuto stanje po ključu).
+const zadanoSklopljen = (kljuc) => /^[gb]:/.test(kljuc || '');
+export const jeSklopljen = (kljuc, obrnuto) => Boolean(kljuc) && zadanoSklopljen(kljuc) !== obrnuto.has(kljuc);
+const kljuceviLovaca = (c, out = []) => { if (c.kljuc && zadanoSklopljen(c.kljuc) && c.djeca.length) out.push(c.kljuc); c.djeca.forEach((d) => kljuceviLovaca(d, out)); return out; };
+
 const cvor = (c, o) => {
   const naslov = c.ulogaOznaka ? `${c.ulogaOznaka} · ${c.uloga}` : c.uloga;
   const prazno = c.prazno || 'Nije postavljen';
-  const sklopljen = c.kljuc && o.sklopljeno.has(c.kljuc);
+  const sklopljen = jeSklopljen(c.kljuc, o.sklopljeno);
   const kontrole = c.meta ? (c.nivo === 'grupa' ? urediGrupu(c, o) : o.edit ? uredi(c, o) : '') : '';
   // bez korisnikId: ključ se ne smije promijeniti kad se uloga dodijeli, inače se "Uredi" zatvori usred rada
   const kljucU = c.meta ? `${c.meta.uloga}|${c.meta.revirId || ''}|${c.meta.sekcijaId || ''}|${c.meta.grupaId || ''}` : '';
   return `<li class="ld-cvor" data-nivo="${c.nivo}"><div class="ld-kartica-cvora" data-prazno="${!c.ime && c.nivo !== 'grupa'}">
     <div class="ld-glava"><span class="ld-lice" aria-hidden="true">${c.ime ? escapeHtml(inicijali(c.ime)) : '+'}</span>
       <div class="ld-tekst"><span class="ld-uloga">${escapeHtml(naslov)}</span><b${c.ime ? '' : ' class="ld-prazno"'}>${escapeHtml(c.ime || prazno)}</b>${c.napomena ? `<span class="sitno">${escapeHtml(c.napomena)}</span>` : ''}</div>
-      ${c.kljuc && c.djeca.length ? `<button type="button" class="ld-sklopi" data-ld-sklopi="${escapeHtml(c.kljuc)}" aria-expanded="${!sklopljen}" aria-label="${sklopljen ? 'Rasklopi' : 'Sklopi'} ${escapeHtml(c.uloga)}">${sklopljen ? '▸' : '▾'} <span class="sitno">${c.djeca.length}</span></button>` : ''}</div>
+      ${c.kljuc && c.djeca.length ? `<button type="button" class="ld-sklopi" data-ld-sklopi="${escapeHtml(c.kljuc)}" aria-expanded="${!sklopljen}" aria-label="${sklopljen ? 'Rasklopi' : 'Sklopi'} ${escapeHtml(c.uloga)}">${sklopljen ? '▸' : '▾'} <span class="sitno">${c.djeca.length}${c.nivo === 'grupa' || c.nivo === 'bez-grupe' ? ' lovaca' : ''}</span></button>` : ''}</div>
     ${kontrole ? `<details class="ld-uredi-okvir" data-ld-otv="${escapeHtml(kljucU)}"${o.urediOtvoreno.has(kljucU) ? ' open' : ''}><summary>Uredi</summary><div class="ld-uredi" ${dataMeta(c.meta)}>${kontrole}</div></details>` : ''}</div>
     ${c.djeca.length && !sklopljen ? `<ul>${c.djeca.map((d) => cvor(d, o)).join('')}</ul>` : ''}</li>`;
 };
@@ -75,6 +81,7 @@ export function ldHtml(tree, opcijeUredi = {}) {
       <div class="ld-ploca"><b>${z.grupa}</b><span>grupa</span></div>
     </div>
     <div class="ld-traka" role="img" aria-label="Popunjeno ${pct} %"><span style="width:${pct}%"></span></div>
+    <div class="ld-alati"><button type="button" class="dugme" data-ld-svi="otvori">Prikaži sve lovce</button><button type="button" class="dugme" data-ld-svi="sklopi">Sklopi lovce</button></div>
     <ul class="ld-stablo" role="tree">${cvor(tree.korijen, o)}</ul>`;
 }
 
@@ -85,7 +92,8 @@ export function initLdGrmec() {
   if (!tab) return;
   let ctx = null;
   let armed = null; // dvaput: "Skini" traži drugi dodir
-  const sklopljeno = new Set(); // sklopljeni revir/sekcija (u memoriji; sve je zadano rasklopljeno)
+  const sklopljeno = new Set(); // odstupanja od zadanog (grupe sklopljene, revir/sekcija rasklopljeni), u memoriji
+  let zadnjeStablo = null;
   const urediOtvoreno = new Set(); // koje su kartice "Uredi" otvorene (preživi ponovno crtanje)
   const me = () => cachedProfile();
   const edit = () => Boolean(me()?.is_admin);
@@ -100,7 +108,8 @@ export function initLdGrmec() {
     const kljuc = (el) => Object.values(el.dataset).join('|');
     const izabrano = new Map([...$('ldg-sadrzaj').querySelectorAll('.ld-uredi')].map((el) => [kljuc(el),
       [el.querySelector('.ld-izbor')?.value || '', el.querySelector('.ld-izbor-grupa')?.value || '']]));
-    $('ldg-sadrzaj').innerHTML = ldHtml(ldTree(ctx, memberName), {
+    zadnjeStablo = ldTree(ctx, memberName);
+    $('ldg-sadrzaj').innerHTML = ldHtml(zadnjeStablo, {
       edit: edit(), sklopljeno, urediOtvoreno,
       candidates: (meta, popuna) => ldCandidates(meta, ctx, users, memberName, popuna),
       canAdd: (sekcijaId) => canAddToGroup(me(), ctx, sekcijaId),
@@ -144,6 +153,12 @@ export function initLdGrmec() {
   const sekcijaZa = (m) => (m.sekcijaId ? ctx.sekcije.find((x) => x.id === m.sekcijaId) : null) || { id: m.sekcijaId, revir_id: m.revirId };
 
   $('ldg-sadrzaj').addEventListener('click', async (e) => {
+    const svi = e.target.closest('[data-ld-svi]');
+    if (svi && zadnjeStablo) {
+      const kljuc = kljuceviLovaca(zadnjeStablo.korijen);
+      for (const k of kljuc) { if (svi.dataset.ldSvi === 'otvori') sklopljeno.add(k); else sklopljeno.delete(k); }
+      draw(); return;
+    }
     const sk = e.target.closest('[data-ld-sklopi]');
     if (sk) { const k = sk.dataset.ldSklopi; if (sklopljeno.has(k)) sklopljeno.delete(k); else sklopljeno.add(k); draw(); return; }
     const b = e.target.closest('[data-ld-akcija]');

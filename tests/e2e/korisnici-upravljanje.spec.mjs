@@ -320,6 +320,18 @@ test('Struktura LD Grmeč: lovac se pravi odmah u grupi (nalog + dodjela grupe),
   await expect(ld.locator('[data-ld-p="slobodno"] b')).not.toHaveText('0');
   // Korisnici i odobrenja odmah ispod strukture
   await expect(page.locator('#ldg-korisnici')).toBeVisible();
+  // lovci u grupi su zadano sklopljeni; "Prikaži sve lovce" ih rasklapa, "Sklopi lovce" vraća
+  await expect(ld.locator('[data-nivo="lovac"]')).toHaveCount(0);
+  await ld.locator('[data-ld-svi="otvori"]').click();
+  await ld.locator('[data-ld-svi="sklopi"]').click();
+  await expect(ld.locator('[data-nivo="lovac"]')).toHaveCount(0);
+  if (process.env.SNIMCI_DIR) {
+    await page.screenshot({ path: `${process.env.SNIMCI_DIR}/ld-${page.viewportSize().width}.png`, fullPage: true });
+    const staro = page.viewportSize();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: `${process.env.SNIMCI_DIR}/ld-1280.png`, fullPage: true });
+    await page.setViewportSize(staro);
+  }
   // sklapanje revira
   const revir = ld.locator('[data-nivo="revir"]').first();
   await expect(revir.locator('[data-nivo="sekcija"]').first()).toBeVisible();

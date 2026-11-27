@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { canSeeLd, ldTree } from '../../static/js/ld-grmec.js';
-import { ldHtml } from '../../static/js/ld-grmec-ui.js';
+import { ldHtml, jeSklopljen } from '../../static/js/ld-grmec-ui.js';
 
 const names = { p: 'Petar Predsjednik', l1: 'Luka Prvi', l2: 'Luka Drugi', ld: 'Vođa Udruženja', rv: 'Vođa Revira', s1: 'Sekcija Prvi', g1: 'Goran Grupovođa', x: 'Obični Lovac' };
 const nameOf = (id) => names[id] || '';
@@ -116,8 +116,15 @@ test('LD Grmeč: lovci su prikazani ispod grupe (bez grupovođe), članovi bez g
   assert.equal(sazetak.grupa, 1);
   // lovci i čvor "bez grupe" nisu mjesta za popunjavanje
   assert.equal(ldTree(ctx, nameOf).sazetak.mjesta, sazetak.mjesta);
-  const html = ldHtml(ldTree(c2, nm));
+  // zadano su grupe sklopljene: lovci se ne crtaju dok se grupa ne rasklopi
+  const tree2 = ldTree(c2, nm);
+  const html0 = ldHtml(tree2);
+  assert.doesNotMatch(html0, /data-nivo="lovac"/); assert.match(html0, /Članovi bez grupe/); assert.match(html0, /1 lovaca<\/span>/);
+  const html = ldHtml(tree2, { sklopljeno: new Set([grupa.kljuc, bez.kljuc]) });
   assert.match(html, /data-nivo="lovac"/); assert.match(html, /Obični Lovac/); assert.match(html, /Članovi bez grupe/);
+  assert.equal(jeSklopljen(grupa.kljuc, new Set()), true);
+  assert.equal(jeSklopljen(grupa.kljuc, new Set([grupa.kljuc])), false);
+  assert.equal(jeSklopljen(sek.kljuc, new Set()), false);
 });
 
 

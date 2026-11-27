@@ -1971,3 +1971,23 @@ svg[hidden] { display: none; }
 .ld-cvor[data-nivo="lovac"] > .ld-kartica-cvora, .ld-cvor[data-nivo="bez-grupe"] > .ld-kartica-cvora { background: transparent; }
 .ld-cvor[data-nivo="lovac"] .ld-lice { width: 30px; height: 30px; font-size: 12px; }
 .ld-cvor[data-nivo="bez-grupe"] > .ld-kartica-cvora { border-style: dashed; }
+
+/* Struktura LD: alati i raspored na širokom ekranu (desktop) */
+.ld-alati { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.ld-alati .dugme { flex: 1 1 auto; min-height: 44px; }
+.ld-cvor[data-nivo="grupa"] > .ld-kartica-cvora { border-left: 4px solid var(--teren, #0f766e); }
+.ld-cvor[data-nivo="sekcija"] > .ld-kartica-cvora { border-left: 4px solid var(--naglasak, var(--okvir)); }
+@media (min-width: 900px) {
+  #ldg-sadrzaj { max-width: 1400px; }
+  .ld-plocice { grid-template-columns: repeat(5, minmax(120px, 1fr)); }
+  .ld-alati .dugme { flex: 0 0 auto; }
+  /* prvi nivo (vodstvo i tri revira) postaje mreža kolona umjesto jedne duboke liste */
+  .ld-cvor[data-nivo="lovovodja"] > ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-left: 0; padding-left: 0; border-left: 0; align-items: start; }
+  .ld-cvor[data-nivo="lovovodja"] > ul > .ld-cvor { padding-top: 0; }
+  .ld-cvor[data-nivo="lovovodja"] > ul > .ld-cvor::before { display: none; }
+  .ld-cvor[data-nivo="predsjednik"] > ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; align-items: start; }
+  .ld-cvor[data-nivo="predsjednik"] > ul > .ld-cvor[data-nivo="lovovodja"] { grid-column: 1 / -1; }
+  .ld-cvor[data-nivo="predsjednik"] > ul > .ld-cvor[data-nivo="lovocuvar"]::before { display: none; }
+  /* grupe unutar sekcije u dvije kolone */
+  .ld-cvor[data-nivo="sekcija"] > ul { display: grid; grid-template-columns: 1fr; }
+}
