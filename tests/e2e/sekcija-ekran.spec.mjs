@@ -367,7 +367,8 @@ test('lov po grupi: grupovođa pravi lov SVOJE grupe (lovci grupe, bez ostalih),
   await page.locator('#sk-lov [data-akcija="lov-novi"]').click();
   const forma = page.locator('#forma-sk-lov');
   await expect(forma).toBeVisible();
-  await expect(page.locator('#slf-grupa-blok')).toBeHidden(); // jedina meta je njegova grupa: nema izbora
+  await expect(page.locator('#slf-grupa-blok')).toBeVisible(); // lov je na nivou grupe: grupa se vidi i kad je jedini izbor
+  await expect(page.locator('#slf-grupa-izbor')).toBeDisabled();
   await expect(forma.locator('#slf-clanovi .slf-red')).toHaveCount(0); // u grupi nema drugih lovaca
   await page.locator('#slf-sirenje').check();
   await expect(forma.locator(`#slf-clanovi .slf-red[data-uid="${LOVAC2.id}"]`)).toHaveCount(1); // proširenje na sekciju
