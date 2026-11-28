@@ -24,7 +24,7 @@ test('lovovođa sekcije: "+" → Dodaj lov → lov počinje → "Lov traje" sa l
   await page.locator('#btn-lov-dodaj').click();
   await expect(page.locator('#sk-lov-forma')).toBeVisible();
   await expect(page.locator('#forma-sk-lov input[name=pokreni]')).toBeChecked();
-  await expect(page.locator('#slf-sekcija')).toHaveText('Sekcija 1');
+  await expect(page.locator('#slf-sekcija')).toContainText('Sekcija 1');
   const izbor = page.locator('#slf-clanovi input');
   await expect(izbor).toHaveCount(9);
   for (let i = 0; i < 3; i++) await izbor.nth(i).check();

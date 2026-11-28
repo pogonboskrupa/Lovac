@@ -10,10 +10,10 @@ const KEY = 'lovac.javne_sekcije';
 export function groupPublicSections(rows) {
   const out = [];
   for (const r of Array.isArray(rows) ? rows : []) {
-    if (!r?.sekcija_id || !r.revir_id) continue;
+    if (!r?.revir_id) continue;
     let g = out.find((x) => x.revir_id === r.revir_id);
     if (!g) { g = { revir_id: r.revir_id, revir: r.revir || '', sekcije: [] }; out.push(g); }
-    if (!g.sekcije.some((s) => s.id === r.sekcija_id)) g.sekcije.push({ id: r.sekcija_id, naziv: r.naziv || '' });
+    if (r.sekcija_id && !g.sekcije.some((s) => s.id === r.sekcija_id)) g.sekcije.push({ id: r.sekcija_id, naziv: r.naziv || '' });
   }
   return out;
 }

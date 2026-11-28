@@ -634,9 +634,11 @@ export function initSekcijaEkran(L, map) {
     lnForm.reset();
     lnForm.naziv.value = plan.lov.naziv;
     lnForm.datum.value = plan.lov.datum;
-    $('slf-sekcija').textContent = s.naziv;
+    const grupaMeta = mete.find((m) => m.grupaId === lnGrupa);
+    $('slf-sekcija').textContent = lnGrupa && grupaMeta ? grupaMeta.tekst : `${s.naziv} (cijela sekcija)`;
     $('slf-status').textContent = online() ? '' : 'Za pravljenje lova potreban je internet.';
-    $('slf-grupa-blok').hidden = mete.length < 2;
+    $('slf-grupa-blok').hidden = !mete.some((m) => m.grupaId) && mete.length < 2; // lov je na nivou grupe: grupa se vidi i kad je jedini izbor
+    $('slf-grupa-izbor').disabled = mete.length < 2;
     $('slf-grupa-izbor').innerHTML = mete.map((m) => `<option value="${escapeHtml(m.grupaId || '')}"${m.grupaId === lnGrupa ? ' selected' : ''}>${escapeHtml(m.tekst)}</option>`).join('');
     // Lov grupe: lovci grupe (grupovođa može proširiti izbor na cijelu sekciju)
     $('slf-sirenje-blok').hidden = !lnGrupa;

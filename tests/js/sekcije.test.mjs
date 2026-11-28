@@ -179,9 +179,10 @@ test('javne sekcije za registraciju: grupisanje po reviru, bez duplikata i prazn
     { sekcija_id: 'c', naziv: 'C', revir_id: 'r1', revir: 'Krupa' },
     { sekcija_id: 'a', naziv: 'A', revir_id: 'r1', revir: 'Krupa' },
     { naziv: 'bez id-a' },
+    { sekcija_id: null, naziv: null, revir_id: 'r3', revir: 'Jezerski' },
   ];
   const g = groupPublicSections(rows);
-  assert.deepEqual(g.map((x) => [x.revir, x.sekcije.map((s) => s.id)]), [['Krupa', ['a', 'c']], ['Otoka', ['b']]]);
+  assert.deepEqual(g.map((x) => [x.revir, x.sekcije.map((s) => s.id)]), [['Krupa', ['a', 'c']], ['Otoka', ['b']], ['Jezerski', []]]);
   assert.deepEqual(groupPublicSections(null), []);
 });
 

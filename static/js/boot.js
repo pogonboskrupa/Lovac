@@ -259,9 +259,9 @@ function wireAuthForms() {
     const fillSek = () => {
       const g = groups.find((x) => x.revir_id === revirSel.value);
       const prev = sekSel.value;
-      sekSel.innerHTML = '<option value="">— izaberi sekciju —</option>' + (g?.sekcije || []).map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.naziv)}</option>`).join('');
+      sekSel.innerHTML = `<option value="">${g && !g.sekcije.length ? '— revir još nema sekcija —' : '— izaberi sekciju —'}</option>` + (g?.sekcije || []).map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.naziv)}</option>`).join('');
       sekSel.value = g?.sekcije.some((s) => s.id === prev) ? prev : '';
-      sekSel.disabled = !g;
+      sekSel.disabled = !g || !g.sekcije.length;
     };
     revirSel.onchange = fillSek;
     fillSek();
