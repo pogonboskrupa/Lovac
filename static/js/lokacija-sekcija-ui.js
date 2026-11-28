@@ -17,7 +17,7 @@ import { getCoordMode } from './map.js';
 import { formatMemberDistance, memberCard, distanceM } from './istrazivac.js';
 import { getShareSettings, setShareSettings } from './lokacija-ui.js';
 import { shareIntervalMs, initialsOf, PRIKAZ_KEY, showOwnMarker } from './lokacija.js';
-import { SHARE_DURATIONS, shareUntil, activeShare, canShareToSection, sectionShareList, untilText } from './lokacija-sekcija.js';
+import { SHARE_DURATIONS, shareUntil, activeShare, canShareToSection, shareGroup, sectionShareList, untilText } from './lokacija-sekcija.js';
 import { toast, copyText, registerBackHandler, escapeHtml } from './ui.js';
 
 export const SEKCIJA_DIJELJENJE_KEY = 'lovac.sekcija_dijeljenje';
@@ -38,6 +38,7 @@ export function initMojaLokacija(L, map) {
   const markers = L.layerGroup().addTo(map);
   let rows = [];
   let sections = []; // sekcije u kojima smijem dijeliti
+  let grupa = null; // { sekcijaId, grupaId } kad sam u grupi: tada dijelim samo sa grupom
   let duration = '1';
   let izabranaSekcija = ''; // sekcija koju je lovac izabrao u padajućoj listi (preživi ponovno crtanje ploče)
   let sendTimer = null;
@@ -80,9 +81,12 @@ export function initMojaLokacija(L, map) {
   const loadSections = async ({ download = false } = {}) => {
     let ctx = await cachedSekcije();
     // Prvo otvaranje prije prve sinhronizacije sekcija: preuzmi ih odmah (ako ima veze).
-    if (download && !ctx.sekcije.length && online()) { await downloadSekcije().catch(() => {}); ctx = await cachedSekcije(); }
+    if (download && online() && (!ctx.sekcije.length || !ctx.grupe?.length)) { await downloadSekcije({ grupe: true }).catch(() => {}); ctx = await cachedSekcije(); }
     sections = ctx.sekcije.filter((s) => s.aktivno !== false
       && canShareToSection(myStatus(s, ctx.clanovi, me()?.id, Boolean(me()?.is_admin), ctx.lovocuvari)));
+    grupa = shareGroup(ctx, me()?.id);
+    // Lovac/grupovođa u grupi dijele samo sa svojom grupom, pa druga sekcija nije izbor.
+    if (grupa) sections = sections.filter((s) => s.id === grupa.sekcijaId);
   };
 
   const renderShare = () => {
@@ -105,16 +109,22 @@ export function initMojaLokacija(L, map) {
     const btn = $('lok-sek-prekidac');
     btn.setAttribute('aria-pressed', String(Boolean(sh)));
     const name = sections.find((s) => s.id === (sh?.sekcijaId || sel.value))?.naziv || 'sekciju';
-    btn.textContent = sh ? 'Prekini dijeljenje' : `Počni dijeliti sa: ${name}`;
+    const grupaTekst = grupa && sections.some((s) => s.id === grupa.sekcijaId);
+    $('lok-sek-naslov').textContent = grupaTekst ? 'Dijeli lokaciju sa grupom' : 'Dijeli lokaciju sa sekcijom';
+    $('lok-sek-opis').textContent = grupaTekst
+      ? 'Lokaciju vide samo članovi tvoje grupe i rukovodioci iznad grupe (lovovođa sekcije, revira i udruženja, lovočuvari), i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.'
+      : 'Lokaciju vide članovi, lovovođa sekcije i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.';
+    btn.textContent = sh ? 'Prekini dijeljenje' : (grupaTekst ? 'Počni dijeliti sa grupom' : `Počni dijeliti sa: ${name}`);
     $('lok-sek-stanje').textContent = sh
-      ? `Dijeliš lokaciju sa sekcijom ${sections.find((s) => s.id === sh.sekcijaId)?.naziv || ''} do ${untilText(sh.do)}.`
+      ? (grupaTekst ? `Dijeliš lokaciju sa svojom grupom do ${untilText(sh.do)}.`
+        : `Dijeliš lokaciju sa sekcijom ${sections.find((s) => s.id === sh.sekcijaId)?.naziv || ''} do ${untilText(sh.do)}.`)
       : (none ? '' : 'Ne dijeliš lokaciju.');
     // značka na vrhu ploče: dijeljenje sa sekcijom se vidi bez listanja do dna
     const znacka = $('lok-sek-znacka');
     znacka.hidden = !sh;
     renderAuto();
     setSharing('sekcija', Boolean(sh));
-    if (sh) znacka.textContent = `Dijeliš sa sekcijom do ${untilText(sh.do)}`;
+    if (sh) znacka.textContent = `Dijeliš sa ${grupa ? 'grupom' : 'sekcijom'} do ${untilText(sh.do)}`;
     const list = sectionShareList(rows, me()?.id, memberName, currentFix());
     $('lok-sek-broj').textContent = list.length ? `(${list.length})` : '';
     $('lok-sek-lista').innerHTML = list.map((m) => `<li class="clan-red" data-uid="${escapeHtml(m.id)}" data-stanje="${m.stanje}">
@@ -235,10 +245,10 @@ export function initMojaLokacija(L, map) {
     }
     const sh = sharing();
     sw.setAttribute('aria-checked', String(Boolean(sh)));
-    sw.setAttribute('aria-label', 'Dijeli lokaciju sa sekcijom');
+    sw.setAttribute('aria-label', grupa ? 'Dijeli lokaciju sa grupom' : 'Dijeli lokaciju sa sekcijom');
     const naziv = sh && sections.find((x) => x.id === sh.sekcijaId)?.naziv;
-    $('lok-auto-stanje').textContent = sh ? `Uključeno: sekcija ${naziv || ''} vidi tvoju poziciju do ${untilText(sh.do)}`
-      : sections.length ? 'Isključeno: niko ne vidi tvoju poziciju' : 'Isključeno: nisi član nijedne sekcije';
+    $('lok-auto-stanje').textContent = sh ? `Uključeno: ${grupa ? 'tvoja grupa' : `sekcija ${naziv || ''}`} vidi tvoju poziciju do ${untilText(sh.do)}`
+      : sections.length ? 'Isključeno: niko ne vidi tvoju poziciju' : 'Isključeno: nisi član nijedne sekcije ni grupe';
   };
   $('btn-lok-auto').addEventListener('click', () => {
     if (aktivanLov) { setShareSettings({ on: !getShareSettings().on }); renderAuto(); return; }
@@ -291,7 +301,7 @@ export function initMojaLokacija(L, map) {
     saveSoft(SEKCIJA_DIJELJENJE_KEY, { sekcijaId, do: shareUntil(duration) });
     armSending();
     renderShare();
-    toast('Lokaciju sada vide članovi sekcije');
+    toast(grupa ? 'Lokaciju sada vide članovi tvoje grupe' : 'Lokaciju sada vide članovi sekcije');
   });
   $('lok-sek-lista').addEventListener('click', (e) => {
     const b = e.target.closest('[data-akcija="na-karti"]');

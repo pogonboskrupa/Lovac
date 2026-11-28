@@ -111,6 +111,22 @@ test('Moja lokacija: ploča pokazuje koordinate u izabranom sistemu i prati dodi
   await expect(page.locator('#lok-koord')).toHaveText(/^Y 55\d{5}, X 49\d{5}$/);
 });
 
+test('lovac u grupi dijeli lokaciju sa GRUPOM, ne sa sekcijom', async ({ page }) => {
+  const server = makeServer();
+  server.db.sekcija_lokacije = [];
+  server.db.grupe = [{ id: ID(700), sekcija_id: ID(200), grupovodja_id: GV.id }];
+  server.db.sekcija_clanovi = server.db.sekcija_clanovi.map((c) => (c.korisnik_id === LOVAC.id ? { ...c, grupa_id: ID(700) } : c));
+  await setup(page, server, LOVAC);
+  await openLok(page);
+  await expect(page.locator('#lok-sek-naslov')).toHaveText('Dijeli lokaciju sa grupom');
+  await expect(page.locator('#lok-sek-prekidac')).toHaveText('Počni dijeliti sa grupom');
+  await page.locator('#lok-sek-prekidac').click();
+  await expect(page.locator('#lok-sek-stanje')).toContainText('Dijeliš lokaciju sa svojom grupom do');
+  await expect(page.locator('#lok-sek-znacka')).toContainText('Dijeliš sa grupom do');
+  await expect(page.locator('#btn-lok-auto')).toHaveAttribute('aria-label', 'Dijeli lokaciju sa grupom');
+  await expect.poll(() => server.db.sekcija_lokacije.length).toBeGreaterThan(0);
+});
+
 test('član dijeli lokaciju sa sekcijom na izabrano vrijeme i prekida je (red se briše sa servera)', async ({ page }) => {
   const server = makeServer();
   server.db.sekcija_lokacije = [];

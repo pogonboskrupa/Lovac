@@ -20,10 +20,12 @@ export function huntTargets(s, ctx = {}, me = null, nameOf = (id) => id) {
   const st = sectionRank(s, ctx, me);
   const lead = leadsRevir(ctx, me, s.revir_id);
   const wide = ['grupovodja', 'admin'].includes(st) || lead;
-  const out = wide ? [{ grupaId: null, tekst: 'Cijela sekcija' }] : [];
+  // Lov se pravi na nivou GRUPE (odluka vlasnika), pa su grupe prve (zadani izbor); cijela sekcija je izuzetak na kraju.
+  const out = [];
   for (const g of (ctx.grupe || []).filter((x) => x.sekcija_id === s.id)) {
     if (g.grupovodja_id === me.id || lead || (wide && g.dozvola_visih)) out.push({ grupaId: g.id, tekst: `Grupa — grupovođa ${nameOf(g.grupovodja_id)}` });
   }
+  if (wide) out.push({ grupaId: null, tekst: 'Cijela sekcija' });
   return out;
 }
 

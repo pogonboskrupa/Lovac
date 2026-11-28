@@ -18,9 +18,9 @@ test('lov po grupi: ko za šta smije praviti lov', () => {
   assert.deepEqual(ids(huntTargets(S, ctx(), me('gv'))), ['g1']); // grupovođa samo svoju grupu
   assert.deepEqual(ids(huntTargets(S, ctx(), me('lvs'))), [null]); // lovovođa sekcije: cijela sekcija, grupa tek uz dopuštenje
   const dozvola = ctx({ grupe: [{ id: 'g1', sekcija_id: 's1', grupovodja_id: 'gv', dozvola_visih: true }] });
-  assert.deepEqual(ids(huntTargets(S, dozvola, me('lvs'))), [null, 'g1']);
-  assert.deepEqual(ids(huntTargets(S, dozvola, me('adm', true))), [null, 'g1']);
-  assert.deepEqual(ids(huntTargets(S, ctx({ revirVodje: [{ korisnik_id: 'rv', revir_id: 'r1' }] }), me('rv'))), [null, 'g1']); // lovovođa revira uvijek
+  assert.deepEqual(ids(huntTargets(S, dozvola, me('lvs'))), ['g1', null]); // grupa je zadani izbor, cijela sekcija zadnja
+  assert.deepEqual(ids(huntTargets(S, dozvola, me('adm', true))), ['g1', null]);
+  assert.deepEqual(ids(huntTargets(S, ctx({ revirVodje: [{ korisnik_id: 'rv', revir_id: 'r1' }] }), me('rv'))), ['g1', null]); // lovovođa revira uvijek
   assert.deepEqual(huntTargets(S, ctx({ revirVodje: [{ korisnik_id: 'rv', revir_id: 'r2' }] }), me('rv')), []); // tuđi revir
   assert.deepEqual(huntTargets(S, ctx(), me('clan')), []);
   assert.equal(organizableSections(ctx(), me('gv')).length, 1);

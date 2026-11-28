@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="static/libs/leaflet/leaflet.css">
 <link rel="stylesheet" href="static/css/app.css">
 <script>
-  const APP_VER = 'v1.9.5';
+  const APP_VER = 'v1.9.6';
   window.APP_VER = APP_VER;
 </script>
 </head>
@@ -251,7 +251,7 @@
     </div>
     <p id="kompas-napomena" class="sitno lok-kompas-napomena"></p>
     <section id="lok-sekcija" class="lok-sekcija">
-      <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-group"/></svg>Dijeli lokaciju sa sekcijom</h3>
+      <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-group"/></svg><span id="lok-sek-naslov">Dijeli lokaciju sa sekcijom</span></h3>
       <p id="lok-sek-nema" class="sitno" hidden>Lokaciju sa sekcijom dijele članovi, lovovođa sekcije, lovočuvar i administrator.</p>
       <div id="lok-sek-forma">
         <select id="lok-sek-izbor" aria-label="Sekcija" hidden></select>
@@ -261,7 +261,7 @@
       </div>
       <h4>Članovi koji dijele lokaciju <span id="lok-sek-broj" class="sitno"></span></h4>
       <ul id="lok-sek-lista" class="spisak"></ul>
-      <p class="sitno">Lokaciju vide samo članovi, lovovođa sekcije i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
+      <p id="lok-sek-opis" class="sitno">Lokaciju vide članovi, lovovođa sekcije i lovočuvar te sekcije, i samo dok dijeljenje traje (najviše 24 h). Prestaje kad isteknu vrijeme ili kad prekineš.</p>
     </section>
     <section id="lok-izabrani" class="lok-sekcija">
       <h3 class="lok-sek-naslov"><svg class="ic" aria-hidden="true"><use href="#ic-korisnik"/></svg>Dijeli sa izabranim lovcima</h3>
@@ -1511,7 +1511,7 @@
 <section id="ping-dijalog" class="dijalog dijalog-gore" role="alertdialog" aria-labelledby="ping-naslov" hidden>
   <h3 id="ping-naslov">Gdje si?</h3>
   <p id="ping-tekst"></p>
-  <p class="sitno">„Da” uključuje dijeljenje tvoje lokacije sa sekcijom na 1 sat (možeš ga prekinuti u „Moja lokacija”).</p>
+  <p class="sitno">„Da” uključuje dijeljenje tvoje lokacije na 1 sat (sa tvojom grupom, a ko nije u grupi sa sekcijom) (možeš ga prekinuti u „Moja lokacija”).</p>
   <div class="red-dugmadi">
     <button id="btn-ping-da" class="dugme glavno" type="button">Da, dijeli</button>
     <button id="btn-ping-ne" class="dugme" type="button">Ne</button>

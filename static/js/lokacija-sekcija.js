@@ -31,6 +31,18 @@ export function canShareToSection(status) {
   return ['clan', 'grupovodja', 'lovocuvar', 'admin'].includes(status);
 }
 
+// Grupa sa kojom dijelim (odluka vlasnika): lovac i grupovođa koji su u grupi dijele SAMO unutar nje (server to provodi:
+// okidač postavlja `grupa_id`), pa modal tada kaže "sa grupom". Ko nije ni u jednoj grupi (vodstvo, administrator) dijeli
+// sa cijelom sekcijom. Vraća { sekcijaId, grupaId } ili null.
+export function shareGroup(ctx, userId) {
+  if (!userId) return null;
+  const aktivna = (id) => (ctx.sekcije || []).some((s) => s.id === id && s.aktivno !== false);
+  const clan = (ctx.clanovi || []).find((c) => c.korisnik_id === userId && c.status === 'odobren' && c.grupa_id && aktivna(c.sekcija_id));
+  if (clan) return { sekcijaId: clan.sekcija_id, grupaId: clan.grupa_id };
+  const vodi = (ctx.grupe || []).find((g) => g.grupovodja_id === userId && aktivna(g.sekcija_id));
+  return vodi ? { sekcijaId: vodi.sekcija_id, grupaId: vodi.id } : null;
+}
+
 // rows: [{ korisnik_id, lat, lon, t, do_ }] — drugi članovi koji dijele i nije isteklo; najbliži prvi.
 export function sectionShareList(rows, myId, nameOf, me, now = Date.now()) {
   return rows
